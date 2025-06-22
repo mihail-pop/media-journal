@@ -1,0 +1,113 @@
+/* Utility class to hide elements */
+.hidden {
+  display: none;
+}
+
+/* Overlay behind the modal to darken the page */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+}
+
+/* Modal container centered on screen */
+.modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1001;
+  background: #fff;
+  padding: 2rem;
+  border-radius: 8px;
+  max-width: 500px;
+  width: 100%;
+  box-sizing: border-box;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+
+/* Container for each label + input */
+.form-group {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+/* Label takes fixed width, right-aligned */
+.form-group label {
+  flex: 0 0 120px; /* fixed width for labels */
+  font-weight: 600;
+  text-align: right;
+  margin-right: 1rem;
+}
+
+/* Inputs and selects take the remaining space */
+.form-group input,
+.form-group select,
+.form-group textarea {
+  flex: 1;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+/* Textarea should be a bit taller */
+.form-group textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+/* Buttons container */
+.modal-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+}
+
+/* General button styles */
+.btn {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.2s ease;
+}
+
+/* Hover effect */
+.btn:hover {
+  background-color: #0056b3;
+}
+
+/* Cancel button variant */
+.btn.cancel {
+  background-color: #6c757d;
+}
+
+.btn.cancel:hover {
+  background-color: #5a6268;
+}
+
+/* Close button positioned top-right inside modal */
+.close-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: transparent;
+  color: #333;
+  font-weight: 700;
+  font-size: 1.2rem;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}

@@ -1,0 +1,26 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block head %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'core/css/lists.css' %}" />
+{% endblock %}
+
+{% block content %}
+  <h1>Manga List</h1>
+
+  {% if items %}
+    <div class="card-grid">
+      {% for item in items %}
+        <div class="card">
+          <a href="{% url 'mal_detail' media_type=item.media_type mal_id=item.source_id %}" class="card-link">
+            <img src="{{ item.cover_url }}" alt="{{ item.title }}">
+            <div class="card-title">{{ item.title }}</div>
+          </a>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p>No items in your list yet.</p>
+  {% endif %}
+{% endblock %}

@@ -1,0 +1,131 @@
+{% extends 'core/base.html' %}
+
+{% block head %}
+{{ block.super }}
+<style>
+  table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+
+  th,
+  td {
+    padding: 8px;
+    border: 1px solid #ddd;
+  }
+
+  input {
+    width: 100%;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>Settings</h1>
+
+<h2>API Keys</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Key 1</th>
+      <th>Key 2</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody id="key-table">
+    {% for key in keys %}
+    <tr data-id="{{ key.id }}">
+      <td><input type="text" class="key-name" value="{{ key.name }}" readonly /></td>
+      <td><input type="text" class="key-1" value="{{ key.key_1 }}" /></td>
+      <td><input type="text" class="key-2" value="{{ key.key_2 }}" /></td>
+      <td>
+        <button class="save-btn">Save</button>
+        <button class="delete-btn">Delete</button>
+      </td>
+    </tr>
+    {% endfor %}
+    <tr>
+      <td><input type="text" id="new-name" placeholder="new name" /></td>
+      <td><input type="text" id="new-key-1" placeholder="key 1" /></td>
+      <td><input type="text" id="new-key-2" placeholder="key 2 (optional)" /></td>
+      <td><button id="add-key-btn">Add</button></td>
+    </tr>
+  </tbody>
+</table>
+{% endblock %}
+
+{% block script %}
+{{ block.super }}
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll(".save-btn").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const row = btn.closest("tr");
+        const id = row.dataset.id;
+        const keyName = row.querySelector(".key-name").value;
+        const key1 = row.querySelector(".key-1").value;
+        const key2 = row.querySelector(".key-2").value;
+
+        const response = await fetch("/api/update_key/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCookie("csrftoken"),
+          },
+          body: JSON.stringify({ id, name: keyName, key_1: key1, key_2: key2 }),
+        });
+
+        const data = await response.json();
+        alert(data.message || data.error);
+      });
+    });
+
+    document.querySelectorAll(".delete-btn").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const row = btn.closest("tr");
+        const id = row.dataset.id;
+
+        const response = await fetch("/api/delete_key/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCookie("csrftoken"),
+          },
+          body: JSON.stringify({ id }),
+        });
+
+        const data = await response.json();
+        alert(data.message || data.error);
+        if (response.ok) row.remove();
+      });
+    });
+
+    document.getElementById("add-key-btn").addEventListener("click", async () => {
+      const name = document.getElementById("new-name").value;
+      const key1 = document.getElementById("new-key-1").value;
+      const key2 = document.getElementById("new-key-2").value;
+
+      const response = await fetch("/api/add_key/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": getCookie("csrftoken"),
+        },
+        body: JSON.stringify({ name, key_1: key1, key_2: key2 }),
+      });
+
+      const data = await response.json();
+      alert(data.message || data.error);
+      if (response.ok) location.reload();
+    });
+
+    function getCookie(name) {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop().split(";").shift();
+    }
+  });
+</script>
+{% endblock %}

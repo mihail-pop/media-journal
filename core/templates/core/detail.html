@@ -1,0 +1,284 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block head %}
+{{ block.super }} <!-- This preserves base stylesheets if any -->
+<link rel="stylesheet" href="{% static 'core/css/detail.css' %}" />
+<link rel="stylesheet" href="{% static 'core/css/modal.css' %}" />
+{% endblock %}
+
+{% block content %}
+
+<div class="detail-container">
+
+  <div class="main-info">
+    <img class="poster" src="{{ poster_url }}" alt="{{ title }}"
+      onerror="this.src='https://dummyimage.com/150x225/cccccc/000000&text=No+Image';" />
+    <div class="text-info">
+      <h1>{{ title }}</h1>
+      <p class="release-date">{{ release_date }}</p>
+      <p class="overview">{{ overview }}</p>
+
+      {% if genres %}
+      <p><strong>Genres:</strong> {{ genres|join:", " }}</p>
+      {% endif %}
+
+      {% if platforms %}
+      <p><strong>Platforms:</strong> {{ platforms|join:", " }}</p>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if in_my_list %}
+    <button id="edit-button" class="btn">Edit</button>
+
+<form id="favorite-form" data-item-id="{{ item_id }}">
+  <label>
+    <input type="checkbox" name="favorite" {% if item.favorite %}checked{% endif %}>
+    Mark as Favorite
+  </label>
+</form>
+
+    <div class="form-group">
+      {% else %}
+      <button id="add-to-list-button" class="btn">Add to My List</button>
+      {% endif %}
+    </div>
+
+      <!-- Reusable Modal (can be moved to a separate template later) -->
+      <div id="edit-modal" class="modal hidden">
+        <div class="modal-content">
+          <h2>Edit Entry</h2>
+          <form id="edit-form" data-media-type="{{ media_type }}" data-item-id="{{ item_id }}">
+            <div class="form-group">
+              <label>Status:
+                <select name="status">
+                  {% for key, label in item_status_choices %}
+                  <option value="{{ key }}" {% if key == item.status %}selected{% endif %}>{{ label }}</option>
+                  {% endfor %}
+                </select>
+              </label>
+            </div>
+            <div class="form-group">
+              <label>Rating:
+                <select name="personal_rating">
+                  <option value="" {% if item.personal_rating == None %}selected{% endif %}>No Rating</option>
+                  {% for value, label in item_rating_choices %}
+                  <option value="{{ value }}" {% if value == item.personal_rating %}selected{% endif %}>{{ label }}
+                  </option>
+                  {% endfor %}
+                </select>
+              </label>
+            </div>
+
+            <div class="form-group">
+              <label>Notes:
+                <textarea name="notes">{{ item.notes }}</textarea>
+              </label>
+            </div>
+
+            <!-- Progress Fields (show/hide in JS) -->
+            <div id="progress-main-group">
+              <div class="form-group">
+                <label>Main Progress:
+                  <input type="number" name="progress_main" min="0"
+                    value="{{ item.progress_main|default_if_none:'' }}" />
+                </label>
+              </div>
+              <div class="form-group">
+                <label>Main Total:
+                  <input type="number" name="total_main" min="0" value="{{ item.total_main|default_if_none:'' }}" />
+                </label>
+              </div>
+            </div>
+
+            <div id="progress-secondary-group">
+              <div class="form-group">
+                <label>Secondary Progress:
+                  <input type="number" name="progress_secondary" min="0"
+                    value="{{ item.progress_secondary|default_if_none:'' }}" />
+                </label>
+              </div>
+              <div class="form-group">
+                <label>Secondary Total:
+                  <input type="number" name="total_secondary" min="0"
+                    value="{{ item.total_secondary|default_if_none:'' }}" />
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>
+                <input type="checkbox" name="favorite" {% if item.favorite %}checked{% endif %}>
+                Mark as Favorite
+              </label>
+            </div>
+                <input type="hidden" name="item_id" value="{{ item_id }}" />
+                <input type="hidden" name="media_type" value="{{ media_type }}" />
+
+                <div class="modal-buttons">
+                  <button type="submit" class="btn">Save</button>
+                  <button type="button" class="btn" id="cancel-edit">Cancel</button>
+                </div>
+                <button type="button" id="edit-close-btn" class="btn close-btn">X</button>
+          </form>
+        </div>
+      </div>
+      <div id="edit-overlay" class="modal-overlay hidden"></div>
+
+      {% if cast %}
+      <section class="cast-section">
+        <h2>Cast</h2>
+        <div class="cast-list">
+          {% for member in cast %}
+          <div class="cast-member">
+            {% if member.is_full_url %}
+            <img src="{{ member.profile_path }}" alt="{{ member.name }}"
+              onerror="this.src='https://dummyimage.com/150x225/cccccc/000000&text=No+Image';" />
+            {% else %}
+            <img src="https://image.tmdb.org/t/p/w185{{ member.profile_path }}" alt="{{ member.name }}"
+              onerror="this.src='https://dummyimage.com/150x225/cccccc/000000&text=No+Image';" />
+            {% endif %}
+            <p class="actor-name">{{ member.name }}</p>
+            <p class="character-name">{{ member.character }}</p>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      {% if seasons %}
+      <section class="seasons-section">
+        <h2>Seasons</h2>
+        <div class="seasons-list">
+          {% for season in seasons %}
+          <div class="season-card">
+            <img src="https://image.tmdb.org/t/p/w185{{ season.poster_path }}" alt="{{ season.name }}"
+              onerror="this.src='https://dummyimage.com/150x225/cccccc/000000&text=No+Image';" />
+            <p class="season-name">{{ season.name }} ({{ season.season_number }})</p>
+            <p class="episode-count">{{ season.episode_count }} episodes</p>
+            <p class="air-date">Air date: {{ season.air_date }}</p>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      {% if screenshots %}
+      <section class="screenshots-section">
+        <h2>Screenshots</h2>
+        <div class="screenshots-list">
+          {% for shot in screenshots %}
+          <img src="{{ shot }}" alt="Screenshot" onerror="this.style.display='none';" />
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      {% if prequels %}
+      <section class="recommendations-section">
+        <h2>Prequels</h2>
+        <div class="recommendations-list">
+          {% for rec in prequels %}
+          <a href="/mal/{{ media_type }}/{{ rec.id }}/" class="rec-card" title="{{ rec.title }}">
+            <img src="{{ rec.poster_path }}" alt="{{ rec.title }}"
+              onerror="this.src='https://dummyimage.com/150x225/cccccc/000000&text=No+Image';" />
+            <p class="rec-title">{{ rec.title }}</p>
+          </a>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      {% if sequels %}
+      <section class="recommendations-section">
+        <h2>Sequels</h2>
+        <div class="recommendations-list">
+          {% for rec in sequels %}
+          <a href="/mal/{{ media_type }}/{{ rec.id }}/" class="rec-card" title="{{ rec.title }}">
+            <img src="{{ rec.poster_path }}" alt="{{ rec.title }}"
+              onerror="this.src='https://dummyimage.com/150x225/cccccc/000000&text=No+Image';" />
+            <p class="rec-title">{{ rec.title }}</p>
+          </a>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      {% if recommendations %}
+      <section class="recommendations-section">
+        <h2>Recommendations</h2>
+        <div class="recommendations-list">
+          {% for rec in recommendations %}
+          <a href="/{% if media_type == 'game' %}igdb/{{ rec.id }}{% else %}tmdb/{{ media_type }}/{{ rec.id }}{% endif %}/"
+            title="{{ rec.title }}">
+            {% if rec.poster_path %}
+            <img
+              src="{% if media_type == 'game' %}{{ rec.poster_path }}{% else %}https://image.tmdb.org/t/p/w185{{ rec.poster_path }}{% endif %}"
+              alt="{{ rec.title }}" onerror="this.src='https://dummyimage.com/150x225/cccccc/000000&text=No+Image';" />
+            {% else %}
+            <img src="https://via.placeholder.com/150x225?text=No+Image" alt="{{ rec.title }}" />
+            {% endif %}
+            <p class="rec-title">{{ rec.title }}</p>
+          </a>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+      {% endblock %}
+
+      {% block script %}
+      {{ block.super }}
+      <script src="{% static 'core/js/edit_modal.js' %}"></script>
+      <script>
+        document.addEventListener("DOMContentLoaded", function () {
+          const addBtn = document.getElementById("add-to-list-button");
+          if (!addBtn) return;
+
+          addBtn.addEventListener("click", function () {
+            const data = {
+              source: "{{ source }}",
+              source_id: "{{ source_id }}",
+              media_type: "{{ media_type }}",
+              title: "{{ title|escapejs }}",
+              cover_url: "{{ poster_url|default:''|escapejs }}",
+            };
+
+            fetch("{% url 'add_to_list' %}", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCookie("csrftoken"),
+              },
+              body: JSON.stringify(data),
+            })
+              .then(response => response.json())
+              .then(data => {
+                if (data.message) {
+                  alert(data.message);
+                  // Optionally reload or swap buttons here
+                  location.reload();
+                } else if (data.error) {
+                  alert("Error: " + data.error);
+                }
+              })
+              .catch(() => alert("Failed to add item."));
+          });
+
+          function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== "") {
+              const cookies = document.cookie.split(";");
+              for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + "=")) {
+                  cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                  break;
+                }
+              }
+            }
+            return cookieValue;
+          }
+        });
+      </script>
+      {% endblock %}

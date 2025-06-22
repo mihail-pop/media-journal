@@ -1,0 +1,30 @@
+{% load static %}
+<header>
+  <div class="navbar container">
+    <div class="logo">Media Journal</div>
+
+    <div class="search-container">
+      <button id="search-open-btn" aria-label="Open Search" class="search-icon-button">
+        <img src="{% static 'core/icons/gear_search_icon.svg' %}" alt="Search" width="30" height="30">
+      </button>
+    </div>
+
+    <ul class="nav-links">
+      <li><a href="/">Home</a></li>
+      <li><a href="/movies">Movies</a></li>
+      <li><a href="/tvshows">TV Shows</a></li>
+      <li><a href="/anime">Anime</a></li>
+
+      <li class="dropdown">
+        <button class="dropbtn">Library ▼</button>
+        <ul class="dropdown-content">
+          <li><a href="/games">Games</a></li>
+          <li><a href="/books">Books</a></li>
+          <li><a href="/manga">Manga</a></li>
+        </ul>
+      </li>
+
+      <li><a href="/settings">Settings</a></li>
+    </ul>
+  </div>
+</header>

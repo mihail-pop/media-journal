@@ -1,0 +1,90 @@
+/* lists.css */
+
+/* Container for the whole list page */
+.list-container {
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+/* Page title */
+.list-container h1 {
+  font-size: 8.5rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
+  color: #222;
+}
+
+/* Grid for cards */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1.2rem;
+}
+
+/* Individual card */
+.card {
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.15);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.15s ease-in-out;
+  cursor: pointer;
+}
+
+.card:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 12px rgb(0 0 0 / 0.25);
+}
+
+/* Card image */
+.card img {
+  width: 100%;
+  height: 270px;
+  object-fit: cover;
+  display: block;
+}
+
+/* Title below the image */
+.card-title {
+  padding: 0.6rem 0.8rem;
+  font-weight: 600;
+  font-size: 1rem;
+  color: #111;
+  flex-grow: 1;
+  text-align: center;
+  line-height: 1.2;
+}
+
+/* Add to list button */
+.add-to-list-btn {
+  margin: 0.6rem auto 1rem auto;
+  padding: 0.5rem 1.1rem;
+  background-color: #007bff;
+  border: none;
+  border-radius: 5px;
+  color: rgb(71, 67, 67);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.add-to-list-btn:hover {
+  background-color: #0056b3;
+}
+
+/* Responsive tweaks */
+@media (max-width: 600px) {
+  .card img {
+    height: 220px;
+  }
+  .card-title {
+    font-size: 0.9rem;
+  }
+  .add-to-list-btn {
+    padding: 0.4rem 0.9rem;
+    font-size: 0.9rem;
+  }
+}

@@ -1,0 +1,149 @@
+/* Reset & basics */
+body {
+  margin: 0;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background: #f7f9fc;
+  color: #2e3440;
+}
+
+/* Header base */
+header {
+  background-color: #fff;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.1);
+  padding: 0.6rem 1rem;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+/* Container for max width */
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Navbar flex */
+.navbar {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 1rem;
+}
+
+/* Logo */
+.logo {
+  font-weight: 700;
+  font-size: 1.5rem;
+  color: #3b82f6; /* nice blue */
+  flex: 0 0 auto;
+  cursor: default;
+}
+
+/* Search container */
+.search-container {
+  flex: 1 1 auto;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+#search-input {
+  width: 100%;
+  max-width: 300px;
+  padding: 0.4rem 0.8rem;
+  font-size: 1rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  transition: border-color 0.2s ease;
+}
+
+#search-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 6px #3b82f6aa;
+}
+
+.live-search-label {
+  font-size: 0.9rem;
+  color: #556270;
+  user-select: none;
+}
+
+.live-search-label input[type="checkbox"] {
+  margin-right: 4px;
+  cursor: pointer;
+}
+
+
+
+/* Navigation links */
+.nav-links {
+  list-style: none;
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 0;
+}
+
+.nav-links li {
+  position: relative;
+}
+
+.nav-links a,
+.dropbtn {
+  color: #556270;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 1rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: 6px;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.nav-links a:hover,
+.dropbtn:hover {
+  background-color: #e0e7ff;
+  color: #3b82f6;
+}
+
+/* Dropdown menu */
+.dropdown-content {
+  display: none;
+  position: absolute;
+  top: 38px;
+  left: 0;
+  background-color: white;
+  min-width: 140px;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.15);
+  border-radius: 6px;
+  z-index: 1200;
+}
+
+.dropdown-content li {
+  padding: 0;
+}
+
+.dropdown-content a {
+  display: block;
+  padding: 10px 16px;
+  color: #556270;
+  font-weight: 500;
+}
+
+.dropdown-content a:hover {
+  background-color: #e0e7ff;
+  color: #3b82f6;
+}
+
+.dropdown:hover .dropdown-content {
+  display: block;
+}

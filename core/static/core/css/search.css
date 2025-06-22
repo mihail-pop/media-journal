@@ -1,0 +1,121 @@
+/* Overlay dims the page */
+#search-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 2rem;
+  z-index: 9999;
+  overflow-y: auto;
+  box-sizing: border-box;
+  transition: opacity 0.25s ease;
+}
+
+/* Hide the overlay by default */
+.hidden {
+  display: none !important;
+}
+
+/* The results panel */
+
+
+/* Scrollbar styling for panel */
+#search-results-panel::-webkit-scrollbar {
+  width: 8px;
+}
+
+#search-results-panel::-webkit-scrollbar-thumb {
+  background-color: #555;
+  border-radius: 4px;
+}
+
+/* Search cards grid inside panel */
+.search-card-grid {
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 1rem;
+  max-height: calc( (180px + 0.6rem + other padding) * 2 + gap ); /* approx 2 rows */
+  overflow-y: auto; /* scroll if more cards */
+}
+
+
+/* Individual search card */
+.search-card {
+  background-color: #333;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.7);
+  border-radius: 8px;
+  padding: 0.5rem;
+  transition: transform 0.15s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.search-card:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 14px rgba(0,0,0,0.9);
+}
+
+.search-card img {
+  width: 120px;
+  height: 180px;
+  border-radius: 6px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+  margin-bottom: 0.6rem;
+  object-fit: cover;
+}
+
+.search-card-title {
+  color: #eee;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-align: center;
+  min-height: 2.6em;
+  user-select: none;
+  padding: 0 0.4rem;
+}
+
+/* Overlay search input styling */
+.overlay-search-bar {
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+#overlay-search-input {
+  width: 80%;
+  max-width: 400px;
+  padding: 0.5rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  outline: none;
+  background-color: #111;
+  color: #eee;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+.overlay-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.live-search-label {
+  font-size: 0.9rem;
+  color: #ccc;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.overlay-search-input-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
