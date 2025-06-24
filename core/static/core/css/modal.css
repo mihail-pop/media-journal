@@ -1,6 +1,9 @@
-/* Utility class to hide elements */
-.hidden {
-  display: none;
+/* Utility class to hide modal elements specifically */
+.modal-hidden {
+  display: none !important;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
 }
 
 /* Overlay behind the modal to darken the page */
@@ -10,8 +13,11 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 1000;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  z-index: 20000; /* Raised above search overlay */
+  opacity: 1;
+  transition: opacity 0.3s ease;
 }
 
 /* Modal container centered on screen */
@@ -20,46 +26,63 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  z-index: 1001;
+  z-index: 20001; /* Higher than overlay */
   background: #fff;
-  padding: 2rem;
-  border-radius: 8px;
-  max-width: 500px;
-  width: 100%;
+  padding: 2.5rem 2rem 2rem 2rem;
+  border-radius: 12px;
+  max-width: 520px;
+  width: 90%;
   box-sizing: border-box;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  box-shadow:
+    0 8px 20px rgba(0, 0, 0, 0.15),
+    0 0 0 1px rgba(0, 0, 0, 0.05);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #333;
+  opacity: 1;
+  transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
-
-/* Container for each label + input */
+/* Form group with label and input */
 .form-group {
   display: flex;
   align-items: center;
-  margin-bottom: 1rem;
+  margin-bottom: 1.2rem;
 }
 
 /* Label takes fixed width, right-aligned */
 .form-group label {
-  flex: 0 0 120px; /* fixed width for labels */
+  flex: 0 0 130px; /* slightly wider for better spacing */
   font-weight: 600;
   text-align: right;
   margin-right: 1rem;
+  color: #444;
+  user-select: none;
 }
 
-/* Inputs and selects take the remaining space */
+/* Inputs, selects, textarea */
 .form-group input,
 .form-group select,
 .form-group textarea {
   flex: 1;
-  padding: 0.4rem 0.6rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  padding: 0.5rem 0.75rem;
+  border: 1.5px solid #bbb;
+  border-radius: 6px;
   font-size: 1rem;
+  font-family: inherit;
+  transition: border-color 0.2s ease;
+  outline-offset: 2px;
 }
 
-/* Textarea should be a bit taller */
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 5px rgba(0, 123, 255, 0.4);
+}
+
+/* Textarea should be taller and resizable vertically */
 .form-group textarea {
-  min-height: 80px;
+  min-height: 100px;
   resize: vertical;
 }
 
@@ -67,8 +90,8 @@
 .modal-buttons {
   display: flex;
   justify-content: flex-end;
-  gap: 0.5rem;
-  margin-top: 1.5rem;
+  gap: 0.75rem;
+  margin-top: 2rem;
 }
 
 /* General button styles */
@@ -76,38 +99,58 @@
   background-color: #007bff;
   color: white;
   border: none;
-  padding: 0.6rem 1.2rem;
-  border-radius: 4px;
+  padding: 0.7rem 1.4rem;
+  border-radius: 6px;
   cursor: pointer;
   font-weight: 600;
-  transition: background-color 0.2s ease;
+  font-size: 1rem;
+  transition: background-color 0.25s ease, box-shadow 0.25s ease;
+  box-shadow: 0 3px 7px rgba(0, 123, 255, 0.4);
 }
 
-/* Hover effect */
-.btn:hover {
+.btn:hover,
+.btn:focus {
   background-color: #0056b3;
+  box-shadow: 0 5px 15px rgba(0, 86, 179, 0.6);
+  outline: none;
 }
 
 /* Cancel button variant */
 .btn.cancel {
   background-color: #6c757d;
+  box-shadow: 0 3px 7px rgba(108, 117, 125, 0.4);
 }
 
-.btn.cancel:hover {
+.btn.cancel:hover,
+.btn.cancel:focus {
   background-color: #5a6268;
+  box-shadow: 0 5px 15px rgba(90, 98, 104, 0.6);
+  outline: none;
 }
 
 /* Close button positioned top-right inside modal */
 .close-btn {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: 14px;
+  right: 14px;
   background: transparent;
-  color: #333;
+  color: #666;
   font-weight: 700;
-  font-size: 1.2rem;
+  font-size: 1.5rem;
   border: none;
   cursor: pointer;
-  padding: 0;
+  padding: 6px 10px;
   line-height: 1;
+  border-radius: 6px;
+  transition: background-color 0.25s ease, color 0.25s ease;
+  user-select: none;
 }
+
+.close-btn:hover,
+.close-btn:focus {
+  background-color: #eee;
+  color: #222;
+  outline: none;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.1);
+}
+

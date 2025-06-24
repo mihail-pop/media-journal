@@ -244,12 +244,20 @@ def tmdb_detail(request, media_type, tmdb_id):
 
     # For TV shows get seasons, for movies no seasons
     seasons = data.get("seasons") if media_type == "tv" else None
+    item = None
+    item_id = None
+
+
 
     in_my_list = check_if_in_list("tmdb", tmdb_id)
-    item = MediaItem.objects.get(source="tmdb", source_id=tmdb_id)
+    if in_my_list:
+        item = MediaItem.objects.get(source="tmdb", source_id=tmdb_id)
+        item_id = item.id
+        
+
     context = {
         "item": item,
-        "item_id": item.id,  # pass the id here explicitly
+        "item_id": item_id,  # pass the id here explicitly
         "source": "tmdb",
         "source_id": tmdb_id,
         "in_my_list": in_my_list,
@@ -262,17 +270,6 @@ def tmdb_detail(request, media_type, tmdb_id):
         "cast": data.get("credits", {}).get("cast", [])[:10],  # top 10 cast members
         "recommendations": data.get("recommendations", {}).get("results", [])[:5],
         "seasons": seasons,
-        #
-        "status": item.status,
-        "personal_rating": item.personal_rating,
-        "notes": item.notes,
-        "progress_main": item.progress_main,
-        "total_main": item.total_main,
-        "progress_secondary": item.progress_secondary,
-        "total_secondary": item.total_secondary,
-        "is_full_url": False,  # relative path
-        "item_status_choices": MediaItem.STATUS_CHOICES,
-        "item_rating_choices": MediaItem.RATING_CHOICES,
     }
 
     return render(request, "core/detail.html", context)
@@ -321,13 +318,18 @@ def mal_detail(request, media_type, mal_id):
     # Fetch detailed info (with poster images) for prequels and sequels
     prequels = fetch_related_with_images(raw_prequels, media_type)
     sequels = fetch_related_with_images(raw_sequels, media_type)
+    item = None
+    item_id = None
+
 
     in_my_list = check_if_in_list("mal", mal_id)
-    item = MediaItem.objects.get(source="mal", source_id=mal_id)
+    if in_my_list:
+        item = MediaItem.objects.get(source="mal", source_id=mal_id)
+        item_id = item.id
 
     context = {
         "item": item,
-        "item_id": item.id,  # pass the id here explicitly
+        "item_id": item_id,  # pass the id here explicitly
         "source": "mal",
         "source_id": mal_id,
         "media_type": media_type,
@@ -340,16 +342,7 @@ def mal_detail(request, media_type, mal_id):
         "recommendations": [],
         "prequels": prequels,
         "sequels": sequels,
-        "status": item.status,
-        "personal_rating": item.personal_rating,
-        "notes": item.notes,
-        "progress_main": item.progress_main,
-        "total_main": item.total_main,
-        "progress_secondary": item.progress_secondary,
-        "total_secondary": item.total_secondary,
         "in_my_list": in_my_list,
-        "item_status_choices": MediaItem.STATUS_CHOICES,
-        "item_rating_choices": MediaItem.RATING_CHOICES,
     }
 
     return render(request, "core/detail.html", context)
@@ -445,13 +438,17 @@ def igdb_detail(request, igdb_id):
     # IGDB has no cast or seasons for games, so keep empty
     cast = []
     seasons = None
+    item = None
+    item_id = None
 
     in_my_list = check_if_in_list("igdb", igdb_id)
-    item = MediaItem.objects.get(source="igdb", source_id=igdb_id)
+    if in_my_list:
+        item = MediaItem.objects.get(source="igdb", source_id=igdb_id)
+        item_id = item.id
 
     context = {
         "item": item,
-        "item_id": item.id,  # pass the id here explicitly
+        "item_id": item_id,  # pass the id here explicitly
         "source": "igdb",
         "source_id": igdb_id,
         "media_type": "game",
@@ -466,15 +463,6 @@ def igdb_detail(request, igdb_id):
         "genres": [g["name"] for g in game.get("genres", []) if "name" in g],
         "platforms": [p["name"] for p in game.get("platforms", []) if "name" in p],
         "in_my_list": in_my_list,
-        "status": item.status,
-        "personal_rating": item.personal_rating,
-        "notes": item.notes,
-        "progress_main": item.progress_main,
-        "total_main": item.total_main,
-        "progress_secondary": item.progress_secondary,
-        "total_secondary": item.total_secondary,
-        "item_status_choices": MediaItem.STATUS_CHOICES,
-        "item_rating_choices": MediaItem.RATING_CHOICES,
     }
 
 
@@ -535,6 +523,29 @@ def edit_item(request, item_id):
             return JsonResponse({"success": False, "error": str(e)})
     return JsonResponse({"success": False, "error": "Invalid request"})
 
+def get_item(request, item_id):
+    try:
+        item = MediaItem.objects.get(id=item_id)
+        return JsonResponse({
+            "success": True,
+            "item": {
+                "id": item.id,
+                "media_type": item.media_type,
+                "status": item.status,
+                "personal_rating": item.personal_rating,
+                "notes": item.notes,
+                "progress_main": item.progress_main,
+                "total_main": item.total_main,
+                "progress_secondary": item.progress_secondary,
+                "total_secondary": item.total_secondary,
+                "favorite": item.favorite,
+                "item_status_choices": MediaItem.STATUS_CHOICES,
+                "item_rating_choices": MediaItem.RATING_CHOICES,
+            }
+        })
+    except MediaItem.DoesNotExist:
+        return JsonResponse({"success": False, "error": "Item not found"})
+
 # Settings
 
 def add_key(request):
@@ -574,3 +585,5 @@ def delete_key(request):
         return JsonResponse({"message": "API key deleted."})
     except APIKey.DoesNotExist:
         return JsonResponse({"error": "Key not found."}, status=404)
+    
+

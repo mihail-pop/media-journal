@@ -25,81 +25,56 @@ header {
   justify-content: space-between;
 }
 
-/* Navbar flex */
+/* Navbar layout */
 .navbar {
   display: flex;
   align-items: center;
   width: 100%;
-  gap: 1rem;
 }
 
 /* Logo */
 .logo {
   font-weight: 700;
   font-size: 1.5rem;
-  color: #3b82f6; /* nice blue */
+  color: #525151;
   flex: 0 0 auto;
   cursor: default;
 }
 
-/* Search container */
-.search-container {
-  flex: 1 1 auto;
-  position: relative;
+/* Center navigation links */
+.nav-center {
   display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-#search-input {
-  width: 100%;
-  max-width: 300px;
-  padding: 0.4rem 0.8rem;
-  font-size: 1rem;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  transition: border-color 0.2s ease;
-}
-
-#search-input:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 6px #3b82f6aa;
-}
-
-.live-search-label {
-  font-size: 0.9rem;
-  color: #556270;
-  user-select: none;
-}
-
-.live-search-label input[type="checkbox"] {
-  margin-right: 4px;
-  cursor: pointer;
-}
-
-
-
-/* Navigation links */
-.nav-links {
+  justify-content: center;
+  flex: 1;
+  gap: 1.2rem;
   list-style: none;
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-  flex: 0 0 auto;
   margin: 0;
   padding: 0;
+  align-items: center;
 }
 
-.nav-links li {
+/* Right-side nav (search, settings) */
+.nav-right {
+  display: flex;
+  gap: 0.4rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  align-items: center;
+}
+
+/* Navigation links (center & right) */
+.nav-center li,
+.nav-right li {
   position: relative;
 }
 
-.nav-links a,
+.nav-center a,
+.nav-right a,
 .dropbtn {
   color: #556270;
   text-decoration: none;
-  font-weight: 600;
+  font-weight: 550;
   font-size: 1rem;
   background: none;
   border: none;
@@ -109,7 +84,8 @@ header {
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-.nav-links a:hover,
+.nav-center a:hover,
+.nav-right a:hover,
 .dropbtn:hover {
   background-color: #e0e7ff;
   color: #3b82f6;
@@ -117,12 +93,15 @@ header {
 
 /* Dropdown menu */
 .dropdown-content {
+  margin: 0; 
+  padding-left: 0;
+  list-style: none;
   display: none;
   position: absolute;
-  top: 38px;
+  top: 34px;
   left: 0;
   background-color: white;
-  min-width: 140px;
+  min-width: 130px;
   box-shadow: 0 4px 12px rgb(0 0 0 / 0.15);
   border-radius: 6px;
   z-index: 1200;
@@ -146,4 +125,45 @@ header {
 
 .dropdown:hover .dropdown-content {
   display: block;
+}
+
+/* Search icon styles */
+.search-container {
+  display: flex;
+  align-items: center;
+}
+
+.search-icon-button {
+  background: none;
+  border: none;
+  padding: 0.3rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.search-icon-button:hover {
+  background-color: #e0e7ff;
+}
+
+
+/* Lock header height to avoid layout shift */
+header {
+  min-height: 54px; /* consistent height */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.navbar {
+  min-height: 40px;
+}
+
+/* Invisible placeholder when search button is hidden */
+.nav-right .search-container {
+  width: 36px; /* Reserve space even if hidden */
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }

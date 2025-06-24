@@ -19,6 +19,7 @@ urlpatterns = [
     path('games/', views.games, name='games'),
     path('books/', views.books, name='books'),
     path('manga/', views.manga, name='manga'),
+    path('get-item/<int:item_id>/', views.get_item, name='get_item'),
     path('settings/', views.settings, name='settings'),
     path('api/add_key/', views.add_key, name='add_key'),
     path('api/update_key/', views.update_key, name='update_key'),

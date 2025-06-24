@@ -1,0 +1,70 @@
+<!-- Edit Modal Partial -->
+<div id="edit-modal" class="modal modal-hidden">
+  <div class="modal-content">
+    <h2>Edit Entry</h2>
+    <form id="edit-form" data-media-type="{{ media_type }}" data-item-id="{{ item_id }}">
+      <div class="form-group">
+        <label>Status:
+          <select name="status">
+            <!-- Options dynamically filled by JS -->
+            {% for key, label in item_status_choices %}
+            <option value="{{ key }}" {% if key == status %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </label>
+      </div>
+
+      <div class="form-group">
+        <label>Rating:
+          <select name="personal_rating">
+            <option value="" {% if personal_rating == None %}selected{% endif %}>No Rating</option>
+            {% for value, label in item_rating_choices %}
+            <option value="{{ value }}" {% if value == personal_rating %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </label>
+      </div>
+
+      <div class="form-group">
+        <label>Notes:
+          <textarea name="notes">{{ notes }}</textarea>
+        </label>
+      </div>
+
+      <!-- Progress Fields -->
+      <div id="progress_main_group" class="form-group">
+        <label>Main Progress:
+          <input type="number" name="progress_main" min="0" value="{{ progress_main|default_if_none:'' }}" />
+        </label>
+        <label>Main Total:
+          <input type="number" name="total_main" min="0" value="{{ total_main|default_if_none:'' }}" />
+        </label>
+      </div>
+
+      <div id="progress_secondary_group" class="form-group">
+        <label>Secondary Progress:
+          <input type="number" name="progress_secondary" min="0" value="{{ progress_secondary|default_if_none:'' }}" />
+        </label>
+        <label>Secondary Total:
+          <input type="number" name="total_secondary" min="0" value="{{ total_secondary|default_if_none:'' }}" />
+        </label>
+      </div>
+
+<form id="favorite-form" data-item-id="{{ item_id }}">
+  <label class="favorite-checkbox">
+    <input type="checkbox" name="favorite" {% if item.favorite %}checked{% endif %}>
+    <span class="heart"></span>
+  </label>
+</form>
+
+      <input type="hidden" name="item_id" value="{{ item_id }}" />
+      <input type="hidden" name="media_type" value="{{ media_type }}" />
+
+      <div class="modal-buttons">
+        <button type="submit" class="btn">Save</button>
+      </div>
+      <button type="button" id="edit-close-btn" class="btn close-btn">X</button>
+    </form>
+  </div>
+</div>
+<div id="edit-overlay" class="modal-overlay modal-hidden"></div>

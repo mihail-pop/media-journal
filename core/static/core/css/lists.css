@@ -88,3 +88,22 @@
     font-size: 0.9rem;
   }
 }
+
+.card {
+  position: relative;
+}
+.edit-card-btn {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  display: none;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+.card:hover .edit-card-btn {
+  display: block;
+}

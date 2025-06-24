@@ -2,25 +2,34 @@
 {% load static %}
 
 {% block head %}
-  {{ block.super }}  <!-- This preserves base stylesheets if any -->
-  <link rel="stylesheet" href="{% static 'core/css/lists.css' %}" />
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'core/css/lists.css' %}" />
+<link rel="stylesheet" href="{% static 'core/css/modal.css' %}">
 {% endblock %}
 
 {% block content %}
-  <h1>Movies List</h1>
+<h1>Movies List</h1>
 
-  {% if items %}
-    <div class="card-grid">
-      {% for item in items %}
-        <div class="card">
-          <a href="{% url 'tmdb_detail' media_type=item.media_type tmdb_id=item.source_id %}" class="card-link">
-            <img src="{{ item.cover_url }}" alt="{{ item.title }}">
-            <div class="card-title">{{ item.title }}</div>
-          </a>
-        </div>
-      {% endfor %}
-    </div>
-  {% else %}
-    <p>No items in your list yet.</p>
-  {% endif %}
+{% if items %}
+<div class="card-grid">
+  {% for item in items %}
+  <div class="card" data-id="{{ item.id }}" data-media-type="{{ item.media_type }}">
+    <a href="{% url 'tmdb_detail' media_type=item.media_type tmdb_id=item.source_id %}" class="card-link">
+      <img src="{{ item.cover_url }}" alt="{{ item.title }}">
+      <div class="card-title">{{ item.title }}</div>
+    </a>
+    <button class="edit-card-btn">⋯</button>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<p>No items in your list yet.</p>
+{% endif %}
+
+{% include 'core/partials/edit_modal.html' %}
+{% endblock %}
+
+{% block script %}
+{{ block.super }}
+<script src="{% static 'core/js/edit_modal.js' %}"></script>
 {% endblock %}
