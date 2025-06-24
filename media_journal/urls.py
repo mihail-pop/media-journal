@@ -1,6 +1,8 @@
 from django.contrib import admin
 from django.urls import path
 from core import views
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -24,4 +26,4 @@ urlpatterns = [
     path('api/add_key/', views.add_key, name='add_key'),
     path('api/update_key/', views.update_key, name='update_key'),
     path('api/delete_key/', views.delete_key, name='delete_key'),
-]
+]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -1,0 +1,125 @@
+/* settings.css */
+
+body {
+  font-family: "Segoe UI", Tahoma, sans-serif;
+  background-color: #f9fafb;
+  color: #2e3440;
+}
+
+h1 {
+  margin-bottom: 1rem;
+  font-size: 1.8rem;
+  color: #1f2937;
+}
+
+/* Collapsible Section */
+.settings-section {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.settings-header {
+  background-color: #f3f4f6;
+  padding: 0.75rem 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.settings-header:hover {
+  background-color: #e5e7eb;
+}
+
+.settings-header::after {
+  content: "▼";
+  transition: transform 0.2s;
+}
+
+.settings-header.collapsed::after {
+  transform: rotate(-90deg);
+}
+
+.settings-content {
+  padding: 1rem;
+  display: block;
+}
+
+.settings-content.collapsed {
+  display: none;
+}
+
+/* Table styling */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.5rem;
+}
+
+th,
+td {
+  padding: 8px;
+  border: 1px solid #e5e7eb;
+  text-align: left;
+}
+
+input,
+select {
+  width: 100%;
+  padding: 6px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 0.95rem;
+}
+
+button {
+  padding: 6px 12px;
+  border: none;
+  background-color: #3b82f6;
+  color: white;
+  font-weight: 600;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+button:hover {
+  background-color: #2563eb;
+}
+
+button:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.settings-page-content {
+  margin-top: 10.5rem; /* existing */
+  max-width: 800px;     /* max width to control container size */
+  margin-left: auto;    /* center horizontally */
+  margin-right: auto;
+  padding-left: 1rem;   /* optional, some horizontal padding */
+  padding-right: 1rem;  /* optional */
+}
+
+table input,
+table select {
+  height: 32px;           /* fixed height to match table row */
+  box-sizing: border-box; /* include padding and border inside height */
+  padding: 4px 6px;       /* adjust padding to fit nicely */
+  font-size: 0.9rem;      /* slightly smaller font for better fit */
+  border-radius: 4px;
+  border: 1px solid #d1d5db;
+}
+
+.collapsible-content {
+  display: none; /* hidden by default */
+}
+
+.collapsible.active + .collapsible-content {
+  display: block;
+}

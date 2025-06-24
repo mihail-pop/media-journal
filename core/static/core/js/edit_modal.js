@@ -4,11 +4,11 @@ document.addEventListener("DOMContentLoaded", function () {
   const modal = document.getElementById("edit-modal");
   const overlay = document.getElementById("edit-overlay");
 
-  // Utility functions to show/hide fields by id suffix
   function showField(id) {
     const el = document.getElementById(id + "_group");
     if (el) el.style.display = "block";
   }
+
   function hideField(id) {
     const el = document.getElementById(id + "_group");
     if (el) el.style.display = "none";
@@ -16,32 +16,53 @@ document.addEventListener("DOMContentLoaded", function () {
 
   function updateFieldVisibility(mediaType) {
     hideField("progress_main");
-    hideField("total_main");
     hideField("progress_secondary");
-    hideField("total_secondary");
+
+    const mainLabel = document.getElementById("progress_main_label");
+    const secondaryLabel = document.getElementById("progress_secondary_label");
 
     if (mediaType === "tv") {
       showField("progress_main");
-      showField("total_main");
       showField("progress_secondary");
-      showField("total_secondary");
+      if (mainLabel) mainLabel.textContent = "Episode Progress:";
+      if (secondaryLabel) secondaryLabel.textContent = "Season Progress:";
     } else if (mediaType === "anime") {
       showField("progress_main");
-      showField("total_main");
+      if (mainLabel) mainLabel.textContent = "Episode Progress:";
     } else if (mediaType === "game") {
       showField("progress_main");
       showField("progress_secondary");
+      if (mainLabel) mainLabel.textContent = "Hours Played:";
+      if (secondaryLabel) secondaryLabel.textContent = "Year Finished:";
     } else if (mediaType === "manga") {
       showField("progress_main");
-      showField("total_main");
       showField("progress_secondary");
-      showField("total_secondary");
+      if (mainLabel) mainLabel.textContent = "Chapter Progress:";
+      if (secondaryLabel) secondaryLabel.textContent = "Volume Progress:";
+    }
+  }
+
+  function updateTotalDisplays(item) {
+    const mainTotalDisplay = document.getElementById("progress_main_total_display");
+    const secondaryTotalDisplay = document.getElementById("progress_secondary_total_display");
+
+    if (mainTotalDisplay) {
+      mainTotalDisplay.textContent = item.total_main !== null ? `/ ${item.total_main}` : "";
+    }
+    if (secondaryTotalDisplay) {
+      secondaryTotalDisplay.textContent = item.total_secondary !== null ? `/ ${item.total_secondary}` : "";
     }
   }
 
   function populateForm(form, item) {
+    console.log("Populating form with item:", item);
     form.dataset.mediaType = item.media_type;
     form.dataset.itemId = item.id;
+    const totalMainInput = form.querySelector('input[name="total_main"]');
+if (totalMainInput) totalMainInput.value = item.total_main ?? "";
+
+const totalSecondaryInput = form.querySelector('input[name="total_secondary"]');
+if (totalSecondaryInput) totalSecondaryInput.value = item.total_secondary ?? "";
 
     const statusSelect = form.querySelector('select[name="status"]');
     statusSelect.innerHTML = "";
@@ -69,15 +90,16 @@ document.addEventListener("DOMContentLoaded", function () {
 
     form.querySelector('[name="notes"]').value = item.notes || "";
     form.querySelector('[name="progress_main"]').value = item.progress_main ?? "";
-    form.querySelector('[name="total_main"]').value = item.total_main ?? "";
     form.querySelector('[name="progress_secondary"]').value = item.progress_secondary ?? "";
-    form.querySelector('[name="total_secondary"]').value = item.total_secondary ?? "";
 
     const favInput = form.querySelector('input[name="favorite"]');
     if (favInput) favInput.checked = !!item.favorite;
+
+    updateFieldVisibility(item.media_type);
+    updateTotalDisplays(item);
   }
 
-  // Handle clicks from list pages (cards)
+  // Card edit button click
   document.querySelectorAll(".edit-card-btn").forEach(button => {
     button.addEventListener("click", function (e) {
       e.preventDefault();
@@ -85,59 +107,60 @@ document.addEventListener("DOMContentLoaded", function () {
       const itemId = card.dataset.id;
 
       const form = document.getElementById("edit-form");
-      if (!form) {
-        console.error("Edit form not found");
-        return;
-      }
+      if (!form) return console.error("Edit form not found");
 
+      console.log("Fetching item for ID:", itemId);
       fetch(`/get-item/${itemId}/`)
         .then(res => res.json())
         .then(data => {
           if (!data.success) return alert("Failed to load item");
-
+          console.log("Fetched item data:", data.item);
           populateForm(form, data.item);
-          updateFieldVisibility(data.item.media_type);
           modal.classList.remove("modal-hidden");
           overlay.classList.remove("modal-hidden");
         })
-        .catch(() => alert("Failed to load item"));
+        .catch(err => {
+          console.error("Fetch error:", err);
+          alert("Failed to load item");
+        });
     });
   });
 
-  // Handle clicks from detail.html button
+  // Detail page edit button click
   const detailEditBtn = document.getElementById("edit-button");
   if (detailEditBtn) {
     detailEditBtn.addEventListener("click", function () {
       const itemId = detailEditBtn.dataset.id;
-      const mediaType = detailEditBtn.dataset.mediaType;
 
       const form = document.getElementById("edit-form");
-      if (!form) {
-        console.error("Edit form not found");
-        return;
-      }
+      if (!form) return console.error("Edit form not found");
 
+      console.log("Fetching item from detail page:", itemId);
       fetch(`/get-item/${itemId}/`)
         .then(res => res.json())
         .then(data => {
           if (!data.success) return alert("Failed to load item");
-
+          console.log("Fetched item data:", data.item);
           populateForm(form, data.item);
-          updateFieldVisibility(mediaType);
           modal.classList.remove("modal-hidden");
           overlay.classList.remove("modal-hidden");
         })
-        .catch(() => alert("Failed to load item"));
+        .catch(err => {
+          console.error("Fetch error:", err);
+          alert("Failed to load item");
+        });
     });
   }
 
-  // Modal close handlers
+  // Modal close
   document.getElementById("edit-close-btn")?.addEventListener("click", () => {
+    console.log("Closing modal (button)");
     modal.classList.add("modal-hidden");
     overlay.classList.add("modal-hidden");
   });
 
   overlay?.addEventListener("click", () => {
+    console.log("Closing modal (overlay click)");
     modal.classList.add("modal-hidden");
     overlay.classList.add("modal-hidden");
   });
@@ -147,9 +170,16 @@ document.addEventListener("DOMContentLoaded", function () {
   if (form) {
     form.addEventListener("submit", function (e) {
       e.preventDefault();
+      console.log("Form submitted");
 
       const itemId = form.dataset.itemId;
-      const data = Object.fromEntries(new FormData(form));
+      if (!itemId) {
+        console.error("Missing item ID on form");
+        return;
+      }
+
+      const formData = Object.fromEntries(new FormData(form));
+      console.log("Data to send:", formData);
 
       fetch(`/edit-item/${itemId}/`, {
         method: "POST",
@@ -157,25 +187,30 @@ document.addEventListener("DOMContentLoaded", function () {
           "Content-Type": "application/json",
           "X-CSRFToken": getCookie("csrftoken"),
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(formData),
       })
         .then(res => res.json())
         .then(res => {
+          console.log("Server response:", res);
           if (res.success) {
             location.reload();
           } else {
             alert("Failed to update item.");
           }
         })
-        .catch(() => alert("Request failed."));
+        .catch(err => {
+          console.error("Request failed:", err);
+          alert("Request failed.");
+        });
     });
 
-    // Favorite checkbox live update (optional)
+    // Favorite checkbox update
     const favInput = form.querySelector('input[name="favorite"]');
     if (favInput) {
       favInput.addEventListener("change", function () {
         const itemId = form.dataset.itemId;
         const newStatus = favInput.checked;
+        console.log("Toggling favorite:", newStatus);
 
         fetch(`/edit-item/${itemId}/`, {
           method: "POST",
@@ -187,6 +222,7 @@ document.addEventListener("DOMContentLoaded", function () {
         })
           .then(res => res.json())
           .then(res => {
+            console.log("Favorite update response:", res);
             if (!res.success) {
               alert("Failed to update favorite.");
               favInput.checked = !newStatus;
@@ -194,7 +230,8 @@ document.addEventListener("DOMContentLoaded", function () {
               location.reload();
             }
           })
-          .catch(() => {
+          .catch(err => {
+            console.error("Favorite update failed:", err);
             alert("Request failed.");
             favInput.checked = !newStatus;
           });

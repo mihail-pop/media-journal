@@ -6,20 +6,21 @@
       <div class="form-group">
         <label>Status:
           <select name="status">
-            <!-- Options dynamically filled by JS -->
             {% for key, label in item_status_choices %}
-            <option value="{{ key }}" {% if key == status %}selected{% endif %}>{{ label }}</option>
+              <option value="{{ key }}" {% if key == status %}selected{% endif %}>{{ label }}</option>
             {% endfor %}
           </select>
         </label>
       </div>
 
+      <input type="hidden" name="total_main" value="{{ total_main|default_if_none:'' }}" /> 
+      <input type="hidden" name="total_secondary" value="{{ total_secondary|default_if_none:'' }}" />
       <div class="form-group">
         <label>Rating:
           <select name="personal_rating">
             <option value="" {% if personal_rating == None %}selected{% endif %}>No Rating</option>
             {% for value, label in item_rating_choices %}
-            <option value="{{ value }}" {% if value == personal_rating %}selected{% endif %}>{{ label }}</option>
+              <option value="{{ value }}" {% if value == personal_rating %}selected{% endif %}>{{ label }}</option>
             {% endfor %}
           </select>
         </label>
@@ -31,31 +32,31 @@
         </label>
       </div>
 
-      <!-- Progress Fields -->
+      <!-- Main Progress -->
       <div id="progress_main_group" class="form-group">
-        <label>Main Progress:
+        <label>
+          <span id="progress_main_label">Main Progress:</span>
           <input type="number" name="progress_main" min="0" value="{{ progress_main|default_if_none:'' }}" />
-        </label>
-        <label>Main Total:
-          <input type="number" name="total_main" min="0" value="{{ total_main|default_if_none:'' }}" />
+          <span id="progress_main_total_display" class="progress-total-display">/ {{ total_main|default_if_none:'' }}</span>
         </label>
       </div>
 
+      <!-- Secondary Progress -->
       <div id="progress_secondary_group" class="form-group">
-        <label>Secondary Progress:
+        <label>
+          <span id="progress_secondary_label">Secondary Progress:</span>
           <input type="number" name="progress_secondary" min="0" value="{{ progress_secondary|default_if_none:'' }}" />
-        </label>
-        <label>Secondary Total:
-          <input type="number" name="total_secondary" min="0" value="{{ total_secondary|default_if_none:'' }}" />
+          <span id="progress_secondary_total_display" class="progress-total-display">/ {{ total_secondary|default_if_none:'' }}</span>
         </label>
       </div>
 
-<form id="favorite-form" data-item-id="{{ item_id }}">
-  <label class="favorite-checkbox">
-    <input type="checkbox" name="favorite" {% if item.favorite %}checked{% endif %}>
-    <span class="heart"></span>
-  </label>
-</form>
+      <!-- Favorite checkbox inside main form -->
+      <div class="form-group">
+        <label class="favorite-checkbox">
+          <input type="checkbox" name="favorite" {% if item.favorite %}checked{% endif %}>
+          <span class="heart"></span>
+        </label>
+      </div>
 
       <input type="hidden" name="item_id" value="{{ item_id }}" />
       <input type="hidden" name="media_type" value="{{ media_type }}" />

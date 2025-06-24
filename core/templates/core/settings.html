@@ -2,58 +2,57 @@
 
 {% block head %}
 {{ block.super }}
-<style>
-  table {
-    border-collapse: collapse;
-    width: 100%;
-  }
-
-  th,
-  td {
-    padding: 8px;
-    border: 1px solid #ddd;
-  }
-
-  input {
-    width: 100%;
-  }
-</style>
+<link rel="stylesheet" href="/static/core/css/settings.css">
 {% endblock %}
 
 {% block content %}
-<h1>Settings</h1>
+<div class="settings-page-content">
+  <h1>Settings</h1>
 
-<h2>API Keys</h2>
-
-<table>
-  <thead>
-    <tr>
-      <th>Name</th>
-      <th>Key 1</th>
-      <th>Key 2</th>
-      <th>Actions</th>
-    </tr>
-  </thead>
-  <tbody id="key-table">
-    {% for key in keys %}
-    <tr data-id="{{ key.id }}">
-      <td><input type="text" class="key-name" value="{{ key.name }}" readonly /></td>
-      <td><input type="text" class="key-1" value="{{ key.key_1 }}" /></td>
-      <td><input type="text" class="key-2" value="{{ key.key_2 }}" /></td>
-      <td>
-        <button class="save-btn">Save</button>
-        <button class="delete-btn">Delete</button>
-      </td>
-    </tr>
-    {% endfor %}
-    <tr>
-      <td><input type="text" id="new-name" placeholder="new name" /></td>
-      <td><input type="text" id="new-key-1" placeholder="key 1" /></td>
-      <td><input type="text" id="new-key-2" placeholder="key 2 (optional)" /></td>
-      <td><button id="add-key-btn">Add</button></td>
-    </tr>
-  </tbody>
-</table>
+  <div class="settings-section">
+    <button class="collapsible">API Keys</button>
+    <div class="collapsible-content">
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>ID</th>
+            <th>Secret</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="key-table">
+          {% for key in keys %}
+          <tr data-id="{{ key.id }}">
+            <td><input type="text" class="key-name" value="{{ key.name }}" readonly /></td>
+            <td><input type="text" class="key-1" value="{{ key.key_1 }}" /></td>
+            <td><input type="text" class="key-2" value="{{ key.key_2 }}" /></td>
+            <td>
+              <button class="save-btn">Save</button>
+              <button class="delete-btn">Delete</button>
+            </td>
+          </tr>
+          {% endfor %}
+          <tr>
+            <td>
+              <select id="new-name">
+                <option value="">-- Select API --</option>
+                {% for key_name, key_label in allowed_names %}
+                {% if key_name not in existing_names %}
+                <option value="{{ key_name }}">{{ key_label }}</option>
+                {% endif %}
+                {% endfor %}
+              </select>
+            </td>
+            <td><input type="text" id="new-key-1" placeholder="id" /></td>
+            <td><input type="text" id="new-key-2" placeholder="secret (optional*)" /></td>
+            <td><button id="add-key-btn">Add</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block script %}
@@ -107,6 +106,8 @@
       const key1 = document.getElementById("new-key-1").value;
       const key2 = document.getElementById("new-key-2").value;
 
+      if (!name) return alert("Please select an API name.");
+
       const response = await fetch("/api/add_key/", {
         method: "POST",
         headers: {
@@ -126,6 +127,14 @@
       const parts = value.split(`; ${name}=`);
       if (parts.length === 2) return parts.pop().split(";").shift();
     }
+
+    // Collapse behavior
+    document.querySelectorAll(".collapsible").forEach(button => {
+      button.addEventListener("click", () => {
+        button.classList.toggle("active");
+        // No manual style changes; CSS handles show/hide based on .active
+      });
+    });
   });
 </script>
 {% endblock %}

@@ -1,11 +1,19 @@
 from django.db import models
+from django.db.models import JSONField
 
 # Create your models here.
 
 class APIKey(models.Model):
-    name = models.CharField(max_length=100, unique=True)  # e.g., "tmdb", "igdb", "mal"
-    key_1 = models.CharField(max_length=255)              # primary key or client ID
-    key_2 = models.CharField(max_length=255, blank=True)  # secret or optional extra
+    NAME_CHOICES = [
+        ("tmdb", "TMDB"),
+        ("igdb", "IGDB"),
+        ("mal", "MyAnimeList"),
+        ("anilist", "AniList"),
+    ]
+
+    name = models.CharField(max_length=100, unique=True, choices=NAME_CHOICES)
+    key_1 = models.CharField(max_length=255)
+    key_2 = models.CharField(max_length=255, blank=True)
 
     def __str__(self):
         return self.name
@@ -36,14 +44,23 @@ class MediaItem(models.Model):
 
     title = models.CharField(max_length=300)
     media_type = models.CharField(max_length=20, choices=MEDIA_TYPES)
-    source = models.CharField(max_length=50)              # e.g. "tmdb", "mal", "igdb"
-    source_id = models.CharField(max_length=100)          # Required: All major APIs provide unique IDs
-    cover_url = models.URLField(blank=True)               # Can be remote or a local path if downloaded
+    source = models.CharField(max_length=50)              
+    source_id = models.CharField(max_length=100)          
+
+    cover_url = models.URLField(blank=True)               
+    banner_url = models.URLField(blank=True)              # New: wide image (e.g. backdrop, screenshot)
+
+    release_date = models.CharField(max_length=20, blank=True)  # Stored as string to unify format
+    overview = models.TextField(blank=True)               # New: description/synopsis
+
+    cast = models.JSONField(blank=True, null=True)        # Unified for all media types
+    seasons = models.JSONField(blank=True, null=True)     # Only for TV series
+    related_titles = models.JSONField(blank=True, null=True)  # Prequels/Sequels for anime/manga
 
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="planned")
     
-    progress_main = models.PositiveIntegerField(default=0)    # Episodes / Chapters
-    progress_secondary = models.PositiveIntegerField(null=True, blank=True)  # Seasons / Volumes (optional)
+    progress_main = models.PositiveIntegerField(default=0)
+    progress_secondary = models.PositiveIntegerField(null=True, blank=True)
 
     total_main = models.PositiveIntegerField(null=True, blank=True)
     total_secondary = models.PositiveIntegerField(null=True, blank=True)

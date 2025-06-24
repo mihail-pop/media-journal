@@ -8,6 +8,9 @@
 {% endblock %}
 
 {% block content %}
+<div class="banner-section" data-banner="{{ banner_url|default:'https://dummyimage.com/1280x400/444444/ffffff&text=No+Banner' }}">
+  <div class="banner-overlay"></div>
+</div>
 <div class="detail-container">
   <div class="main-info">
     <img class="poster" src="{{ poster_url }}" alt="{{ title }}"
@@ -44,43 +47,40 @@
 
   {% include "core/partials/edit_modal.html" with media_type=media_type item_id=item_id status=item.status personal_rating=item.personal_rating notes=item.notes progress_main=item.progress_main total_main=item.total_main progress_secondary=item.progress_secondary total_secondary=item.total_secondary favorite=item.favorite item_status_choices=item_status_choices item_rating_choices=item_rating_choices %}
 
-  {% if cast %}
-  <section class="cast-section">
-    <h2>Cast</h2>
-    <div class="cast-list">
-      {% for member in cast %}
-      <div class="cast-member">
-        {% if member.is_full_url %}
-        <img src="{{ member.profile_path }}" alt="{{ member.name }}"
-          onerror="this.src='https://dummyimage.com/150x225/cccccc/000000&text=No+Image';" />
-        {% else %}
-        <img src="https://image.tmdb.org/t/p/w185{{ member.profile_path }}" alt="{{ member.name }}"
-          onerror="this.src='https://dummyimage.com/150x225/cccccc/000000&text=No+Image';" />
-        {% endif %}
-        <p class="actor-name">{{ member.name }}</p>
-        <p class="character-name">{{ member.character }}</p>
-      </div>
-      {% endfor %}
+{% if cast %}
+<section class="cast-section">
+  <h2>Cast</h2>
+  <div class="cast-list">
+    {% for member in cast %}
+    <div class="cast-member">
+      <img src="{% if member.is_full_url %}{{ member.profile_path }}{% else %}https://image.tmdb.org/t/p/w185{{ member.profile_path }}{% endif %}"
+           alt="{{ member.name }}"
+           onerror="this.src='https://dummyimage.com/150x225/cccccc/000000&text=No+Image';" />
+      <p class="actor-name">{{ member.name }}</p>
+      <p class="character-name">{{ member.character }}</p>
     </div>
-  </section>
-  {% endif %}
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
 
-  {% if seasons %}
-  <section class="seasons-section">
-    <h2>Seasons</h2>
-    <div class="seasons-list">
-      {% for season in seasons %}
-      <div class="season-card">
-        <img src="https://image.tmdb.org/t/p/w185{{ season.poster_path }}" alt="{{ season.name }}"
-          onerror="this.src='https://dummyimage.com/150x225/cccccc/000000&text=No+Image';" />
-        <p class="season-name">{{ season.name }} ({{ season.season_number }})</p>
-        <p class="episode-count">{{ season.episode_count }} episodes</p>
-        <p class="air-date">Air date: {{ season.air_date }}</p>
-      </div>
-      {% endfor %}
+{% if seasons %}
+<section class="seasons-section">
+  <h2>Seasons</h2>
+  <div class="seasons-list">
+    {% for season in seasons %}
+    <div class="season-card">
+      <img src="{{ season.poster_path_full|default:'https://dummyimage.com/150x225/cccccc/000000&text=No+Image' }}"
+           alt="{{ season.name }}"
+           onerror="this.src='https://dummyimage.com/150x225/cccccc/000000&text=No+Image';" />
+      <p class="season-name">{{ season.name }} ({{ season.season_number }})</p>
+      <p class="episode-count">{{ season.episode_count }} episodes</p>
+      <p class="air-date">Air date: {{ season.air_date }}</p>
     </div>
-  </section>
-  {% endif %}
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
 
   {% if screenshots %}
   <section class="screenshots-section">
@@ -148,6 +148,15 @@
 
 {% block script %}
   {{ block.super }}
+  <script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const banner = document.querySelector(".banner-section");
+    if (banner) {
+      const url = banner.dataset.banner;
+      banner.style.backgroundImage = `url("${url}")`;
+    }
+  });
+</script>
   <script src="{% static 'core/js/edit_modal.js' %}"></script>
 
   <script>

@@ -8,12 +8,14 @@ body {
 
 /* Header base */
 header {
-  background-color: #fff;
-  box-shadow: 0 2px 6px rgb(0 0 0 / 0.1);
+  background-color: rgba(0, 0, 0, 0.3); /* black with 30% opacity */
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
   padding: 0.6rem 1rem;
-  position: sticky;
+  position: absolute;
   top: 0;
-  z-index: 1000;
+  z-index: 10;
+  width: 100%;
+  border-bottom: none;
 }
 
 /* Container for max width */
@@ -36,7 +38,7 @@ header {
 .logo {
   font-weight: 700;
   font-size: 1.5rem;
-  color: #525151;
+  color: #f7f6f6;
   flex: 0 0 auto;
   cursor: default;
 }
@@ -72,7 +74,7 @@ header {
 .nav-center a,
 .nav-right a,
 .dropbtn {
-  color: #556270;
+  color: #ffffff;
   text-decoration: none;
   font-weight: 550;
   font-size: 1rem;
