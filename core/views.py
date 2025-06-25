@@ -59,49 +59,120 @@ def home(request):
 
 @require_GET
 def mal_search(request):
-    query = request.GET.get("q", "").strip()
-    search_type = request.GET.get("type", "anime").lower()  # default to anime
+    query_str = request.GET.get("q", "").strip()
+    search_type = request.GET.get("type", "anime").lower()
 
-    if not query:
+    if not query_str:
         return JsonResponse({"error": "Query parameter 'q' is required."}, status=400)
 
     if search_type not in ("anime", "manga"):
         return JsonResponse({"error": "Invalid search type. Use 'anime' or 'manga'."}, status=400)
 
-    try:
-        mal_keys = APIKey.objects.get(name="mal")
-        client_id = mal_keys.key_1
-    except APIKey.DoesNotExist:
-        return JsonResponse({"error": "MAL API keys not found."}, status=500)
+    graphql_query = '''
+    query ($search: String, $type: MediaType) {
+      Page(perPage: 9) {
+        media(search: $search, type: $type) {
+          idMal
+          title {
+            english
+            romaji
+          }
+          coverImage {
+            medium
+          }
+        }
+      }
+    }
+    '''
+
+    variables = {
+        "search": query_str,
+        "type": search_type.upper()  # "ANIME" or "MANGA"
+    }
 
     headers = {
-        "X-MAL-CLIENT-ID": client_id
+        "Content-Type": "application/json"
     }
 
-    url = f"https://api.myanimelist.net/v2/{search_type}"
-    params = {
-        "q": query,
-        "limit": 9,
-        "fields": "id,title,main_picture,alternative_titles"
-    }
-
-    response = requests.get(url, headers=headers, params=params)
+    response = requests.post(
+        "https://graphql.anilist.co",
+        json={"query": graphql_query, "variables": variables},
+        headers=headers
+    )
 
     if response.status_code != 200:
-        return JsonResponse({"error": "Failed to fetch from MAL."}, status=500)
+        return JsonResponse({"error": "Failed to fetch from AniList."}, status=500)
 
-    data = response.json()
-    results = []
-    for item in data.get("data", []):
-        node = item["node"]
-        english_title = node.get("alternative_titles", {}).get("en")
-        results.append({
-            "id": str(node["id"]),
-            "title": english_title or node["title"],
-            "poster_path": node["main_picture"]["medium"] if node.get("main_picture") else None,
-        })
+    try:
+        data = response.json()
+        results = []
 
-    return JsonResponse({"results": results})
+        for media in data.get("data", {}).get("Page", {}).get("media", []):
+            mal_id = media.get("idMal")
+            if not mal_id:
+                continue  # skip entries without MAL ID
+
+            title = media["title"].get("english") or media["title"].get("romaji") or "Unknown Title"
+            poster = media.get("coverImage", {}).get("medium")
+
+            results.append({
+                "id": str(mal_id),  # Still return MAL ID for compatibility
+                "title": title,
+                "poster_path": poster,
+            })
+
+        return JsonResponse({"results": results})
+
+    except Exception as e:
+        return JsonResponse({"error": f"AniList parse error: {str(e)}"}, status=500)
+
+
+# If search/Anilist API ever breaks use this function that uses the MAL api
+# @require_GET
+# def mal_search(request):
+#     query = request.GET.get("q", "").strip()
+#     search_type = request.GET.get("type", "anime").lower()  # default to anime
+
+#     if not query:
+#         return JsonResponse({"error": "Query parameter 'q' is required."}, status=400)
+
+#     if search_type not in ("anime", "manga"):
+#         return JsonResponse({"error": "Invalid search type. Use 'anime' or 'manga'."}, status=400)
+
+#     try:
+#         mal_keys = APIKey.objects.get(name="mal")
+#         client_id = mal_keys.key_1
+#     except APIKey.DoesNotExist:
+#         return JsonResponse({"error": "MAL API keys not found."}, status=500)
+
+#     headers = {
+#         "X-MAL-CLIENT-ID": client_id
+#     }
+
+#     url = f"https://api.myanimelist.net/v2/{search_type}"
+#     params = {
+#         "q": query,
+#         "limit": 9,
+#         "fields": "id,title,main_picture,alternative_titles"
+#     }
+
+#     response = requests.get(url, headers=headers, params=params)
+
+#     if response.status_code != 200:
+#         return JsonResponse({"error": "Failed to fetch from MAL."}, status=500)
+
+#     data = response.json()
+#     results = []
+#     for item in data.get("data", []):
+#         node = item["node"]
+#         english_title = node.get("alternative_titles", {}).get("en")
+#         results.append({
+#             "id": str(node["id"]),
+#             "title": english_title or node["title"],
+#             "poster_path": node["main_picture"]["medium"] if node.get("main_picture") else None,
+#         })
+
+#     return JsonResponse({"results": results})
 
 
 
@@ -409,10 +480,8 @@ def save_tmdb_item(media_type, tmdb_id):
     except Exception as e:
         return JsonResponse({"error": f"Failed to save: {str(e)}"})
 
-    
 @require_GET
 def mal_detail(request, media_type, mal_id):
-    in_my_list = False
     if media_type not in ("anime", "manga"):
         return JsonResponse({"error": "Invalid media type."}, status=400)
 
@@ -421,17 +490,22 @@ def mal_detail(request, media_type, mal_id):
     cast = []
     prequels = []
     sequels = []
-    banner_url = None
     poster_url = None
+    banner_url = None
     overview = ""
     release_date = ""
+    title = ""
+    in_my_list = False
 
-    # Check if it's saved in the local DB
     try:
         item = MediaItem.objects.get(source="mal", source_id=mal_id)
         item_id = item.id
-
-        # Prepare cast data
+        title = item.title
+        poster_url = item.cover_url
+        banner_url = item.banner_url
+        overview = item.overview
+        release_date = item.release_date
+        cast = []
         for member in item.cast or []:
             profile = member.get("profile_path")
             is_full_url = profile.startswith("http") or profile.startswith("/media/") if profile else False
@@ -442,94 +516,46 @@ def mal_detail(request, media_type, mal_id):
                 "is_full_url": is_full_url,
             })
 
-        # Prepare related titles
         for related in item.related_titles or []:
-            poster = related.get("poster_path")
-            is_full_url = poster.startswith("http") or poster.startswith("/media/") if poster else False
             entry = {
                 "id": related.get("mal_id"),
                 "title": related.get("title"),
-                "poster_path": poster,
-                "is_full_url": is_full_url,
+                "poster_path": related.get("poster_path"),
+                "is_full_url": related.get("poster_path", "").startswith("http") or related.get("poster_path", "").startswith("/media/"),
             }
             if related.get("relation", "").lower() == "prequel":
                 prequels.append(entry)
             elif related.get("relation", "").lower() == "sequel":
                 sequels.append(entry)
 
-        poster_url = item.cover_url
-        banner_url = item.banner_url
-        overview = item.overview
-        release_date = item.release_date
         in_my_list = True
 
     except MediaItem.DoesNotExist:
-        # Live fetch from Jikan and AniList
-        jikan_url = f"https://api.jikan.moe/v4/{media_type}/{mal_id}/full"
-        response = requests.get(jikan_url)
-        if response.status_code != 200:
-            return JsonResponse({"error": "Failed to fetch details from Jikan."}, status=500)
+        try:
+            anilist_data = fetch_anilist_data(mal_id, media_type)
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
 
-        data = response.json().get("data", {})
-        poster_url = data.get("images", {}).get("jpg", {}).get("large_image_url") or \
-                     data.get("images", {}).get("jpg", {}).get("image_url")
-        overview = data.get("synopsis")
-        release_date = data.get("aired", {}).get("from") or data.get("published", {}).get("from")
-        title = data.get("title_english") or data.get("title") or "Unknown Title"
-
-        # Cast
-        char_url = f"https://api.jikan.moe/v4/{media_type}/{mal_id}/characters"
-        char_resp = requests.get(char_url)
-        if char_resp.status_code == 200:
-            for ch in char_resp.json().get("data", [])[:10]:
-                cast.append({
-                    "name": ch["character"]["name"],
-                    "character": ch["role"],
-                    "profile_path": ch["character"]["images"]["jpg"]["image_url"],
-                    "is_full_url": True,
-                })
-
-        # Related titles: fetch posters using same method as save_mal_item
-        related_titles = []
-        for relation in data.get("relations", []):
-            if relation["relation"].lower() in ("prequel", "sequel"):
-                for entry in relation["entry"]:
-                    r_id = entry["mal_id"]
-
-                    # Use a different variable to avoid overwriting the main poster
-                    detail_url = f"https://api.jikan.moe/v4/{media_type}/{r_id}"
-                    r_resp = requests.get(detail_url)
-                    if r_resp.status_code == 200:
-                        r_data = r_resp.json().get("data", {})
-                        r_title = r_data.get("title_english") or r_data.get("title") or entry["name"]
-                        related_poster = r_data.get("images", {}).get("jpg", {}).get("image_url") or ""
-                    else:
-                        related_poster = ""
-
-                    related_titles.append({
-                        "id": r_id,
-                        "mal_id": r_id,
-                        "title": r_title,
-                        "poster_path": related_poster,
-                        "relation": relation["relation"].capitalize(),  # "Prequel" or "Sequel"
-                        "is_full_url": True,
-                    })
-                    time.sleep(1)
+        title = anilist_data["title"]
+        poster_url = anilist_data["poster_url"]
+        banner_url = anilist_data["banner_url"]
+        overview = anilist_data["overview"]
+        release_date = anilist_data["release_date"]
+        cast = anilist_data["cast"]
+        related_titles = anilist_data["related_titles"]
 
         prequels = [r for r in related_titles if r["relation"].lower() == "prequel"]
         sequels = [r for r in related_titles if r["relation"].lower() == "sequel"]
-        print("SEQUELS:", json.dumps(sequels, indent=2))
-        
-
-        banner_url = fetch_anilist_banner(mal_id, media_type)
-
+        for r in prequels + sequels:
+            if "id" not in r and "mal_id" in r:
+                r["id"] = r["mal_id"]
     context = {
         "item": item,
         "item_id": item_id,
-        "source": "mal",
+        "source": "mal",  # keep "mal" even if using anilist internally
         "source_id": mal_id,
         "media_type": media_type,
-        "title": item.title if item else title,
+        "title": title,
         "overview": overview,
         "poster_url": poster_url,
         "banner_url": banner_url,
@@ -544,79 +570,52 @@ def mal_detail(request, media_type, mal_id):
 
     return render(request, "core/detail.html", context)
 
-
 def save_mal_item(media_type, mal_id):
     try:
-        # --- Fetch Jikan full data
-        jikan_url = f"https://api.jikan.moe/v4/{media_type}/{mal_id}/full"
-        response = requests.get(jikan_url)
-        if response.status_code != 200:
-            return JsonResponse({"error": "Failed to fetch data from Jikan."})
-        data = response.json().get("data", {})
+        anilist_data = fetch_anilist_data(mal_id, media_type)
 
-        # --- Poster
-        poster_url = data.get("images", {}).get("jpg", {}).get("large_image_url") or \
-                     data.get("images", {}).get("jpg", {}).get("image_url") or ""
-        local_poster = download_image(poster_url, f"posters/mal_{mal_id}.jpg") if poster_url else ""
+        # --- Download images
+        local_poster = download_image(
+            anilist_data["poster_url"], f"posters/mal_{mal_id}.jpg"
+        ) if anilist_data["poster_url"] else ""
 
-        # --- Banner (AniList)
-        banner_url = fetch_anilist_banner(mal_id, media_type)
-        local_banner = download_image(banner_url, f"banners/mal_{mal_id}.jpg") if banner_url else ""
-        main_poster = download_image(poster_url, f"posters/mal_{mal_id}.jpg") if poster_url else ""
+        local_banner = download_image(
+            anilist_data["banner_url"], f"banners/mal_{mal_id}.jpg"
+        ) if anilist_data["banner_url"] else ""
 
-        # --- Title and description
-        title = data.get("title_english") or data.get("title") or "Unknown Title"
-        overview = data.get("synopsis") or ""
-        release_date = data.get("aired", {}).get("from") or data.get("published", {}).get("from") or ""
-
-        # --- Cast
         cast = []
-        char_url = f"https://api.jikan.moe/v4/{media_type}/{mal_id}/characters"
-        char_resp = requests.get(char_url)
-        if char_resp.status_code == 200:
-            for i, ch in enumerate(char_resp.json().get("data", [])[:10]):
-                image_url = ch["character"]["images"]["jpg"]["image_url"]
-                local_path = download_image(image_url, f"cast/mal_{mal_id}_{i}.jpg")
-                cast.append({
-                    "name": ch["character"]["name"],
-                    "character": ch["role"],
-                    "profile_path": local_path,
-                })
+        for i, member in enumerate(anilist_data["cast"][:10]):
+            profile_url = member.get("profile_path")
+            local_path = download_image(profile_url, f"cast/mal_{mal_id}_{i}.jpg") if profile_url else ""
+            cast.append({
+                "name": member["name"],
+                "character": member["character"],
+                "profile_path": local_path,
+            })
 
-        # --- Related Titles (prequels/sequels)
         related_titles = []
-        for relation in data.get("relations", []):
-            if relation["relation"].lower() in ("prequel", "sequel"):
-                for entry in relation["entry"]:
-                    r_id = entry["mal_id"]
-                    # Fetch related entry for poster
-                    detail_url = f"https://api.jikan.moe/v4/{media_type}/{r_id}"
-                    r_resp = requests.get(detail_url)
-                    if r_resp.status_code == 200:
-                        r_data = r_resp.json().get("data", {})
-                        r_title = r_data.get("title_english") or r_data.get("title") or entry["name"]
-                        poster_url = r_data.get("images", {}).get("jpg", {}).get("image_url") or ""
-                        local_poster = download_image(poster_url, f"related/mal_{r_id}.jpg") if poster_url else ""
-                    else:
-                        local_poster = ""
+        for related in anilist_data["related_titles"]:
+            r_id = related["mal_id"]
+            poster_path = related["poster_path"]
+            local_related_poster = download_image(poster_path, f"related/mal_{r_id}.jpg") if poster_path else ""
 
-                    related_titles.append({
-                        "mal_id": r_id,
-                        "title": r_title,
-                        "poster_path": local_poster,
-                        "relation": relation["relation"].capitalize(),  # e.g. "Prequel"
-                    })
+            related_titles.append({
+                "mal_id": r_id,
+                "title": related["title"],
+                "poster_path": local_related_poster,
+                "relation": related["relation"],
+            })
 
         # --- Save to DB
         MediaItem.objects.create(
-            title=title,
+            title=anilist_data["title"],
             media_type=media_type,
-            source="mal",
+            source="mal",  # Still marked as "mal" for consistency
             source_id=mal_id,
-            cover_url=main_poster,
+            cover_url=local_poster,
             banner_url=local_banner,
-            overview=overview,
-            release_date=release_date,
+            overview=anilist_data["overview"],
+            release_date=anilist_data["release_date"],
             cast=cast,
             seasons=None,
             related_titles=related_titles,
@@ -627,15 +626,58 @@ def save_mal_item(media_type, mal_id):
     except Exception as e:
         return JsonResponse({"error": f"Save failed: {str(e)}"})
 
-
-def fetch_anilist_banner(mal_id, media_type):
+def fetch_anilist_data(mal_id, media_type):
     query = '''
     query ($malId: Int, $type: MediaType) {
       Media(idMal: $malId, type: $type) {
+        id
+        title {
+          romaji
+          english
+        }
+        description(asHtml: false)
+        startDate {
+          year
+          month
+          day
+        }
         bannerImage
+        coverImage {
+          large
+        }
+        characters(sort: [ROLE, RELEVANCE], perPage: 10) {
+          edges {
+            role
+            node {
+              name {
+                full
+              }
+              image {
+                large
+              }
+            }
+          }
+        }
+        relations {
+          edges {
+            relationType
+            node {
+              idMal
+              title {
+                english
+                romaji
+              }
+              coverImage {
+                large
+              }
+              type
+            }
+          }
+        }
       }
     }
     '''
+
     variables = {
         "malId": int(mal_id),
         "type": media_type.upper()  # "ANIME" or "MANGA"
@@ -645,13 +687,6 @@ def fetch_anilist_banner(mal_id, media_type):
         "Content-Type": "application/json"
     }
 
-    try:
-        keys = APIKey.objects.get(name="anilist")
-        client_id = keys.key_1
-        # Not needed in this case, but you can send Client-ID if required
-    except APIKey.DoesNotExist:
-        client_id = None  # fallback if needed
-
     response = requests.post(
         "https://graphql.anilist.co",
         json={"query": query, "variables": variables},
@@ -659,10 +694,327 @@ def fetch_anilist_banner(mal_id, media_type):
     )
 
     if response.status_code != 200:
-        return None
+        raise Exception("AniList API request failed.")
 
-    data = response.json().get("data", {}).get("Media")
-    return data.get("bannerImage") if data else None
+    media = response.json().get("data", {}).get("Media")
+    if not media:
+        raise Exception("AniList: No data found for this ID.")
+
+    # --- Title
+    title = media["title"].get("english") or media["title"].get("romaji") or "Unknown Title"
+
+    # --- Description
+    overview = media.get("description") or ""
+
+    # --- Release Date
+    start = media.get("startDate")
+    if start and start.get("year"):
+        release_date = f"{start['year']}-{start['month'] or 1:02}-{start['day'] or 1:02}"
+    else:
+        release_date = ""
+
+    # --- Poster
+    poster_url = media.get("coverImage", {}).get("large")
+
+    # --- Banner
+    banner_url = media.get("bannerImage")
+
+    # --- Cast
+    cast = []
+    for edge in media.get("characters", {}).get("edges", []):
+        character = edge["node"]
+        cast.append({
+            "name": character["name"]["full"],
+            "character": edge.get("role", ""),
+            "profile_path": character["image"]["large"],
+            "is_full_url": True,
+        })
+
+    # --- Related Titles
+    related_titles = []
+    for rel in media.get("relations", {}).get("edges", []):
+        relation_type = rel.get("relationType", "").lower()
+        if relation_type in ("prequel", "sequel"):
+            node = rel["node"]
+            r_id = node.get("idMal")
+            if not r_id:
+                continue  # skip if no MAL ID
+
+            r_title = node["title"].get("english") or node["title"].get("romaji") or "Unknown Title"
+            r_poster = node["coverImage"].get("large") or ""
+
+            related_titles.append({
+                "mal_id": r_id,
+                "title": r_title,
+                "poster_path": r_poster,
+                "relation": relation_type.capitalize(),  # Prequel/Sequel
+                "is_full_url": True,
+            })
+
+    return {
+        "title": title,
+        "overview": overview,
+        "release_date": release_date,
+        "poster_url": poster_url,
+        "banner_url": banner_url,
+        "cast": cast,
+        "related_titles": related_titles,
+    }
+
+# In case anilist breaks, comment out that functions and use those functions!!<3   
+# @require_GET
+# def mal_detail(request, media_type, mal_id):
+#     in_my_list = False
+#     if media_type not in ("anime", "manga"):
+#         return JsonResponse({"error": "Invalid media type."}, status=400)
+
+#     item = None
+#     item_id = None
+#     cast = []
+#     prequels = []
+#     sequels = []
+#     banner_url = None
+#     poster_url = None
+#     overview = ""
+#     release_date = ""
+
+#     # Check if it's saved in the local DB
+#     try:
+#         item = MediaItem.objects.get(source="mal", source_id=mal_id)
+#         item_id = item.id
+
+#         # Prepare cast data
+#         for member in item.cast or []:
+#             profile = member.get("profile_path")
+#             is_full_url = profile.startswith("http") or profile.startswith("/media/") if profile else False
+#             cast.append({
+#                 "name": member.get("name"),
+#                 "character": member.get("character"),
+#                 "profile_path": profile,
+#                 "is_full_url": is_full_url,
+#             })
+
+#         # Prepare related titles
+#         for related in item.related_titles or []:
+#             poster = related.get("poster_path")
+#             is_full_url = poster.startswith("http") or poster.startswith("/media/") if poster else False
+#             entry = {
+#                 "id": related.get("mal_id"),
+#                 "title": related.get("title"),
+#                 "poster_path": poster,
+#                 "is_full_url": is_full_url,
+#             }
+#             if related.get("relation", "").lower() == "prequel":
+#                 prequels.append(entry)
+#             elif related.get("relation", "").lower() == "sequel":
+#                 sequels.append(entry)
+
+#         poster_url = item.cover_url
+#         banner_url = item.banner_url
+#         overview = item.overview
+#         release_date = item.release_date
+#         in_my_list = True
+
+#     except MediaItem.DoesNotExist:
+#         # Live fetch from Jikan and AniList
+#         jikan_url = f"https://api.jikan.moe/v4/{media_type}/{mal_id}/full"
+#         response = requests.get(jikan_url)
+#         if response.status_code != 200:
+#             return JsonResponse({"error": "Failed to fetch details from Jikan."}, status=500)
+
+#         data = response.json().get("data", {})
+#         poster_url = data.get("images", {}).get("jpg", {}).get("large_image_url") or \
+#                      data.get("images", {}).get("jpg", {}).get("image_url")
+#         overview = data.get("synopsis")
+#         release_date = data.get("aired", {}).get("from") or data.get("published", {}).get("from")
+#         title = data.get("title_english") or data.get("title") or "Unknown Title"
+
+#         # Cast
+#         char_url = f"https://api.jikan.moe/v4/{media_type}/{mal_id}/characters"
+#         char_resp = requests.get(char_url)
+#         if char_resp.status_code == 200:
+#             for ch in char_resp.json().get("data", [])[:10]:
+#                 cast.append({
+#                     "name": ch["character"]["name"],
+#                     "character": ch["role"],
+#                     "profile_path": ch["character"]["images"]["jpg"]["image_url"],
+#                     "is_full_url": True,
+#                 })
+
+#         # Related titles: fetch posters using same method as save_mal_item
+#         related_titles = []
+#         for relation in data.get("relations", []):
+#             if relation["relation"].lower() in ("prequel", "sequel"):
+#                 for entry in relation["entry"]:
+#                     r_id = entry["mal_id"]
+
+#                     # Use a different variable to avoid overwriting the main poster
+#                     detail_url = f"https://api.jikan.moe/v4/{media_type}/{r_id}"
+#                     r_resp = requests.get(detail_url)
+#                     if r_resp.status_code == 200:
+#                         r_data = r_resp.json().get("data", {})
+#                         r_title = r_data.get("title_english") or r_data.get("title") or entry["name"]
+#                         related_poster = r_data.get("images", {}).get("jpg", {}).get("image_url") or ""
+#                     else:
+#                         related_poster = ""
+
+#                     related_titles.append({
+#                         "id": r_id,
+#                         "mal_id": r_id,
+#                         "title": r_title,
+#                         "poster_path": related_poster,
+#                         "relation": relation["relation"].capitalize(),  # "Prequel" or "Sequel"
+#                         "is_full_url": True,
+#                     })
+#                     time.sleep(1)
+
+#         prequels = [r for r in related_titles if r["relation"].lower() == "prequel"]
+#         sequels = [r for r in related_titles if r["relation"].lower() == "sequel"]
+#         print("SEQUELS:", json.dumps(sequels, indent=2))
+        
+
+#         banner_url = fetch_anilist_banner(mal_id, media_type)
+
+#     context = {
+#         "item": item,
+#         "item_id": item_id,
+#         "source": "mal",
+#         "source_id": mal_id,
+#         "media_type": media_type,
+#         "title": item.title if item else title,
+#         "overview": overview,
+#         "poster_url": poster_url,
+#         "banner_url": banner_url,
+#         "release_date": release_date,
+#         "cast": cast,
+#         "seasons": None,
+#         "recommendations": [],
+#         "prequels": prequels,
+#         "sequels": sequels,
+#         "in_my_list": in_my_list,
+#     }
+
+#     return render(request, "core/detail.html", context)
+
+
+# def save_mal_item(media_type, mal_id):
+#     try:
+#         # --- Fetch Jikan full data
+#         jikan_url = f"https://api.jikan.moe/v4/{media_type}/{mal_id}/full"
+#         response = requests.get(jikan_url)
+#         if response.status_code != 200:
+#             return JsonResponse({"error": "Failed to fetch data from Jikan."})
+#         data = response.json().get("data", {})
+
+#         # --- Poster
+#         poster_url = data.get("images", {}).get("jpg", {}).get("large_image_url") or \
+#                      data.get("images", {}).get("jpg", {}).get("image_url") or ""
+#         local_poster = download_image(poster_url, f"posters/mal_{mal_id}.jpg") if poster_url else ""
+
+#         # --- Banner (AniList)
+#         banner_url = fetch_anilist_banner(mal_id, media_type)
+#         local_banner = download_image(banner_url, f"banners/mal_{mal_id}.jpg") if banner_url else ""
+#         main_poster = download_image(poster_url, f"posters/mal_{mal_id}.jpg") if poster_url else ""
+
+#         # --- Title and description
+#         title = data.get("title_english") or data.get("title") or "Unknown Title"
+#         overview = data.get("synopsis") or ""
+#         release_date = data.get("aired", {}).get("from") or data.get("published", {}).get("from") or ""
+
+#         # --- Cast
+#         cast = []
+#         char_url = f"https://api.jikan.moe/v4/{media_type}/{mal_id}/characters"
+#         char_resp = requests.get(char_url)
+#         if char_resp.status_code == 200:
+#             for i, ch in enumerate(char_resp.json().get("data", [])[:10]):
+#                 image_url = ch["character"]["images"]["jpg"]["image_url"]
+#                 local_path = download_image(image_url, f"cast/mal_{mal_id}_{i}.jpg")
+#                 cast.append({
+#                     "name": ch["character"]["name"],
+#                     "character": ch["role"],
+#                     "profile_path": local_path,
+#                 })
+
+#         # --- Related Titles (prequels/sequels)
+#         related_titles = []
+#         for relation in data.get("relations", []):
+#             if relation["relation"].lower() in ("prequel", "sequel"):
+#                 for entry in relation["entry"]:
+#                     r_id = entry["mal_id"]
+#                     # Fetch related entry for poster
+#                     detail_url = f"https://api.jikan.moe/v4/{media_type}/{r_id}"
+#                     r_resp = requests.get(detail_url)
+#                     if r_resp.status_code == 200:
+#                         r_data = r_resp.json().get("data", {})
+#                         r_title = r_data.get("title_english") or r_data.get("title") or entry["name"]
+#                         poster_url = r_data.get("images", {}).get("jpg", {}).get("image_url") or ""
+#                         local_poster = download_image(poster_url, f"related/mal_{r_id}.jpg") if poster_url else ""
+#                     else:
+#                         local_poster = ""
+
+#                     related_titles.append({
+#                         "mal_id": r_id,
+#                         "title": r_title,
+#                         "poster_path": local_poster,
+#                         "relation": relation["relation"].capitalize(),  # e.g. "Prequel"
+#                     })
+
+#         # --- Save to DB
+#         MediaItem.objects.create(
+#             title=title,
+#             media_type=media_type,
+#             source="mal",
+#             source_id=mal_id,
+#             cover_url=main_poster,
+#             banner_url=local_banner,
+#             overview=overview,
+#             release_date=release_date,
+#             cast=cast,
+#             seasons=None,
+#             related_titles=related_titles,
+#         )
+
+#         return JsonResponse({"message": "Saved to your list."})
+
+#     except Exception as e:
+#         return JsonResponse({"error": f"Save failed: {str(e)}"})
+
+
+# def fetch_anilist_banner(mal_id, media_type):
+#     query = '''
+#     query ($malId: Int, $type: MediaType) {
+#       Media(idMal: $malId, type: $type) {
+#         bannerImage
+#       }
+#     }
+#     '''
+#     variables = {
+#         "malId": int(mal_id),
+#         "type": media_type.upper()  # "ANIME" or "MANGA"
+#     }
+
+#     headers = {
+#         "Content-Type": "application/json"
+#     }
+
+#     try:
+#         keys = APIKey.objects.get(name="anilist")
+#         client_id = keys.key_1
+#         # Not needed in this case, but you can send Client-ID if required
+#     except APIKey.DoesNotExist:
+#         client_id = None  # fallback if needed
+
+#     response = requests.post(
+#         "https://graphql.anilist.co",
+#         json={"query": query, "variables": variables},
+#         headers=headers
+#     )
+
+#     if response.status_code != 200:
+#         return None
+
+#     data = response.json().get("data", {}).get("Media")
+#     return data.get("bannerImage") if data else None
 
 
 # Game Details
