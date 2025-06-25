@@ -8,6 +8,7 @@ import time
 import json
 import requests
 import logging
+import os
 logger = logging.getLogger(__name__)
 
 IGDB_ACCESS_TOKEN = None
@@ -37,7 +38,7 @@ def manga(request):
     manga = MediaItem.objects.filter(media_type="manga").order_by("-date_added")
     return render(request, 'core/manga.html', {'items': manga, 'page_type': 'manga'})
 
-def settings(request):
+def settings_page(request):
     keys = APIKey.objects.all().order_by("name")
     existing_names = [key.name for key in keys]
     allowed_names = APIKey.NAME_CHOICES  # [('tmdb', 'TMDb'), ('igdb', 'IGDB'), ...]
@@ -1311,9 +1312,54 @@ def edit_item(request, item_id):
     return JsonResponse({"success": False, "error": "Invalid request"})
 
 
+@require_POST
+def delete_item(request, item_id):
+    try:
+        item = MediaItem.objects.get(id=item_id)
+        source = item.source
+        mal_id = item.source_id
 
+        # --- Delete associated image files if locally stored
+        media_root = settings.MEDIA_ROOT
+        paths_to_check = []
 
+        if item.cover_url and item.cover_url.startswith("/media/"):
+            paths_to_check.append(os.path.join(media_root, item.cover_url.replace("/media/", "")))
+        if item.banner_url and item.banner_url.startswith("/media/"):
+            paths_to_check.append(os.path.join(media_root, item.banner_url.replace("/media/", "")))
 
+        for i, member in enumerate(item.cast or []):
+            p = member.get("profile_path", "")
+            if p.startswith("/media/"):
+                paths_to_check.append(os.path.join(media_root, p.replace("/media/", "")))
+
+        for related in item.related_titles or []:
+            p = related.get("poster_path", "")
+            if p.startswith("/media/"):
+                paths_to_check.append(os.path.join(media_root, p.replace("/media/", "")))
+
+        for season in item.seasons or []:
+            p = season.get("poster_path", "")
+            if p.startswith("/media/"):
+                paths_to_check.append(os.path.join(media_root, p.replace("/media/", "")))
+
+        for path in paths_to_check:
+            try:
+                if os.path.exists(path):
+                    os.remove(path)
+            except Exception:
+                pass  # Ignore deletion errors
+
+        # --- Delete the DB entry
+        item.delete()
+        return JsonResponse({"success": True})
+
+    except MediaItem.DoesNotExist:
+        return JsonResponse({"success": False, "error": "Item not found"})
+    except Exception as e:
+            import traceback
+            traceback.print_exc()  # Show full traceback in terminal
+            return JsonResponse({"success": False, "error": str(e)})
 
 
 def get_item(request, item_id):

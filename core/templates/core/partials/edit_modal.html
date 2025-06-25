@@ -1,71 +1,96 @@
 <!-- Edit Modal Partial -->
 <div id="edit-modal" class="modal modal-hidden">
   <div class="modal-content">
-    <h2>Edit Entry</h2>
-    <form id="edit-form" data-media-type="{{ media_type }}" data-item-id="{{ item_id }}">
-      <div class="form-group">
-        <label>Status:
-          <select name="status">
-            {% for key, label in item_status_choices %}
-              <option value="{{ key }}" {% if key == status %}selected{% endif %}>{{ label }}</option>
-            {% endfor %}
-          </select>
-        </label>
-      </div>
 
-      <input type="hidden" name="total_main" value="{{ total_main|default_if_none:'' }}" /> 
-      <input type="hidden" name="total_secondary" value="{{ total_secondary|default_if_none:'' }}" />
-      <div class="form-group">
-        <label>Rating:
-          <select name="personal_rating">
-            <option value="" {% if personal_rating == None %}selected{% endif %}>No Rating</option>
-            {% for value, label in item_rating_choices %}
-              <option value="{{ value }}" {% if value == personal_rating %}selected{% endif %}>{{ label }}</option>
-            {% endfor %}
-          </select>
-        </label>
-      </div>
+<!-- Banner with background image -->
+<div class="modal-banner" data-banner="{{ item.banner_url|default:'/static/img/banner_fallback.jpg' }}">
+  <div class="banner-overlay"></div>
+</div>
 
-      <div class="form-group">
-        <label>Notes:
-          <textarea name="notes">{{ notes }}</textarea>
-        </label>
-      </div>
 
-      <!-- Main Progress -->
-      <div id="progress_main_group" class="form-group">
-        <label>
-          <span id="progress_main_label">Main Progress:</span>
-          <input type="number" name="progress_main" min="0" value="{{ progress_main|default_if_none:'' }}" />
-          <span id="progress_main_total_display" class="progress-total-display">/ {{ total_main|default_if_none:'' }}</span>
-        </label>
-      </div>
 
-      <!-- Secondary Progress -->
-      <div id="progress_secondary_group" class="form-group">
-        <label>
-          <span id="progress_secondary_label">Secondary Progress:</span>
-          <input type="number" name="progress_secondary" min="0" value="{{ progress_secondary|default_if_none:'' }}" />
-          <span id="progress_secondary_total_display" class="progress-total-display">/ {{ total_secondary|default_if_none:'' }}</span>
-        </label>
-      </div>
+    <!-- Cover image in top-right corner -->
+    <div class="modal-cover">
+      <img src="{{ item.cover_url|default:'/static/img/cover_fallback.jpg' }}" alt="Cover">
+    </div>
 
-      <!-- Favorite checkbox inside main form -->
-      <div class="form-group">
-        <label class="favorite-checkbox">
-          <input type="checkbox" name="favorite" {% if item.favorite %}checked{% endif %}>
-          <span class="heart"></span>
-        </label>
-      </div>
+    <!-- Modal Body -->
+    <div class="modal-body">
+      <form id="edit-form" data-media-type="{{ media_type }}" data-item-id="{{ item_id }}">
+        
+  <div class="modal-actions-top">
+    <label class="favorite-checkbox">
+      <input type="checkbox" name="favorite" {% if item.favorite %}checked{% endif %}>
+      <span class="heart"></span>
+    </label>
+    <button type="submit" class="btn save-btn">Save</button>
+  </div>
+<div class="form-row-two">
+  <div class="form-group vertical-label">
+    <label for="status">Status</label>
+    <select name="status" id="status" class="status-select">
+      {% for key, label in item_status_choices %}
+        <option value="{{ key }}" {% if key == status %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+<div class="form-group vertical-label">
+  <label for="personal_rating">Rating</label>
 
-      <input type="hidden" name="item_id" value="{{ item_id }}" />
-      <input type="hidden" name="media_type" value="{{ media_type }}" />
+  <!-- hidden select, kept for JS -->
+  <select name="personal_rating" id="personal_rating" style="display:none;"></select>
 
-      <div class="modal-buttons">
-        <button type="submit" class="btn">Save</button>
-      </div>
-      <button type="button" id="edit-close-btn" class="btn close-btn">X</button>
-    </form>
+  <!-- faces UI -->
+  <div class="rating-faces">
+    <button type="button" data-value="1" class="face face-bad" title="Bad"></button>
+    <button type="button" data-value="2" class="face face-neutral" title="Neutral"></button>
+    <button type="button" data-value="3" class="face face-good" title="Good"></button>
   </div>
 </div>
+</div>
+        <input type="hidden" name="total_main" value="{{ total_main|default_if_none:'' }}" /> 
+        <input type="hidden" name="total_secondary" value="{{ total_secondary|default_if_none:'' }}" />
+        <div class="form-row-two">
+        <!-- Main Progress -->
+        <div id="progress_main_group" class="form-group">
+          <label>
+            <span id="progress_main_label">Main Progress:</span>
+            <input type="number" name="progress_main" min="0" value="{{ progress_main|default_if_none:'' }}" />
+            <span id="progress_main_total_display" class="progress-total-display">/ {{ total_main|default_if_none:'' }}</span>
+          </label>
+        </div>
+
+        <!-- Secondary Progress -->
+        <div id="progress_secondary_group" class="form-group">
+          <label>
+            <span id="progress_secondary_label">Secondary Progress:</span>
+            <input type="number" name="progress_secondary" min="0" value="{{ progress_secondary|default_if_none:'' }}" />
+            <span id="progress_secondary_total_display" class="progress-total-display">/ {{ total_secondary|default_if_none:'' }}</span>
+          </label>
+        </div>
+        </div>
+<div class="form-group notes-group">
+  <label for="notes">Notes</label>
+  <textarea id="notes" name="notes">{{ notes }}</textarea>
+</div>
+        <input type="hidden" name="item_id" value="{{ item_id }}" />
+        <input type="hidden" name="media_type" value="{{ media_type }}" />
+
+        <button type="button" id="edit-delete-btn" class="btn danger-btn">Delete</button>
+        <button type="button" id="edit-close-btn" class="btn close-btn">X</button>
+      </form>
+    </div>
+  </div>
+</div>
+
 <div id="edit-overlay" class="modal-overlay modal-hidden"></div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const modalBanner = document.querySelector("#edit-modal .modal-banner");
+    if (modalBanner) {
+      const url = modalBanner.dataset.banner;
+      modalBanner.style.backgroundImage = `url("${url}")`;
+    }
+  });
+</script>

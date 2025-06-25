@@ -24,35 +24,56 @@ document.addEventListener("DOMContentLoaded", function () {
     if (mediaType === "tv") {
       showField("progress_main");
       showField("progress_secondary");
-      if (mainLabel) mainLabel.textContent = "Episode Progress:";
-      if (secondaryLabel) secondaryLabel.textContent = "Season Progress:";
+      if (mainLabel) mainLabel.textContent = "Episode Progress";
+      if (secondaryLabel) secondaryLabel.textContent = "Season Progress";
     } else if (mediaType === "anime") {
       showField("progress_main");
-      if (mainLabel) mainLabel.textContent = "Episode Progress:";
+      if (mainLabel) mainLabel.textContent = "Episode Progress";
     } else if (mediaType === "game") {
       showField("progress_main");
       showField("progress_secondary");
-      if (mainLabel) mainLabel.textContent = "Hours Played:";
-      if (secondaryLabel) secondaryLabel.textContent = "Year Finished:";
+      if (mainLabel) mainLabel.textContent = "Hours Played";
+      if (secondaryLabel) secondaryLabel.textContent = "Year Finished";
     } else if (mediaType === "manga") {
       showField("progress_main");
       showField("progress_secondary");
-      if (mainLabel) mainLabel.textContent = "Chapter Progress:";
-      if (secondaryLabel) secondaryLabel.textContent = "Volume Progress:";
+      if (mainLabel) mainLabel.textContent = "Chapter Progress";
+      if (secondaryLabel) secondaryLabel.textContent = "Volume Progress";
     }
   }
 
-  function updateTotalDisplays(item) {
-    const mainTotalDisplay = document.getElementById("progress_main_total_display");
-    const secondaryTotalDisplay = document.getElementById("progress_secondary_total_display");
+function updateTotalDisplays(item) {
+  const mainTotalDisplay = document.getElementById("progress_main_total_display");
+  const secondaryTotalDisplay = document.getElementById("progress_secondary_total_display");
 
-    if (mainTotalDisplay) {
-      mainTotalDisplay.textContent = item.total_main !== null ? `/ ${item.total_main}` : "";
-    }
-    if (secondaryTotalDisplay) {
-      secondaryTotalDisplay.textContent = item.total_secondary !== null ? `/ ${item.total_secondary}` : "";
+  // Define units for main and secondary progress per media type
+  const units = {
+    tv: { main: "episodes", secondary: "seasons" },
+    anime: { main: "episodes", secondary: "" },
+    game: { main: "hours", secondary: "years" },
+    manga: { main: "chapters", secondary: "volumes" },
+  };
+
+  const mediaType = item.media_type;
+  const mainUnit = units[mediaType]?.main || "";
+  const secondaryUnit = units[mediaType]?.secondary || "";
+
+  if (mainTotalDisplay) {
+    if (item.total_main !== null && item.total_main !== undefined && item.total_main !== "") {
+      mainTotalDisplay.textContent = `/ ${item.total_main} ${mainUnit}`;
+    } else {
+      mainTotalDisplay.textContent = "";
     }
   }
+
+  if (secondaryTotalDisplay) {
+    if (item.total_secondary !== null && item.total_secondary !== undefined && item.total_secondary !== "") {
+      secondaryTotalDisplay.textContent = `/ ${item.total_secondary} ${secondaryUnit}`;
+    } else {
+      secondaryTotalDisplay.textContent = "";
+    }
+  }
+}
 
   function populateForm(form, item) {
     console.log("Populating form with item:", item);
@@ -73,20 +94,45 @@ if (totalSecondaryInput) totalSecondaryInput.value = item.total_secondary ?? "";
       if (choice[0] === item.status) option.selected = true;
       statusSelect.appendChild(option);
     });
+const ratingSelect = form.querySelector('select[name="personal_rating"]');
+ratingSelect.innerHTML = "";
 
-    const ratingSelect = form.querySelector('select[name="personal_rating"]');
-    ratingSelect.innerHTML = "";
-    const emptyOption = document.createElement("option");
-    emptyOption.value = "";
-    emptyOption.textContent = "No rating";
-    ratingSelect.appendChild(emptyOption);
-    item.item_rating_choices.forEach(choice => {
-      const option = document.createElement("option");
-      option.value = choice[0];
-      option.textContent = choice[1];
-      if (choice[0] === item.personal_rating) option.selected = true;
-      ratingSelect.appendChild(option);
-    });
+// Build the options dynamically (keep this as is)
+const emptyOption = document.createElement("option");
+emptyOption.value = "";
+emptyOption.textContent = "No rating";
+ratingSelect.appendChild(emptyOption);
+
+item.item_rating_choices.forEach(choice => {
+  const option = document.createElement("option");
+  option.value = choice[0];
+  option.textContent = choice[1];
+  if (choice[0] === item.personal_rating) option.selected = true;
+  ratingSelect.appendChild(option);
+});
+
+// Now sync the face buttons with the select's value
+const faces = form.querySelectorAll('.rating-faces .face');
+
+function updateFacesFromSelect() {
+  faces.forEach(face => {
+    if (face.dataset.value === ratingSelect.value) {
+      face.classList.add('selected');
+    } else {
+      face.classList.remove('selected');
+    }
+  });
+}
+
+faces.forEach(face => {
+  face.addEventListener('click', () => {
+    ratingSelect.value = face.dataset.value;
+    updateFacesFromSelect();
+  });
+});
+
+// call once after options built and select value set
+updateFacesFromSelect();
 
     form.querySelector('[name="notes"]').value = item.notes || "";
     form.querySelector('[name="progress_main"]').value = item.progress_main ?? "";
@@ -105,10 +151,26 @@ if (totalSecondaryInput) totalSecondaryInput.value = item.total_secondary ?? "";
       e.preventDefault();
       const card = button.closest(".card");
       const itemId = card.dataset.id;
+      const mediaType = card.dataset.mediaType;
+      const coverUrl = card.dataset.coverUrl;
+      const bannerUrl = card.dataset.bannerUrl;
+
+      const modal = document.getElementById('edit-modal');
+      const banner = modal.querySelector('.modal-banner');
+      const cover = modal.querySelector('.modal-cover img');
 
       const form = document.getElementById("edit-form");
       if (!form) return console.error("Edit form not found");
+          // Set cover image
+    if (cover && coverUrl) {
+      cover.src = coverUrl;
+    }
 
+    // Set banner background via data attribute + CSS
+    if (banner && bannerUrl) {
+      banner.dataset.banner = bannerUrl;
+      banner.style.backgroundImage = `url("${bannerUrl}")`;
+    }
       console.log("Fetching item for ID:", itemId);
       fetch(`/get-item/${itemId}/`)
         .then(res => res.json())
@@ -164,6 +226,34 @@ if (totalSecondaryInput) totalSecondaryInput.value = item.total_secondary ?? "";
     modal.classList.add("modal-hidden");
     overlay.classList.add("modal-hidden");
   });
+  
+document.getElementById("edit-delete-btn")?.addEventListener("click", function () {
+  if (!confirm("Are you sure you want to delete this item? This action cannot be undone.")) return;
+
+  const itemId = form.dataset.itemId;
+
+  fetch(`/delete-item/${itemId}/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": getCookie("csrftoken"),
+    }
+  })
+  .then(res => res.json())
+  .then(res => {
+    if (res.success) {
+      alert("Item deleted.");
+      window.location.reload();
+    } else {
+      alert("Failed to delete item.");
+    }
+  })
+  .catch(err => {
+    console.error("Delete request failed:", err);
+    alert("Delete failed.");
+  });
+});
+
 
   // Submit form
   const form = document.getElementById("edit-form");
@@ -227,7 +317,7 @@ if (totalSecondaryInput) totalSecondaryInput.value = item.total_secondary ?? "";
               alert("Failed to update favorite.");
               favInput.checked = !newStatus;
             } else {
-              location.reload();
+              // location.reload();
             }
           })
           .catch(err => {

@@ -1,8 +1,15 @@
+body {
+  background-color: #062246; /* same dark blue as cards or any color you want */
+  color: white; /* fallback text color */
+  margin: 0; /* optional, to remove default margin */
+  font-family: Arial, sans-serif; /* keep consistent font */
+}
+
 .detail-container {
   max-width: 900px;
   margin: 20px auto;
   padding: 0 15px;
-  color: rgb(43, 26, 26);
+  color: white; /* changed from rgb(43, 26, 26) to white */
   font-family: Arial, sans-serif;
 }
 
@@ -24,10 +31,11 @@
 
 .text-info h1 {
   margin: 0 0 10px;
+  color: white; /* ensure title is white */
 }
 
 .release-date {
-  color: #000000;
+  color: #ccc; /* changed from black to light gray for contrast */
   margin-bottom: 15px;
 }
 
@@ -35,7 +43,7 @@
   font-size: 1rem;
   line-height: 1.4;
   margin-top: 10px;
-  color: #333;
+  color: #ddd; /* changed from #333 to light gray */
   max-width: 600px;
 }
 
@@ -50,13 +58,13 @@
 }
 
 .cast-member, .season-card, .rec-card {
-  background: #222;
+  background: #123a6d;  /* changed from #222 to a richer darker blue */
   border-radius: 6px;
   padding: 8px;
   width: 120px;
   text-align: center;
   text-decoration: none;
-  color: rgb(0, 0, 0);
+  color: white; /* changed from rgb(0, 0, 0) to white */
   box-shadow: 0 1px 5px rgba(0,0,0,0.6);
   transition: transform 0.2s ease;
 }
@@ -79,14 +87,14 @@
 }
 
 .character-name, .episode-count, .air-date {
-  color: #bbb;
+  color: #bbb; /* light gray for secondary text */
 }
 
 .rec-title {
   font-weight: bold;
   margin-top: 2px;
+  color: white;
 }
-
 
 .edit-favorite-wrapper {
   display: flex;
@@ -101,7 +109,7 @@
   align-items: center;
   gap: 0.5rem;
   font-weight: 600;
-  color: #555;
+  color: #bbb; /* lighter color for checkbox label */
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
@@ -114,12 +122,12 @@
   pointer-events: none;
 }
 
-/* The heart shape - using CSS */
+/* Unchecked: solid white heart with no stroke */
 .favorite-checkbox .heart {
   width: 40px;
   height: 40px;
   display: inline-block;
-  background: url('data:image/svg+xml;utf8,<svg fill="none" stroke="%23888" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 21C12 21 7 16.5 5 12.5C3 8.5 5 5 8.5 5C10.5 5 12 7 12 7C12 7 13.5 5 15.5 5C19 5 21 8.5 19 12.5C17 16.5 12 21 12 21Z"/></svg>') no-repeat center center;
+  background: url('data:image/svg+xml;utf8,<svg fill="%23ffffff" stroke="%23ffffff" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 21C12 21 7 16.5 5 12.5C3 8.5 5 5 8.5 5C10.5 5 12 7 12 7C12 7 13.5 5 15.5 5C19 5 21 8.5 19 12.5C17 16.5 12 21 12 21Z"/></svg>') no-repeat center center;
   background-size: contain;
   transition: background 0.3s ease;
 }

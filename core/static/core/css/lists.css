@@ -107,3 +107,12 @@
 .card:hover .edit-card-btn {
   display: block;
 }
+
+.face-field {
+  background-color: #007bff; /* blue */
+  padding: 8px;              /* some space around the face */
+  border-radius: 8px;        /* slightly rounded corners */
+  display: inline-flex;      /* to fit tightly around the face */
+  align-items: center;
+  justify-content: center;
+}
