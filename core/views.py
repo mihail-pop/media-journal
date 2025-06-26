@@ -1278,15 +1278,20 @@ def edit_item(request, item_id):
             else:
                 new_status = old_status
 
-            # Update progress fields if present (always accept manual input)
+            # Update progress fields if present (manual input)
             if "progress_main" in data and data["progress_main"] not in [None, ""]:
-                item.progress_main = int(data["progress_main"])
+                progress_main = int(data["progress_main"])
+                if item.total_main is not None and progress_main > item.total_main:
+                    progress_main = item.total_main
+                item.progress_main = progress_main
 
             if "progress_secondary" in data and data["progress_secondary"] not in [None, ""]:
-                item.progress_secondary = int(data["progress_secondary"])
+                progress_secondary = int(data["progress_secondary"])
+                if item.total_secondary is not None and progress_secondary > item.total_secondary:
+                    progress_secondary = item.total_secondary
+                item.progress_secondary = progress_secondary
 
-            # ONLY if status changed from something else TO completed,
-            # overwrite progress with total values
+            # If status changed TO "completed", override progress with totals
             if old_status != "completed" and new_status == "completed":
                 if item.total_main is not None:
                     item.progress_main = item.total_main
@@ -1310,6 +1315,7 @@ def edit_item(request, item_id):
             return JsonResponse({"success": False, "error": str(e)})
 
     return JsonResponse({"success": False, "error": "Invalid request"})
+
 
 
 @require_POST
@@ -1409,7 +1415,7 @@ def get_item(request, item_id):
                 "status": item.status,
                 "personal_rating": item.personal_rating,
                 "notes": item.notes,
-                "progress_main": item.progress_main,
+                "progress_main": item.progress_main if item.progress_main else None,
                 "total_main": total_main,
                 "progress_secondary": item.progress_secondary,
                 "total_secondary": total_secondary,

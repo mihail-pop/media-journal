@@ -17,7 +17,8 @@
        data-id="{{ item.id }}"
        data-media-type="{{ item.media_type }}"
        data-cover-url="{{ item.cover_url|default:'/static/img/cover_fallback.jpg' }}"
-       data-banner-url="{{ item.banner_url|default:'/static/img/banner_fallback.jpg' }}">
+       data-banner-url="{{ item.banner_url|default:'/static/img/banner_fallback.jpg' }}"
+       data-title="{{ item.title|escape }}">
        
     <a href="{% url 'tmdb_detail' media_type=item.media_type tmdb_id=item.source_id %}" class="card-link">
       <img src="{{ item.cover_url }}" alt="{{ item.title }}">

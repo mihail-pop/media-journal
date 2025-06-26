@@ -13,6 +13,10 @@
     <div class="modal-cover">
       <img src="{{ item.cover_url|default:'/static/img/cover_fallback.jpg' }}" alt="Cover">
     </div>
+    <!-- Title next to the cover -->
+<div class="modal-title-block" >
+  <h2 class="modal-title" >{{ item.title }}</h2>
+</div>
 
     <!-- Modal Body -->
     <div class="modal-body">

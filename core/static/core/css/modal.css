@@ -74,6 +74,15 @@
   z-index: 1;
 }
 
+.modal-banner::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.45); /* consistent dark tint */
+  z-index: 0;
+}
+
+
 /* Cover image in top-right of banner */
 .modal-cover {
   position: absolute;
@@ -92,6 +101,24 @@
   height: 100%;
   object-fit: cover;
   display: block;
+}
+
+.modal-title-block {
+  position: absolute;
+  top: 160px;              /* Align with cover */
+  left: 170px;            /* To the right of the 120px wide cover + spacing */
+  z-index: 10;
+  max-width: 520px;
+  color: rgb(224, 223, 223);
+}
+
+.modal-title {
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 0;
+  color: #e0e0e0;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
 }
 
 /* Body below banner */
@@ -294,6 +321,18 @@
   background-size: contain;
 }
 
+/* Hover effect for unchecked heart (grey/white) */
+.favorite-checkbox .heart:hover {
+  filter: drop-shadow(0 0 4px #fff) brightness(1.2);
+  cursor: pointer;
+}
+
+/* Hover effect for checked heart (red) */
+.favorite-checkbox input[type="checkbox"]:checked + .heart:hover {
+  filter: drop-shadow(0 0 6px #e0245e) brightness(1.1);
+  cursor: pointer;
+}
+
 .form-row-two {
   display: flex;
   justify-content: flex-start;
@@ -368,6 +407,8 @@ textarea[name="notes"] {
   border: 1px solid transparent;
   background-color: transparent;
   transition: border-color 0.3s ease;
+  position: relative;
+  overflow: hidden;
 }
 
 /* Sad face */
@@ -403,6 +444,19 @@ textarea[name="notes"] {
   color: #f8d4e0;
 }
 
+.face::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0);
+  transition: background-color 0.2s ease;
+}
+
+.face:hover::after {
+  background-color: rgba(255, 255, 255, 0.3); /* subtle bright overlay */
+}
+
 
 .rating-faces {
   display: flex;
@@ -424,6 +478,7 @@ input[type="number"]::-webkit-outer-spin-button {
 /* Firefox */
 input[type="number"] {
   -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 #status,

@@ -158,7 +158,11 @@ updateFacesFromSelect();
       const modal = document.getElementById('edit-modal');
       const banner = modal.querySelector('.modal-banner');
       const cover = modal.querySelector('.modal-cover img');
-
+      const title = card.dataset.title;
+const titleElement = modal.querySelector('.modal-title');
+if (titleElement && title) {
+  titleElement.textContent = title;
+}
       const form = document.getElementById("edit-form");
       if (!form) return console.error("Edit form not found");
           // Set cover image

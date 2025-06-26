@@ -138,6 +138,18 @@ body {
   background-size: contain;
 }
 
+/* Hover effect for unchecked heart (grey/white) */
+.favorite-checkbox .heart:hover {
+  filter: drop-shadow(0 0 4px #fff) brightness(1.2);
+  cursor: pointer;
+}
+
+/* Hover effect for checked heart (red) */
+.favorite-checkbox input[type="checkbox"]:checked + .heart:hover {
+  filter: drop-shadow(0 0 6px #e0245e) brightness(1.1);
+  cursor: pointer;
+}
+
 /* Banner section that appears beneath a transparent header */
 .banner-section {
   position: relative;
