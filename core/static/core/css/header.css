@@ -16,6 +16,7 @@ header {
   z-index: 10;
   width: 100%;
   border-bottom: none;
+  box-sizing: border-box;
 }
 
 /* Container for max width */
@@ -74,7 +75,7 @@ header {
 .nav-center a,
 .nav-right a,
 .dropbtn {
-  color: #ffffff;
+  color: rgb(236, 236, 236);
   text-decoration: none;
   font-weight: 550;
   font-size: 1rem;

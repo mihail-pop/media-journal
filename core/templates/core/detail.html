@@ -8,18 +8,46 @@
 {% endblock %}
 
 {% block content %}
+
+<!-- Banner -->
 <div class="banner-section" data-banner="{{ banner_url|default:'https://dummyimage.com/1280x400/444444/ffffff&text=No+Banner' }}">
   <div class="banner-overlay"></div>
 </div>
-<div class="detail-container">
-  <div class="main-info">
+
+<!-- Colored section below banner -->
+<div class="top-colored-section">
+  <div class="detail-container top-content">
+
+  <div class="left-column">
+    <!-- Poster -->
     <img class="poster" src="{{ poster_url }}" alt="{{ title }}"
       onerror="this.src='https://dummyimage.com/150x225/cccccc/000000&text=No+Image';" />
+    
+    <!-- Edit / Favorite buttons -->
+    <div class="edit-favorite-wrapper">
+      {% if in_my_list %}
+        <button id="edit-button" class="btn edit-card-btn" data-id="{{ item_id }}" data-media-type="{{ media_type }}">Edit</button>
+        <form id="favorite-form" data-item-id="{{ item_id }}">
+          <label class="favorite-checkbox">
+            <input type="checkbox" name="favorite" {% if item.favorite %}checked{% endif %}>
+            <span class="heart"></span>
+          </label>
+        </form>
+      {% else %}
+        <button id="add-to-list-button" class="btn">Add to My List</button>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="right-column">
+    <!-- Main info + buttons -->
     <div class="text-info">
       <h1>{{ title }}</h1>
+      <p class="overview">{{ overview|safe }}</p>
       <p class="release-date">{{ release_date }}</p>
-      <p class="overview">{{ overview }}</p>
+    </div>
 
+          <!-- 
       {% if genres %}
         <p><strong>Genres:</strong> {{ genres|join:", " }}</p>
       {% endif %}
@@ -27,124 +55,142 @@
       {% if platforms %}
         <p><strong>Platforms:</strong> {{ platforms|join:", " }}</p>
       {% endif %}
-    </div>
+      -->
+   </div>
   </div>
-
-  {% if in_my_list %}
-<div class="edit-favorite-wrapper">
-  <button id="edit-button" class="btn edit-card-btn" data-id="{{ item_id }}" data-media-type="{{ media_type }}">Edit</button>
-
-  <form id="favorite-form" data-item-id="{{ item_id }}">
-    <label class="favorite-checkbox">
-      <input type="checkbox" name="favorite" {% if item.favorite %}checked{% endif %}>
-      <span class="heart"></span>
-    </label>
-  </form>
+ </div>
 </div>
-  {% else %}
-    <button id="add-to-list-button" class="btn">Add to My List</button>
-  {% endif %}
 
-  {% include "core/partials/edit_modal.html" with media_type=media_type item_id=item_id status=item.status personal_rating=item.personal_rating notes=item.notes progress_main=item.progress_main total_main=item.total_main progress_secondary=item.progress_secondary total_secondary=item.total_secondary favorite=item.favorite item_status_choices=item_status_choices item_rating_choices=item_rating_choices %}
 
-{% if cast %}
-<section class="cast-section">
-  <h2>Cast</h2>
-  <div class="cast-list">
-    {% for member in cast %}
-    <div class="cast-member">
-      <img src="{% if member.is_full_url %}{{ member.profile_path }}{% else %}https://image.tmdb.org/t/p/w185{{ member.profile_path }}{% endif %}"
-           alt="{{ member.name }}"
-           onerror="this.src='https://dummyimage.com/150x225/cccccc/000000&text=No+Image';" />
-      <p class="actor-name">{{ member.name }}</p>
-      <p class="character-name">{{ member.character }}</p>
-    </div>
+{% include "core/partials/edit_modal.html" with media_type=media_type item_id=item_id status=item.status personal_rating=item.personal_rating notes=item.notes progress_main=item.progress_main total_main=item.total_main progress_secondary=item.progress_secondary total_secondary=item.total_secondary favorite=item.favorite item_status_choices=item_status_choices item_rating_choices=item_rating_choices %}
+
+<!-- Main background section -->
+<div class="main-colored-section">
+  <div class="detail-container">
+
+    {% if prequels or sequels %}
+    <section class="recommendations-section double-recs">
+      {% if prequels %}
+      <div class="rec-block">
+        <h2>Prequels</h2>
+        <div class="recommendations-list">
+          {% for rec in prequels %}
+          <a href="/mal/{{ media_type }}/{{ rec.id }}/" class="rec-card" title="{{ rec.title }}">
+            <img src="{{ rec.poster_path }}" alt="{{ rec.title }}" onerror="this.src='https://dummyimage.com/150x225/cccccc/000000&text=No+Image';" />
+            <p class="rec-title">{{ rec.title }}</p>
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      {% if sequels %}
+      <div class="rec-block">
+        <h2>Sequels</h2>
+        <div class="recommendations-list">
+          {% for rec in sequels %}
+          <a href="/mal/{{ media_type }}/{{ rec.id }}/" class="rec-card" title="{{ rec.title }}">
+            <img src="{{ rec.poster_path }}" alt="{{ rec.title }}" onerror="this.src='https://dummyimage.com/150x225/cccccc/000000&text=No+Image';" />
+            <p class="rec-title">{{ rec.title }}</p>
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </section>
+    {% endif %}
+
+    {% if seasons %}
+    <section class="seasons-section">
+      <h2>Seasons</h2>
+      <div class="seasons-list">
+        {% for season in seasons %}
+        <div class="season-card">
+          <img src="{{ season.poster_path_full|default:'https://dummyimage.com/150x225/cccccc/000000&text=No+Image' }}"
+               alt="{{ season.name }}"
+               onerror="this.src='https://dummyimage.com/150x225/cccccc/000000&text=No+Image';" />
+          <p class="season-name">{{ season.name }}</p>
+          <p class="episode-count">{{ season.episode_count }} episodes</p>
+          <p class="air-date">{{ season.air_date }}</p>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+{% if screenshots %}
+<section class="screenshots-section">
+  <h2>Screenshots</h2>
+  <div class="screenshots-list">
+    {% for shot in screenshots %}
+      <img src="{% if shot.is_full_url %}{{ shot.url }}{% else %}{{ shot.url }}{% endif %}" 
+           alt="Screenshot" onerror="this.style.display='none';" />
     {% endfor %}
   </div>
 </section>
 {% endif %}
 
-{% if seasons %}
-<section class="seasons-section">
-  <h2>Seasons</h2>
-  <div class="seasons-list">
-    {% for season in seasons %}
-    <div class="season-card">
-      <img src="{{ season.poster_path_full|default:'https://dummyimage.com/150x225/cccccc/000000&text=No+Image' }}"
-           alt="{{ season.name }}"
-           onerror="this.src='https://dummyimage.com/150x225/cccccc/000000&text=No+Image';" />
-      <p class="season-name">{{ season.name }} ({{ season.season_number }})</p>
-      <p class="episode-count">{{ season.episode_count }} episodes</p>
-      <p class="air-date">Air date: {{ season.air_date }}</p>
-    </div>
-    {% endfor %}
-  </div>
-</section>
-{% endif %}
 
-  {% if screenshots %}
-  <section class="screenshots-section">
-    <h2>Screenshots</h2>
-    <div class="screenshots-list">
-      {% for shot in screenshots %}
-      <img src="{{ shot }}" alt="Screenshot" onerror="this.style.display='none';" />
-      {% endfor %}
-    </div>
-  </section>
-  {% endif %}
+    {% if cast %}
+    <section class="cast-section">
+      <h2>Cast</h2>
+      <div class="cast-list">
+        {% for member in cast %}
+        <div class="cast-member">
+          <img src="{% if member.is_full_url %}{{ member.profile_path }}{% else %}https://image.tmdb.org/t/p/w185{{ member.profile_path }}{% endif %}"
+               alt="{{ member.name }}"
+               onerror="this.src='https://dummyimage.com/150x225/cccccc/000000&text=No+Image';" />
+          <p class="actor-name">{{ member.name }}</p>
+          <p class="character-name">{{ member.character }}</p>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
 
-  {% if prequels %}
-  <section class="recommendations-section">
-    <h2>Prequels</h2>
-    <div class="recommendations-list">
-      {% for rec in prequels %}
-      <a href="/mal/{{ media_type }}/{{ rec.id }}/" class="rec-card" title="{{ rec.title }}">
-        <img src="{{ rec.poster_path }}" alt="{{ rec.title }}"
-          onerror="this.src='https://dummyimage.com/150x225/cccccc/000000&text=No+Image';" />
-        <p class="rec-title">{{ rec.title }}</p>
-      </a>
-      {% endfor %}
-    </div>
-  </section>
-  {% endif %}
-
-  {% if sequels %}
-  <section class="recommendations-section">
-    <h2>Sequels</h2>
-    <div class="recommendations-list">
-      {% for rec in sequels %}
-      <a href="/mal/{{ media_type }}/{{ rec.id }}/" class="rec-card" title="{{ rec.title }}">
-        <img src="{{ rec.poster_path }}" alt="{{ rec.title }}"
-          onerror="this.src='https://dummyimage.com/150x225/cccccc/000000&text=No+Image';" />
-        <p class="rec-title">{{ rec.title }}</p>
-      </a>
-      {% endfor %}
-    </div>
-  </section>
-  {% endif %}
-
-  {% if recommendations %}
-  <section class="recommendations-section">
-    <h2>Recommendations</h2>
-    <div class="recommendations-list">
-      {% for rec in recommendations %}
-      <a href="/{% if media_type == 'game' %}igdb/{{ rec.id }}{% else %}tmdb/{{ media_type }}/{{ rec.id }}{% endif %}/"
-        title="{{ rec.title }}">
-        {% if rec.poster_path %}
+{% if recommendations %}
+<section class="recommendations-section">
+  <h2>Recommendations</h2>
+  <div class="recommendations-list">
+    {% for rec in recommendations %}
+    <div class="recommendation">
+    <a href="
+      {% if media_type == 'game' %}
+        /igdb/game/{{ rec.id }}/
+      {% elif media_type == 'anime' or media_type == 'manga' %}
+        /mal/{{ media_type }}/{{ rec.id }}/
+      {% else %}
+        /tmdb/{{ media_type }}/{{ rec.id }}/
+      {% endif %}
+    " title="{{ rec.title }}">
+      
+      {% if rec.poster_path %}
         <img
-          src="{% if media_type == 'game' %}{{ rec.poster_path }}{% else %}https://image.tmdb.org/t/p/w185{{ rec.poster_path }}{% endif %}"
-          alt="{{ rec.title }}" onerror="this.src='https://dummyimage.com/150x225/cccccc/000000&text=No+Image';" />
-        {% else %}
+          src="{% if media_type == 'game' or media_type == 'anime' or media_type == 'manga' %}
+                {{ rec.poster_path }}
+               {% else %}
+                https://image.tmdb.org/t/p/w185{{ rec.poster_path }}
+               {% endif %}"
+          alt="{{ rec.title }}"
+          onerror="this.src='https://dummyimage.com/150x225/cccccc/000000&text=No+Image';"
+        />
+      {% else %}
         <img src="https://via.placeholder.com/150x225?text=No+Image" alt="{{ rec.title }}" />
-        {% endif %}
-        <p class="rec-title">{{ rec.title }}</p>
-      </a>
-      {% endfor %}
+      {% endif %}
+      
+      <p class="rec-title">{{ rec.title }}</p>
+    </a>
     </div>
-  </section>
-  {% endif %}
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+
+  </div>
 </div>
 {% endblock %}
+
 
 {% block script %}
   {{ block.super }}

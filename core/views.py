@@ -9,6 +9,7 @@ import json
 import requests
 import logging
 import os
+import datetime
 logger = logging.getLogger(__name__)
 
 IGDB_ACCESS_TOKEN = None
@@ -340,6 +341,26 @@ def tmdb_detail(request, media_type, tmdb_id):
                 else:
                     season["poster_path_full"] = ""
 
+                # Format season air_date like release_date
+                raw_air_date = season.get("air_date") or ""
+                formatted_air_date = ""
+                try:
+                    if raw_air_date:
+                        parsed_date = datetime.datetime.strptime(raw_air_date, "%Y-%m-%d")
+                        formatted_air_date = parsed_date.strftime("%b %Y")
+                except ValueError:
+                    formatted_air_date = raw_air_date
+                season["air_date"] = formatted_air_date
+
+        raw_date = item.release_date or ""
+        formatted_release_date = ""
+
+        try:
+            if raw_date:
+                parsed_date = datetime.datetime.strptime(raw_date, "%Y-%m-%d")
+                formatted_release_date = parsed_date.strftime("%d %B %Y")
+        except ValueError:
+            formatted_release_date = raw_date
 
         return render(request, "core/detail.html", {
             "item": item,
@@ -352,7 +373,7 @@ def tmdb_detail(request, media_type, tmdb_id):
             "overview": item.overview,
             "banner_url": item.banner_url,
             "poster_url": item.cover_url,
-            "release_date": item.release_date,
+            "release_date": formatted_release_date,
             "genres": [],  # Optional
             "cast": cast_data,
             "recommendations": [],  # Optional
@@ -385,7 +406,7 @@ def tmdb_detail(request, media_type, tmdb_id):
 
     # Cast (use TMDB URLs)
     cast_data = []
-    for i, actor in enumerate(data.get("credits", {}).get("cast", [])[:10]):
+    for i, actor in enumerate(data.get("credits", {}).get("cast", [])[:16]):
         profile_url = f"https://image.tmdb.org/t/p/w185{actor.get('profile_path')}" if actor.get("profile_path") else ""
         cast_data.append({
             "name": actor.get("name"),
@@ -401,6 +422,27 @@ def tmdb_detail(request, media_type, tmdb_id):
             poster_path = season.get("poster_path")
             season["poster_path_full"] = f"https://image.tmdb.org/t/p/w185{poster_path}" if poster_path else ""
 
+            # Format air_date for each season
+            raw_air_date = season.get("air_date") or ""
+            formatted_air_date = ""
+            try:
+                if raw_air_date:
+                    parsed_date = datetime.datetime.strptime(raw_air_date, "%Y-%m-%d")
+                    formatted_air_date = parsed_date.strftime("%b %Y")
+            except ValueError:
+                formatted_air_date = raw_air_date
+            season["air_date"] = formatted_air_date
+
+    raw_date = data.get("release_date") or data.get("first_air_date") or ""
+    formatted_release_date = ""
+
+    try:
+        if raw_date:
+            parsed_date = datetime.datetime.strptime(raw_date, "%Y-%m-%d")
+            formatted_release_date = parsed_date.strftime("%d %B %Y")  # e.g., "05 November 2023"
+    except ValueError:
+        formatted_release_date = raw_date  # fallback to raw string if parsing fails
+
     return render(request, "core/detail.html", {
         "item": None,
         "item_id": None,
@@ -412,10 +454,10 @@ def tmdb_detail(request, media_type, tmdb_id):
         "overview": data.get("overview", ""),
         "banner_url": banner_url,
         "poster_url": poster_url,
-        "release_date": data.get("release_date") or data.get("first_air_date") or "",
+        "release_date": formatted_release_date,
         "genres": data.get("genres", []),
         "cast": cast_data,
-        "recommendations": data.get("recommendations", {}).get("results", [])[:5],
+        "recommendations": data.get("recommendations", {}).get("results", [])[:16],
         "seasons": seasons,
     })
 
@@ -439,7 +481,7 @@ def save_tmdb_item(media_type, tmdb_id):
 
         # Cast
         cast_data = []
-        for i, actor in enumerate(data.get("credits", {}).get("cast", [])[:10]):
+        for i, actor in enumerate(data.get("credits", {}).get("cast", [])[:16]):
             profile_url = f"https://image.tmdb.org/t/p/w185{actor.get('profile_path')}" if actor.get("profile_path") else ""
             local_profile = download_image(profile_url, f"cast/tmdb_{tmdb_id}_{i}.jpg") if profile_url else ""
             cast_data.append({
@@ -495,6 +537,7 @@ def mal_detail(request, media_type, mal_id):
     banner_url = None
     overview = ""
     release_date = ""
+    formatted_release_date = ""
     title = ""
     in_my_list = False
 
@@ -506,6 +549,15 @@ def mal_detail(request, media_type, mal_id):
         banner_url = item.banner_url
         overview = item.overview
         release_date = item.release_date
+
+        # Format release date from DB
+        if release_date:
+            try:
+                parsed_date = datetime.datetime.strptime(release_date, "%Y-%m-%d")
+                formatted_release_date = parsed_date.strftime("%d %B %Y")
+            except ValueError:
+                formatted_release_date = release_date
+
         cast = []
         for member in item.cast or []:
             profile = member.get("profile_path")
@@ -530,6 +582,7 @@ def mal_detail(request, media_type, mal_id):
                 sequels.append(entry)
 
         in_my_list = True
+        recommendations = [];
 
     except MediaItem.DoesNotExist:
         try:
@@ -542,31 +595,43 @@ def mal_detail(request, media_type, mal_id):
         banner_url = anilist_data["banner_url"]
         overview = anilist_data["overview"]
         release_date = anilist_data["release_date"]
+
+        # Format release date from AniList
+        if release_date:
+            try:
+                parsed_date = datetime.datetime.strptime(release_date, "%Y-%m-%d")
+                formatted_release_date = parsed_date.strftime("%d %B %Y")
+            except ValueError:
+                formatted_release_date = release_date
+
         cast = anilist_data["cast"]
         related_titles = anilist_data["related_titles"]
+        recommendations = anilist_data.get("recommendations", [])
 
         prequels = [r for r in related_titles if r["relation"].lower() == "prequel"]
         sequels = [r for r in related_titles if r["relation"].lower() == "sequel"]
         for r in prequels + sequels:
             if "id" not in r and "mal_id" in r:
                 r["id"] = r["mal_id"]
+
     context = {
         "item": item,
         "item_id": item_id,
-        "source": "mal",  # keep "mal" even if using anilist internally
+        "source": "mal",
         "source_id": mal_id,
         "media_type": media_type,
         "title": title,
         "overview": overview,
         "poster_url": poster_url,
         "banner_url": banner_url,
-        "release_date": release_date,
+        "release_date": formatted_release_date,
         "cast": cast,
         "seasons": None,
         "recommendations": [],
         "prequels": prequels,
         "sequels": sequels,
         "in_my_list": in_my_list,
+        "recommendations": recommendations,
     }
 
     return render(request, "core/detail.html", context)
@@ -585,7 +650,7 @@ def save_mal_item(media_type, mal_id):
         ) if anilist_data["banner_url"] else ""
 
         cast = []
-        for i, member in enumerate(anilist_data["cast"][:10]):
+        for i, member in enumerate(anilist_data["cast"][:16]):
             profile_url = member.get("profile_path")
             local_path = download_image(profile_url, f"cast/mal_{mal_id}_{i}.jpg") if profile_url else ""
             cast.append({
@@ -644,9 +709,9 @@ def fetch_anilist_data(mal_id, media_type):
         }
         bannerImage
         coverImage {
-          large
+          extraLarge
         }
-        characters(sort: [ROLE, RELEVANCE], perPage: 10) {
+        characters(sort: [ROLE, RELEVANCE], perPage: 16) {
           edges {
             role
             node {
@@ -675,13 +740,29 @@ def fetch_anilist_data(mal_id, media_type):
             }
           }
         }
+        recommendations(sort: RATING_DESC, perPage: 16) {
+          edges {
+            node {
+              mediaRecommendation {
+                idMal
+                title {
+                  romaji
+                  english
+                }
+                coverImage {
+                  large
+                }
+              }
+            }
+          }
+        }
       }
     }
     '''
 
     variables = {
         "malId": int(mal_id),
-        "type": media_type.upper()  # "ANIME" or "MANGA"
+        "type": media_type.upper()
     }
 
     headers = {
@@ -701,26 +782,24 @@ def fetch_anilist_data(mal_id, media_type):
     if not media:
         raise Exception("AniList: No data found for this ID.")
 
-    # --- Title
+    # Title
     title = media["title"].get("english") or media["title"].get("romaji") or "Unknown Title"
 
-    # --- Description
+    # Overview
     overview = media.get("description") or ""
 
-    # --- Release Date
+    # Release Date
     start = media.get("startDate")
     if start and start.get("year"):
         release_date = f"{start['year']}-{start['month'] or 1:02}-{start['day'] or 1:02}"
     else:
         release_date = ""
 
-    # --- Poster
-    poster_url = media.get("coverImage", {}).get("large")
-
-    # --- Banner
+    # Poster & Banner
+    poster_url = media.get("coverImage", {}).get("extraLarge")
     banner_url = media.get("bannerImage")
 
-    # --- Cast
+    # Cast
     cast = []
     for edge in media.get("characters", {}).get("edges", []):
         character = edge["node"]
@@ -731,7 +810,7 @@ def fetch_anilist_data(mal_id, media_type):
             "is_full_url": True,
         })
 
-    # --- Related Titles
+    # Related Titles
     related_titles = []
     for rel in media.get("relations", {}).get("edges", []):
         relation_type = rel.get("relationType", "").lower()
@@ -739,7 +818,7 @@ def fetch_anilist_data(mal_id, media_type):
             node = rel["node"]
             r_id = node.get("idMal")
             if not r_id:
-                continue  # skip if no MAL ID
+                continue
 
             r_title = node["title"].get("english") or node["title"].get("romaji") or "Unknown Title"
             r_poster = node["coverImage"].get("large") or ""
@@ -748,9 +827,27 @@ def fetch_anilist_data(mal_id, media_type):
                 "mal_id": r_id,
                 "title": r_title,
                 "poster_path": r_poster,
-                "relation": relation_type.capitalize(),  # Prequel/Sequel
+                "relation": relation_type.capitalize(),
                 "is_full_url": True,
             })
+
+    # Recommendations
+    recommendations = []
+    for edge in media.get("recommendations", {}).get("edges", []):
+        node = edge.get("node", {}).get("mediaRecommendation")
+        if not node or not node.get("idMal"):
+            continue
+
+        rec_id = node["idMal"]
+        rec_title = node["title"].get("english") or node["title"].get("romaji") or "Unknown Title"
+        rec_poster = node["coverImage"].get("large") or ""
+
+        recommendations.append({
+            "id": rec_id,
+            "title": rec_title,
+            "poster_path": rec_poster,
+            "is_full_url": True,
+        })
 
     return {
         "title": title,
@@ -760,7 +857,10 @@ def fetch_anilist_data(mal_id, media_type):
         "banner_url": banner_url,
         "cast": cast,
         "related_titles": related_titles,
+        "recommendations": recommendations,
     }
+
+
 
 # In case anilist breaks, comment out that functions and use those functions!!<3   
 # @require_GET
@@ -1029,8 +1129,20 @@ def igdb_detail(request, igdb_id):
         in_my_list = False
         item = None
 
+    formatted_release_date = ""
+
     if in_my_list:
         # Use saved data
+        screenshots = item.screenshots or []
+
+        # Format release date from DB
+        if item.release_date:
+            try:
+                parsed_date = datetime.datetime.strptime(item.release_date, "%Y-%m-%d")
+                formatted_release_date = parsed_date.strftime("%d %B %Y")
+            except ValueError:
+                formatted_release_date = item.release_date
+
         context = {
             "item": item,
             "item_id": item.id,
@@ -1041,11 +1153,11 @@ def igdb_detail(request, igdb_id):
             "overview": item.overview,
             "poster_url": item.cover_url,
             "banner_url": item.banner_url,
-            "release_date": item.release_date,
-            "cast": [],  # games don't have cast saved
+            "release_date": formatted_release_date,
+            "cast": [],
             "seasons": None,
             "recommendations": [],
-            "screenshots": [],
+            "screenshots": screenshots,
             "in_my_list": True,
         }
         return render(request, "core/detail.html", context)
@@ -1082,8 +1194,6 @@ def igdb_detail(request, igdb_id):
         return JsonResponse({"error": "Game not found."}, status=404)
 
     game = data[0]
-
-    # Parse API data
     title = game.get("name") or "Unknown Title"
     overview = game.get("summary") or game.get("storyline") or ""
 
@@ -1094,17 +1204,27 @@ def igdb_detail(request, igdb_id):
     screenshots = []
     for ss in game.get("screenshots", []):
         if ss and "url" in ss:
-            screenshots.append("https:" + ss["url"].replace("t_thumb", "t_screenshot_huge"))
+            url = "https:" + ss["url"].replace("t_thumb", "t_screenshot_huge")
+            screenshots.append({
+                "url": url,
+                "is_full_url": True
+            })
 
-    banner_url = screenshots[0] if screenshots else None
+    banner_url = screenshots[0]["url"] if screenshots else None
     screenshots = screenshots[1:] if len(screenshots) > 1 else []
 
-    release_date = None
+    # Format release date from IGDB (timestamp -> %Y-%m-%d -> %d %B %Y)
+    release_date = ""
     if game.get("first_release_date"):
-        release_date = time.strftime('%Y-%m-%d', time.localtime(game["first_release_date"]))
+        try:
+            date_str = time.strftime('%Y-%m-%d', time.localtime(game["first_release_date"]))
+            parsed_date = datetime.datetime.strptime(date_str, "%Y-%m-%d")
+            formatted_release_date = parsed_date.strftime("%d %B %Y")
+        except Exception:
+            formatted_release_date = ""  # fallback if error
 
     recommendations = []
-    for rec in game.get("similar_games", [])[:5]:
+    for rec in game.get("similar_games", [])[:16]:
         rec_cover_url = None
         if rec.get("cover") and rec["cover"].get("url"):
             rec_cover_url = "https:" + rec["cover"]["url"].replace("t_thumb", "t_cover_big")
@@ -1127,7 +1247,7 @@ def igdb_detail(request, igdb_id):
         "overview": overview,
         "poster_url": poster_url,
         "banner_url": banner_url,
-        "release_date": release_date,
+        "release_date": formatted_release_date,
         "cast": [],
         "seasons": None,
         "recommendations": recommendations,
@@ -1138,6 +1258,7 @@ def igdb_detail(request, igdb_id):
     }
 
     return render(request, "core/detail.html", context)
+
 
 
 def save_igdb_item(igdb_id):
@@ -1182,6 +1303,10 @@ def save_igdb_item(igdb_id):
         poster_url = "https:" + game["cover"]["url"].replace("t_thumb", "t_cover_big")
     local_poster = download_image(poster_url, f"posters/igdb_{igdb_id}.jpg") if poster_url else ""
 
+    # Strip media/ prefix
+    if local_poster.startswith("media/"):
+        local_poster = local_poster[len("media/"):]
+
     # Banner = first screenshot
     screenshots = game.get("screenshots", [])
     banner_url = None
@@ -1190,15 +1315,27 @@ def save_igdb_item(igdb_id):
         if banner_url_raw:
             banner_url = "https:" + banner_url_raw.replace("t_thumb", "t_screenshot_huge")
     local_banner = download_image(banner_url, f"banners/igdb_{igdb_id}.jpg") if banner_url else ""
+    if local_banner.startswith("media/"):
+        local_banner = local_banner[len("media/"):]
+
+    # Save screenshots locally (skip first, it's banner)
+    local_screenshots = []
+    for i, ss in enumerate(screenshots[1:], start=1):
+        if ss and "url" in ss:
+            url = "https:" + ss["url"].replace("t_thumb", "t_screenshot_huge")
+            local_path = download_image(url, f"screenshots/igdb_{igdb_id}_{i}.jpg")
+            if local_path.startswith("media/"):
+                local_path = local_path[len("media/"):]
+            if local_path:
+                local_screenshots.append({
+                    "url": local_path,
+                    "is_full_url": False,
+                })
 
     # Release date
     release_date = None
     if game.get("first_release_date"):
         release_date = time.strftime('%Y-%m-%d', time.localtime(game["first_release_date"]))
-
-    # Genres & Platforms
-    genres = [g["name"] for g in game.get("genres", []) if "name" in g]
-    platforms = [p["name"] for p in game.get("platforms", []) if "name" in p]
 
     # Save to DB
     MediaItem.objects.create(
@@ -1213,9 +1350,16 @@ def save_igdb_item(igdb_id):
         cast=[],
         seasons=None,
         related_titles=[],
+        screenshots=local_screenshots,
     )
 
     return JsonResponse({"success": True, "message": "Game added to list"})
+
+
+
+
+
+
 
 def check_if_in_list(source, source_id):
     return MediaItem.objects.filter(source=source, source_id=str(source_id)).exists() # useless?
@@ -1346,6 +1490,11 @@ def delete_item(request, item_id):
 
         for season in item.seasons or []:
             p = season.get("poster_path", "")
+            if p.startswith("/media/"):
+                paths_to_check.append(os.path.join(media_root, p.replace("/media/", "")))
+                
+        for shot in item.screenshots or []:
+            p = shot.get("url", "")
             if p.startswith("/media/"):
                 paths_to_check.append(os.path.join(media_root, p.replace("/media/", "")))
 

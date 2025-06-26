@@ -56,6 +56,7 @@ class MediaItem(models.Model):
     cast = models.JSONField(blank=True, null=True)        # Unified for all media types
     seasons = models.JSONField(blank=True, null=True)     # Only for TV series
     related_titles = models.JSONField(blank=True, null=True)  # Prequels/Sequels for anime/manga
+    screenshots = models.JSONField(blank=True, null=True)
 
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="planned")
     
