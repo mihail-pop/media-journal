@@ -159,6 +159,7 @@ updateFacesFromSelect();
       const banner = modal.querySelector('.modal-banner');
       const cover = modal.querySelector('.modal-cover img');
       const title = card.dataset.title;
+
 const titleElement = modal.querySelector('.modal-title');
 if (titleElement && title) {
   titleElement.textContent = title;
@@ -191,6 +192,53 @@ if (titleElement && title) {
         });
     });
   });
+
+  // List view edit button click
+document.querySelectorAll("#list-view .edit-card-btn").forEach(button => {
+  button.addEventListener("click", function (e) {
+    e.preventDefault();
+    const row = button.closest(".list-row");
+    const itemId = row.dataset.id;
+    const mediaType = row.dataset.mediaType;
+    const coverUrl = row.dataset.coverUrl;
+    const bannerUrl = row.dataset.bannerUrl;
+    const title = row.dataset.title;
+
+    const modal = document.getElementById('edit-modal');
+    const banner = modal.querySelector('.modal-banner');
+    const cover = modal.querySelector('.modal-cover img');
+    const titleElement = modal.querySelector('.modal-title');
+
+    if (titleElement && title) {
+      titleElement.textContent = title;
+    }
+
+    if (cover && coverUrl) {
+      cover.src = coverUrl;
+    }
+
+    if (banner && bannerUrl) {
+      banner.dataset.banner = bannerUrl;
+      banner.style.backgroundImage = `url("${bannerUrl}")`;
+    }
+
+    const form = document.getElementById("edit-form");
+    if (!form) return console.error("Edit form not found");
+
+    fetch(`/get-item/${itemId}/`)
+      .then(res => res.json())
+      .then(data => {
+        if (!data.success) return alert("Failed to load item");
+        populateForm(form, data.item);
+        modal.classList.remove("modal-hidden");
+        overlay.classList.remove("modal-hidden");
+      })
+      .catch(err => {
+        console.error("Fetch error:", err);
+        alert("Failed to load item");
+      });
+  });
+});
 
   // Detail page edit button click
   const detailEditBtn = document.getElementById("edit-button");

@@ -1,41 +1,185 @@
 {% extends 'core/base.html' %}
 {% load static %}
+{% load custom_filters %}
 
 {% block head %}
 {{ block.super }}
-<link rel="stylesheet" href="{% static 'core/css/lists.css' %}" />
+<link rel="stylesheet" href="{% static 'core/css/lists.css' %}">
 <link rel="stylesheet" href="{% static 'core/css/modal.css' %}">
 {% endblock %}
 
 {% block content %}
-<h1>Games List</h1>
-
-{% if items %}
-<div class="card-grid">
-  {% for item in items %}
-  <div class="card"
-       data-id="{{ item.id }}"
-       data-media-type="{{ item.media_type }}"
-       data-cover-url="{{ item.cover_url|default:'/static/img/cover_fallback.jpg' }}"
-       data-banner-url="{{ item.banner_url|default:'/static/img/banner_fallback.jpg' }}"
-       data-title="{{ item.title|escape }}">
-       
-    <a href="{% url 'igdb_detail' igdb_id=item.source_id %}" class="card-link">
-      <img src="{{ item.cover_url }}" alt="{{ item.title }}">
-      <div class="card-title">{{ item.title }}</div>
-    </a>
-    <button class="edit-card-btn">⋯</button>
+<!-- Top Banner Rotator -->
+<div class="banner-rotator">
+  <img id="rotating-banner" src="/static/img/banner_fallback.jpg" alt="Banner">
+  <div class="banner-overlay">
+    <div class="banner-quote"></div>
   </div>
-  {% endfor %}
 </div>
-{% else %}
-<p>No items in your list yet.</p>
-{% endif %}
 
-{% include 'core/partials/edit_modal.html' %}
+<div class="separator-bar"></div>
+
+<!-- Main Section: Sidebar + List Area -->
+<div class="list-page-container">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <input type="text" id="search-input" placeholder="Search your games.." autocomplete="off">
+    {% regroup items by status as status_groups %}
+<div class="filter-buttons-wrapper">
+  <h3>Lists</h3>
+  <div class="filter-buttons">
+    <button class="filter-btn active" data-filter="all">
+      <span class="btn-text">All</span>
+      <span class="btn-count">{{ items|length }}</span>
+    </button>
+    {% for group in status_groups %}
+    <button class="filter-btn" data-filter="{{ group.grouper }}">
+      <span class="btn-text">{{ group.grouper|underscore_to_space|title }}</span>
+      <span class="btn-count">{{ group.list|length }}</span>
+    </button>
+    {% endfor %}
+  </div>
+</div>
+
+    <h3>List Toggle</h3>
+    <div class="view-toggle">
+      <button id="card-view-btn" class="toggle-btn active">Card View</button>
+      <button id="list-view-btn" class="toggle-btn">List View</button>
+    </div>
+  </aside>
+
+  <!-- Content Area -->
+  <section class="list-content">
+    {% if items %}
+    
+    <!-- Card View -->
+    <div id="card-view">
+      {% for group in status_groups %}
+      <div class="status-group" data-status="{{ group.grouper }}">
+        <h2 class="status-header">{{ group.grouper|underscore_to_space|title }}</h2>
+        <div class="card-grid">
+          {% for item in group.list %}
+          <div class="card"
+               data-id="{{ item.id }}"
+               data-status="{{ item.status }}"
+               data-personal-rating="{{ item.personal_rating|default:'0' }}"
+               data-title="{{ item.title|escape }}"
+               data-cover-url="{{ item.cover_url|default:'/static/img/cover_fallback.jpg' }}"
+               data-banner-url="{{ item.banner_url|default:'/static/img/banner_fallback.jpg' }}"
+               data-notes="{{ item.notes|escape }}">
+
+            <a href="{% url 'igdb_detail' igdb_id=item.source_id %}" class="card-link">
+              <img src="{{ item.cover_url|default:'/static/img/cover_fallback.jpg' }}" alt="{{ item.title }}" loading="lazy"> <!-- Check if this is working, lazy loading -->
+              <div class="card-title-overlay">
+                <span class="card-title">{{ item.title }}</span>
+                <div class="card-meta-row">
+    {% if item.progress_main %}
+    <div class="card-progress">
+      {% if item.progress_main == item.total_main %}
+        {{ item.progress_main }}
+      {% else %}
+        {{ item.progress_main }}{% if item.total_main %}/{{ item.total_main }}{% endif %}
+      {% endif %}
+    </div>
+  {% endif %}
+{% if item.personal_rating %}
+  <span class="card-rating">
+    {% if item.personal_rating == 1 %}
+      <!-- Sad face -->
+      <svg aria-hidden="true" focusable="false" data-prefix="far" data-icon="frown" class="svg-inline--fa fa-frown fa-w-16 fa-lg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><path fill="currentColor" d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zm0 448c-110.3 0-200-89.7-200-200S137.7 56 248 56s200 89.7 200 200-89.7 200-200 200zm-80-216c17.7 0 32-14.3 32-32s-14.3-32-32-32-32 14.3-32 32 14.3 32 32 32zm160-64c-17.7 0-32 14.3-32 32s14.3 32 32 32 32-14.3 32-32-14.3-32-32-32zm-80 128c-40.2 0-78 17.7-103.8 48.6-8.5 10.2-7.1 25.3 3.1 33.8 10.2 8.4 25.3 7.1 33.8-3.1 16.6-19.9 41-31.4 66.9-31.4s50.3 11.4 66.9 31.4c8.1 9.7 23.1 11.9 33.8 3.1 10.2-8.5 11.5-23.6 3.1-33.8C326 321.7 288.2 304 248 304z"></path></svg>
+    {% elif item.personal_rating == 2 %}
+      <!-- Neutral face -->
+      <svg aria-hidden="true" focusable="false" data-prefix="far" data-icon="meh" class="svg-inline--fa fa-meh fa-w-16 fa-lg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><path fill="currentColor" d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zm0 448c-110.3 0-200-89.7-200-200S137.7 56 248 56s200 89.7 200 200-89.7 200-200 200zm-80-216c17.7 0 32-14.3 32-32s-14.3-32-32-32-32 14.3-32 32 14.3 32 32 32zm160-64c-17.7 0-32 14.3-32 32s14.3 32 32 32 32-14.3 32-32-14.3-32-32-32zm8 144H160c-13.2 0-24 10.8-24 24s10.8 24 24 24h176c13.2 0 24-10.8 24-24s-10.8-24-24-24z"></path></svg>
+    {% elif item.personal_rating == 3 %}
+      <!-- Happy face -->
+      <svg aria-hidden="true" focusable="false" data-prefix="far" data-icon="smile" class="svg-inline--fa fa-smile fa-w-16 fa-lg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><path fill="currentColor" d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zm0 448c-110.3 0-200-89.7-200-200S137.7 56 248 56s200 89.7 200 200-89.7 200-200 200zm-80-216c17.7 0 32-14.3 32-32s-14.3-32-32-32-32 14.3-32 32 14.3 32 32 32zm160 0c17.7 0 32-14.3 32-32s-14.3-32-32-32-32 14.3-32 32 14.3 32 32 32zm4 72.6c-20.8 25-51.5 39.4-84 39.4s-63.2-14.3-84-39.4c-8.5-10.2-23.7-11.5-33.8-3.1-10.2 8.5-11.5 23.6-3.1 33.8 30 36 74.1 56.6 120.9 56.6s90.9-20.6 120.9-56.6c8.5-10.2 7.1-25.3-3.1-33.8-10.1-8.4-25.3-7.1-33.8 3.1z"></path></svg>
+    {% endif %}
+  </span>
+{% endif %}</div>
+              </div>
+            </a>
+            <button class="edit-card-btn">⋯</button>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- List View -->
+    <div id="list-view" class="list-table" style="display: none;">
+      {% for group in status_groups %}
+      <div class="status-group" data-status="{{ group.grouper }}">
+        <h2 class="status-header">{{ group.grouper|underscore_to_space|title }}</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Rating</th>
+              <th>Status</th>
+              <th>Hours</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in group.list %}
+            <tr class="list-row"
+                data-id="{{ item.id }}"
+                data-status="{{ item.status }}"
+                data-personal-rating="{{ item.personal_rating|default:'0' }}"
+                data-title="{{ item.title|escape }}"
+                data-cover-url="{{ item.cover_url|default:'/static/img/cover_fallback.jpg' }}"
+                data-banner-url="{{ item.banner_url|default:'/static/img/banner_fallback.jpg' }}">
+              
+              <td>
+                <a href="{% url 'igdb_detail' igdb_id=item.source_id %}">
+                  {{ item.title }}
+                  <button class="edit-card-btn">⋯</button>
+                </a>
+              </td>
+              <td>
+{% if item.personal_rating %}
+  <span class="card-rating">
+    {% if item.personal_rating == 1 %}
+      <!-- Sad face -->
+      <svg aria-hidden="true" focusable="false" data-prefix="far" data-icon="frown" class="svg-inline--fa fa-frown fa-w-16 fa-lg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><path fill="currentColor" d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zm0 448c-110.3 0-200-89.7-200-200S137.7 56 248 56s200 89.7 200 200-89.7 200-200 200zm-80-216c17.7 0 32-14.3 32-32s-14.3-32-32-32-32 14.3-32 32 14.3 32 32 32zm160-64c-17.7 0-32 14.3-32 32s14.3 32 32 32 32-14.3 32-32-14.3-32-32-32zm-80 128c-40.2 0-78 17.7-103.8 48.6-8.5 10.2-7.1 25.3 3.1 33.8 10.2 8.4 25.3 7.1 33.8-3.1 16.6-19.9 41-31.4 66.9-31.4s50.3 11.4 66.9 31.4c8.1 9.7 23.1 11.9 33.8 3.1 10.2-8.5 11.5-23.6 3.1-33.8C326 321.7 288.2 304 248 304z"></path></svg>
+    {% elif item.personal_rating == 2 %}
+      <!-- Neutral face -->
+      <svg aria-hidden="true" focusable="false" data-prefix="far" data-icon="meh" class="svg-inline--fa fa-meh fa-w-16 fa-lg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><path fill="currentColor" d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zm0 448c-110.3 0-200-89.7-200-200S137.7 56 248 56s200 89.7 200 200-89.7 200-200 200zm-80-216c17.7 0 32-14.3 32-32s-14.3-32-32-32-32 14.3-32 32 14.3 32 32 32zm160-64c-17.7 0-32 14.3-32 32s14.3 32 32 32 32-14.3 32-32-14.3-32-32-32zm8 144H160c-13.2 0-24 10.8-24 24s10.8 24 24 24h176c13.2 0 24-10.8 24-24s-10.8-24-24-24z"></path></svg>
+    {% elif item.personal_rating == 3 %}
+      <!-- Happy face -->
+      <svg aria-hidden="true" focusable="false" data-prefix="far" data-icon="smile" class="svg-inline--fa fa-smile fa-w-16 fa-lg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><path fill="currentColor" d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zm0 448c-110.3 0-200-89.7-200-200S137.7 56 248 56s200 89.7 200 200-89.7 200-200 200zm-80-216c17.7 0 32-14.3 32-32s-14.3-32-32-32-32 14.3-32 32 14.3 32 32 32zm160 0c17.7 0 32-14.3 32-32s-14.3-32-32-32-32 14.3-32 32 14.3 32 32 32zm4 72.6c-20.8 25-51.5 39.4-84 39.4s-63.2-14.3-84-39.4c-8.5-10.2-23.7-11.5-33.8-3.1-10.2 8.5-11.5 23.6-3.1 33.8 30 36 74.1 56.6 120.9 56.6s90.9-20.6 120.9-56.6c8.5-10.2 7.1-25.3-3.1-33.8-10.1-8.4-25.3-7.1-33.8 3.1z"></path></svg>
+    {% endif %}
+  </span>
+{% endif %}
+              </td>
+              <td>{{ item.get_status_display }}</td>
+<td style="text-align: center;">
+  {% if item.progress_main %}
+    {% if item.progress_main == item.total_main %}
+      {{ item.progress_main }}
+    {% else %}
+      {{ item.progress_main }}{% if item.total_main %} / {{ item.total_main }}{% endif %}
+    {% endif %}
+  {% endif %}
+</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endfor %}
+    </div>
+
+    {% else %}
+    <p>No items in your list yet.</p>
+    {% endif %}
+  </section>
+
+  {% include 'core/partials/edit_modal.html' %}
 {% endblock %}
 
 {% block script %}
 {{ block.super }}
 <script src="{% static 'core/js/edit_modal.js' %}"></script>
+<script src="{% static 'core/js/lists.js' %}"></script>
 {% endblock %}

@@ -49,6 +49,11 @@ body {
   z-index: 0;
 }
 
+.banner-section.no-banner {
+  height: 270px; /* or 150px, adjust as needed */
+  background-color: #151f2e;
+}
+
 .banner-overlay {
   position: absolute;
   top: 0;
@@ -57,6 +62,11 @@ body {
   width: 100%;
   background: linear-gradient(to bottom, #060d224d, transparent 40%, #060d224d 100%);
   z-index: 1;
+}
+
+.banner-section.no-banner .banner-overlay{
+  background: none;
+ 
 }
 
 /* --- TOP SECTION (under banner) --- */

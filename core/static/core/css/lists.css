@@ -1,97 +1,259 @@
-/* lists.css */
-
-/* Container for the whole list page */
-.list-container {
-  max-width: 1200px;
-  margin: 2rem auto;
-  padding: 0 1rem;
+body {
+  background-color: #0b1622; /* example dark background */
+  margin: 0;
+  padding: 0;
+  color: #8596A5;
 }
 
-/* Page title */
-.list-container h1 {
-  font-size: 8.5rem;
+.status-header {
+  margin-top: 50px;    /* adjust this value as you want */
+  margin-bottom: 10px; /* adjust this value as you want */
+  font-weight: bold;
+}
+
+.separator-bar {
+  width: 100%;
+  height: 45px; /* or any height you want */
+  background-color: #151F2E; /* choose your color */
   margin-bottom: 1.5rem;
-  text-align: center;
-  color: #222;
 }
 
-/* Grid for cards */
+/* --- Page Layout --- */
+.list-page-container {
+  display: flex;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 10rem 2rem;
+  
+}
+
+/* --- Banner Rotator --- */
+.banner-rotator {
+  position: relative; /* Needed to contain the overlay */
+  width: 100%;
+  height: 330px;
+  overflow: hidden;
+}
+
+.banner-rotator img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: 0;
+  object-position: center 15%;
+
+  /* Add smooth opacity transition */
+  transition: opacity 1s ease-in-out;
+  opacity: 1;
+}
+
+/* The overlay that covers the whole image */
+.banner-overlay {
+  position: absolute; /* sits over the image */
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(to bottom, #060d22cc, transparent 40%, #060d22cc 100%);
+  z-index: 1;
+  pointer-events: none; /* let clicks pass through */
+  display: flex;
+  justify-content: flex-end; /* align quote container to right */
+  align-items: stretch;
+  padding-right: 2rem;
+  box-sizing: border-box;
+}
+
+/* The quote container on right side, initially hidden */
+.banner-quote {
+  display: none; /* toggle via JS */
+  color: white;
+  font-style: italic;
+  padding: 1rem 2rem;
+  text-align: right;
+  height: 100%;
+  max-width: 40%;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  box-sizing: border-box;
+  background: rgba(0, 0, 0, 0.4);
+  pointer-events: auto; /* allow text selection if needed */
+  border-radius: 0 0 0 12px;
+
+  height: 50%;            /* reduce height */
+  margin-top: auto;       /* push it down inside flex container */
+  margin-bottom: 2rem;    /* add some space from bottom */
+  max-width: 40%;
+
+  transition: opacity 1s ease-in-out;
+}
+
+/* --- Sidebar --- */
+.sidebar {
+  width: 15%;
+  padding-right: 2.5rem;
+  display: flex;
+  flex-direction: column;
+  
+}
+
+#search-input {
+  padding: 0.6rem 0.8rem;
+  border-radius: 6px;
+  border: none;
+  font-size: 1rem;
+  background: #1f2a38;
+  color: #cecece;
+}
+
+#search-input:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+#search-input::placeholder {
+  color: #cecece; /* placeholder color */
+}
+
+.filter-buttons,
+.view-toggle {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.filter-btn,
+.toggle-btn {
+  display: flex;              /* make button a flex container */
+  justify-content: space-between; /* push text left, count right */
+  align-items: center;        /* vertically center content */
+  text-align: left;
+  padding: 0.5rem;
+  background: none;
+  border: none;
+  color: #8596A5;
+  font-size: 0.95rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  width: 100%;
+}
+
+.btn-text {
+  /* left side - default alignment */
+}
+
+.btn-count {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  /* right side */
+  font-weight: bold;
+  /* optionally add color or spacing */
+}
+
+.filter-buttons-wrapper:hover .btn-count {
+  opacity: 1;
+}
+
+.sidebar h3 {
+  color: #8596A5;
+  font-weight: 600;
+  font-size: 1rem;
+  margin-top: 1.5rem;   /* Adjust as needed */
+  margin-bottom: 0.75rem;  /* Adjust as needed */
+}
+
+.filter-btn:hover,
+.toggle-btn:hover {
+  background-color: #32445b;
+}
+
+.filter-btn.active,
+.toggle-btn.active {
+  background-color: #1f2a38;
+}
+
+/* --- Main List Content --- */
+.list-content {
+  width: 80%;
+  margin-top: -20px;
+}
+
+/* --- Card View Grid --- */
 .card-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 1.2rem;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 150px));
+  gap: 0.9rem;
 }
 
-/* Individual card */
+/* Individual Card */
 .card {
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 6px rgb(0 0 0 / 0.15);
+  border-radius: 4px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  position: relative;
   transition: transform 0.15s ease-in-out;
   cursor: pointer;
 }
 
-.card:hover {
-  transform: scale(1.05);
-  box-shadow: 0 6px 12px rgb(0 0 0 / 0.25);
-}
 
-/* Card image */
+
+/* Card Image */
 .card img {
-  width: 100%;
-  height: 270px;
+  width: 150px;
+  height: 210px;
   object-fit: cover;
   display: block;
 }
 
-/* Title below the image */
+/* Title & Rating Overlay */
+.card-title-overlay {
+  background: rgba(14,15,15, .8);
+  color: #EDF1F5;
+  padding: 0.5rem 0.6rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-start;
+  font-size: 0.8rem;
+  gap: 0.5rem;
+
+  position: absolute;    /* new */
+  bottom: 0;                /* new */
+  left: 0;               /* new */
+  right: 0;              /* new */
+  z-index: 1;            /* ensures it stays above image */
+
+  min-height: 48px;
+}
+
 .card-title {
-  padding: 0.6rem 0.8rem;
-  font-weight: 600;
-  font-size: 1rem;
-  color: #111;
-  flex-grow: 1;
-  text-align: center;
-  line-height: 1.2;
+  width: 100%;
+  flex: 1;
 }
 
-/* Add to list button */
-.add-to-list-btn {
-  margin: 0.6rem auto 1rem auto;
-  padding: 0.5rem 1.1rem;
-  background-color: #007bff;
-  border: none;
-  border-radius: 5px;
-  color: rgb(71, 67, 67);
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
+.card-rating {
+  align-self: flex-end;
+  font-size: 1.1rem;
 }
 
-.add-to-list-btn:hover {
-  background-color: #0056b3;
+.card-meta-row {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  gap: 0.5rem;
 }
 
-/* Responsive tweaks */
-@media (max-width: 600px) {
-  .card img {
-    height: 220px;
-  }
-  .card-title {
-    font-size: 0.9rem;
-  }
-  .add-to-list-btn {
-    padding: 0.4rem 0.9rem;
-    font-size: 0.9rem;
-  }
+.card-progress {
+  font-size: 0.75rem;
+  color: #8596A5;
 }
 
-.card {
-  position: relative;
-}
+
+/* Edit Button */
 .edit-card-btn {
   position: absolute;
   top: 5px;
@@ -104,15 +266,150 @@
   cursor: pointer;
   border-radius: 4px;
 }
+
 .card:hover .edit-card-btn {
   display: block;
 }
 
+.list-table .edit-card-btn {
+  display: none;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  font-size: 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.list-table tr:hover .edit-card-btn {
+  display: inline-block;
+}
+
+/* Rating Badge */
 .face-field {
-  background-color: #007bff; /* blue */
-  padding: 8px;              /* some space around the face */
-  border-radius: 8px;        /* slightly rounded corners */
-  display: inline-flex;      /* to fit tightly around the face */
+  background-color: none;
+  padding: 4px 8px;
+  border-radius: 8px;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
 }
+
+.card-rating svg {
+  width: 1em;
+  height: 1em;
+  color: grey;
+}
+
+/* --- List View Table --- */
+.list-table {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.list-table table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+  table-layout: fixed;
+}
+
+.list-table th:nth-child(1),
+.list-table td:nth-child(1) {
+  width: 50%;
+}
+
+.list-table th:nth-child(2),
+.list-table td:nth-child(2) {
+  width: 10%;
+  text-align: center;
+}
+
+.list-table th:nth-child(3),
+.list-table td:nth-child(3) {
+  color: #8596A5;
+  width: 20%;
+  text-align: center;
+}
+
+.list-table th:nth-child(4),
+.list-table td:nth-child(4) {
+  color: #8596A5;
+  width: 10%;
+  text-align: center;
+}
+
+.list-table th:nth-child(5),
+.list-table td:nth-child(5) {
+  color: #8596A5;
+  width: 10%;
+  text-align: center;
+}
+
+.list-table th,
+.list-table td {
+  padding: 0.8rem 1rem;
+  text-align: left;
+}
+
+.list-table td {
+  padding: 0.5rem 1rem;
+  vertical-align: middle;
+  position: relative;
+}
+
+.list-table th {
+  background-color: #1f2a38;
+  color: #8596A5;
+}
+
+.list-table td {
+  background-color: #151f2e;  
+  color: #111;
+}
+
+.list-table a {
+  color: #8596A5;
+  text-decoration: none;
+}
+
+.list-table a:hover {
+  text-decoration: underline;
+}
+
+/* --- Responsive --- */
+@media (max-width: 900px) {
+  .list-page-container {
+    flex-direction: column;
+  }
+
+  .sidebar, .list-content {
+    width: 100%;
+  }
+
+  .banner-rotator {
+    height: 200px;
+  }
+
+  .card img {
+    height: 220px;
+  }
+}
+
+@media (max-width: 600px) {
+  .card-title-overlay {
+    flex-direction: column;
+    align-items: flex-start;
+    font-size: 0.85rem;
+  }
+
+  .face-field {
+    font-size: 0.9rem;
+  }
+}
+

@@ -9,10 +9,13 @@
 
 {% block content %}
 
-<!-- Banner -->
-<div class="banner-section" data-banner="{{ banner_url|default:'https://dummyimage.com/1280x400/444444/ffffff&text=No+Banner' }}">
-  <div class="banner-overlay"></div>
-</div>
+
+{% with banner=banner_url|default_if_none:'' %}
+  <div class="banner-section {% if not banner %}no-banner{% endif %}"
+       {% if banner %}data-banner="{{ banner_url}}"{% endif %}>
+    <div class="banner-overlay"></div>
+  </div>
+{% endwith %}
 
 <!-- Colored section below banner -->
 <div class="top-colored-section">

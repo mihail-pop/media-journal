@@ -10,34 +10,163 @@ import requests
 import logging
 import os
 import datetime
+from django.db.models import Case, When, IntegerField, Value, F
+
+
 logger = logging.getLogger(__name__)
 
 IGDB_ACCESS_TOKEN = None
 IGDB_TOKEN_EXPIRY = 0
 
+
+
+
+
 def movies(request):
-    movies = MediaItem.objects.filter(media_type="movie").order_by("-date_added")
+
+    status_ordering = Case(
+        When(status='ongoing', then=Value(1)),
+        When(status='completed', then=Value(2)),
+        When(status='on_hold', then=Value(3)),
+        When(status='planned', then=Value(4)),
+        When(status='dropped', then=Value(5)),
+        default=Value(6),  # just in case
+        output_field=IntegerField(),
+    )
+    
+    rating_ordering = Case(
+        When(personal_rating=3, then=Value(1)),
+        When(personal_rating=2, then=Value(2)),
+        When(personal_rating=1, then=Value(3)),
+        When(personal_rating=None, then=Value(4)),
+        default=Value(4),
+        output_field=IntegerField(),
+    )
+    
+    movies = MediaItem.objects.filter(media_type="movie").annotate(
+        status_order=status_ordering,
+        rating_order=rating_ordering
+    ).order_by('status_order', 'rating_order', 'title')
+
     return render(request, 'core/movies.html', {'items': movies, 'page_type': 'movie'})
 
+
 def tvshows(request):
-    tvshows = MediaItem.objects.filter(media_type="tv").order_by("-date_added")
+    status_ordering = Case(
+        When(status='ongoing', then=Value(1)),
+        When(status='completed', then=Value(2)),
+        When(status='on_hold', then=Value(3)),
+        When(status='planned', then=Value(4)),
+        When(status='dropped', then=Value(5)),
+        default=Value(6),
+        output_field=IntegerField(),
+    )
+    
+    rating_ordering = Case(
+        When(personal_rating=3, then=Value(1)),
+        When(personal_rating=2, then=Value(2)),
+        When(personal_rating=1, then=Value(3)),
+        When(personal_rating=None, then=Value(4)),
+        default=Value(4),
+        output_field=IntegerField(),
+    )
+    
+    tvshows = MediaItem.objects.filter(media_type="tv").annotate(
+        status_order=status_ordering,
+        rating_order=rating_ordering
+    ).order_by('status_order', 'rating_order', 'title')
+
     return render(request, 'core/tvshows.html', {'items': tvshows, 'page_type': 'tv'})
 
+
 def anime(request):
-    anime = MediaItem.objects.filter(media_type="anime").order_by("-date_added")
+    status_ordering = Case(
+        When(status='ongoing', then=Value(1)),
+        When(status='completed', then=Value(2)),
+        When(status='on_hold', then=Value(3)),
+        When(status='planned', then=Value(4)),
+        When(status='dropped', then=Value(5)),
+        default=Value(6),
+        output_field=IntegerField(),
+    )
+    
+    rating_ordering = Case(
+        When(personal_rating=3, then=Value(1)),
+        When(personal_rating=2, then=Value(2)),
+        When(personal_rating=1, then=Value(3)),
+        When(personal_rating=None, then=Value(4)),
+        default=Value(4),
+        output_field=IntegerField(),
+    )
+    
+    anime = MediaItem.objects.filter(media_type="anime").annotate(
+        status_order=status_ordering,
+        rating_order=rating_ordering
+    ).order_by('status_order', 'rating_order', 'title')
+
     return render(request, 'core/anime.html', {'items': anime, 'page_type': 'anime'})
 
 def games(request):
-    games = MediaItem.objects.filter(media_type="game").order_by("-date_added")
+    status_ordering = Case(
+        When(status='ongoing', then=Value(1)),
+        When(status='completed', then=Value(2)),
+        When(status='on_hold', then=Value(3)),
+        When(status='planned', then=Value(4)),
+        When(status='dropped', then=Value(5)),
+        default=Value(6),
+        output_field=IntegerField(),
+    )
+    
+    rating_ordering = Case(
+        When(personal_rating=3, then=Value(1)),
+        When(personal_rating=2, then=Value(2)),
+        When(personal_rating=1, then=Value(3)),
+        When(personal_rating=None, then=Value(4)),
+        default=Value(4),
+        output_field=IntegerField(),
+    )
+    
+    games = MediaItem.objects.filter(media_type="game").annotate(
+        status_order=status_ordering,
+        rating_order=rating_ordering
+    ).order_by('status_order', 'rating_order', 'title')
+
     return render(request, 'core/games.html', {'items': games, 'page_type': 'game'})
+
+def manga(request):
+    status_ordering = Case(
+        When(status='ongoing', then=Value(1)),
+        When(status='completed', then=Value(2)),
+        When(status='on_hold', then=Value(3)),
+        When(status='planned', then=Value(4)),
+        When(status='dropped', then=Value(5)),
+        default=Value(6),
+        output_field=IntegerField(),
+    )
+    
+    rating_ordering = Case(
+        When(personal_rating=3, then=Value(1)),
+        When(personal_rating=2, then=Value(2)),
+        When(personal_rating=1, then=Value(3)),
+        When(personal_rating=None, then=Value(4)),
+        default=Value(4),
+        output_field=IntegerField(),
+    )
+    
+    manga = MediaItem.objects.filter(media_type="manga").annotate(
+        status_order=status_ordering,
+        rating_order=rating_ordering
+    ).order_by('status_order', 'rating_order', 'title')
+
+    return render(request, 'core/manga.html', {'items': manga, 'page_type': 'manga'})
 
 def books(request):
     books = MediaItem.objects.filter(media_type="book").order_by("-date_added")
     return render(request, 'core/books.html', {'items': books, 'page_type': 'book'})
 
-def manga(request):
-    manga = MediaItem.objects.filter(media_type="manga").order_by("-date_added")
-    return render(request, 'core/manga.html', {'items': manga, 'page_type': 'manga'})
+def home(request):
+    # no search bar here
+    return render(request, 'core/home.html', {})
 
 def settings_page(request):
     keys = APIKey.objects.all().order_by("name")
@@ -50,15 +179,8 @@ def settings_page(request):
         'existing_names': existing_names,
     })
 
-def home(request):
-    # no search bar here
-    return render(request, 'core/home.html', {})
-
-
 
 # Anime
-
-
 @require_GET
 def mal_search(request):
     query_str = request.GET.get("q", "").strip()
