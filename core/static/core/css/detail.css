@@ -60,7 +60,7 @@ body {
   left: 0;
   height: 100%;
   width: 100%;
-  background: linear-gradient(to bottom, #060d224d, transparent 40%, #060d224d 100%);
+  background: linear-gradient(180deg, rgba(6, 13, 34, 0) 40%, rgba(6, 13, 34, 0.6) 100%);
   z-index: 1;
 }
 
@@ -197,6 +197,7 @@ body {
 .main-colored-section {
   background-color: #0b1622;
   padding: 2rem 1rem;
+  min-height: calc(100vh - 600px);
 }
 
 /* --- SECTION LAYOUTS --- */

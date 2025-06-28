@@ -1,6 +1,131 @@
 {% extends 'core/base.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block head %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'core/css/home.css' %}">
+{% endblock %}
 
 {% block content %}
-<h1>Welcome to Media Journal</h1>
-<!-- put your favorites, stats, charts here -->
+
+<!-- Top Banner Rotator -->
+<div class="banner-rotator">
+  <img id="rotating-banner" src="{% static 'img/banner_fallback.jpg' %}" alt="Banner">
+  <div class="banner-overlay">
+    <div class="banner-quote"></div>
+  </div>
+</div>
+
+<!-- Separator Bar -->
+<div class="separator-bar"></div>
+
+<!-- Stats Section -->
+<section class="stats-section">
+  <div class="activity-graph">
+    <h3>Activity History</h3>
+<div class="activity-grid">
+  {% for column in activity_columns %}
+    <div class="activity-column">
+      {% for day in column %}
+        <div class="activity-cell 
+                    {% if day.count == 0 %}activity-none
+                    {% elif day.count == 1 %}activity-low
+                    {% else %}activity-high{% endif %}"
+             title="{{ day.date }} — {{ day.count }} item{{ day.count|pluralize }} added">
+        </div>
+      {% endfor %}
+    </div>
+  {% endfor %}
+</div>
+  </div>
+
+  <div class="stats-summary-box">
+    <h2>Stats</h2>
+    <ul>
+      <li>Total Movies: {{ stats.movies }}</li>
+      <li>Total TV Shows: {{ stats.tvshows }}</li>
+      <li>Total Anime: {{ stats.anime }}</li>
+      <li>Total Manga: {{ stats.manga }}</li>
+      <li>Total Games: {{ stats.games }}</li>
+    </ul>
+  </div>
+</section>
+
+
+
+<!-- Favorites Section -->
+<section class="favorites-section">
+  {% for row in favorite_sections|slice:":10"|chunk:2 %}
+    <div class="favorites-row">
+      {% for category, items in row %}
+        {% if items %}
+        <div class="favorites-column">
+          <h2 class="favorites-header" onclick="openFavoritesOverlay('{{ category }}')">{{ category }}</h2>
+          <div class="card-grid">
+            {% for item in items|slice:":25" %}
+            <div class="card"
+                 data-banner-url="{{ item.banner_url|default:'/static/img/banner_fallback.jpg' }}"
+                 data-notes="{{ item.notes|escape }}">
+{% if item.media_type in 'movie,tvshow' %}
+  <a href="{% url 'tmdb_detail' media_type=item.media_type tmdb_id=item.source_id %}">
+{% elif item.media_type == 'anime' or item.media_type == 'manga' %}
+  <a href="{% url 'mal_detail' media_type=item.media_type mal_id=item.source_id %}">
+{% elif item.media_type == 'game' %}
+  <a href="{% url 'igdb_detail' igdb_id=item.source_id %}">
+{% else %}
+  <a href="#">
+{% endif %}
+                <img src="{{ item.cover_url|default:'/static/img/cover_fallback.jpg' }}" alt="{{ item.title }}">
+              </a>
+  <div class="hover-title-overlay">
+    <span class="hover-title-text">{{ item.title }}</span>
+  </div>
+
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+  {% endfor %}
+</section>
+
+{% for category, items in favorite_sections %}
+  {% if items %}
+  <div class="favorites-overlay hidden" id="overlay-{{ category|slugify }}">
+    <div class="overlay-content">
+      <h2>{{ category }}</h2>
+      <button onclick="closeFavoritesOverlay('{{ category|slugify }}')">Close</button>
+      <div class="card-grid">
+        {% for item in items %}
+        <div class="card">
+          {% if item.media_type in 'movie,tvshow' %}
+            <a href="{% url 'tmdb_detail' media_type=item.media_type tmdb_id=item.source_id %}">
+          {% elif item.media_type == 'anime' or item.media_type == 'manga' %}
+            <a href="{% url 'mal_detail' media_type=item.media_type mal_id=item.source_id %}">
+          {% elif item.media_type == 'game' %}
+            <a href="{% url 'igdb_detail' igdb_id=item.source_id %}">
+          {% else %}
+            <a href="#">
+          {% endif %}
+              <img src="{{ item.cover_url|default:'/static/img/cover_fallback.jpg' }}" alt="{{ item.title }}">
+            </a>
+            <div class="hover-title-overlay">
+              <span class="hover-title-text">{{ item.title }}</span>
+            </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+{% endfor %}
+
+{% endblock %}
+
+{% block script %}
+{{ block.super }}
+<script src="{% static 'core/js/home.js' %}"></script>
 {% endblock %}

@@ -55,7 +55,7 @@ body {
   left: 0;
   height: 100%;
   width: 100%;
-  background: linear-gradient(to bottom, #060d22cc, transparent 40%, #060d22cc 100%);
+  background: linear-gradient(180deg, rgba(6, 13, 34, 0) 40%, rgba(6, 13, 34, 0.6) 100%);
   z-index: 1;
   pointer-events: none; /* let clicks pass through */
   display: flex;

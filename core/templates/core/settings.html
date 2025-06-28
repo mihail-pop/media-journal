@@ -9,6 +9,20 @@
 <div class="settings-page-content">
   <h1>Settings</h1>
 
+<div class="settings-section">
+  <button class="collapsible">Backup</button>
+  <div class="collapsible-content">
+    <div class="backup-actions">
+      <button id="download-backup-btn">Download Backup</button>
+      <input type="file" id="upload-backup-input" accept=".zip" style="display: none;" />
+      <button id="upload-backup-btn">Load Backup</button>
+    </div>
+    <p style="font-size: 0.9rem; margin-top: 0.5rem; text-align: center;">
+      Here you can save or restore your entire media list and all saved images (covers, banners, cast, etc).
+    </p>
+  </div>
+</div>
+
   <div class="settings-section">
     <button class="collapsible">API Keys</button>
     <div class="collapsible-content">
@@ -136,5 +150,46 @@
       });
     });
   });
+</script>
+
+<script>
+  function getCookie(name) {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(";").shift();
+}
+document.getElementById("download-backup-btn").addEventListener("click", function () {
+  window.location.href = "/backup/export/";
+});
+
+document.getElementById("upload-backup-btn").addEventListener("click", function () {
+  document.getElementById("upload-backup-input").click();
+});
+
+document.getElementById("upload-backup-input").addEventListener("change", function () {
+  const file = this.files[0];
+  if (!file) return;
+
+  const formData = new FormData();
+  formData.append("backup_zip", file);
+  const csrftoken = getCookie("csrftoken");
+
+  fetch("/backup/import/", {
+  method: "POST",
+  headers: {
+    "X-CSRFToken": csrftoken,
+  },
+  body: formData,
+})
+  .then((response) => response.json())
+  .then((data) => {
+    alert(data.message || data.error || "Import finished.");
+    window.location.reload();
+  })
+  .catch((err) => {
+    console.error("Backup import failed:", err);
+    alert("Backup import failed.");
+  });
+});
 </script>
 {% endblock %}

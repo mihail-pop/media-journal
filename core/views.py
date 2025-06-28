@@ -1,7 +1,15 @@
 from django.views.decorators.http import require_GET, require_POST
+from django.db.models import Case, When, IntegerField, Value, F
+from django.core.files.storage import default_storage
+from django.core.serializers import deserialize
+from django.core.serializers import serialize
+from django.http import FileResponse
 from django.shortcuts import render
 from django.conf import settings
 from django.http import JsonResponse
+from django.utils import timezone
+from datetime import timedelta
+from collections import defaultdict
 from .models import APIKey, MediaItem
 from .utils import download_image
 import time
@@ -10,7 +18,10 @@ import requests
 import logging
 import os
 import datetime
-from django.db.models import Case, When, IntegerField, Value, F
+import shutil
+import tempfile
+import zipfile
+
 
 
 logger = logging.getLogger(__name__)
@@ -165,8 +176,68 @@ def books(request):
     return render(request, 'core/books.html', {'items': books, 'page_type': 'book'})
 
 def home(request):
-    # no search bar here
-    return render(request, 'core/home.html', {})
+    # All favorite items across types
+    favorites = MediaItem.objects.filter(favorite=True)
+
+    # Organize favorites by media type for display
+    favorite_sections = {
+        "Movies": favorites.filter(media_type="movie"),
+        "TV Shows": favorites.filter(media_type="tv"),
+        "Anime": favorites.filter(media_type="anime"),
+        "Manga": favorites.filter(media_type="manga"),
+        "Games": favorites.filter(media_type="game"),
+    }
+
+    # Basic stats
+    all_items = MediaItem.objects.all()
+    stats = {
+        "Movies": all_items.filter(media_type="movie").count(),
+        "TV Shows": all_items.filter(media_type="tv").count(),
+        "Anime": all_items.filter(media_type="anime").count(),
+        "Manga": all_items.filter(media_type="manga").count(),
+        "Games": all_items.filter(media_type="game").count(),
+        "Total Entries": all_items.count(),
+        "Favorites": favorites.count(),
+    }
+
+    # Activity History: past 167 days
+    today = timezone.now().date()
+    start_date = today - timedelta(days=166)  # includes today
+
+    # Count entries per day
+    activity_counts = (
+        MediaItem.objects
+        .filter(date_added__date__gte=start_date)
+        .values_list('date_added', flat=True)
+    )
+
+    count_by_day = defaultdict(int)
+    for dt in activity_counts:
+        count_by_day[dt.date()] += 1
+
+    # Build list of (date, count) pairs in order (left = oldest, right = newest)
+# Build 167-day history
+    activity_data = []
+    for i in range(167):
+        day = start_date + timedelta(days=i)
+        count = count_by_day.get(day, 0)
+        activity_data.append({
+            "date": day.isoformat(),
+            "count": count,
+        })
+
+# Reshape into 24 columns (7 cells per column) → last column may have fewer
+    columns = []
+    for i in range(0, len(activity_data), 7):
+        column = activity_data[i:i+7]
+        columns.append(column)
+
+    return render(request, "core/home.html", {
+        "favorite_sections": favorite_sections.items(),
+        "stats": stats,
+        "activity_data": activity_data,  # ⬅️ pass to template
+        "activity_columns": columns,
+    })
 
 def settings_page(request):
     keys = APIKey.objects.all().order_by("name")
@@ -1700,6 +1771,82 @@ def get_item(request, item_id):
 
 
 # Settings
+
+@require_GET
+def create_backup(request):
+    import uuid
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        # Export DB
+        json_path = os.path.join(temp_dir, "media_items.json")
+        with open(json_path, "w", encoding="utf-8") as f:
+            f.write(serialize("json", MediaItem.objects.all()))
+
+        # Copy media
+        media_root = settings.MEDIA_ROOT
+        folders = ["posters", "banners", "cast", "related", "screenshots", "seasons"]
+        for folder in folders:
+            src = os.path.join(media_root, folder)
+            dst = os.path.join(temp_dir, folder)
+            if os.path.exists(src):
+                shutil.copytree(src, dst)
+
+        # Save to a permanent temp file outside context manager
+        temp_zip = tempfile.NamedTemporaryFile(suffix=".zip", delete=False)
+        temp_zip_path = temp_zip.name
+        temp_zip.close()  # We'll write manually
+
+        with zipfile.ZipFile(temp_zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
+            for root, _, files in os.walk(temp_dir):
+                for file in files:
+                    abs_path = os.path.join(root, file)
+                    rel_path = os.path.relpath(abs_path, temp_dir)
+                    zipf.write(abs_path, rel_path)
+
+    # Open outside the `with` block to avoid "used by another process"
+    return FileResponse(open(temp_zip_path, "rb"), as_attachment=True, filename="media_backup.zip")
+
+
+@require_POST
+def restore_backup(request):
+    uploaded_zip = request.FILES.get("backup_zip")
+    if not uploaded_zip:
+        return JsonResponse({"error": "No file uploaded"}, status=400)
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        # Save uploaded zip and extract it
+        zip_path = os.path.join(temp_dir, "uploaded_backup.zip")
+        with open(zip_path, "wb") as f:
+            for chunk in uploaded_zip.chunks():
+                f.write(chunk)
+
+        with zipfile.ZipFile(zip_path, "r") as zipf:
+            zipf.extractall(temp_dir)
+
+        # Load JSON data
+        json_file = os.path.join(temp_dir, "media_items.json")
+        with open(json_file, "r", encoding="utf-8") as f:
+            media_data = json.load(f)
+
+        for obj in deserialize("json", json.dumps(media_data)):
+            try:
+                # Only add if not already in DB
+                fields = obj.object
+                if not MediaItem.objects.filter(source=fields.source, source_id=fields.source_id).exists():
+                    obj.save()
+            except Exception as e:
+                continue  # optionally log errors
+
+        # Copy media folders
+        media_root = settings.MEDIA_ROOT
+        folders = ["posters", "banners", "cast", "related", "screenshots", "seasons"]
+        for folder in folders:
+            src_folder = os.path.join(temp_dir, folder)
+            dest_folder = os.path.join(media_root, folder)
+            if os.path.exists(src_folder):
+                shutil.copytree(src_folder, dest_folder, dirs_exist_ok=True)
+
+        return JsonResponse({"message": "Backup restored successfully"})
 
 def add_key(request):
     data = json.loads(request.body)

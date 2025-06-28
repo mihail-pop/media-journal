@@ -27,4 +27,6 @@ urlpatterns = [
     path('api/add_key/', views.add_key, name='add_key'),
     path('api/update_key/', views.update_key, name='update_key'),
     path('api/delete_key/', views.delete_key, name='delete_key'),
+    path('backup/export/', views.create_backup, name='create_backup'),
+    path('backup/import/', views.restore_backup, name='restore_backup'),
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
