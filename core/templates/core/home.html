@@ -24,31 +24,57 @@
 <section class="stats-section">
   <div class="activity-graph">
     <h3>Activity History</h3>
-<div class="activity-grid">
-  {% for column in activity_columns %}
-    <div class="activity-column">
-      {% for day in column %}
-        <div class="activity-cell 
-                    {% if day.count == 0 %}activity-none
-                    {% elif day.count == 1 %}activity-low
-                    {% else %}activity-high{% endif %}"
-             title="{{ day.date }} — {{ day.count }} item{{ day.count|pluralize }} added">
+    <div class="activity-grid">
+      {% for column in activity_columns %}
+        <div class="activity-column">
+          {% for day in column %}
+            <div class="activity-cell 
+                        {% if day.count == 0 %}activity-none
+                        {% elif day.count == 1 %}activity-low
+                        {% else %}activity-high{% endif %}"
+                 title="{{ day.date }} — {{ day.count }} item{{ day.count|pluralize }} added">
+            </div>
+          {% endfor %}
         </div>
       {% endfor %}
     </div>
-  {% endfor %}
-</div>
   </div>
 
   <div class="stats-summary-box">
     <h2>Stats</h2>
-    <ul>
-      <li>Total Movies: {{ stats.movies }}</li>
-      <li>Total TV Shows: {{ stats.tvshows }}</li>
-      <li>Total Anime: {{ stats.anime }}</li>
-      <li>Total Manga: {{ stats.manga }}</li>
-      <li>Total Games: {{ stats.games }}</li>
-    </ul>
+
+    <!-- Colored category blocks -->
+    <div class="stats-blocks">
+      {% for block in stats_blocks %}
+        <div class="stats-block">
+          <div class="stats-block-label" style="background-color: {{ block.color }};">
+            {{ block.label }}
+          </div>
+          <div class="stats-block-count">
+            {{ block.count }}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+    <!-- Color bar -->
+    <div class="stats-bar">
+      {% for block in stats_blocks %}
+        <div class="stats-bar-segment" style="width: {{ block.percentage }}%; background-color: {{ block.color }};"></div>
+      {% endfor %}
+    </div>
+
+    <!-- Extra stats -->
+    {% if extra_stats %}
+      <div class="extra-stats">
+        {% for label, value in extra_stats.items %}
+          <div class="extra-stat-row">
+            <span class="extra-stat-label">{{ label }}</span>
+            <span class="extra-stat-value">{{ value }}</span>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
   </div>
 </section>
 

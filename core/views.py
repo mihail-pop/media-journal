@@ -175,11 +175,16 @@ def books(request):
     books = MediaItem.objects.filter(media_type="book").order_by("-date_added")
     return render(request, 'core/books.html', {'items': books, 'page_type': 'book'})
 
+
+from django.db.models import Sum
+from collections import defaultdict
+from datetime import timedelta
+from django.utils import timezone
+from django.shortcuts import render
+
 def home(request):
-    # All favorite items across types
     favorites = MediaItem.objects.filter(favorite=True)
 
-    # Organize favorites by media type for display
     favorite_sections = {
         "Movies": favorites.filter(media_type="movie"),
         "TV Shows": favorites.filter(media_type="tv"),
@@ -188,23 +193,66 @@ def home(request):
         "Games": favorites.filter(media_type="game"),
     }
 
-    # Basic stats
     all_items = MediaItem.objects.all()
-    stats = {
+    media_counts = {
         "Movies": all_items.filter(media_type="movie").count(),
         "TV Shows": all_items.filter(media_type="tv").count(),
         "Anime": all_items.filter(media_type="anime").count(),
         "Manga": all_items.filter(media_type="manga").count(),
         "Games": all_items.filter(media_type="game").count(),
-        "Total Entries": all_items.count(),
-        "Favorites": favorites.count(),
     }
 
-    # Activity History: past 167 days
-    today = timezone.now().date()
-    start_date = today - timedelta(days=166)  # includes today
+    total_entries = sum(media_counts.values())
 
-    # Count entries per day
+    media_colors = {
+        "Movies": "#F4B400",     # Yellow
+        "TV Shows": "#DB4437",   # Red
+        "Anime": "#4285F4",      # Blue
+        "Manga": "#A142F4",      # Purple
+        "Games": "#0F9D58",      # Green
+    }
+
+    stats_blocks = []
+    for label, count in media_counts.items():
+        if count > 0:
+            stats_blocks.append({
+                "label": label,
+                "count": count,
+                "color": media_colors[label],
+                "percentage": round((count / total_entries) * 100, 2) if total_entries else 0,
+            })
+
+    stats = dict(media_counts)
+    stats["Total Entries"] = total_entries
+    stats["Favorites"] = favorites.count()
+
+    # Extra stats
+    movie_count = media_counts["Movies"]
+    tv_episodes = all_items.filter(media_type="tv").aggregate(Sum("progress_main"))["progress_main__sum"] or 0
+    anime_episodes = all_items.filter(media_type="anime").aggregate(Sum("progress_main"))["progress_main__sum"] or 0
+
+    total_hours = movie_count * 1.5 + tv_episodes * 0.4 + anime_episodes * 0.2
+    days_watched = round(total_hours / 24, 1)
+
+    game_hours = all_items.filter(media_type="game").aggregate(Sum("progress_main"))["progress_main__sum"] or 0
+    days_played = round(game_hours / 24, 1)
+
+    chapters_read = (
+        all_items.filter(media_type="manga").aggregate(Sum("progress_main"))["progress_main__sum"] or 0
+    )
+
+    extra_stats = {}
+    if days_watched > 0:
+        extra_stats["Days Watched"] = days_watched
+    if days_played > 0:
+        extra_stats["Days Played"] = days_played
+    if chapters_read > 0:
+        extra_stats["Chapters Read"] = chapters_read
+
+    # Activity history (167 days)
+    today = timezone.now().date()
+    start_date = today - timedelta(days=166)
+
     activity_counts = (
         MediaItem.objects
         .filter(date_added__date__gte=start_date)
@@ -215,29 +263,25 @@ def home(request):
     for dt in activity_counts:
         count_by_day[dt.date()] += 1
 
-    # Build list of (date, count) pairs in order (left = oldest, right = newest)
-# Build 167-day history
     activity_data = []
     for i in range(167):
         day = start_date + timedelta(days=i)
-        count = count_by_day.get(day, 0)
         activity_data.append({
             "date": day.isoformat(),
-            "count": count,
+            "count": count_by_day.get(day, 0),
         })
 
-# Reshape into 24 columns (7 cells per column) → last column may have fewer
-    columns = []
-    for i in range(0, len(activity_data), 7):
-        column = activity_data[i:i+7]
-        columns.append(column)
+    columns = [activity_data[i:i+7] for i in range(0, len(activity_data), 7)]
 
     return render(request, "core/home.html", {
         "favorite_sections": favorite_sections.items(),
         "stats": stats,
-        "activity_data": activity_data,  # ⬅️ pass to template
+        "stats_blocks": stats_blocks,
+        "extra_stats": extra_stats,             # ⬅️ added for HTML usage
+        "activity_data": activity_data,
         "activity_columns": columns,
     })
+
 
 def settings_page(request):
     keys = APIKey.objects.all().order_by("name")
@@ -265,7 +309,7 @@ def mal_search(request):
 
     graphql_query = '''
     query ($search: String, $type: MediaType) {
-      Page(perPage: 9) {
+      Page(perPage: 10) {
         media(search: $search, type: $type) {
           idMal
           title {
@@ -443,7 +487,7 @@ def igdb_search(request):
             "poster_path": cover_url,
         })
 
-    return JsonResponse({"results": results[:9]})
+    return JsonResponse({"results": results[:10]})
 
 # Movies/Shows Search
 
@@ -491,7 +535,7 @@ def tmdb_search(request):
         for item in data.get("results", [])
     ]
 
-    return JsonResponse({"results": results[:9]})
+    return JsonResponse({"results": results[:10]})
 
 # Movie and show details
 @require_GET
@@ -571,6 +615,7 @@ def tmdb_detail(request, media_type, tmdb_id):
             "cast": cast_data,
             "recommendations": [],  # Optional
             "seasons": seasons,
+            'page_type': media_type,
         })
 
     except MediaItem.DoesNotExist:
@@ -652,6 +697,7 @@ def tmdb_detail(request, media_type, tmdb_id):
         "cast": cast_data,
         "recommendations": data.get("recommendations", {}).get("results", [])[:16],
         "seasons": seasons,
+        'page_type': media_type,
     })
 
 def save_tmdb_item(media_type, tmdb_id):
@@ -825,6 +871,7 @@ def mal_detail(request, media_type, mal_id):
         "sequels": sequels,
         "in_my_list": in_my_list,
         "recommendations": recommendations,
+        'page_type': media_type,
     }
 
     return render(request, "core/detail.html", context)
@@ -1352,6 +1399,7 @@ def igdb_detail(request, igdb_id):
             "recommendations": [],
             "screenshots": screenshots,
             "in_my_list": True,
+            'page_type': "game",
         }
         return render(request, "core/detail.html", context)
 

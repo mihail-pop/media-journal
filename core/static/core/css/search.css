@@ -13,14 +13,16 @@
   z-index: 9999;
   overflow-y: auto;
   box-sizing: border-box;
-  transition: opacity 0.25s ease;
+}
+#search-overlay {
+  transition: opacity 0.5s ease;
+  opacity: 1;
 }
 
-/* Hide the overlay by default */
-.hidden {
-  display: none !important;
+#search-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
 }
-
 /* The results panel */
 
 
@@ -30,44 +32,48 @@
 }
 
 #search-results-panel::-webkit-scrollbar-thumb {
-  background-color: #555;
+  background-color: #ebebeb;
   border-radius: 4px;
 }
 
 /* Search cards grid inside panel */
 .search-card-grid {
   width: 100%;
-  max-width: 500px;
+  max-width: 800px; /* increased from 500px to fit 5 cards of ~140px + gaps */
   margin: 0 auto;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 1rem;
-  max-height: calc( (180px + 0.6rem + other padding) * 2 + gap ); /* approx 2 rows */
-  overflow-y: auto; /* scroll if more cards */
+  grid-template-columns: repeat(5, 1fr); /* fixed 5 columns */
+  gap: 12px; /* add a gap for spacing between cards */
+  max-height: 500px; /* approx 2 rows, adjust as needed */
+  overflow-y: auto;
+  background: #151F2E;
+  padding: 12px;
+  border-radius: 4px;
 }
 
 
 /* Individual search card */
 .search-card {
-  background-color: #333;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.7);
-  border-radius: 8px;
+  background:none;
   padding: 0.5rem;
-  transition: transform 0.15s ease-in-out, box-shadow 0.2s ease-in-out;
 }
 
 .search-card:hover {
   transform: scale(1.05);
-  box-shadow: 0 6px 14px rgba(0,0,0,0.9);
+  background-color: #1f2a38;
+  border-radius: 4px;
 }
 
 .search-card img {
+  display: block;
   width: 120px;
   height: 180px;
-  border-radius: 6px;
+  border-radius: 4px;
   box-shadow: 0 1px 4px rgba(0,0,0,0.5);
   margin-bottom: 0.6rem;
   object-fit: cover;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .search-card-title {
@@ -80,6 +86,18 @@
   padding: 0 0.4rem;
 }
 
+.search-card .card-link {
+  color: #eee;           /* match your title color */
+  text-decoration: none; /* remove underline */
+  outline: none;
+}
+
+.search-card .card-link:hover,
+.search-card .card-link:focus {
+  text-decoration: none;
+  color: #eee;           /* keep color on hover/focus */
+}
+
 /* Overlay search input styling */
 .overlay-search-bar {
   margin-bottom: 1rem;
@@ -88,19 +106,24 @@
 
 #overlay-search-input {
   width: 80%;
+  min-width: 250px;
   max-width: 400px;
   padding: 0.5rem;
   border: none;
   border-radius: 6px;
   font-size: 1rem;
   outline: none;
-  background-color: #111;
-  color: #eee;
+  background-color: #1f2a38;
+  color: #f8f8f8;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
 }
 
+#overlay-search-input::placeholder {
+  color: #f8f8f8; /* lighter gray placeholder text */
+  opacity: 1;
+}
+
 .overlay-search-bar {
-  display: flex;
   align-items: center;
   gap: 1rem;
 }
@@ -118,4 +141,15 @@
   align-items: center;
   justify-content: center;
   gap: 1rem;
+  margin-top: 2rem;
+  transform: translateY(-20px);
+  opacity: 0;
+  animation: slideDown 0.3s ease forwards;
+}
+
+@keyframes slideDown {
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }

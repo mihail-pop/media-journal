@@ -6,7 +6,6 @@
   <meta charset="UTF-8" />
   <title>Media Journal</title>
   <link rel="stylesheet" href="{% static 'core/css/header.css' %}" />
-  <link rel="stylesheet" href="{% static 'core/css/detail.css' %}" />
   <link rel="stylesheet" href="{% static 'core/css/search.css' %}" />
 </head>
 {% endblock %}
@@ -117,7 +116,7 @@
 
           const cardsHtml = data.results.map(item => {
             const title = item.title || item.name || "Untitled";
-            let poster = "https://via.placeholder.com/200x300?text=No+Image";
+            let poster = "{% static 'core/img/placeholder.png' %}";
 
             if ((pageType === "movie" || pageType === "tv") && item.poster_path) {
               poster = `https://image.tmdb.org/t/p/w200${item.poster_path}`;
