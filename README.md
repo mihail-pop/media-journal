@@ -10,20 +10,15 @@ I’ve always wanted to create an all-in-one media tracking app that fits my sty
 - **Personalized Dashboard**: Favorites and statistics are displayed on the home page.  
 
 ## Demo  
-<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 20px 0;">
-  <a href="https://github.com/user-attachments/assets/7a939463-5bc7-4a4d-8b22-784fa50a83c7" target="_blank">
-    <img src="https://github.com/user-attachments/assets/7a939463-5bc7-4a4d-8b22-784fa50a83c7" style="width: 100%; border-radius: 8px; border: 1px solid #ddd;">
-  </a>
-  <a href="https://github.com/user-attachments/assets/65b9bc6a-dfe1-43f0-bfe8-fb4a6beb0768" target="_blank">
-    <img src="https://github.com/user-attachments/assets/65b9bc6a-dfe1-43f0-bfe8-fb4a6beb0768" style="width: 100%; border-radius: 8px; border: 1px solid #ddd;">
-  </a>
-  <a href="https://github.com/user-attachments/assets/d64967bd-9571-477e-a1f0-9ce37b716d5f" target="_blank">
-    <img src="https://github.com/user-attachments/assets/d64967bd-9571-477e-a1f0-9ce37b716d5f" style="width: 100%; border-radius: 8px; border: 1px solid #ddd;">
-  </a>
-  <a href="https://github.com/user-attachments/assets/d30dc7ef-501c-40da-a2db-8bbafd2870c5" target="_blank">
-    <img src="https://github.com/user-attachments/assets/d30dc7ef-501c-40da-a2db-8bbafd2870c5" style="width: 100%; border-radius: 8px; border: 1px solid #ddd;">
-  </a>
-</div>
+| <img src="https://github.com/user-attachments/assets/fa3e8a0e-d09b-4acc-b905-91fe8959effa" width="500" /> | <img src="https://github.com/user-attachments/assets/16d7ef42-de94-4452-91a8-be202c6513b9" width="500" /> |
+| :-----------------------------------------: | :-----------------------------------------: |
+|                 Home Page                    |               List Example                   |
+
+| <img src="https://github.com/user-attachments/assets/6531915d-f095-4b29-9208-d3fa35df1a57" width="500" /> | <img src="https://github.com/user-attachments/assets/65ef3080-67b1-424a-a894-1276284c2567" width="500" /> |
+| :-----------------------------------------: | :-----------------------------------------: |
+|               Details Page                  |               Edit                   |
+
+
 
 ## Requirements  
 - **Python** (Developed with version **3.13.0**)  
