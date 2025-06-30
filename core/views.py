@@ -1,7 +1,9 @@
+from core.utils import download_image, fetch_anilist_data, get_trending_anime, get_trending_games, get_trending_manga, get_trending_movies, get_trending_tv, get_igdb_token
 from django.views.decorators.http import require_GET, require_POST
 from django.db.models import Case, When, IntegerField, Value, F
 from django.core.files.storage import default_storage
 from django.core.serializers import deserialize
+from core.background import start_tmdb_background_loop, start_anilist_background_loop
 from django.core.serializers import serialize
 from django.http import FileResponse
 from django.shortcuts import render
@@ -11,7 +13,8 @@ from django.utils import timezone
 from datetime import timedelta
 from collections import defaultdict
 from .models import APIKey, MediaItem
-from .utils import download_image
+from django.db.models import Sum
+from django.urls import reverse
 import time
 import json
 import requests
@@ -175,15 +178,10 @@ def books(request):
     books = MediaItem.objects.filter(media_type="book").order_by("-date_added")
     return render(request, 'core/books.html', {'items': books, 'page_type': 'book'})
 
-
-from django.db.models import Sum
-from collections import defaultdict
-from datetime import timedelta
-from django.utils import timezone
-from django.shortcuts import render
-
 def home(request):
     favorites = MediaItem.objects.filter(favorite=True)
+    start_tmdb_background_loop()
+    start_anilist_background_loop()
 
     favorite_sections = {
         "Movies": favorites.filter(media_type="movie"),
@@ -273,6 +271,23 @@ def home(request):
 
     columns = [activity_data[i:i+7] for i in range(0, len(activity_data), 7)]
 
+    notifications = MediaItem.objects.filter(notification=True).order_by('-last_updated')
+
+    notifications_list = []
+    for item in notifications:
+        if item.media_type == 'tv':
+            url = reverse('tmdb_detail', args=[item.media_type, item.source_id])  # adjust the name/args if needed
+        elif item.media_type in ['anime', 'manga']:
+            url = reverse('mal_detail', args=[item.media_type, item.source_id])
+        else:
+            url = '#'
+        notifications_list.append({
+            'id': item.id,
+            'title': item.title,
+            'url': url,
+            'media_type': item.media_type,
+        })
+
     return render(request, "core/home.html", {
         "favorite_sections": favorite_sections.items(),
         "stats": stats,
@@ -280,6 +295,7 @@ def home(request):
         "extra_stats": extra_stats,             # ⬅️ added for HTML usage
         "activity_data": activity_data,
         "activity_columns": columns,
+        'notifications': notifications_list,
     })
 
 
@@ -294,6 +310,36 @@ def settings_page(request):
         'existing_names': existing_names,
     })
 
+@require_POST
+def dismiss_notification(request, item_id):
+    try:
+        item = MediaItem.objects.get(id=item_id)
+        item.notification = False
+        item.save()
+        return JsonResponse({"success": True})
+    except MediaItem.DoesNotExist:
+        return JsonResponse({"error": "Item not found"}, status=404)
+
+
+def discover_view(request):
+    trending_movies = get_trending_movies()
+    trending_tv = get_trending_tv()
+    trending_anime = get_trending_anime()
+    trending_manga = get_trending_manga()
+    trending_games = get_trending_games()
+
+    # Combine all trending items into a single list
+    media_items = []
+    media_items.extend(trending_movies)
+    media_items.extend(trending_tv)
+    media_items.extend(trending_anime)
+    media_items.extend(trending_manga)
+    media_items.extend(trending_games)
+
+    context = {
+        "media_items": media_items,
+    }
+    return render(request, "core/discover.html", context)
 
 # Anime
 @require_GET
@@ -418,32 +464,7 @@ def mal_search(request):
 
 #igdb / games
 
-def get_igdb_token():
-    global IGDB_ACCESS_TOKEN, IGDB_TOKEN_EXPIRY
 
-    if IGDB_ACCESS_TOKEN and IGDB_TOKEN_EXPIRY > time.time():
-        return IGDB_ACCESS_TOKEN
-
-    try:
-        igdb_keys = APIKey.objects.get(name="igdb")
-    except APIKey.DoesNotExist:
-        return None
-
-    url = "https://id.twitch.tv/oauth2/token"
-    params = {
-        "client_id": igdb_keys.key_1,
-        "client_secret": igdb_keys.key_2,
-        "grant_type": "client_credentials",
-    }
-
-    resp = requests.post(url, params=params)
-    if resp.status_code != 200:
-        return None
-
-    token_data = resp.json()
-    IGDB_ACCESS_TOKEN = token_data["access_token"]
-    IGDB_TOKEN_EXPIRY = time.time() + token_data["expires_in"] - 60
-    return IGDB_ACCESS_TOKEN
 
 @require_GET
 def igdb_search(request):
@@ -931,175 +952,6 @@ def save_mal_item(media_type, mal_id):
 
     except Exception as e:
         return JsonResponse({"error": f"Save failed: {str(e)}"})
-
-def fetch_anilist_data(mal_id, media_type):
-    query = '''
-    query ($malId: Int, $type: MediaType) {
-      Media(idMal: $malId, type: $type) {
-        id
-        title {
-          romaji
-          english
-        }
-        description(asHtml: false)
-        startDate {
-          year
-          month
-          day
-        }
-        bannerImage
-        coverImage {
-          extraLarge
-        }
-        characters(sort: [ROLE, RELEVANCE], perPage: 16) {
-          edges {
-            role
-            node {
-              name {
-                full
-              }
-              image {
-                large
-              }
-            }
-          }
-        }
-        relations {
-          edges {
-            relationType
-            node {
-              idMal
-              title {
-                english
-                romaji
-              }
-              coverImage {
-                large
-              }
-              type
-            }
-          }
-        }
-        recommendations(sort: RATING_DESC, perPage: 16) {
-          edges {
-            node {
-              mediaRecommendation {
-                idMal
-                title {
-                  romaji
-                  english
-                }
-                coverImage {
-                  large
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-    '''
-
-    variables = {
-        "malId": int(mal_id),
-        "type": media_type.upper()
-    }
-
-    headers = {
-        "Content-Type": "application/json"
-    }
-
-    response = requests.post(
-        "https://graphql.anilist.co",
-        json={"query": query, "variables": variables},
-        headers=headers
-    )
-
-    if response.status_code != 200:
-        raise Exception("AniList API request failed.")
-
-    media = response.json().get("data", {}).get("Media")
-    if not media:
-        raise Exception("AniList: No data found for this ID.")
-
-    # Title
-    title = media["title"].get("english") or media["title"].get("romaji") or "Unknown Title"
-
-    # Overview
-    overview = media.get("description") or ""
-
-    # Release Date
-    start = media.get("startDate")
-    if start and start.get("year"):
-        release_date = f"{start['year']}-{start['month'] or 1:02}-{start['day'] or 1:02}"
-    else:
-        release_date = ""
-
-    # Poster & Banner
-    poster_url = media.get("coverImage", {}).get("extraLarge")
-    banner_url = media.get("bannerImage")
-
-    # Cast
-    cast = []
-    for edge in media.get("characters", {}).get("edges", []):
-        character = edge["node"]
-        cast.append({
-            "name": character["name"]["full"],
-            "character": edge.get("role", ""),
-            "profile_path": character["image"]["large"],
-            "is_full_url": True,
-        })
-
-    # Related Titles
-    related_titles = []
-    for rel in media.get("relations", {}).get("edges", []):
-        relation_type = rel.get("relationType", "").lower()
-        if relation_type in ("prequel", "sequel"):
-            node = rel["node"]
-            r_id = node.get("idMal")
-            if not r_id:
-                continue
-
-            r_title = node["title"].get("english") or node["title"].get("romaji") or "Unknown Title"
-            r_poster = node["coverImage"].get("large") or ""
-
-            related_titles.append({
-                "mal_id": r_id,
-                "title": r_title,
-                "poster_path": r_poster,
-                "relation": relation_type.capitalize(),
-                "is_full_url": True,
-            })
-
-    # Recommendations
-    recommendations = []
-    for edge in media.get("recommendations", {}).get("edges", []):
-        node = edge.get("node", {}).get("mediaRecommendation")
-        if not node or not node.get("idMal"):
-            continue
-
-        rec_id = node["idMal"]
-        rec_title = node["title"].get("english") or node["title"].get("romaji") or "Unknown Title"
-        rec_poster = node["coverImage"].get("large") or ""
-
-        recommendations.append({
-            "id": rec_id,
-            "title": rec_title,
-            "poster_path": rec_poster,
-            "is_full_url": True,
-        })
-
-    return {
-        "title": title,
-        "overview": overview,
-        "release_date": release_date,
-        "poster_url": poster_url,
-        "banner_url": banner_url,
-        "cast": cast,
-        "related_titles": related_titles,
-        "recommendations": recommendations,
-    }
-
 
 
 # In case anilist breaks, comment out that functions and use those functions!!<3   
@@ -1938,4 +1790,3 @@ def delete_key(request):
     except APIKey.DoesNotExist:
         return JsonResponse({"error": "Key not found."}, status=404)
     
-

@@ -18,7 +18,30 @@
 </div>
 
 <!-- Separator Bar -->
-<div class="separator-bar"></div>
+<div class="separator-bar">
+  <div id="notifications-wrapper" class="notifications-wrapper">
+    <button id="notifications-button" class="notifications-button" aria-haspopup="true" aria-expanded="false" aria-label="Toggle notifications dropdown">
+      Notifications
+  <svg class="notification-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img">
+    <path fill="currentColor" d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+  </svg>
+    </button>
+    <div id="notifications-dropdown" class="notifications-dropdown" role="menu" aria-label="Notifications list" hidden>
+      {% if notifications %}
+        <ul>
+          {% for n in notifications %}
+            <li id="notification-{{ n.id }}">
+              <a href="{{ n.url }}">{{ n.title }}</a> was updated
+              <button class="dismiss-notification" data-id="{{ n.id }}" aria-label="Dismiss notification">✕</button>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="no-notifications">No notifications.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
 
 <!-- Stats Section -->
 <section class="stats-section">

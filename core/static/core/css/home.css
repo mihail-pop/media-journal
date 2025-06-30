@@ -66,6 +66,10 @@ body {
   height: 45px;
   background-color: #151F2E;
   margin-bottom: 1.5rem;
+  display: flex;
+  justify-content: flex-end; /* pushes children to the right */
+  align-items: center; /* vertically center if needed */
+  padding: 5px; /* optional spacing */
 }
 
 /* --- Card Grid --- */
@@ -420,6 +424,114 @@ body {
 .extra-stat-row:nth-child(3) .extra-stat-label { /* Chapters Read */
   background-color: #A142F4;
 }
+
+.notifications-wrapper {
+  position: relative;
+  display: inline-block;
+  font-family: Arial, sans-serif;
+}
+
+.notifications-button {
+  background-color: transparent;
+  border: none;
+  color: #8596A5;
+  font-weight: bold;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  margin-right: 14vw;
+  user-select: none;
+}
+
+.notifications-button .notification-icon {
+  fill: white;
+  transition: fill 0.3s ease;
+}
+
+/* Pink icon and text when notifications exist */
+.notifications-button.has-notifications {
+  color: #e91e63; /* pink */
+}
+
+.notifications-button.has-notifications .notification-icon {
+  fill: #e91e63;
+}
+
+/* Dropdown container */
+.notifications-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: #222;
+  color: white;
+  min-width: 190px;
+  max-height: 300px;
+  overflow-y: auto;
+  border-radius: 4px;
+  box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+  margin-top: 6px;
+  padding: 10px 10px;
+  z-index: 1000;
+  margin-right: 13vw;
+  
+}
+
+/* Notification list */
+.notifications-dropdown ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.notifications-dropdown li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 4px;
+  border-bottom: 1px solid #444;
+}
+
+.notifications-dropdown li:last-child {
+  border-bottom: none;
+}
+
+.notifications-dropdown li a {
+  color: #fff;
+  text-decoration: underline;
+  flex-grow: 1;
+  margin-right: 10px;
+}
+
+.notifications-dropdown li a:hover {
+  color: #e91e63;
+}
+
+.dismiss-notification {
+  background: none;
+  border: none;
+  color: #bbb;
+  cursor: pointer;
+  font-size: 1.2rem;
+  padding: 0 6px;
+  user-select: none;
+  transition: color 0.3s ease;
+  margin-bottom: 4px;
+}
+
+.dismiss-notification:hover {
+  color: #e91e63;
+}
+
+.no-notifications {
+  margin: 0;
+  padding: 6px 4px;
+  font-style: italic;
+  color: #aaa;
+}
+
 
 @media (max-width: 900px) {
   .favorites-row {

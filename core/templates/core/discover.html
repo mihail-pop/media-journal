@@ -1,0 +1,81 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block head %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'core/css/lists.css' %}">
+<link rel="stylesheet" href="{% static 'core/css/modal.css' %}">
+<link rel="stylesheet" href="{% static 'core/css/discover.css' %}">
+{% endblock %}
+
+{% block content %}
+<!-- Top Banner Rotator -->
+<div class="banner-rotator">
+  <img id="rotating-banner" src="/static/img/banner_fallback.jpg" alt="Banner">
+  <div class="banner-overlay">
+    <div class="banner-quote">Explore new titles to discover</div>
+  </div>
+</div>
+
+<div class="separator-bar"></div>
+
+<div class="list-page-container">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <input type="text" id="search-input" placeholder="Search all media..." autocomplete="off">
+  </aside>
+
+  <!-- Content Area -->
+  <section class="list-content">
+    {% if media_items %}
+    <div id="discover-list" class="card-list">
+      {% for item in media_items %}
+      <div class="card card-vertical"
+           data-id="{{ item.id }}"
+           data-media-type="{{ item.media_type }}"
+           data-title="{{ item.title|escape }}"
+           data-cover-url="{{ item.cover_url|default:'/static/img/cover_fallback.jpg' }}"
+           data-banner-url="{{ item.banner_url|default:'/static/img/banner_fallback.jpg' }}">
+{% if item.media_type in 'movie,tv' %}
+  <a href="{% url 'tmdb_detail' media_type=item.media_type tmdb_id=item.source_id %}" class="card-link">
+    <img src="{{ item.cover_url|default:'/static/img/cover_fallback.jpg' }}" alt="{{ item.title }}" loading="lazy">
+    <div class="card-title-overlay">
+      <span class="card-title">{{ item.title }}</span>
+    </div>
+  </a>
+{% elif item.media_type in 'manga,anime' %}
+  <!-- Use your anime detail URL here -->
+  <a href="{% url 'mal_detail' anime_id=item.source_id %}" class="card-link">
+    <img src="{{ item.cover_url|default:'/static/img/cover_fallback.jpg' }}" alt="{{ item.title }}" loading="lazy">
+    <div class="card-title-overlay">
+      <span class="card-title">{{ item.title }}</span>
+    </div>
+  </a>
+{% elif item.media_type == 'game' %}
+  <!-- Use your game detail URL here -->
+  <a href="{% url 'igdb_detail' game_id=item.source_id %}" class="card-link">
+    <img src="{{ item.cover_url|default:'/static/img/cover_fallback.jpg' }}" alt="{{ item.title }}" loading="lazy">
+    <div class="card-title-overlay">
+      <span class="card-title">{{ item.title }}</span>
+    </div>
+  </a>
+{% else %}
+  <!-- No link for unknown media -->
+  <div class="card-link">
+    <img src="{{ item.cover_url|default:'/static/img/cover_fallback.jpg' }}" alt="{{ item.title }}" loading="lazy">
+    <div class="card-title-overlay">
+      <span class="card-title">{{ item.title }}</span>
+    </div>
+  </div>
+{% endif %}
+        <button class="edit-card-btn">⋯</button>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="empty-message">No items to display.</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

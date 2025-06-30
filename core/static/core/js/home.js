@@ -68,3 +68,62 @@ function closeFavoritesOverlay(categorySlug) {
 function slugify(text) {
   return text.toLowerCase().replace(/\s+/g, '-');
 }
+
+  const notifButton = document.getElementById('notifications-button');
+  const notifDropdown = document.getElementById('notifications-dropdown');
+
+  notifButton.addEventListener('click', () => {
+    const expanded = notifButton.getAttribute('aria-expanded') === 'true';
+    notifButton.setAttribute('aria-expanded', String(!expanded));
+    notifDropdown.hidden = expanded;  // toggle
+  });
+
+  // Dismiss notification handler
+  document.querySelectorAll('.dismiss-notification').forEach(button => {
+    button.addEventListener('click', function(event) {
+      event.stopPropagation(); // prevent dropdown toggle
+      const notifId = this.getAttribute('data-id');
+      fetch(`/notifications/dismiss/${notifId}/`, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': getCookie("csrftoken"),
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({})
+      })
+      .then(res => {
+        if (res.ok) {
+          const li = document.getElementById(`notification-${notifId}`);
+          li.remove();
+
+          // If no notifications left, show 'No notifications.'
+          if (notifDropdown.querySelectorAll('li').length === 0) {
+            notifDropdown.innerHTML = '<p class="no-notifications">No notifications.</p>';
+            notifButton.classList.remove('has-notifications');
+          }
+        } else {
+          alert('Failed to dismiss notification.');
+        }
+      });
+    });
+  });
+
+  // Add or remove 'has-notifications' class to button depending on notifications count
+  if (notifDropdown.querySelectorAll('li').length > 0) {
+    notifButton.classList.add('has-notifications');
+  }
+
+    function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== "") {
+      const cookies = document.cookie.split(";");
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === name + "=") {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
