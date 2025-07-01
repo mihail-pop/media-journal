@@ -18,13 +18,23 @@
 </div>
 
 <!-- Separator Bar -->
-<div class="separator-bar">
+<div class="separator-bar" style="display: flex; gap: 1rem; align-items: center; padding: 0 1rem;">
+<div id="discover-wrapper" class="discover-wrapper">
+  <a href="/discover/" class="discover-button" aria-label="Discover content">
+    Discover
+    <svg class="discover-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img">
+      <!-- Flame shape path -->
+      <path fill="currentColor" d="M12 2C9.243 6 7 9.5 7 13c0 3.314 2.686 6 6 6s6-2.686 6-6c0-1.456-1.17-3.495-3-6.15-1.49 2.39-2.71 4.41-3 5.15 0 0 0-3.5 0-7z"/>
+    </svg>
+  </a>
+</div>
+
   <div id="notifications-wrapper" class="notifications-wrapper">
     <button id="notifications-button" class="notifications-button" aria-haspopup="true" aria-expanded="false" aria-label="Toggle notifications dropdown">
       Notifications
-  <svg class="notification-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img">
-    <path fill="currentColor" d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
-  </svg>
+      <svg class="notification-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img">
+        <path fill="currentColor" d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+      </svg>
     </button>
     <div id="notifications-dropdown" class="notifications-dropdown" role="menu" aria-label="Notifications list" hidden>
       {% if notifications %}
@@ -171,6 +181,92 @@
   </div>
   {% endif %}
 {% endfor %}
+
+<section class="favorites-section">
+{% if favorite_characters or favorite_actors %}
+<section class="favorite-people-section">
+  <div class="favorites-row">
+    {% if favorite_characters %}
+    <div class="favorites-column">
+      <h2 class="favorites-header" onclick="openFavoritesOverlay('characters')">Characters</h2>
+      <div class="card-grid">
+        {% for person in favorite_characters|slice:":25" %}
+        <div class="card">
+          <img src="{{ person.image_url|default:'/static/core/img/placeholder.png' }}" alt="{{ person.name }}">
+          <div class="hover-title-overlay">
+            <span class="hover-title-text">{{ person.name }}</span>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if favorite_actors %}
+    <div class="favorites-column">
+      <h2 class="favorites-header" onclick="openFavoritesOverlay('actors')">Actors</h2>
+      <div class="card-grid">
+        {% for person in favorite_actors|slice:":25" %}
+        <div class="card">
+          <img src="{{ person.image_url|default:'/static/core/img/placeholder.png' }}" alt="{{ person.name }}">
+          <div class="hover-title-overlay">
+            <span class="hover-title-text">{{ person.name }}</span>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endif %}
+</section>
+
+{% if favorite_characters %}
+<div class="favorites-overlay hidden" id="overlay-characters">
+  <div class="overlay-content">
+    <h2>Characters</h2>
+    <button onclick="closeFavoritesOverlay('characters')">Close</button>
+    <div class="card-grid" id="characters-card-grid">
+      {% for person in favorite_characters %}
+      <div class="card" data-id="{{ person.id }}">
+        <img src="{{ person.image_url|default:'/static/core/img/placeholder.png' }}" alt="{{ person.name }}">
+        <div class="hover-title-overlay">
+          <span class="hover-title-text">{{ person.name }}</span>
+        </div>
+        <div class="reorder-buttons">
+          <button class="move-up-btn" title="Move Up" aria-label="Move Up">⬆️</button>
+          <button class="move-down-btn" title="Move Down" aria-label="Move Down">⬇️</button>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% if favorite_actors %}
+<div class="favorites-overlay hidden" id="overlay-actors">
+  <div class="overlay-content">
+    <h2>Actors</h2>
+    <button onclick="closeFavoritesOverlay('actors')">Close</button>
+    <div class="card-grid" id="actors-card-grid">
+      {% for person in favorite_actors %}
+      <div class="card" data-id="{{ person.id }}">
+        <img src="{{ person.image_url|default:'/static/core/img/placeholder.png' }}" alt="{{ person.name }}">
+        <div class="hover-title-overlay">
+          <span class="hover-title-text">{{ person.name }}</span>
+        </div>
+        <div class="reorder-buttons">
+          <button class="move-up-btn" title="Move Up" aria-label="Move Up">⬆️</button>
+          <button class="move-down-btn" title="Move Down" aria-label="Move Down">⬇️</button>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
 
 {% endblock %}
 

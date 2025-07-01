@@ -245,6 +245,7 @@ def get_trending_movies():
                 "id": str(item["id"]),
                 "title": item.get("title", "Untitled"),
                 "poster_path": poster_url,
+                "media_type" : "movie"
             })
 
         return results
@@ -278,6 +279,7 @@ def get_trending_tv():
                 "id": str(item["id"]),
                 "title": item.get("name", "Untitled"),  # TV shows use "name"
                 "poster_path": poster_url,
+                "media_type" : "tv"
             })
 
         return results
@@ -330,6 +332,7 @@ def get_trending_anime():
                 "id": str(mal_id),
                 "title": title,
                 "poster_path": poster,
+                "media_type" : "anime"
             })
 
         return results
@@ -382,6 +385,7 @@ def get_trending_manga():
                 "id": str(mal_id),
                 "title": title,
                 "poster_path": poster,
+                "media_type" : "manga"
             })
 
         return results
@@ -429,6 +433,7 @@ def get_trending_games():
                 "id": str(item["id"]),
                 "title": item.get("name", "Untitled"),
                 "poster_path": cover_url,
+                "media_type" : "game"
             })
 
         return results

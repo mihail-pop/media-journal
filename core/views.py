@@ -12,9 +12,11 @@ from django.http import JsonResponse
 from django.utils import timezone
 from datetime import timedelta
 from collections import defaultdict
-from .models import APIKey, MediaItem
+from .models import APIKey, MediaItem, FavoritePerson
 from django.db.models import Sum
+from django.utils.text import slugify
 from django.urls import reverse
+from django.db import transaction
 import time
 import json
 import requests
@@ -288,8 +290,13 @@ def home(request):
             'media_type': item.media_type,
         })
 
+    favorite_characters = FavoritePerson.objects.filter(type="character").order_by("position")
+    favorite_actors = FavoritePerson.objects.filter(type="actor").order_by("position")
+
     return render(request, "core/home.html", {
         "favorite_sections": favorite_sections.items(),
+        "favorite_characters": favorite_characters,
+        "favorite_actors": favorite_actors,
         "stats": stats,
         "stats_blocks": stats_blocks,
         "extra_stats": extra_stats,             # ⬅️ added for HTML usage
@@ -297,6 +304,24 @@ def home(request):
         "activity_columns": columns,
         'notifications': notifications_list,
     })
+
+@require_POST
+def update_favorite_person_order(request):
+    try:
+        data = json.loads(request.body)
+        new_order = data.get("order", [])  # List of IDs in new order
+
+        if not isinstance(new_order, list):
+            return JsonResponse({"error": "Invalid data format"}, status=400)
+
+        # Wrap updates in a transaction for atomicity
+        with transaction.atomic():
+            for position, person_id in enumerate(new_order, start=1):
+                FavoritePerson.objects.filter(id=person_id).update(position=position)
+
+        return JsonResponse({"success": True})
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
 
 
 def settings_page(request):
@@ -336,8 +361,17 @@ def discover_view(request):
     media_items.extend(trending_manga)
     media_items.extend(trending_games)
 
+    MEDIA_SECTIONS = [
+    ("movie", "Trending Movies"),
+    ("tv", "Trending TV Shows"),
+    ("anime", "Trending Anime"),
+    ("manga", "Trending Manga"),
+    ("game", "Trending Games"),
+]
+
     context = {
         "media_items": media_items,
+        "media_sections": MEDIA_SECTIONS,
     }
     return render(request, "core/discover.html", context)
 
@@ -1789,4 +1823,148 @@ def delete_key(request):
         return JsonResponse({"message": "API key deleted."})
     except APIKey.DoesNotExist:
         return JsonResponse({"error": "Key not found."}, status=404)
+
+
+def character_search(query):
+    url = 'https://graphql.anilist.co'
+    headers = {'Content-Type': 'application/json'}
+
+    graphql_query = '''
+    query ($search: String) {
+      Page(perPage: 10) {
+        characters(search: $search) {
+          id
+          name {
+            full
+          }
+          image {
+            large
+          }
+        }
+      }
+    }
+    '''
+
+    variables = {
+        'search': query
+    }
+
+    response = requests.post(url, json={'query': graphql_query, 'variables': variables}, headers=headers)
+
+    if response.status_code == 200:
+        data = response.json()
+        results = []
+        for char in data['data']['Page']['characters']:
+            results.append({
+                'id': char['id'],
+                'name': char['name']['full'],
+                'image': char['image']['large']
+            })
+        return results
+    else:
+        return []
     
+def actor_search(query):
+    url = 'https://api.themoviedb.org/3/search/person'
+    params = {
+        'api_key': APIKey.objects.get(name="tmdb").key_1,
+        'query': query,
+        'include_adult': False,
+        'language': 'en-US',
+        'page': 1
+    }
+
+    response = requests.get(url, params=params)
+
+    if response.status_code == 200:
+        data = response.json()
+        results = []
+        for person in data.get('results', [])[:10]:
+            results.append({
+                'id': person['id'],
+                'name': person['name'],
+                'image': f"https://image.tmdb.org/t/p/w185{person['profile_path']}" if person.get('profile_path') else None
+            })
+        return results
+    else:
+        return []
+    
+
+def save_favorite_actor_character(name, image_url, type):
+    existing_count = FavoritePerson.objects.filter(type=type).count()
+    position = existing_count + 1
+
+    # Prepare local path
+    slug_name = slugify(name)
+    ext = image_url.split('.')[-1].split('?')[0]  # crude extension extract, e.g. jpg, png
+    relative_path = f'favorites/{type}s/{slug_name}.{ext}'
+
+    local_url = download_image(image_url, relative_path)
+    # fallback to original url if download failed
+    final_image_url = local_url if local_url else image_url
+
+    person = FavoritePerson.objects.create(
+        name=name,
+        image_url=final_image_url,
+        type=type,
+        position=position
+    )
+    return person
+
+def delete_favorite_person_and_reorder(person_id):
+    try:
+        person = FavoritePerson.objects.get(id=person_id)
+        person_type = person.type
+
+        # Attempt to delete the local image file if it's stored locally
+        if person.image_url and person.image_url.startswith(settings.MEDIA_URL):
+            # Convert URL to file system path
+            relative_path = person.image_url.replace(settings.MEDIA_URL, '').lstrip('/')
+            local_path = os.path.join(settings.MEDIA_ROOT, relative_path)
+            if os.path.isfile(local_path):
+                try:
+                    os.remove(local_path)
+                except Exception as e:
+                    print(f"Failed to delete image file {local_path}: {e}")
+
+        # Delete the person record from DB
+        person.delete()
+
+        # Reorder remaining people of the same type
+        favorites = FavoritePerson.objects.filter(type=person_type).order_by('position')
+        for i, fav in enumerate(favorites, start=1):
+            fav.position = i
+            fav.save()
+        return True
+    except FavoritePerson.DoesNotExist:
+        return False
+    
+
+def character_search_view(request):
+    query = request.GET.get('q', '')
+    results = character_search(query) if query else []
+    return JsonResponse(results, safe=False)
+
+def actor_search_view(request):
+    query = request.GET.get('q', '')
+    results = actor_search(query) if query else []
+    return JsonResponse(results, safe=False)
+
+def toggle_favorite_person_view(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST request required.'}, status=400)
+
+    data = json.loads(request.body)
+    name = data.get('name')
+    image_url = data.get('image_url')
+    person_type = data.get('type')
+
+    # Check if already favorited
+    existing = FavoritePerson.objects.filter(name=name, type=person_type).first()
+    if existing:
+        # Delete favorite and reorder positions
+        delete_favorite_person_and_reorder(existing.id)
+        return JsonResponse({'status': 'removed'})
+    else:
+        save_favorite_actor_character(name, image_url, person_type)
+        return JsonResponse({'status': 'added'})

@@ -1,0 +1,98 @@
+body {
+  background-color: #0b1622;
+  margin: 0;
+  padding: 0;
+  color: #8596A5;
+}
+
+.separator-bar {
+  width: 100%;
+  height: 58px;
+  margin-bottom: 1.5rem;
+}
+
+.list-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* this centers sections horizontally */
+  width: 100%;
+  margin-top: -20px;
+}
+
+.list-content {
+  width: 100%;
+  margin-top: -20px;
+  align-items: center;
+}
+
+/* Section styling */
+.discover-section {
+  margin-bottom: 3rem;
+}
+
+.section-title {
+  font-size: 1.5rem;
+  margin-bottom: 1.2rem;
+}
+
+/* Grid layout for cards: 5 per row */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 150px);
+  gap: 2.5rem 2rem;
+}
+
+/* Individual card */
+.card {
+  border-radius: 4px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transition: transform 0.15s ease-in-out;
+  cursor: pointer;
+  width: 150px;
+}
+
+.card img {
+  width: 150px;
+  height: 210px;
+  object-fit: cover;
+  display: block;
+}
+
+/* NEW: title block under the image */
+.card-title-overlay {
+  background: none;
+  padding: 0.4rem 0 0;
+  font-size: 0.85rem;
+  text-align: left;
+}
+
+.card-title {
+  width: 150px; /* or 100% */
+  white-space: normal; /* allow wrapping */
+  overflow-wrap: break-word; /* break long words if needed */
+  line-height: 1.2em; /* optional: tighter line spacing */
+  margin-top: 0.25rem; /* add spacing from image */
+}
+
+.card:hover .card-title {
+  color: #EDF1F5; /* bright color on hover */
+  transition: color 0.3s ease;
+}
+
+.card-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+/* Empty message */
+.empty-message {
+  text-align: center;
+  margin-top: 2rem;
+  color: #A0AAB4;
+  font-size: 1.1rem;
+}

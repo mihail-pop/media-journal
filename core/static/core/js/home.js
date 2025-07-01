@@ -62,6 +62,7 @@ function openFavoritesOverlay(category) {
 function closeFavoritesOverlay(categorySlug) {
   const id = `overlay-${categorySlug}`;
   document.getElementById(id)?.classList.add('hidden');
+  location.reload();
 }
 
 // Helper to match Django's slugify (simplified version)
@@ -127,3 +128,68 @@ function slugify(text) {
     }
     return cookieValue;
   }
+
+
+
+  // Handle reorder button clicks inside a container (.card-grid)
+function setupReorderButtons(containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  container.querySelectorAll('.card').forEach(card => {
+const upBtn = card.querySelector('.move-up-btn');
+const downBtn = card.querySelector('.move-down-btn');
+
+    upBtn?.addEventListener('click', () => moveCard(card, container, -1));
+    downBtn?.addEventListener('click', () => moveCard(card, container, 1));
+  });
+}
+
+function moveCard(card, container, direction) {
+  const cards = Array.from(container.children);
+  const index = cards.indexOf(card);
+  const newIndex = index + direction;
+
+  if (newIndex < 0 || newIndex >= cards.length) return; // Can't move out of bounds
+
+  // Swap card with the one in newIndex position
+  container.insertBefore(card, direction === 1 ? cards[newIndex].nextSibling : cards[newIndex]);
+
+  // After reorder, send updated order to backend
+  saveNewOrder(container);
+}
+
+function saveNewOrder(container) {
+  // Extract IDs from cards (you must add data-id="{{ person.id }}" in HTML)
+  const ids = Array.from(container.children).map(card => card.dataset.id);
+  console.log('Saving new order:', ids);
+
+  // Send order to backend
+  fetch('/api/favorite-persons/reorder/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCookie('csrftoken'),
+    },
+    body: JSON.stringify({ order: ids }),
+  })
+    .then(response => {
+      if (!response.ok) throw new Error('Failed to save order');
+      return response.json();
+    })
+    .then(data => {
+      console.log('Order saved successfully', data);
+    })
+    .catch(error => {
+      console.error('Error saving order:', error);
+      alert('Error saving new order. Please try again.');
+    });
+}
+
+
+
+// Initialize reorder buttons on page load for actors and characters
+document.addEventListener('DOMContentLoaded', () => {
+setupReorderButtons('actors-card-grid');
+setupReorderButtons('characters-card-grid');
+});

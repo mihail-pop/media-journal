@@ -134,22 +134,30 @@
 {% endif %}
 
 
-    {% if cast %}
-    <section class="cast-section">
-      <h2>Cast</h2>
-      <div class="cast-list">
-        {% for member in cast %}
-        <div class="cast-member">
-          <img src="{% if member.is_full_url %}{{ member.profile_path }}{% else %}https://image.tmdb.org/t/p/w185{{ member.profile_path }}{% endif %}"
-               alt="{{ member.name }}"
-               onerror="this.src='https://dummyimage.com/150x225/cccccc/000000&text=No+Image';" />
-          <p class="actor-name">{{ member.name }}</p>
-          <p class="character-name">{{ member.character }}</p>
-        </div>
-        {% endfor %}
-      </div>
-    </section>
-    {% endif %}
+{% if cast %}
+<section class="cast-section">
+  <div class="cast-header" style="display: flex; align-items: center; gap: 1rem;">
+    <h2 style="margin: 0;">Cast</h2>
+    <input type="text" id="person-search-input" placeholder="Search for a character or actor..." autocomplete="off" style="flex-grow: 1;">
+    <button id="person-search-btn" title="Search" aria-label="Search" class="search-icon-button"></button>
+  </div>
+
+  <!-- Search results above the cast list -->
+  <div id="person-search-results" class="search-results"></div>
+
+  <div class="cast-list">
+    {% for member in cast %}
+    <div class="cast-member">
+      <img src="{% if member.is_full_url %}{{ member.profile_path }}{% else %}https://image.tmdb.org/t/p/w185{{ member.profile_path }}{% endif %}"
+           alt="{{ member.name }}"
+           onerror="this.src='https://dummyimage.com/150x225/cccccc/000000&text=No+Image';" />
+      <p class="actor-name">{{ member.name }}</p>
+      <p class="character-name">{{ member.character }}</p>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
 
 {% if recommendations %}
 <section class="recommendations-section">
@@ -197,6 +205,107 @@
 
 {% block script %}
   {{ block.super }}
+<script>
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== "") {
+      const cookies = document.cookie.split(";");
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === name + "=") {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    const searchInput = document.getElementById("person-search-input");
+    const searchBtn = document.getElementById("person-search-btn");
+    const resultsContainer = document.getElementById("person-search-results");
+
+    const mediaType = "{{ media_type }}"; // movie, tv, anime, manga
+
+    function performSearch() {
+      const query = searchInput.value.trim();
+      if (!query) {
+        resultsContainer.innerHTML = "";
+        return;
+      }
+
+      const endpoint =
+        mediaType === "anime" || mediaType === "manga"
+          ? "/api/character_search/"
+          : "/api/actor_search/";
+
+      fetch(`${endpoint}?q=${encodeURIComponent(query)}`)
+        .then((res) => res.json())
+        .then((data) => {
+          resultsContainer.innerHTML = "";
+          if (data.length === 0) {
+            resultsContainer.innerHTML = "<p>No results found.</p>";
+            return;
+          }
+
+          data.forEach((person) => {
+            const card = document.createElement("div");
+            card.className = "person-card";
+            card.innerHTML = `
+              <img src="${
+                person.image || "/static/core/img/placeholder.png"
+              }" alt="${person.name}">
+              <p class="person-name">${person.name}</p>
+              <button class="favorite-btn" data-name="${person.name}" data-img="${person.image}" data-type="${
+              mediaType === "anime" || mediaType === "manga" ? "character" : "actor"
+            }">⭐</button>
+            `;
+            resultsContainer.appendChild(card);
+          });
+        })
+        .catch((err) => {
+          console.error("Search failed:", err);
+          resultsContainer.innerHTML = "<p>Error fetching data.</p>";
+        });
+    }
+
+    searchBtn.addEventListener("click", performSearch);
+
+    // Optional: search on Enter key inside input
+    searchInput.addEventListener("keyup", (e) => {
+      if (e.key === "Enter") {
+        performSearch();
+      }
+    });
+
+    resultsContainer.addEventListener("click", function (e) {
+      if (e.target.classList.contains("favorite-btn")) {
+        const btn = e.target;
+        const name = btn.dataset.name;
+        const image = btn.dataset.img;
+        const type = btn.dataset.type;
+
+        fetch("/api/toggle_favorite_person/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCookie("csrftoken"),
+          },
+          body: JSON.stringify({ name, image_url: image, type }),
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.status === "added") {
+              btn.textContent = "✅"; // favorited
+            } else if (data.status === "removed") {
+              btn.textContent = "⭐"; // unfavorited
+            }
+          });
+      }
+    });
+  });
+</script>
   <script>
   document.addEventListener("DOMContentLoaded", function () {
     const banner = document.querySelector(".banner-section");

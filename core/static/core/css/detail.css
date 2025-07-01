@@ -137,7 +137,6 @@ body {
   border: none;
   padding: 0.6rem 1.2rem;
   border-radius: 6px;
-  color: #f7f7f7;
   font-weight: 600;
   cursor: pointer;
   transition: background-color 0.3s ease;
@@ -222,7 +221,7 @@ body {
   transition: transform 0.2s ease;
 }
 
-.cast-member:hover, .season-card:hover, .rec-card:hover, .recommendation:hover {
+.rec-card:hover, .recommendation:hover {
   transform: scale(1.05);
 }
 
@@ -298,4 +297,116 @@ body {
   .double-recs {
     flex-direction: column;
   }
+}
+
+
+
+/* Container for the inline search */
+#person-search-container {
+  margin-bottom: 1.5rem;
+  max-width: 100%;
+}
+
+#person-search-input {
+  width: 100%;
+  max-width: 50px;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  border: none;
+  font-size: 1rem;
+  background-color: #151f2e;
+  color: #cecece;
+  box-shadow: inset 0 0 4px #0008;
+  transition: box-shadow 0.3s ease;
+}
+
+#person-search-input::placeholder {
+  color: #cecece; /* placeholder color */
+}
+
+#person-search-input:focus {
+  outline: none;
+  max-width: 230px;
+}
+
+#person-search-btn {
+  margin-left: 0.5rem;
+  background-color: none;
+  background: none;
+  border: none;
+  padding: 0.45rem 1rem;
+  border-radius: 6px;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+#person-search-btn:hover {
+  background-color: #0099cc;
+}
+
+/* Search results container */
+#person-search-results {
+  margin-top: 0.8rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  max-width: 100%;
+  margin-bottom: 1.2rem;
+}
+
+/* Each person card */
+.person-card {
+  background: #151f2e;
+  border-radius: 6px;
+  padding: 8px;
+  width: 120px;
+  text-align: center;
+  text-decoration: none;
+  color: white;
+  box-shadow: 0 1px 5px rgba(0,0,0,0.6);
+  transition: transform 0.2s ease;
+}
+
+
+/* Person image */
+.person-card img {
+  width: 120px;
+  height: 180px;
+  object-fit: cover;
+  border-bottom: 1px solid #0b1622;
+  background-color: #222a3a;
+}
+
+/* Person name */
+.person-name {
+  font-size: 0.85rem;
+  color: #eee;
+  margin: 6px 4px 8px;
+  flex-grow: 1;
+  line-height: 1.1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Favorite (star) button */
+.favorite-btn {
+  background: transparent;
+  border: none;
+  font-size: 1.2rem;
+  padding: 6px 0;
+  color: #bbb;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+.favorite-btn:hover {
+  color: #00bfff;
+}
+
+.favorite-btn:focus {
+  outline: none;
+  color: #0099cc;
 }

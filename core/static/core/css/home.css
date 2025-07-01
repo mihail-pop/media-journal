@@ -425,12 +425,14 @@ body {
   background-color: #A142F4;
 }
 
+.discover-button,
 .notifications-wrapper {
   position: relative;
   display: inline-block;
   font-family: Arial, sans-serif;
 }
 
+.discover-button,
 .notifications-button {
   background-color: transparent;
   border: none;
@@ -440,10 +442,28 @@ body {
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 6px;
   padding: 6px 10px;
-  margin-right: 14vw;
   user-select: none;
+}
+
+.notifications-button{
+  margin-right: 14vw;
+  gap: 6px;
+}
+
+.discover-button {
+  text-decoration: none;
+}
+
+.discover-button svg{
+  fill: white;
+}
+
+.discover-button:hover,
+.discover-button:hover svg {
+  color: #e91e63; /* bright yellow/orange for text */
+  fill: #e91e63;  /* same bright color for the flame SVG */
+  transition: color 0.3s ease, fill 0.3s ease;
 }
 
 .notifications-button .notification-icon {
@@ -560,3 +580,43 @@ body {
   margin: 0 auto;
 }
 
+/* Hide reorder buttons by default */
+.reorder-buttons {
+  position: absolute;
+  flex-direction: column;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none; /* prevent accidental clicks when hidden */
+  z-index: 1000;
+}
+
+/* Show buttons when hovering over the card */
+.card:hover .reorder-buttons {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Style for the buttons */
+.reorder-buttons button {
+  background-color: rgba(0, 0, 0, 0.6);
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  font-size: 1.2rem;
+  padding: 4px 6px;
+  border-radius: 4px;
+  user-select: none;
+  line-height: 1;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+  z-index: 1000;
+}
+
+.reorder-buttons button:hover {
+  background-color: rgba(0, 0, 0, 0.85);
+}

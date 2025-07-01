@@ -78,3 +78,18 @@ class MediaItem(models.Model):
 
     def __str__(self):
         return f"{self.title} ({self.media_type})"
+    
+
+class FavoritePerson(models.Model):
+    PERSON_TYPE_CHOICES = [
+        ('character', 'Character'),
+        ('actor', 'Actor'),
+    ]
+
+    name = models.CharField(max_length=200)
+    image_url = models.URLField(blank=True, null=True)
+    type = models.CharField(max_length=10, choices=PERSON_TYPE_CHOICES)
+    position = models.PositiveIntegerField()
+
+    def __str__(self):
+        return f"{self.name} ({self.type})"
