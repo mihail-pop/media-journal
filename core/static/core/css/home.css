@@ -92,15 +92,24 @@ body {
   position: relative;
   transition: transform 0.15s ease-in-out;
   cursor: pointer;
+  width: 85px;
+  height: 115px;
+  overflow: hidden;
+}
 
+.card-image {
+  width: 340px; /* original image width */
+  height: 460px; /* original image height */
+  transform: scale(0.25);
+  transform-origin: top left;
 }
 
 .card img {
-  border-radius: 4px;
-  width: 85px;
-  height: 115px;
-  object-fit: cover;
+  width: 100%;
+  height: auto;
   display: block;
+  object-fit: cover;
+  border-radius: 4px;
 }
 
 /* Hover title overlay */

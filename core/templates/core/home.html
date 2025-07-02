@@ -136,7 +136,7 @@
 {% else %}
   <a href="#">
 {% endif %}
-                <img src="{{ item.cover_url|default:'/static/img/cover_fallback.jpg' }}" alt="{{ item.title }}">
+                <div class="card-image"><img src="{{ item.cover_url|default:'/static/img/cover_fallback.jpg' }}" alt="{{ item.title }}"></div>
               </a>
   <div class="hover-title-overlay">
     <span class="hover-title-text">{{ item.title }}</span>
@@ -170,7 +170,7 @@
           {% else %}
             <a href="#">
           {% endif %}
-              <img src="{{ item.cover_url|default:'/static/img/cover_fallback.jpg' }}" alt="{{ item.title }}">
+              <div class="card-image"><img src="{{ item.cover_url|default:'/static/img/cover_fallback.jpg' }}" alt="{{ item.title }}"></div>
             </a>
             <div class="hover-title-overlay">
               <span class="hover-title-text">{{ item.title }}</span>
@@ -193,7 +193,7 @@
       <div class="card-grid">
         {% for person in favorite_characters|slice:":25" %}
         <div class="card">
-          <img src="{{ person.image_url|default:'/static/core/img/placeholder.png' }}" alt="{{ person.name }}">
+          <div class="card-image"><img src="{{ person.image_url|default:'/static/core/img/placeholder.png' }}" alt="{{ person.name }}"></div>
           <div class="hover-title-overlay">
             <span class="hover-title-text">{{ person.name }}</span>
           </div>
@@ -209,7 +209,7 @@
       <div class="card-grid">
         {% for person in favorite_actors|slice:":25" %}
         <div class="card">
-          <img src="{{ person.image_url|default:'/static/core/img/placeholder.png' }}" alt="{{ person.name }}">
+          <div class="card-image"><img src="{{ person.image_url|default:'/static/core/img/placeholder.png' }}" alt="{{ person.name }}"></div>
           <div class="hover-title-overlay">
             <span class="hover-title-text">{{ person.name }}</span>
           </div>
@@ -231,7 +231,7 @@
     <div class="card-grid" id="characters-card-grid">
       {% for person in favorite_characters %}
       <div class="card" data-id="{{ person.id }}">
-        <img src="{{ person.image_url|default:'/static/core/img/placeholder.png' }}" alt="{{ person.name }}">
+        <div class="card-image"><img src="{{ person.image_url|default:'/static/core/img/placeholder.png' }}" alt="{{ person.name }}"></div>
         <div class="hover-title-overlay">
           <span class="hover-title-text">{{ person.name }}</span>
         </div>
@@ -254,7 +254,7 @@
     <div class="card-grid" id="actors-card-grid">
       {% for person in favorite_actors %}
       <div class="card" data-id="{{ person.id }}">
-        <img src="{{ person.image_url|default:'/static/core/img/placeholder.png' }}" alt="{{ person.name }}">
+        <div class="card-image"><img src="{{ person.image_url|default:'/static/core/img/placeholder.png' }}" alt="{{ person.name }}"></div>
         <div class="hover-title-overlay">
           <span class="hover-title-text">{{ person.name }}</span>
         </div>

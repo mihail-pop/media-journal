@@ -399,7 +399,7 @@ def mal_search(request):
             romaji
           }
           coverImage {
-            medium
+            large
           }
         }
       }
@@ -434,7 +434,7 @@ def mal_search(request):
                 continue  # skip entries without MAL ID
 
             title = media["title"].get("english") or media["title"].get("romaji") or "Unknown Title"
-            poster = media.get("coverImage", {}).get("medium")
+            poster = media.get("coverImage", {}).get("large")
 
             results.append({
                 "id": str(mal_id),  # Still return MAL ID for compatibility
