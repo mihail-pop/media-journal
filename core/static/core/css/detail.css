@@ -410,3 +410,80 @@ body {
   outline: none;
   color: #0099cc;
 }
+
+
+
+.screenshot-rotator {
+  position: relative;
+  max-width: 100%;
+  height: auto;
+  text-align: center;
+}
+
+.screenshot-rotator img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 0 10px #0003;
+  transition: opacity 0.2s ease;
+}
+
+.rotator-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0, 0, 0, 0.4);
+  border: none;
+  color: white;
+  font-size: 2rem;
+  padding: 0.3em 0.6em;
+  cursor: pointer;
+  z-index: 1;
+  border-radius: 50%;
+  transition: background 0.2s ease;
+}
+
+.rotator-btn:hover {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.rotator-btn.left {
+  left: 10px;
+}
+
+.rotator-btn.right {
+  right: 10px;
+}
+
+.screenshots-header {
+  display: flex;
+  align-items: center;
+  gap: 1em; /* space between title and buttons */
+  flex-wrap: wrap; /* if screen is narrow, forms wrap below */
+  margin-bottom: 1em;
+}
+
+.screenshots-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  white-space: nowrap;
+}
+
+.inline-form {
+  margin: 0;  /* remove default form margin */
+}
+
+.inline-form button {
+  background-color: #151f2e;
+  border: none;
+  color: #cecece;
+  padding: 0.4em 1em;
+  font-size: 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.inline-form button:hover {
+  background-color: #1f2a38;
+}

@@ -44,7 +44,6 @@
   display: grid;
   grid-template-columns: repeat(5, 1fr); /* fixed 5 columns */
   gap: 12px; /* add a gap for spacing between cards */
-  max-height: 500px; /* approx 2 rows, adjust as needed */
   overflow-y: auto;
   background: #151F2E;
   padding: 12px;

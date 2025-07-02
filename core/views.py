@@ -17,6 +17,7 @@ from django.db.models import Sum
 from django.utils.text import slugify
 from django.urls import reverse
 from django.db import transaction
+from django.core.files.base import ContentFile
 import time
 import json
 import requests
@@ -26,6 +27,7 @@ import datetime
 import shutil
 import tempfile
 import zipfile
+import glob
 
 
 
@@ -699,7 +701,7 @@ def tmdb_detail(request, media_type, tmdb_id):
 
     # Cast (use TMDB URLs)
     cast_data = []
-    for i, actor in enumerate(data.get("credits", {}).get("cast", [])[:16]):
+    for i, actor in enumerate(data.get("credits", {}).get("cast", [])[:8]):
         profile_url = f"https://image.tmdb.org/t/p/w185{actor.get('profile_path')}" if actor.get("profile_path") else ""
         cast_data.append({
             "name": actor.get("name"),
@@ -775,7 +777,7 @@ def save_tmdb_item(media_type, tmdb_id):
 
         # Cast
         cast_data = []
-        for i, actor in enumerate(data.get("credits", {}).get("cast", [])[:16]):
+        for i, actor in enumerate(data.get("credits", {}).get("cast", [])[:8]):
             profile_url = f"https://image.tmdb.org/t/p/w185{actor.get('profile_path')}" if actor.get("profile_path") else ""
             local_profile = download_image(profile_url, f"cast/tmdb_{tmdb_id}_{i}.jpg") if profile_url else ""
             cast_data.append({
@@ -945,7 +947,7 @@ def save_mal_item(media_type, mal_id):
         ) if anilist_data["banner_url"] else ""
 
         cast = []
-        for i, member in enumerate(anilist_data["cast"][:16]):
+        for i, member in enumerate(anilist_data["cast"][:8]):
             profile_url = member.get("profile_path")
             local_path = download_image(profile_url, f"cast/mal_{mal_id}_{i}.jpg") if profile_url else ""
             cast.append({
@@ -1483,7 +1485,71 @@ def save_igdb_item(igdb_id):
     return JsonResponse({"success": True, "message": "Game added to list"})
 
 
+def upload_game_screenshots(request):
+    if request.method != "POST":
+        return JsonResponse({"success": False, "message": "Invalid request method."}, status=400)
 
+    igdb_id = request.POST.get("igdb_id")
+    if not igdb_id:
+        return JsonResponse({"success": False, "message": "Missing igdb_id."}, status=400)
+
+    try:
+        media_item = MediaItem.objects.get(media_type="game", source="igdb", source_id=str(igdb_id))
+    except MediaItem.DoesNotExist:
+        return JsonResponse({"success": False, "message": "Game not found."}, status=404)
+
+    files = request.FILES.getlist("screenshots[]")
+    if not files:
+        return JsonResponse({"success": False, "message": "No files uploaded."}, status=400)
+
+    action = request.headers.get("X-Action", "replace")  # default to replace
+
+    if action == "replace":
+        # Delete existing screenshots
+        pattern_jpg = os.path.join(settings.MEDIA_ROOT, f"screenshots/igdb_{igdb_id}_*.jpg")
+        pattern_png = os.path.join(settings.MEDIA_ROOT, f"screenshots/igdb_{igdb_id}_*.png")
+
+        for path in glob.glob(pattern_jpg) + glob.glob(pattern_png):
+            os.remove(path)
+
+        # Start numbering from 1
+        start_index = 1
+
+        # Clear old list
+        old_screenshots = []
+
+    elif action == "add":
+        # Adding screenshots: keep old list
+        old_screenshots = media_item.screenshots or []
+        start_index = len(old_screenshots) + 1
+
+    else:
+        return JsonResponse({"success": False, "message": "Invalid action."}, status=400)
+
+    # Save and rename new screenshots
+    new_screenshots = list(old_screenshots)  # copy existing if adding
+
+    for i, file in enumerate(files, start=start_index):
+        ext = os.path.splitext(file.name)[1].lower()
+        if ext not in [".jpg", ".jpeg", ".png"]:
+            continue  # Skip unsupported files
+
+        filename = f"screenshots/igdb_{igdb_id}_{i}{ext}"
+        full_path = os.path.join(settings.MEDIA_ROOT, filename)
+        default_storage.save(full_path, file)
+
+        url = f"/media/{filename}"
+
+        new_screenshots.append({
+            "url": url,
+            "is_full_url": False
+        })
+
+    # Update DB entry
+    media_item.screenshots = new_screenshots
+    media_item.save()
+
+    return JsonResponse({"success": True, "message": "Screenshots updated."})
 
 
 
@@ -1711,14 +1777,18 @@ def create_backup(request):
     import uuid
 
     with tempfile.TemporaryDirectory() as temp_dir:
-        # Export DB
+        # Export MediaItem and FavoritePerson
+        media_items = list(MediaItem.objects.all())
+        favorite_people = list(FavoritePerson.objects.all())
+        all_data = media_items + favorite_people
+
         json_path = os.path.join(temp_dir, "media_items.json")
         with open(json_path, "w", encoding="utf-8") as f:
-            f.write(serialize("json", MediaItem.objects.all()))
+            f.write(serialize("json", all_data))
 
         # Copy media
         media_root = settings.MEDIA_ROOT
-        folders = ["posters", "banners", "cast", "related", "screenshots", "seasons"]
+        folders = ["posters", "banners", "cast", "related", "screenshots", "seasons", "favorites/actors", "favorites/characters"]
         for folder in folders:
             src = os.path.join(media_root, folder)
             dst = os.path.join(temp_dir, folder)
@@ -1764,16 +1834,20 @@ def restore_backup(request):
 
         for obj in deserialize("json", json.dumps(media_data)):
             try:
-                # Only add if not already in DB
-                fields = obj.object
-                if not MediaItem.objects.filter(source=fields.source, source_id=fields.source_id).exists():
-                    obj.save()
+                instance = obj.object
+                if isinstance(instance, MediaItem):
+                    if not MediaItem.objects.filter(source=instance.source, source_id=instance.source_id).exists():
+                        obj.save()
+                elif isinstance(instance, FavoritePerson):
+                    if not FavoritePerson.objects.filter(name=instance.name, type=instance.type).exists():
+                        obj.save()
             except Exception as e:
                 continue  # optionally log errors
 
+
         # Copy media folders
         media_root = settings.MEDIA_ROOT
-        folders = ["posters", "banners", "cast", "related", "screenshots", "seasons"]
+        folders = ["posters", "banners", "cast", "related", "screenshots", "seasons","favorites/actors", "favorites/characters"]
         for folder in folders:
             src_folder = os.path.join(temp_dir, folder)
             dest_folder = os.path.join(media_root, folder)

@@ -79,19 +79,20 @@ document.addEventListener("DOMContentLoaded", function () {
 
   applyFilters();
 
-  // === BANNER ROTATOR ===
+let firstLoad = true;
+
 function initBannerRotator() {
   const cards = [...document.querySelectorAll(".card")];
 
   bannerPool = cards
     .map(card => {
       const bannerUrl = card.dataset.bannerUrl;
-      const notes = card.dataset.notes?.trim(); // might be undefined
+      const notes = card.dataset.notes?.trim();
       return bannerUrl && !bannerUrl.includes("fallback")
         ? { bannerUrl, notes }
         : null;
     })
-    .filter(Boolean); // remove nulls
+    .filter(Boolean);
 
   if (bannerPool.length === 0) return;
 
@@ -103,30 +104,39 @@ function updateBanner() {
   if (bannerPool.length === 0) return;
   const random = Math.floor(Math.random() * bannerPool.length);
   const { bannerUrl, notes } = bannerPool[random];
-  
-  // Fade out
-  bannerImg.style.opacity = 0;
 
   const quoteBox = document.querySelector(".banner-quote");
-  if (quoteBox) {
-    quoteBox.style.opacity = 0;  // fade out quote as well
-  }
 
-  // After fade-out duration (1000ms), change image & notes, then fade in
-  setTimeout(() => {
+  if (firstLoad) {
+    // Immediately show banner without fade
     bannerImg.src = bannerUrl;
+    bannerImg.style.opacity = 1;
 
-    const quoteBox = document.querySelector(".banner-quote");
     if (quoteBox) {
       quoteBox.innerText = notes ? `“${notes}”\n\n~You` : "";
       quoteBox.style.display = notes ? "block" : "none";
       quoteBox.style.opacity = notes ? 1 : 0;
     }
 
+    firstLoad = false;  // next time fade will apply
+    return;
+  }
+
+  // Fade out
+  bannerImg.style.opacity = 0;
+  if (quoteBox) quoteBox.style.opacity = 0;
+
+  setTimeout(() => {
+    bannerImg.src = bannerUrl;
+    if (quoteBox) {
+      quoteBox.innerText = notes ? `“${notes}”\n\n~You` : "";
+      quoteBox.style.display = notes ? "block" : "none";
+      quoteBox.style.opacity = notes ? 1 : 0;
+    }
     // Fade back in
     bannerImg.style.opacity = 1;
-  }, 1000);  // same as CSS transition time
+  }, 1000);
 }
 
-  initBannerRotator();
+initBannerRotator();
 });

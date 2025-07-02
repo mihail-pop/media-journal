@@ -71,7 +71,7 @@ def fetch_anilist_data(mal_id, media_type):
         coverImage {
           extraLarge
         }
-        characters(sort: [ROLE, RELEVANCE], perPage: 16) {
+        characters(sort: [ROLE, RELEVANCE], perPage: 8) {
           edges {
             role
             node {
@@ -79,7 +79,7 @@ def fetch_anilist_data(mal_id, media_type):
                 full
               }
               image {
-                large
+                medium
               }
             }
           }
@@ -166,7 +166,7 @@ def fetch_anilist_data(mal_id, media_type):
         cast.append({
             "name": character["name"]["full"],
             "character": edge.get("role", ""),
-            "profile_path": character["image"]["large"],
+            "profile_path": character["image"]["medium"],
             "is_full_url": True,
         })
 

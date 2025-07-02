@@ -31,9 +31,7 @@ document.addEventListener("DOMContentLoaded", function () {
       if (mainLabel) mainLabel.textContent = "Episode Progress";
     } else if (mediaType === "game") {
       showField("progress_main");
-      showField("progress_secondary");
       if (mainLabel) mainLabel.textContent = "Hours Played";
-      if (secondaryLabel) secondaryLabel.textContent = "Year Finished";
     } else if (mediaType === "manga") {
       showField("progress_main");
       showField("progress_secondary");
@@ -280,8 +278,6 @@ document.querySelectorAll("#list-view .edit-card-btn").forEach(button => {
   });
   
 document.getElementById("edit-delete-btn")?.addEventListener("click", function () {
-  if (!confirm("Are you sure you want to delete this item? This action cannot be undone.")) return;
-
   const itemId = form.dataset.itemId;
 
   fetch(`/delete-item/${itemId}/`, {
@@ -294,7 +290,6 @@ document.getElementById("edit-delete-btn")?.addEventListener("click", function (
   .then(res => res.json())
   .then(res => {
     if (res.success) {
-      alert("Item deleted.");
       window.location.reload();
     } else {
       alert("Failed to delete item.");

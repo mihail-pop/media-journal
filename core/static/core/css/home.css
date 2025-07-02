@@ -65,7 +65,7 @@ body {
   width: 100%;
   height: 45px;
   background-color: #151F2E;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
   display: flex;
   justify-content: flex-end; /* pushes children to the right */
   align-items: center; /* vertically center if needed */
@@ -124,7 +124,7 @@ body {
 /* Hover title text */
 .hover-title-text {
   color: #8596A5;
-  font-size: 0.75rem;
+  font-size: 0.85rem;
   font-weight: 600;
   text-align: center;
   overflow: hidden;
@@ -300,25 +300,22 @@ body {
 /* --- Stats Section Layout --- */
 .stats-summary-box {
   transform: scale(0.92);
-  margin-top: 1rem;
-  padding: 0rem 1.5rem 1.5rem 1.5rem; /* top right bottom left */
+  padding: 3rem 1.5rem 1.5rem 1.5rem; /* top right bottom left */
   background-color: #151F2E;
-  border-radius: 12px;
+  border-radius: 6px;
   color: #EDF1F5;
 }
 
-.stats-summary-box h2 {
+.extra-stats-class h2 {
   font-size: 1.3rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.1rem;
   color: #8596A5;
   
   /* This lifts the title visually */
   position: relative;
-  top: -3.25rem; /* or adjust as needed */
-  left: -2.5rem;
   padding: 0 0rem;
   width: fit-content;
-  margin-left: 1rem;
+  margin-left: 1.5rem;
   z-index: 1;
 }
 
@@ -339,7 +336,6 @@ body {
 
 .stats-block-label {
   color: #fff;
-  font-size: 0.85rem;
   font-weight: 600;
   border-radius: 6px;
   padding: 0.4rem 0.6rem;
@@ -391,7 +387,7 @@ body {
 /* Only color the label/title */
 .extra-stat-label {
   color: #fff;
-  font-size: 0.85rem;
+  font-size: 0.90rem;
   font-weight: 600;
   padding: 0.4rem 0.6rem;
   border-radius: 4px;

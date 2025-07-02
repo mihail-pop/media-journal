@@ -121,18 +121,43 @@
     </section>
     {% endif %}
 
+{{ screenshots|json_script:"screenshots-data" }}
+
 {% if screenshots %}
 <section class="screenshots-section">
+  <div class="screenshots-header">
   <h2>Screenshots</h2>
-  <div class="screenshots-list">
-    {% for shot in screenshots %}
-      <img src="{% if shot.is_full_url %}{{ shot.url }}{% else %}{{ shot.url }}{% endif %}" 
-           alt="Screenshot" onerror="this.style.display='none';" />
-    {% endfor %}
+
+  <!-- Upload Form -->
+  <form id="screenshot-upload-form" enctype="multipart/form-data" class="inline-form">
+    <input type="hidden" name="igdb_id" value="{{ source_id }}">
+    <input type="file" id="screenshot-file-input" name="screenshots[]" accept=".jpg,.jpeg,.png" multiple hidden>
+    <button type="button" onclick="document.getElementById('screenshot-file-input').click();">
+      Swap
+    </button>
+  </form>
+
+  <!-- Add Form (add to existing) -->
+<form id="screenshot-add-form" enctype="multipart/form-data" class="inline-form">
+  <input type="hidden" name="igdb_id" value="{{ source_id }}">
+  <input type="file" id="screenshot-add-file-input" name="screenshots[]" accept=".jpg,.jpeg,.png" multiple hidden>
+  <button type="button" onclick="document.getElementById('screenshot-add-file-input').click();">
+    Add
+  </button>
+</form>
+</div>
+
+  <!-- Screenshot Rotator -->
+  <div class="screenshot-rotator" onmouseenter="showArrows(this)" onmouseleave="hideArrows(this)">
+    <img id="screenshot-image" src="{{ screenshots.0.url }}" alt="Screenshot" />
+    <button class="rotator-btn left" onclick="changeScreenshot(-1)" style="display: none;">‹</button>
+    <button class="rotator-btn right" onclick="changeScreenshot(1)" style="display: none;">›</button>
   </div>
+
+  <!-- Inject JSON data safely -->
+  {{ screenshots|json_script:"screenshots-data" }}
 </section>
 {% endif %}
-
 
 {% if cast %}
 <section class="cast-section">
@@ -202,9 +227,37 @@
 </div>
 {% endblock %}
 
-
 {% block script %}
   {{ block.super }}
+<script>
+  const screenshotsData = JSON.parse(document.getElementById('screenshots-data').textContent);
+  let currentIndex = 0;
+
+function changeScreenshot(direction) {
+  const img = document.getElementById("screenshot-image");
+
+  // Fade out
+  img.style.opacity = 0;
+
+  setTimeout(() => {
+    currentIndex = (currentIndex + direction + screenshotsData.length) % screenshotsData.length;
+    img.src = screenshotsData[currentIndex].url;
+
+    // Fade in
+    img.style.opacity = 1;
+  }, 200); // Match this to your CSS transition duration (0.2s = 200ms)
+}
+
+  function showArrows(container) {
+    container.querySelector(".left").style.display = "block";
+    container.querySelector(".right").style.display = "block";
+  }
+
+  function hideArrows(container) {
+    container.querySelector(".left").style.display = "none";
+    container.querySelector(".right").style.display = "none";
+  }
+</script>
 <script>
   function getCookie(name) {
     let cookieValue = null;
@@ -306,6 +359,83 @@
     });
   });
 </script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const uploadFileInput = document.getElementById("screenshot-file-input");
+  const uploadForm = document.getElementById("screenshot-upload-form");
+
+  const addFileInput = document.getElementById("screenshot-add-file-input");
+  const addForm = document.getElementById("screenshot-add-form");
+
+  const csrfToken = getCookie("csrftoken");
+
+  // Replace all screenshots (existing logic)
+  uploadFileInput.addEventListener("change", function () {
+    const files = uploadFileInput.files;
+    if (!files.length) return;
+
+    const formData = new FormData();
+    formData.append("igdb_id", uploadForm.querySelector('input[name="igdb_id"]').value);
+    for (let i = 0; i < files.length; i++) {
+      formData.append("screenshots[]", files[i]);
+    }
+
+    fetch("/upload-game-screenshots/", {
+      method: "POST",
+      headers: {
+        "X-CSRFToken": csrfToken,
+        "X-Action": "replace"  // new header to tell backend to replace
+      },
+      body: formData,
+    })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          location.reload();
+        } else {
+          alert("Failed to upload screenshots: " + data.message);
+        }
+      })
+      .catch(error => {
+        console.error("Upload error:", error);
+        alert("An error occurred while uploading screenshots.");
+      });
+  });
+
+  // Add new screenshots (without deleting existing)
+  addFileInput.addEventListener("change", function () {
+    const files = addFileInput.files;
+    if (!files.length) return;
+
+    const formData = new FormData();
+    formData.append("igdb_id", addForm.querySelector('input[name="igdb_id"]').value);
+    for (let i = 0; i < files.length; i++) {
+      formData.append("screenshots[]", files[i]);
+    }
+
+    fetch("/upload-game-screenshots/", {
+      method: "POST",
+      headers: {
+        "X-CSRFToken": csrfToken,
+        "X-Action": "add"  // tell backend to add
+      },
+      body: formData,
+    })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          location.reload();
+        } else {
+          alert("Failed to add screenshots: " + data.message);
+        }
+      })
+      .catch(error => {
+        console.error("Upload error:", error);
+        alert("An error occurred while adding screenshots.");
+      });
+  });
+});
+</script>
   <script>
   document.addEventListener("DOMContentLoaded", function () {
     const banner = document.querySelector(".banner-section");
@@ -342,7 +472,7 @@
         .then(response => response.json())
         .then(data => {
           if (data.message) {
-            alert(data.message);
+            sessionStorage.setItem("openEditModal", "true");
             location.reload();
           } else if (data.error) {
             alert("Error: " + data.error);
@@ -367,6 +497,21 @@
       }
     });
   </script>
+  <script>
+  document.addEventListener("DOMContentLoaded", () => {
+    if (sessionStorage.getItem("openEditModal")) {
+      sessionStorage.removeItem("openEditModal");
+
+      // Try to find the edit button and click it
+      const editButton = document.getElementById("edit-button");
+      if (editButton) {
+        editButton.click();
+      } else {
+        console.warn("Edit button not found on page load.");
+      }
+    }
+  });
+</script>
   <script>
   document.addEventListener("DOMContentLoaded", function () {
     const favForm = document.getElementById("favorite-form");

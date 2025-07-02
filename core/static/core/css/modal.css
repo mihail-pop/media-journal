@@ -380,10 +380,20 @@
 }
 
 textarea[name="notes"] {
-  min-height: 5px;   /* less tall */
+  flex: none;
+  min-height: 50px;   /* less tall */
   width: 100%;        /* full width */
+  height: auto;
   max-width: 600px;   /* wider */
-  resize: vertical;
+  resize:vertical;
+  max-height: 231px;
+
+  scrollbar-width: none; /* for Firefox */
+  -ms-overflow-style: none;  /* for IE and Edge */
+}
+
+textarea[name="notes"]::-webkit-scrollbar {
+  display: none;
 }
 
 .form-group.notes-group {

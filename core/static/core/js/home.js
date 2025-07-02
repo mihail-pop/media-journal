@@ -3,6 +3,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const quoteBox = document.querySelector(".banner-quote");
 
   let bannerPool = [];
+  let firstLoad = true;
 
   function initBannerRotator() {
     const cards = [...document.querySelectorAll(".card")];
@@ -28,6 +29,27 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const random = Math.floor(Math.random() * bannerPool.length);
     const { bannerUrl, notes } = bannerPool[random];
+
+    if (firstLoad) {
+      // Show banner immediately without fade
+      bannerImg.src = bannerUrl;
+      bannerImg.style.opacity = 1;
+
+      if (quoteBox) {
+        if (notes) {
+          quoteBox.innerText = `“${notes}”\n\n~You`;
+          quoteBox.style.display = "block";
+          quoteBox.style.opacity = 1;
+        } else {
+          quoteBox.innerText = "";
+          quoteBox.style.display = "none";
+          quoteBox.style.opacity = 0;
+        }
+      }
+
+      firstLoad = false;
+      return;
+    }
 
     // Fade out
     bannerImg.style.opacity = 0;
