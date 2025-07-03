@@ -15,6 +15,15 @@
        {% if banner %}data-banner="{{ banner_url}}"{% endif %}>
     <div class="banner-overlay"></div>
   </div>
+{% if not recommendations %}
+  <button onclick="openBannerUpload('{{ source }}', '{{ source_id }}')"
+        class="change-banner-btn">
+  Change Banner
+</button>
+<button onclick="refreshItem('{{ item_id }}')" class="refresh-btn">
+  Refresh Data
+</button>
+{% endif %}
 {% endwith %}
 
 <!-- Colored section below banner -->
@@ -123,11 +132,11 @@
 
 {{ screenshots|json_script:"screenshots-data" }}
 
-{% if screenshots %}
+{% if media_type == 'game' %}
 <section class="screenshots-section">
   <div class="screenshots-header">
   <h2>Screenshots</h2>
-
+{% if not recommendations %}
   <!-- Upload Form -->
   <form id="screenshot-upload-form" enctype="multipart/form-data" class="inline-form">
     <input type="hidden" name="igdb_id" value="{{ source_id }}">
@@ -145,8 +154,9 @@
     Add
   </button>
 </form>
+    {% endif %}
 </div>
-
+{% if screenshots %}
   <!-- Screenshot Rotator -->
   <div class="screenshot-rotator" onmouseenter="showArrows(this)" onmouseleave="hideArrows(this)">
     <img id="screenshot-image" src="{{ screenshots.0.url }}" alt="Screenshot" />
@@ -156,6 +166,7 @@
 
   <!-- Inject JSON data safely -->
   {{ screenshots|json_script:"screenshots-data" }}
+{% endif %}
 </section>
 {% endif %}
 
@@ -229,338 +240,6 @@
 
 {% block script %}
   {{ block.super }}
-<script>
-  const screenshotsData = JSON.parse(document.getElementById('screenshots-data').textContent);
-  let currentIndex = 0;
-
-function changeScreenshot(direction) {
-  const img = document.getElementById("screenshot-image");
-
-  // Fade out
-  img.style.opacity = 0;
-
-  setTimeout(() => {
-    currentIndex = (currentIndex + direction + screenshotsData.length) % screenshotsData.length;
-    img.src = screenshotsData[currentIndex].url;
-
-    // Fade in
-    img.style.opacity = 1;
-  }, 200); // Match this to your CSS transition duration (0.2s = 200ms)
-}
-
-  function showArrows(container) {
-    container.querySelector(".left").style.display = "block";
-    container.querySelector(".right").style.display = "block";
-  }
-
-  function hideArrows(container) {
-    container.querySelector(".left").style.display = "none";
-    container.querySelector(".right").style.display = "none";
-  }
-</script>
-<script>
-  function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== "") {
-      const cookies = document.cookie.split(";");
-      for (let i = 0; i < cookies.length; i++) {
-        const cookie = cookies[i].trim();
-        if (cookie.substring(0, name.length + 1) === name + "=") {
-          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-          break;
-        }
-      }
-    }
-    return cookieValue;
-  }
-
-  document.addEventListener("DOMContentLoaded", function () {
-    const searchInput = document.getElementById("person-search-input");
-    const searchBtn = document.getElementById("person-search-btn");
-    const resultsContainer = document.getElementById("person-search-results");
-
-    const mediaType = "{{ media_type }}"; // movie, tv, anime, manga
-
-    function performSearch() {
-      const query = searchInput.value.trim();
-      if (!query) {
-        resultsContainer.innerHTML = "";
-        return;
-      }
-
-      const endpoint =
-        mediaType === "anime" || mediaType === "manga"
-          ? "/api/character_search/"
-          : "/api/actor_search/";
-
-      fetch(`${endpoint}?q=${encodeURIComponent(query)}`)
-        .then((res) => res.json())
-        .then((data) => {
-          resultsContainer.innerHTML = "";
-          if (data.length === 0) {
-            resultsContainer.innerHTML = "<p>No results found.</p>";
-            return;
-          }
-
-          data.forEach((person) => {
-            const card = document.createElement("div");
-            card.className = "person-card";
-            card.innerHTML = `
-              <img src="${
-                person.image || "/static/core/img/placeholder.png"
-              }" alt="${person.name}">
-              <p class="person-name">${person.name}</p>
-              <button class="favorite-btn" data-name="${person.name}" data-img="${person.image}" data-type="${
-              mediaType === "anime" || mediaType === "manga" ? "character" : "actor"
-            }">⭐</button>
-            `;
-            resultsContainer.appendChild(card);
-          });
-        })
-        .catch((err) => {
-          console.error("Search failed:", err);
-          resultsContainer.innerHTML = "<p>Error fetching data.</p>";
-        });
-    }
-
-    searchBtn.addEventListener("click", performSearch);
-
-    // Optional: search on Enter key inside input
-    searchInput.addEventListener("keyup", (e) => {
-      if (e.key === "Enter") {
-        performSearch();
-      }
-    });
-
-    resultsContainer.addEventListener("click", function (e) {
-      if (e.target.classList.contains("favorite-btn")) {
-        const btn = e.target;
-        const name = btn.dataset.name;
-        const image = btn.dataset.img;
-        const type = btn.dataset.type;
-
-        fetch("/api/toggle_favorite_person/", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-CSRFToken": getCookie("csrftoken"),
-          },
-          body: JSON.stringify({ name, image_url: image, type }),
-        })
-          .then((res) => res.json())
-          .then((data) => {
-            if (data.status === "added") {
-              btn.textContent = "✅"; // favorited
-            } else if (data.status === "removed") {
-              btn.textContent = "⭐"; // unfavorited
-            }
-          });
-      }
-    });
-  });
-</script>
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-  const uploadFileInput = document.getElementById("screenshot-file-input");
-  const uploadForm = document.getElementById("screenshot-upload-form");
-
-  const addFileInput = document.getElementById("screenshot-add-file-input");
-  const addForm = document.getElementById("screenshot-add-form");
-
-  const csrfToken = getCookie("csrftoken");
-
-  // Replace all screenshots (existing logic)
-  uploadFileInput.addEventListener("change", function () {
-    const files = uploadFileInput.files;
-    if (!files.length) return;
-
-    const formData = new FormData();
-    formData.append("igdb_id", uploadForm.querySelector('input[name="igdb_id"]').value);
-    for (let i = 0; i < files.length; i++) {
-      formData.append("screenshots[]", files[i]);
-    }
-
-    fetch("/upload-game-screenshots/", {
-      method: "POST",
-      headers: {
-        "X-CSRFToken": csrfToken,
-        "X-Action": "replace"  // new header to tell backend to replace
-      },
-      body: formData,
-    })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          location.reload();
-        } else {
-          alert("Failed to upload screenshots: " + data.message);
-        }
-      })
-      .catch(error => {
-        console.error("Upload error:", error);
-        alert("An error occurred while uploading screenshots.");
-      });
-  });
-
-  // Add new screenshots (without deleting existing)
-  addFileInput.addEventListener("change", function () {
-    const files = addFileInput.files;
-    if (!files.length) return;
-
-    const formData = new FormData();
-    formData.append("igdb_id", addForm.querySelector('input[name="igdb_id"]').value);
-    for (let i = 0; i < files.length; i++) {
-      formData.append("screenshots[]", files[i]);
-    }
-
-    fetch("/upload-game-screenshots/", {
-      method: "POST",
-      headers: {
-        "X-CSRFToken": csrfToken,
-        "X-Action": "add"  // tell backend to add
-      },
-      body: formData,
-    })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          location.reload();
-        } else {
-          alert("Failed to add screenshots: " + data.message);
-        }
-      })
-      .catch(error => {
-        console.error("Upload error:", error);
-        alert("An error occurred while adding screenshots.");
-      });
-  });
-});
-</script>
-  <script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const banner = document.querySelector(".banner-section");
-    if (banner) {
-      const url = banner.dataset.banner;
-      banner.style.backgroundImage = `url("${url}")`;
-    }
-  });
-</script>
+  <script src="{% static 'core/js/detail.js' %}"></script>
   <script src="{% static 'core/js/edit_modal.js' %}"></script>
-
-  <script>
-    document.addEventListener("DOMContentLoaded", function () {
-      const addBtn = document.getElementById("add-to-list-button");
-      if (!addBtn) return;
-
-      addBtn.addEventListener("click", function () {
-        const data = {
-          source: "{{ source }}",
-          source_id: "{{ source_id }}",
-          media_type: "{{ media_type }}",
-          title: "{{ title|escapejs }}",
-          cover_url: "{{ poster_url|default:''|escapejs }}",
-        };
-
-        fetch("{% url 'add_to_list' %}", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-CSRFToken": getCookie("csrftoken"),
-          },
-          body: JSON.stringify(data),
-        })
-        .then(response => response.json())
-        .then(data => {
-          if (data.message) {
-            sessionStorage.setItem("openEditModal", "true");
-            location.reload();
-          } else if (data.error) {
-            alert("Error: " + data.error);
-          }
-        })
-        .catch(() => alert("Failed to add item."));
-      });
-
-      function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== "") {
-          const cookies = document.cookie.split(";");
-          for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + "=")) {
-              cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-              break;
-            }
-          }
-        }
-        return cookieValue;
-      }
-    });
-  </script>
-  <script>
-  document.addEventListener("DOMContentLoaded", () => {
-    if (sessionStorage.getItem("openEditModal")) {
-      sessionStorage.removeItem("openEditModal");
-
-      // Try to find the edit button and click it
-      const editButton = document.getElementById("edit-button");
-      if (editButton) {
-        editButton.click();
-      } else {
-        console.warn("Edit button not found on page load.");
-      }
-    }
-  });
-</script>
-  <script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const favForm = document.getElementById("favorite-form");
-    if (!favForm) return;
-
-    const favInput = favForm.querySelector('input[name="favorite"]');
-    const itemId = favForm.dataset.itemId;
-
-    if (favInput) {
-      favInput.addEventListener("change", function () {
-        const newStatus = favInput.checked;
-
-        fetch(`/edit-item/${itemId}/`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-CSRFToken": getCookie("csrftoken"),
-          },
-          body: JSON.stringify({ favorite: newStatus }),
-        })
-          .then(res => res.json())
-          .then(res => {
-            if (!res.success) {
-              alert("Failed to update favorite.");
-              favInput.checked = !newStatus;
-            }
-          })
-          .catch(() => {
-            alert("Request failed.");
-            favInput.checked = !newStatus;
-          });
-      });
-    }
-
-    function getCookie(name) {
-      let cookieValue = null;
-      if (document.cookie && document.cookie !== "") {
-        const cookies = document.cookie.split(";");
-        for (let i = 0; i < cookies.length; i++) {
-          const cookie = cookies[i].trim();
-          if (cookie.substring(0, name.length + 1) === name + "=") {
-            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-            break;
-          }
-        }
-      }
-      return cookieValue;
-    }
-  });
-</script>
-
 {% endblock %}

@@ -62,7 +62,6 @@ body {
 
 /* --- Section Separator --- */
 .separator-bar {
-  width: 100%;
   height: 45px;
   background-color: #151F2E;
   margin-bottom: 1rem;
@@ -94,14 +93,18 @@ body {
   cursor: pointer;
   width: 85px;
   height: 115px;
-  overflow: hidden;
+  overflow:visible;
 }
 
 .card-image {
-  width: 340px; /* original image width */
-  height: 460px; /* original image height */
+/*
+  width: 340px; 
+  height: 460px;
   transform: scale(0.25);
+*/
   transform-origin: top left;
+  overflow:hidden;
+  border-radius: 4px;
 }
 
 .card img {
@@ -112,10 +115,17 @@ body {
   border-radius: 4px;
 }
 
+.card a {
+  display: block;           /* ensures it can have width/height */
+  max-height: 115px;        /* or whatever height you want */
+  overflow: hidden;         /* crop any overflow inside */
+  border-radius: 4px;
+}
+
 /* Hover title overlay */
 .hover-title-overlay {
   position: absolute;
-  top: -35px; /* higher to make room */
+  bottom:100%;
   left: 50%;
   transform: translateX(-50%) translateY(-100%);
   background: #1f2a38;
@@ -128,7 +138,7 @@ body {
   border-radius: 4px;
   white-space: nowrap;
   pointer-events: none; /* optional: avoids accidental hover flicker */
-  max-width: 300px;
+  max-width: 1000px;
 }
 /* Hover title text */
 .hover-title-text {
@@ -145,6 +155,7 @@ body {
 .card:hover .hover-title-overlay {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
+  margin-bottom: 8px;
 }
 
 
@@ -230,11 +241,20 @@ body {
 }
 
 .overlay-content {
-  max-width: 1000px;
+  max-height: 90vh;
+  overflow-y: auto;
+  max-width: 1010px;
   width: 100%;
   background: #101820;
   padding: 2rem;
   border-radius: 12px;
+
+  scrollbar-width: none;          /* Firefox */
+  -ms-overflow-style: none;       /* IE/Edge */
+}
+
+.overlay-content::-webkit-scrollbar {
+  display: none;                  /* Chrome, Safari */
 }
 
 .overlay-content h2 {
@@ -624,4 +644,14 @@ body {
 
 .reorder-buttons button:hover {
   background-color: rgba(0, 0, 0, 0.85);
+}
+
+.favorites-overlay .close-button {
+  background: #151F2E;
+  color: white;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+.favorites-overlay .close-button:hover {
+  background: #e04345;
 }

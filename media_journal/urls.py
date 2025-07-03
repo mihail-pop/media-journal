@@ -36,4 +36,6 @@ urlpatterns = [
     path('api/toggle_favorite_person/', views.toggle_favorite_person_view, name='toggle_favorite_person'),
     path('api/favorite-persons/reorder/', views.update_favorite_person_order, name='favorite_person_reorder'),
     path("upload-game-screenshots/", views.upload_game_screenshots, name="upload_game_screenshots"),
+    path("upload-banner/", views.upload_banner, name="upload_banner"),
+    path("refresh-item/", views.refresh_item, name="refresh_item"),
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

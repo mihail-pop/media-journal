@@ -233,7 +233,7 @@ def home(request):
     tv_episodes = all_items.filter(media_type="tv").aggregate(Sum("progress_main"))["progress_main__sum"] or 0
     anime_episodes = all_items.filter(media_type="anime").aggregate(Sum("progress_main"))["progress_main__sum"] or 0
 
-    total_hours = movie_count * 1.5 + tv_episodes * 0.4 + anime_episodes * 0.2
+    total_hours = movie_count * (90/60) + tv_episodes * (40/60) + anime_episodes * (24/60)
     days_watched = round(total_hours / 24, 1)
 
     game_hours = all_items.filter(media_type="game").aggregate(Sum("progress_main"))["progress_main__sum"] or 0
@@ -523,7 +523,7 @@ def igdb_search(request):
     }
 
     # IGDB uses a POST request with a query language (IGDB API docs)
-    data = f'search "{query}"; fields id,name,cover.url; limit 10;'
+    data = f'search "{query}"; fields id,name,cover.url; where category = (0, 1, 2, 4,5,8,9,10,11,3); limit 10;'
 
     response = requests.post("https://api.igdb.com/v4/games", headers=headers, data=data)
     if response.status_code != 200:
@@ -1384,6 +1384,7 @@ def igdb_detail(request, igdb_id):
         "genres": genres,
         "platforms": platforms,
         "in_my_list": False,
+        'page_type': "game",
     }
 
     return render(request, "core/detail.html", context)
@@ -2042,3 +2043,70 @@ def toggle_favorite_person_view(request):
     else:
         save_favorite_actor_character(name, image_url, person_type)
         return JsonResponse({'status': 'added'})
+    
+
+@require_POST
+def upload_banner(request):
+    uploaded_file = request.FILES.get("banner")
+    source = request.POST.get("source")
+    source_id = request.POST.get("id")
+
+    if not uploaded_file or not source or not source_id:
+        return JsonResponse({"error": "Missing required data."}, status=400)
+
+    ext = os.path.splitext(uploaded_file.name)[1].lower()
+    if ext not in [".jpg", ".jpeg", ".png"]:
+        return JsonResponse({"error": "Unsupported file type."}, status=400)
+
+    # Build full file path: media/banners/source_id.ext
+    banner_dir = os.path.join(settings.MEDIA_ROOT, "banners")
+    os.makedirs(banner_dir, exist_ok=True)
+
+    # Base name (we may overwrite or replace extension)
+    base_name = f"{source}_{source_id}"
+    new_path = os.path.join(banner_dir, base_name + ext)
+
+    # Delete any existing file with same base name but different ext
+    for existing_ext in [".jpg", ".jpeg", ".png"]:
+        old_path = os.path.join(banner_dir, base_name + existing_ext)
+        if os.path.exists(old_path) and old_path != new_path:
+            os.remove(old_path)
+
+    # Save new file
+    with open(new_path, "wb+") as destination:
+        for chunk in uploaded_file.chunks():
+            destination.write(chunk)
+
+    return JsonResponse({"success": True, "url": f"/media/banners/{base_name}{ext}"})
+
+@require_POST
+def refresh_item(request):
+    try:
+        data = json.loads(request.body)
+        item_id = data.get("id")
+        if not item_id:
+            return JsonResponse({"error": "Missing item ID."}, status=400)
+
+        # Get the item first
+        item = MediaItem.objects.get(id=item_id)
+        source = item.source
+        source_id = item.source_id
+        media_type = item.media_type
+
+        # Delete the existing item
+        delete_item(request, item_id)
+
+        # Re-save the item based on its source
+        if source == "tmdb":
+            return save_tmdb_item(media_type, source_id)
+        elif source == "mal":
+            return save_mal_item(media_type, source_id)
+        elif source == "igdb":
+            return save_igdb_item(source_id)
+        else:
+            return JsonResponse({"error": "Unsupported source."}, status=400)
+
+    except MediaItem.DoesNotExist:
+        return JsonResponse({"error": "Item not found."}, status=404)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)

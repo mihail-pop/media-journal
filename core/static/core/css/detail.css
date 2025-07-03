@@ -78,7 +78,8 @@ body {
 
 .poster {
   width: 210px;
-  height: 310px;
+  height: auto;
+  max-height: 400px;
   object-fit: cover;
   border-radius: 4px;
   top: -110px;
@@ -486,4 +487,42 @@ body {
 
 .inline-form button:hover {
   background-color: #1f2a38;
+}
+
+.change-banner-btn {
+  position: absolute;
+  top: 22.5rem;
+  right: 16px;
+  padding: 6px 12px;
+  background: #0b1622;
+  color: #cecece;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  z-index: 10;
+  transition: background 0.2s ease;
+}
+
+.change-banner-btn:hover {
+  background: #25394f;
+}
+
+.refresh-btn {
+  position: absolute;
+  top: 25.5rem;
+  right: 16px;
+  padding: 6px 12px;
+  background: #0b1622;
+  color: #cecece;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  z-index: 10;
+  transition: background 0.2s ease;
+}
+
+.refresh-btn:hover {
+  background-color: #25394f;
 }

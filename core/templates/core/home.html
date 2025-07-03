@@ -11,7 +11,7 @@
 
 <!-- Top Banner Rotator -->
 <div class="banner-rotator">
-  <img id="rotating-banner" src="{% static 'img/banner_fallback.jpg' %}" alt="Banner">
+  <img id="rotating-banner" src="{% static 'core/img/placeholder.png' %}" alt="Banner">
   <div class="banner-overlay">
     <div class="banner-quote"></div>
   </div>
@@ -157,7 +157,7 @@
   <div class="favorites-overlay hidden" id="overlay-{{ category|slugify }}">
     <div class="overlay-content">
       <h2>{{ category }}</h2>
-      <button onclick="closeFavoritesOverlay('{{ category|slugify }}')">Close</button>
+      <button class="close-button" onclick="closeFavoritesOverlay('{{ category|slugify }}')">Close</button>
       <div class="card-grid">
         {% for item in items %}
         <div class="card">
@@ -227,7 +227,7 @@
 <div class="favorites-overlay hidden" id="overlay-characters">
   <div class="overlay-content">
     <h2>Characters</h2>
-    <button onclick="closeFavoritesOverlay('characters')">Close</button>
+    <button class="close-button" onclick="closeFavoritesOverlay('characters')">Close</button>
     <div class="card-grid" id="characters-card-grid">
       {% for person in favorite_characters %}
       <div class="card" data-id="{{ person.id }}">
@@ -250,7 +250,7 @@
 <div class="favorites-overlay hidden" id="overlay-actors">
   <div class="overlay-content">
     <h2>Actors</h2>
-    <button onclick="closeFavoritesOverlay('actors')">Close</button>
+    <button class="close-button" onclick="closeFavoritesOverlay('actors')">Close</button>
     <div class="card-grid" id="actors-card-grid">
       {% for person in favorite_actors %}
       <div class="card" data-id="{{ person.id }}">

@@ -11,7 +11,7 @@
 {% block content %}
 <!-- Top Banner Rotator -->
 <div class="banner-rotator">
-  <img id="rotating-banner" src="/static/img/banner_fallback.jpg" alt="Banner">
+  <img id="rotating-banner" src="{% static 'core/img/placeholder.png' %}" alt="Banner">
   <div class="banner-overlay">
     <div class="banner-quote"></div>
   </div>
@@ -70,7 +70,7 @@
                data-notes="{{ item.notes|escape }}">
 
             <a href="{% url 'mal_detail' media_type=item.media_type mal_id=item.source_id %}" class="card-link">
-              <img src="{{ item.cover_url|default:'/static/img/cover_fallback.jpg' }}" alt="{{ item.title }}" loading="lazy"> <!-- Check if this is working, lazy loading -->
+              <div class="card-image"><img src="{{ item.cover_url|default:'/static/img/cover_fallback.jpg' }}" alt="{{ item.title }}" loading="lazy"></div> <!-- Check if this is working, lazy loading -->
               <div class="card-title-overlay">
                 <span class="card-title">{{ item.title }}</span>
                 <div class="card-meta-row">

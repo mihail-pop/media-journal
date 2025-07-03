@@ -79,6 +79,9 @@ class MediaItem(models.Model):
     def __str__(self):
         return f"{self.title} ({self.media_type})"
     
+    class Meta:
+        unique_together = ("source", "source_id", "media_type")
+    
 
 class FavoritePerson(models.Model):
     PERSON_TYPE_CHOICES = [

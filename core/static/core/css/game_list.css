@@ -204,7 +204,7 @@ body {
   transition: transform 0.15s ease-in-out;
   cursor: pointer;
   width: 150px;
-  height: 210px;
+  height: 200px;
 }
 
 .card-image {
