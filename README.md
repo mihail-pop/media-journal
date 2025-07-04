@@ -31,6 +31,17 @@ pip install -r requirements.txt
 ```
 ## Setup
 
+### Docker 
+Open a terminal in the project folder and run:
+   ```sh
+   docker-compose build
+   ```
+Then, for this and all future runs, start the app with:
+   ```sh
+   docker-compose up
+   ```
+Now you can open the app in your browser at: http://localhost:8000
+
 ### Windows - Simple Step-by-Step Guide
 
 1. Ensure Python is installed. During installation, **make sure to check** the option:  
