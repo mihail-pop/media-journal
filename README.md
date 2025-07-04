@@ -46,14 +46,19 @@ pip install -r requirements.txt
    ```sh
    pip install -r requirements.txt
    ```
-   Tip: If you work with multiple Python projects, consider creating a virtual environment (venv) before installing dependencies. Otherwise, you can skip this step. 
-5. Start the app by running:
+   Tip: If you work with multiple Python projects, consider creating a virtual environment (venv) before installing dependencies. Otherwise, you can skip this step.
+   
+6. Create the db.sqlite3 by running:
+   ```sh
+   python manage.py makemigrations
+   python manage.py migrate
+   ```
+7. Start the app by running:
    ```sh
    python manage.py runserver
    ```
-
-6. Now you can open the app in your browser at: http://localhost:8000
-7. Navigate to **Settings → API Keys** in the app.
+8. Now you can open the app in your browser at: http://localhost:8000
+9. Navigate to **Settings → API Keys** in the app.
    Here you will need to add your API keys — instructions on how to obtain them are provided in that section.
 
 ### Optional Tips
