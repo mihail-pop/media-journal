@@ -6,7 +6,7 @@ The app includes all the core features I initially set out to implement. I use i
 
 ### Main Features
 
-- **Local Storage**: All items added to your lists are saved locally.  
+- **Local Storage**:  All items added to your lists are saved locally, including their associated images (on average, less than 1 MB per item).
 - **Automatic Updates**: TV shows, anime, and manga are checked automatically for sequels or new seasons.  
 - **Data Portability**: Export and import your lists for backup or transfer.  
 - **Organized Lists**: Separate categories for Movies, TV Shows, Anime, Manga, and Games.  
