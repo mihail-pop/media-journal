@@ -8,7 +8,7 @@
 {% endblock %}
 
 {% block content %}
-
+<body data-media-type="{{ media_type }}"></body>
 
 {% with banner=banner_url|default_if_none:'' %}
   <div class="banner-section {% if not banner %}no-banner{% endif %}"

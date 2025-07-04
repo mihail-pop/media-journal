@@ -1565,8 +1565,8 @@ def upload_game_screenshots(request):
             continue  # Skip unsupported files
 
         filename = f"screenshots/igdb_{igdb_id}_{i}{ext}"
-        full_path = os.path.join(settings.MEDIA_ROOT, filename)
-        default_storage.save(full_path, file)
+        default_storage.save(filename, file)
+
 
         url = f"/media/{filename}"
 
