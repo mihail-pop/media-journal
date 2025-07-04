@@ -3,4 +3,29 @@ __pycache__/
 *.pyc
 .env
 *.log
-media/
+
+# Ignore all files in media and its subfolders
+/media/*
+/media/**/*
+
+# But keep folder structure and .gitkeep files
+!/media/.gitkeep
+!/media/banners/
+!/media/cast/
+!/media/favorites/
+!/media/favorites/actors/
+!/media/favorites/characters/
+!/media/posters/
+!/media/related/
+!/media/screenshots/
+!/media/seasons/
+
+!/media/banners/.gitkeep
+!/media/cast/.gitkeep
+!/media/favorites/.gitkeep
+!/media/favorites/actors/.gitkeep
+!/media/favorites/characters/.gitkeep
+!/media/posters/.gitkeep
+!/media/related/.gitkeep
+!/media/screenshots/.gitkeep
+!/media/seasons/.gitkeep
