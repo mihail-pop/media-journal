@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+db.sqlite3
+.env
+*.log
+
+# Ignore all media files (large)
+media/**
+
+# Except keep .gitkeep files (so folders exist)
+!media/**/.gitkeep
