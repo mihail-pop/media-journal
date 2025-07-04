@@ -49,7 +49,7 @@
                 </a>
               {% else %}
                 <div class="card-link">
-                  <img src="{{ item.cover_url|default:'/static/img/cover_fallback.jpg' }}" alt="{{ item.title }}" loading="lazy">
+                  <img src="{{ item.cover_url|default:'/static/core/img/placeholder.png' }}" alt="{{ item.title }}" loading="lazy">
                   <div class="card-title-overlay">
                     <span class="card-title">{{ item.title }}</span>
                   </div>

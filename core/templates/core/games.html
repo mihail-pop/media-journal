@@ -64,12 +64,12 @@
                data-status="{{ item.status }}"
                data-personal-rating="{{ item.personal_rating|default:'0' }}"
                data-title="{{ item.title|escape }}"
-               data-cover-url="{{ item.cover_url|default:'/static/img/cover_fallback.jpg' }}"
-               data-banner-url="{{ item.banner_url|default:'/static/img/banner_fallback.jpg' }}"
+               data-cover-url="{{ item.cover_url|default:'/static/core/img/placeholder.png' }}"
+               data-banner-url="{{ item.banner_url|default:'/static/core/img/placeholder.png' }}"
                data-notes="{{ item.notes|escape }}">
 
             <a href="{% url 'igdb_detail' igdb_id=item.source_id %}" class="card-link">
-              <div class="card-image"><img src="{{ item.cover_url|default:'/static/img/cover_fallback.jpg' }}" alt="{{ item.title }}" loading="lazy"></div> <!-- Check if this is working, lazy loading -->
+              <div class="card-image"><img src="{{ item.cover_url|default:'/static/core/img/placeholder.png' }}" alt="{{ item.title }}" loading="lazy"></div> <!-- Check if this is working, lazy loading -->
               <div class="card-title-overlay">
                 <span class="card-title">{{ item.title }}</span>
                 <div class="card-meta-row">
@@ -127,8 +127,8 @@
                 data-status="{{ item.status }}"
                 data-personal-rating="{{ item.personal_rating|default:'0' }}"
                 data-title="{{ item.title|escape }}"
-                data-cover-url="{{ item.cover_url|default:'/static/img/cover_fallback.jpg' }}"
-                data-banner-url="{{ item.banner_url|default:'/static/img/banner_fallback.jpg' }}">
+                data-cover-url="{{ item.cover_url|default:'/static/core/img/placeholder.png' }}"
+                data-banner-url="{{ item.banner_url|default:'/static/core/img/placeholder.png' }}">
               
               <td>
                 <a href="{% url 'igdb_detail' igdb_id=item.source_id %}">

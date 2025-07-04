@@ -32,8 +32,11 @@
 
   <div class="left-column">
     <!-- Poster -->
-    <img class="poster" src="{{ poster_url }}" alt="{{ title }}"
-      onerror="this.src='https://dummyimage.com/150x225/cccccc/000000&text=No+Image';" />
+<img class="poster" 
+     src="{{ poster_url }}" 
+     alt="{{ title }}" 
+     data-placeholder="{% static 'core/img/placeholder.png' %}" 
+     onerror="this.onerror=null;this.src=this.dataset.placeholder;" />
     
     <!-- Edit / Favorite buttons -->
     <div class="edit-favorite-wrapper">
@@ -46,7 +49,12 @@
           </label>
         </form>
       {% else %}
-        <button id="add-to-list-button" class="btn">Add to My List</button>
+        <button id="add-to-list-button" class="btn"
+          data-source="{{ source }}"
+  data-source-id="{{ source_id }}"
+  data-media-type="{{ media_type }}"
+  data-title="{{ title }}"
+  data-cover-url="{{ cover_url }}">Add to My List</button>
       {% endif %}
     </div>
   </div>
@@ -88,7 +96,10 @@
         <div class="recommendations-list">
           {% for rec in prequels %}
           <a href="/mal/{{ media_type }}/{{ rec.id }}/" class="rec-card" title="{{ rec.title }}">
-            <img src="{{ rec.poster_path }}" alt="{{ rec.title }}" onerror="this.src='https://dummyimage.com/150x225/cccccc/000000&text=No+Image';" />
+            <img src="{{ rec.poster_path }}"
+     alt="{{ rec.title }}"
+     data-placeholder="{% static 'core/img/placeholder.png' %}"
+     onerror="this.onerror=null;this.src=this.dataset.placeholder;" />
             <p class="rec-title">{{ rec.title }}</p>
           </a>
           {% endfor %}
@@ -102,7 +113,10 @@
         <div class="recommendations-list">
           {% for rec in sequels %}
           <a href="/mal/{{ media_type }}/{{ rec.id }}/" class="rec-card" title="{{ rec.title }}">
-            <img src="{{ rec.poster_path }}" alt="{{ rec.title }}" onerror="this.src='https://dummyimage.com/150x225/cccccc/000000&text=No+Image';" />
+            <img src="{{ rec.poster_path }}" 
+     alt="{{ rec.title }}" 
+     data-placeholder="{% static 'core/img/placeholder.png' %}" 
+     onerror="this.onerror=null;this.src=this.dataset.placeholder;" />
             <p class="rec-title">{{ rec.title }}</p>
           </a>
           {% endfor %}
@@ -118,9 +132,12 @@
       <div class="seasons-list">
         {% for season in seasons %}
         <div class="season-card">
-          <img src="{{ season.poster_path_full|default:'https://dummyimage.com/150x225/cccccc/000000&text=No+Image' }}"
-               alt="{{ season.name }}"
-               onerror="this.src='https://dummyimage.com/150x225/cccccc/000000&text=No+Image';" />
+  <img 
+    src="{{ season.poster_path_full|default:'' }}"
+    alt="{{ season.name }}"
+    data-placeholder="{% static 'core/img/placeholder.png' %}"
+    onerror="this.onerror=null;this.src=this.dataset.placeholder;"
+  />
           <p class="season-name">{{ season.name }}</p>
           <p class="episode-count">{{ season.episode_count }} episodes</p>
           <p class="air-date">{{ season.air_date }}</p>
@@ -184,9 +201,10 @@
   <div class="cast-list">
     {% for member in cast %}
     <div class="cast-member">
-      <img src="{% if member.is_full_url %}{{ member.profile_path }}{% else %}https://image.tmdb.org/t/p/w185{{ member.profile_path }}{% endif %}"
-           alt="{{ member.name }}"
-           onerror="this.src='https://dummyimage.com/150x225/cccccc/000000&text=No+Image';" />
+<img src="{% if member.is_full_url %}{{ member.profile_path }}{% else %}https://image.tmdb.org/t/p/w185{{ member.profile_path }}{% endif %}"
+     alt="{{ member.name }}"
+     data-placeholder="{% static 'core/img/placeholder.png' %}"
+     onerror="this.onerror=null;this.src=this.dataset.placeholder;" />
       <p class="actor-name">{{ member.name }}</p>
       <p class="character-name">{{ member.character }}</p>
     </div>
@@ -212,17 +230,21 @@
     " title="{{ rec.title }}">
       
       {% if rec.poster_path %}
-        <img
-          src="{% if media_type == 'game' or media_type == 'anime' or media_type == 'manga' %}
-                {{ rec.poster_path }}
-               {% else %}
-                https://image.tmdb.org/t/p/w185{{ rec.poster_path }}
-               {% endif %}"
-          alt="{{ rec.title }}"
-          onerror="this.src='https://dummyimage.com/150x225/cccccc/000000&text=No+Image';"
-        />
+<img
+  src="{% if media_type == 'game' or media_type == 'anime' or media_type == 'manga' %}
+        {{ rec.poster_path }}
+       {% else %}
+        https://image.tmdb.org/t/p/w185{{ rec.poster_path }}
+       {% endif %}"
+  alt="{{ rec.title }}"
+  data-placeholder="{% static 'core/img/placeholder.png' %}"
+  onerror="this.onerror=null;this.src=this.dataset.placeholder;"
+/>
       {% else %}
-        <img src="https://via.placeholder.com/150x225?text=No+Image" alt="{{ rec.title }}" />
+        <img 
+  src="{% static 'core/img/placeholder.png' %}" 
+  alt="{{ rec.title }}" 
+/>
       {% endif %}
       
       <p class="rec-title">{{ rec.title }}</p>

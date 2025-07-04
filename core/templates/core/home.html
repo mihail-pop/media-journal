@@ -136,7 +136,7 @@
 {% else %}
   <a href="#">
 {% endif %}
-                <div class="card-image"><img src="{{ item.cover_url|default:'/static/img/cover_fallback.jpg' }}" alt="{{ item.title }}"></div>
+                <div class="card-image"><img src="{{ item.cover_url|default:'/static/core/img/placeholder.png' }}" alt="{{ item.title }}"></div>
               </a>
   <div class="hover-title-overlay">
     <span class="hover-title-text">{{ item.title }}</span>
@@ -170,7 +170,7 @@
           {% else %}
             <a href="#">
           {% endif %}
-              <div class="card-image"><img src="{{ item.cover_url|default:'/static/img/cover_fallback.jpg' }}" alt="{{ item.title }}"></div>
+              <div class="card-image"><img src="{{ item.cover_url|default:'/static/core/img/placeholder.png' }}" alt="{{ item.title }}"></div>
             </a>
             <div class="hover-title-overlay">
               <span class="hover-title-text">{{ item.title }}</span>

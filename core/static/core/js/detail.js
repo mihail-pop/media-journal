@@ -248,8 +248,8 @@ document.addEventListener("DOMContentLoaded", function () {
         title: addBtn.dataset.title,
         cover_url: addBtn.dataset.coverUrl,
       };
-
-      fetch("/add-to-list/", {
+      console.log("Sending:", data);
+      fetch("/api/add_to_list/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

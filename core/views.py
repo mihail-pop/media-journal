@@ -1,4 +1,5 @@
 from core.utils import download_image, fetch_anilist_data, get_trending_anime, get_trending_games, get_trending_manga, get_trending_movies, get_trending_tv, get_igdb_token
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_POST
 from django.db.models import Case, When, IntegerField, Value, F
 from django.core.files.storage import default_storage
@@ -40,6 +41,7 @@ IGDB_TOKEN_EXPIRY = 0
 
 
 
+@ensure_csrf_cookie
 def movies(request):
 
     status_ordering = Case(
@@ -69,6 +71,7 @@ def movies(request):
     return render(request, 'core/movies.html', {'items': movies, 'page_type': 'movie'})
 
 
+@ensure_csrf_cookie
 def tvshows(request):
     status_ordering = Case(
         When(status='ongoing', then=Value(1)),
@@ -97,6 +100,7 @@ def tvshows(request):
     return render(request, 'core/tvshows.html', {'items': tvshows, 'page_type': 'tv'})
 
 
+@ensure_csrf_cookie
 def anime(request):
     status_ordering = Case(
         When(status='ongoing', then=Value(1)),
@@ -124,6 +128,8 @@ def anime(request):
 
     return render(request, 'core/anime.html', {'items': anime, 'page_type': 'anime'})
 
+
+@ensure_csrf_cookie
 def games(request):
     status_ordering = Case(
         When(status='ongoing', then=Value(1)),
@@ -151,6 +157,8 @@ def games(request):
 
     return render(request, 'core/games.html', {'items': games, 'page_type': 'game'})
 
+
+@ensure_csrf_cookie
 def manga(request):
     status_ordering = Case(
         When(status='ongoing', then=Value(1)),
@@ -178,10 +186,14 @@ def manga(request):
 
     return render(request, 'core/manga.html', {'items': manga, 'page_type': 'manga'})
 
+
+@ensure_csrf_cookie
 def books(request):
     books = MediaItem.objects.filter(media_type="book").order_by("-date_added")
     return render(request, 'core/books.html', {'items': books, 'page_type': 'book'})
 
+
+@ensure_csrf_cookie
 def home(request):
     favorites = MediaItem.objects.filter(favorite=True)
     start_tmdb_background_loop()
@@ -307,6 +319,8 @@ def home(request):
         'notifications': notifications_list,
     })
 
+
+@ensure_csrf_cookie
 @require_POST
 def update_favorite_person_order(request):
     try:
@@ -326,6 +340,7 @@ def update_favorite_person_order(request):
         return JsonResponse({"error": str(e)}, status=500)
 
 
+@ensure_csrf_cookie
 def settings_page(request):
     keys = APIKey.objects.all().order_by("name")
     existing_names = [key.name for key in keys]
@@ -337,6 +352,8 @@ def settings_page(request):
         'existing_names': existing_names,
     })
 
+
+@ensure_csrf_cookie
 @require_POST
 def dismiss_notification(request, item_id):
     try:
@@ -348,6 +365,7 @@ def dismiss_notification(request, item_id):
         return JsonResponse({"error": "Item not found"}, status=404)
 
 
+@ensure_csrf_cookie
 def discover_view(request):
     trending_movies = get_trending_movies()
     trending_tv = get_trending_tv()
@@ -378,6 +396,8 @@ def discover_view(request):
     return render(request, "core/discover.html", context)
 
 # Anime
+
+@ensure_csrf_cookie
 @require_GET
 def mal_search(request):
     query_str = request.GET.get("q", "").strip()
@@ -502,6 +522,7 @@ def mal_search(request):
 
 
 
+@ensure_csrf_cookie
 @require_GET
 def igdb_search(request):
     query = request.GET.get("q", "").strip()
@@ -548,6 +569,7 @@ def igdb_search(request):
 
 # Movies/Shows Search
 
+@ensure_csrf_cookie
 @require_GET
 def tmdb_search(request):
     query = request.GET.get("q", "").strip()
@@ -595,6 +617,8 @@ def tmdb_search(request):
     return JsonResponse({"results": results[:10]})
 
 # Movie and show details
+
+@ensure_csrf_cookie
 @require_GET
 def tmdb_detail(request, media_type, tmdb_id):
     if media_type not in ("movie", "tv"):
@@ -819,6 +843,8 @@ def save_tmdb_item(media_type, tmdb_id):
     except Exception as e:
         return JsonResponse({"error": f"Failed to save: {str(e)}"})
 
+
+@ensure_csrf_cookie
 @require_GET
 def mal_detail(request, media_type, mal_id):
     if media_type not in ("anime", "manga"):
@@ -1248,6 +1274,8 @@ def save_mal_item(media_type, mal_id):
 
 # Game Details
 
+
+@ensure_csrf_cookie
 @require_GET
 def igdb_detail(request, igdb_id):
     try:
@@ -1486,6 +1514,7 @@ def save_igdb_item(igdb_id):
     return JsonResponse({"success": True, "message": "Game added to list"})
 
 
+@ensure_csrf_cookie
 def upload_game_screenshots(request):
     if request.method != "POST":
         return JsonResponse({"success": False, "message": "Invalid request method."}, status=400)
@@ -1560,6 +1589,7 @@ def check_if_in_list(source, source_id):
 
 # Add to list
 
+@ensure_csrf_cookie
 @require_POST
 def add_to_list(request):
     try:
@@ -1595,6 +1625,7 @@ def add_to_list(request):
 # Edit item
 
 
+@ensure_csrf_cookie
 def edit_item(request, item_id):
     if request.method == "POST":
         try:
@@ -1656,6 +1687,7 @@ def edit_item(request, item_id):
 
 
 
+@ensure_csrf_cookie
 @require_POST
 def delete_item(request, item_id):
     try:
@@ -1711,6 +1743,7 @@ def delete_item(request, item_id):
             return JsonResponse({"success": False, "error": str(e)})
 
 
+@ensure_csrf_cookie
 def get_item(request, item_id):
     try:
         item = MediaItem.objects.get(id=item_id)
@@ -1773,6 +1806,7 @@ def get_item(request, item_id):
 
 # Settings
 
+@ensure_csrf_cookie
 @require_GET
 def create_backup(request):
     import uuid
@@ -1812,6 +1846,7 @@ def create_backup(request):
     return FileResponse(open(temp_zip_path, "rb"), as_attachment=True, filename="media_backup.zip")
 
 
+@ensure_csrf_cookie
 @require_POST
 def restore_backup(request):
     uploaded_zip = request.FILES.get("backup_zip")
@@ -1857,6 +1892,7 @@ def restore_backup(request):
 
         return JsonResponse({"message": "Backup restored successfully"})
 
+@ensure_csrf_cookie
 def add_key(request):
     data = json.loads(request.body)
     name = data.get("name", "").strip().lower()
@@ -1878,6 +1914,7 @@ def add_key(request):
     return JsonResponse({"message": "API key added."})
 
 
+@ensure_csrf_cookie
 def update_key(request):
     data = json.loads(request.body)
     try:
@@ -1890,6 +1927,7 @@ def update_key(request):
         return JsonResponse({"error": "Key not found."}, status=404)
 
 
+@ensure_csrf_cookie
 def delete_key(request):
     data = json.loads(request.body)
     try:
@@ -2015,16 +2053,19 @@ def delete_favorite_person_and_reorder(person_id):
         return False
     
 
+@ensure_csrf_cookie
 def character_search_view(request):
     query = request.GET.get('q', '')
     results = character_search(query) if query else []
     return JsonResponse(results, safe=False)
 
+@ensure_csrf_cookie
 def actor_search_view(request):
     query = request.GET.get('q', '')
     results = actor_search(query) if query else []
     return JsonResponse(results, safe=False)
 
+@ensure_csrf_cookie
 def toggle_favorite_person_view(request):
     if request.method != 'POST':
         return JsonResponse({'error': 'POST request required.'}, status=400)
@@ -2045,6 +2086,7 @@ def toggle_favorite_person_view(request):
         return JsonResponse({'status': 'added'})
     
 
+@ensure_csrf_cookie
 @require_POST
 def upload_banner(request):
     uploaded_file = request.FILES.get("banner")
@@ -2079,6 +2121,7 @@ def upload_banner(request):
 
     return JsonResponse({"success": True, "url": f"/media/banners/{base_name}{ext}"})
 
+@ensure_csrf_cookie
 @require_POST
 def refresh_item(request):
     try:
