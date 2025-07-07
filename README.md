@@ -31,6 +31,20 @@ pip install -r requirements.txt
 ```
 ## Setup
 
+### Docker 
+1. Open a terminal in the project folder and run:
+   ```sh
+   docker-compose build
+   ```
+2. Then, for this and all future runs, start the app with:
+   ```sh
+   docker-compose up
+   ```
+3. Now you can open the app in your browser at: http://localhost:8000
+
+4. Navigate to **Settings → API Keys** in the app.
+   Here you will need to add your API keys — instructions on how to obtain them are provided in that section.
+
 ### Windows - Simple Step-by-Step Guide
 
 1. Ensure Python is installed. During installation, **make sure to check** the option:  
