@@ -48,11 +48,11 @@ class MediaItem(models.Model):
     source = models.CharField(max_length=50)              
     source_id = models.CharField(max_length=100)          
 
-    cover_url = models.URLField(blank=True)               
-    banner_url = models.URLField(blank=True)              # New: wide image (e.g. backdrop, screenshot)
+    cover_url = models.URLField(blank=True, null=True)               
+    banner_url = models.URLField(blank=True, null=True)              # New: wide image (e.g. backdrop, screenshot)
 
-    release_date = models.CharField(max_length=20, blank=True)  # Stored as string to unify format
-    overview = models.TextField(blank=True)               # New: description/synopsis
+    release_date = models.CharField(max_length=20, blank=True, null=True)  # Stored as string to unify format
+    overview = models.TextField(blank=True, null=True)               # New: description/synopsis
 
     cast = models.JSONField(blank=True, null=True)        # Unified for all media types
     seasons = models.JSONField(blank=True, null=True)     # Only for TV series
@@ -71,7 +71,7 @@ class MediaItem(models.Model):
     favorite = models.BooleanField(default=False)
 
     date_added = models.DateTimeField(auto_now_add=True)
-    notes = models.TextField(blank=True)
+    notes = models.TextField(blank=True, null=True)
 
     last_updated = models.DateTimeField(default=timezone.now)
     notification = models.BooleanField(default=False)

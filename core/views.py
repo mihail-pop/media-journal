@@ -1338,7 +1338,7 @@ def igdb_detail(request, igdb_id):
     fields 
       id, name, summary, storyline, 
       cover.url, genres.name, platforms.name, 
-      first_release_date, screenshots.url, similar_games.name, similar_games.cover.url;
+      first_release_date, screenshots.url, similar_games.name, similar_games.cover.url, artworks.url;
     where id = {igdb_id};
     '''
 
@@ -1366,6 +1366,17 @@ def igdb_detail(request, igdb_id):
                 "url": url,
                 "is_full_url": True
             })
+    
+    # I tried artworks but overall ingame screenshots look better as banners
+    # if "artworks" in game and game["artworks"]:
+    #     first_artwork = game["artworks"][0]
+    #     if first_artwork and "url" in first_artwork:
+    #        banner_url = "https:" + first_artwork["url"].replace("t_thumb", "t_screenshot_huge")
+
+    # Fallback to screenshot if no artwork is present
+    # if not banner_url and screenshots:
+    #     banner_url = screenshots[0]["url"]
+    #     screenshots = screenshots[1:] if len(screenshots) > 1 else []
 
     banner_url = screenshots[0]["url"] if screenshots else None
     screenshots = screenshots[1:] if len(screenshots) > 1 else []

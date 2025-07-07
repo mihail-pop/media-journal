@@ -271,16 +271,33 @@ def get_trending_tv():
         data = response.json()
         results = []
 
-        for item in data.get("results", [])[:10]:
+        for item in data.get("results", []):
+            # Filter out anime based on language and country
+            original_language = item.get("original_language", "")
+            origin_country = item.get("origin_country", [])
+            genre_ids = item.get("genre_ids", [])
+
+            is_anime = (
+                original_language == "ja" or
+                "JP" in origin_country or
+                16 in genre_ids  # Genre ID 16 = Animation
+            )
+
+            if is_anime:
+                continue  # skip this item
+
             poster = item.get("poster_path")
             poster_url = f"https://image.tmdb.org/t/p/w342{poster}" if poster else None
 
             results.append({
                 "id": str(item["id"]),
-                "title": item.get("name", "Untitled"),  # TV shows use "name"
+                "title": item.get("name", "Untitled"),
                 "poster_path": poster_url,
-                "media_type" : "tv"
+                "media_type": "tv"
             })
+
+            if len(results) == 10:
+                break
 
         return results
 
@@ -407,7 +424,7 @@ def get_trending_games():
         "Client-ID": igdb_keys.key_1,
         "Authorization": f"Bearer {token}",
     }
-
+    
     # Get games with cover images, sorted by popularity, limited to 10
     body = (
         'fields id, name, cover.url; '
