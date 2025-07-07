@@ -52,11 +52,18 @@ pip install -r requirements.txt
 
 2. Download the project:  
    Click the green **Code** button → **Download ZIP** → Extract it to your desired location.
-
-3. Open a terminal inside the project folder:  
+   Or if you want to easly keep up with the updates you can clone the repository using Git:
+    ```sh
+   git clone https://github.com/mihail-pop/media-journal
+   ```
+   This will create a folder with the full project and Git history. To update it later, simply run:
+    ```sh
+   git pull
+   ```
+4. Open a terminal inside the project folder:  
    Right-click inside the extracted folder → Select **Open in Terminal**.
 
-4. Install the dependencies by running:  
+5. Install the dependencies by running:  
    ```sh
    pip install -r requirements.txt
    ```
