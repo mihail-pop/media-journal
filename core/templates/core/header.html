@@ -6,7 +6,7 @@
 <ul class="nav-center">
   {% for item in nav_items %}
     <li><a href="{% if item.name == 'home' %}/{% else %}/{{ item.name }}{% endif %}">
-      {{ item.name|title }}
+      {{ item.display_name }}
     </a></li>
   {% endfor %}
 </ul>

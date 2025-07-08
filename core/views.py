@@ -419,6 +419,8 @@ def settings_page(request):
     allowed_names = APIKey.NAME_CHOICES  # [('tmdb', 'TMDb'), ('igdb', 'IGDB'), ...]
 
     nav_items = NavItem.objects.all().order_by("position")
+    for item in nav_items:
+        item.display_name = item.get_name_display()
 
     return render(request, 'core/settings.html', {
         'keys': keys,
