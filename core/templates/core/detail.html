@@ -16,6 +16,9 @@
     <div class="banner-overlay"></div>
   </div>
 {% if not recommendations %}
+<button onclick="openCoverUpload('{{ source }}', '{{ source_id }}')" class="change-cover-btn">
+  Change Cover
+</button>
   <button onclick="openBannerUpload('{{ source }}', '{{ source_id }}')"
         class="change-banner-btn">
   Change Banner
@@ -190,7 +193,15 @@
 {% if cast %}
 <section class="cast-section">
   <div class="cast-header" style="display: flex; align-items: center; gap: 1rem;">
-    <h2 style="margin: 0;">Cast</h2>
+    {% if media_type == "tv" or media_type == "movie" %}
+  <h2 style="margin: 0;">Cast</h2>
+{% elif media_type == "manga" or media_type == "anime" %}
+  <h2 style="margin: 0;">Characters</h2>
+{% elif media_type == "book" %}
+  <h2 style="margin: 0;">Authors</h2>
+{% else %}
+  <h2 style="margin: 0;">Cast</h2>  {# fallback #}
+{% endif %}
     <input type="text" id="person-search-input" placeholder="Search for a character or actor..." autocomplete="off" style="flex-grow: 1;">
     <button id="person-search-btn" title="Search" aria-label="Search" class="search-icon-button"></button>
   </div>
@@ -224,6 +235,8 @@
         /igdb/game/{{ rec.id }}/
       {% elif media_type == 'anime' or media_type == 'manga' %}
         /mal/{{ media_type }}/{{ rec.id }}/
+      {% elif media_type == 'book' %}
+        /openlib/book/{{ rec.id }}/
       {% else %}
         /tmdb/{{ media_type }}/{{ rec.id }}/
       {% endif %}

@@ -396,34 +396,4 @@ body {
   text-decoration: underline;
 }
 
-/* --- Responsive --- */
-@media (max-width: 900px) {
-  .list-page-container {
-    flex-direction: column;
-  }
-
-  .sidebar, .list-content {
-    width: 100%;
-  }
-
-  .banner-rotator {
-    height: 200px;
-  }
-
-  .card img {
-    height: 220px;
-  }
-}
-
-@media (max-width: 600px) {
-  .card-title-overlay {
-    flex-direction: column;
-    align-items: flex-start;
-    font-size: 0.85rem;
-  }
-
-  .face-field {
-    font-size: 0.9rem;
-  }
-}
 

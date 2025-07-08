@@ -13,12 +13,13 @@ from django.http import JsonResponse
 from django.utils import timezone
 from datetime import timedelta
 from collections import defaultdict
-from .models import APIKey, MediaItem, FavoritePerson
+from .models import APIKey, MediaItem, FavoritePerson, NavItem
 from django.db.models import Sum
 from django.utils.text import slugify
 from django.urls import reverse
 from django.db import transaction
 from django.core.files.base import ContentFile
+from django.utils.timesince import timesince
 import time
 import json
 import requests
@@ -29,6 +30,7 @@ import shutil
 import tempfile
 import zipfile
 import glob
+import re
 
 
 
@@ -189,7 +191,30 @@ def manga(request):
 
 @ensure_csrf_cookie
 def books(request):
-    books = MediaItem.objects.filter(media_type="book").order_by("-date_added")
+    status_ordering = Case(
+        When(status='ongoing', then=Value(1)),
+        When(status='completed', then=Value(2)),
+        When(status='on_hold', then=Value(3)),
+        When(status='planned', then=Value(4)),
+        When(status='dropped', then=Value(5)),
+        default=Value(6),
+        output_field=IntegerField(),
+    )
+    
+    rating_ordering = Case(
+        When(personal_rating=3, then=Value(1)),
+        When(personal_rating=2, then=Value(2)),
+        When(personal_rating=1, then=Value(3)),
+        When(personal_rating=None, then=Value(4)),
+        default=Value(4),
+        output_field=IntegerField(),
+    )
+    
+    books = MediaItem.objects.filter(media_type="book").annotate(
+        status_order=status_ordering,
+        rating_order=rating_ordering
+    ).order_by('status_order', 'rating_order', 'title')
+
     return render(request, 'core/books.html', {'items': books, 'page_type': 'book'})
 
 
@@ -205,6 +230,7 @@ def home(request):
         "Anime": favorites.filter(media_type="anime"),
         "Manga": favorites.filter(media_type="manga"),
         "Games": favorites.filter(media_type="game"),
+        "Books": favorites.filter(media_type="book"),
     }
 
     all_items = MediaItem.objects.all()
@@ -212,8 +238,9 @@ def home(request):
         "Movies": all_items.filter(media_type="movie").count(),
         "TV Shows": all_items.filter(media_type="tv").count(),
         "Anime": all_items.filter(media_type="anime").count(),
-        "Manga": all_items.filter(media_type="manga").count(),
         "Games": all_items.filter(media_type="game").count(),
+        "Books": all_items.filter(media_type="book").count(),
+        "Manga": all_items.filter(media_type="manga").count(),
     }
 
     total_entries = sum(media_counts.values())
@@ -222,8 +249,9 @@ def home(request):
         "Movies": "#F4B400",     # Yellow
         "TV Shows": "#DB4437",   # Red
         "Anime": "#4285F4",      # Blue
-        "Manga": "#A142F4",      # Purple
         "Games": "#0F9D58",      # Green
+        "Books": "#F06292",
+        "Manga": "#A142F4",      # Purple
     }
 
     stats_blocks = []
@@ -255,11 +283,17 @@ def home(request):
         all_items.filter(media_type="manga").aggregate(Sum("progress_main"))["progress_main__sum"] or 0
     )
 
+    pages_read = (
+        all_items.filter(media_type="book").aggregate(Sum("progress_main"))["progress_main__sum"] or 0
+    )
+
     extra_stats = {}
     if days_watched > 0:
         extra_stats["Days Watched"] = days_watched
     if days_played > 0:
         extra_stats["Days Played"] = days_played
+    if pages_read > 0:
+        extra_stats["Pages Read"] = pages_read
     if chapters_read > 0:
         extra_stats["Chapters Read"] = chapters_read
 
@@ -307,6 +341,43 @@ def home(request):
     favorite_characters = FavoritePerson.objects.filter(type="character").order_by("position")
     favorite_actors = FavoritePerson.objects.filter(type="actor").order_by("position")
 
+    recent_items = MediaItem.objects.order_by("-date_added")[:2]
+    recent_activity = []
+
+    for item in recent_items:
+        time_ago = timesince(item.date_added).split(",")[0] + " ago"
+        if item.status == "completed":
+            message = f"Completed {item.title} {time_ago}"
+        elif item.status == "planned":
+            message = f"Planned {item.title} {time_ago}"
+        elif item.status == "dropped":
+            message = f"Dropped {item.title} {time_ago}"
+        elif item.status == "ongoing":
+            message = f"Started {item.title} {time_ago}"
+        elif item.status == "on_hold":
+            message = f"Put {item.title} on hold {time_ago}"
+        else:
+            message = f"Added {item.title} {time_ago}"
+    
+        # Generate the detail URL
+        if item.source == "tmdb" and item.media_type in ["movie", "tv"]:
+            url = reverse("tmdb_detail", args=[item.media_type, item.source_id])
+        elif item.source == "mal" and item.media_type in ["anime", "manga"]:
+            url = reverse("mal_detail", args=[item.media_type, item.source_id])
+        elif item.source == "igdb" and item.media_type == "game":
+            url = reverse("igdb_detail", args=[item.source_id])
+        elif item.source == "openlib" and item.media_type == "book":
+            url = reverse("openlib_detail", args=[item.source_id])
+        else:
+            url = "#"
+        
+        recent_activity.append({
+            "message": message,
+            "media_type": item.media_type,
+            "title": item.title,
+            "url": url,
+        })
+
     return render(request, "core/home.html", {
         "favorite_sections": favorite_sections.items(),
         "favorite_characters": favorite_characters,
@@ -317,6 +388,7 @@ def home(request):
         "activity_data": activity_data,
         "activity_columns": columns,
         'notifications': notifications_list,
+        "recent_activity": recent_activity,
     })
 
 
@@ -346,10 +418,13 @@ def settings_page(request):
     existing_names = [key.name for key in keys]
     allowed_names = APIKey.NAME_CHOICES  # [('tmdb', 'TMDb'), ('igdb', 'IGDB'), ...]
 
+    nav_items = NavItem.objects.all().order_by("position")
+
     return render(request, 'core/settings.html', {
         'keys': keys,
         'allowed_names': allowed_names,
         'existing_names': existing_names,
+        'nav_items': nav_items,
     })
 
 
@@ -516,11 +591,63 @@ def mal_search(request):
 #     return JsonResponse({"results": results})
 
 
+# books search
+@ensure_csrf_cookie
+@require_GET
+def openlib_search(request):
+    query = request.GET.get("q", "").strip()
+
+    if not query:
+        return JsonResponse({"error": "Query parameter 'q' is required."}, status=400)
+
+    url = "https://openlibrary.org/search.json"
+    params = {"q": query}
+
+    response = requests.get(url, params=params)
+    if response.status_code != 200:
+        return JsonResponse({"error": "Failed to fetch from Open Library."}, status=500)
+
+    data = response.json()
+    results = []
+
+    for item in data.get("docs", [])[:10]:
+        title = item.get("title") or "Untitled"
+        author = ", ".join(item.get("author_name", []))
+        year = item.get("first_publish_year", "")
+        description = item.get("subtitle", "")
+        poster_url = None
+
+        # Prefer edition-based cover if possible
+        edition_keys = item.get("edition_key", [])
+        if edition_keys:
+            for key in edition_keys[:3]:  # Check up to 3 editions
+                edition_response = requests.get(f"https://openlibrary.org/books/{key}.json")
+                if edition_response.status_code == 200:
+                    ed_data = edition_response.json()
+                    fmt = ed_data.get("physical_format", "").lower()
+                    if "hardcover" in fmt or "paperback" in fmt or "book" in fmt:
+                        cover_ids = ed_data.get("covers", [])
+                        if cover_ids:
+                            poster_url = f"https://covers.openlibrary.org/b/id/{cover_ids[0]}-L.jpg"
+                            break
+
+        # Fallback to search cover if edition didn't yield better one
+        if not poster_url and "cover_i" in item:
+            poster_url = f"https://covers.openlibrary.org/b/id/{item['cover_i']}-L.jpg"
+
+        results.append({
+            "id": item.get("key", "").split("/")[-1],  # Extract OLxxxxxW
+            "title": title,
+            "media_type": "book",
+            "poster_path": poster_url,
+            "overview": description,
+            "release_date": str(year),
+        })
+
+    return JsonResponse({"results": results})
 
 
-#igdb / games
-
-
+# games search
 
 @ensure_csrf_cookie
 @require_GET
@@ -1271,10 +1398,222 @@ def save_mal_item(media_type, mal_id):
 #     data = response.json().get("data", {}).get("Media")
 #     return data.get("bannerImage") if data else None
 
+# Book Details
+
+@ensure_csrf_cookie
+@require_GET
+def openlib_detail(request, work_id):
+    item = None
+    try:
+        item = MediaItem.objects.get(source="openlib", source_id=work_id)
+
+        raw_date = item.release_date or ""
+        formatted_release_date = ""
+        try:
+            if raw_date:
+                parsed_date = datetime.datetime.strptime(raw_date, "%Y-%m-%d")
+                formatted_release_date = parsed_date.strftime("%d %B %Y")
+        except ValueError:
+            formatted_release_date = raw_date
+
+        return render(request, "core/detail.html", {
+            "item": item,
+            "item_id": item.id,
+            "source": "openlib",
+            "source_id": work_id,
+            "in_my_list": True,
+            "media_type": "book",
+            "title": item.title,
+            "overview": item.overview,
+            "banner_url": item.banner_url,  # no wide artwork
+            "poster_url": item.cover_url,
+            "release_date": formatted_release_date,
+            "genres": [],  # Could map from subjects later
+            "cast": item.cast or [],
+            "recommendations": [],
+            "seasons": None,
+            "page_type": "book",
+        })
+
+    except MediaItem.DoesNotExist:
+        pass  # Fall through to live fetch
+
+    # Fetch from Open Library API
+    detail_url = f"https://openlibrary.org/works/{work_id}.json"
+    detail_response = requests.get(detail_url)
+
+    if detail_response.status_code != 200:
+        return JsonResponse({"error": "Failed to fetch book details from Open Library."}, status=500)
+
+    detail_data = detail_response.json()
+
+    # Title and description
+    title = detail_data.get("title", "Untitled")
+    description_raw = detail_data.get("description", "")
+    if isinstance(description_raw, dict):
+        description = description_raw.get("value", "")
+    else:
+        description = description_raw
+
+    description = re.sub(r'- \[.*?\]\(https?://[^\)]+\)', '', description)  # Remove list of markdown links
+    description = re.sub(r'\[.*?\]:\s+https?://\S+', '', description)       # Remove link footnotes if present
+    description = re.sub(r'-{2,}', '', description)                         # Remove long dashed lines
+    description = re.sub(r'See:\s*$', '', description)                      # Remove dangling 'See:' if left
+    description = re.sub(r'\(\[.*?\]\[\d+\]\)', '', description)
+    description = re.sub(r'\[.*?\]\[\d+\]', '', description)  # Remove [Source][1]
+    description = re.sub(r'\[.*?\]\(https?://[^\)]+\)', '', description)
+    description = description.strip()
+
+    # Cover image
+    cover_ids = detail_data.get("covers", [])
+    poster_url = f"https://covers.openlibrary.org/b/id/{cover_ids[0]}-L.jpg" if cover_ids else None
+
+    # Try to format a date (note: not always present)
+    raw_date = detail_data.get("created", {}).get("value", "")
+    formatted_release_date = ""
+    try:
+        if raw_date:
+            parsed_date = datetime.datetime.strptime(raw_date[:10], "%Y-%m-%d")
+            formatted_release_date = parsed_date.strftime("%d %B %Y")
+    except ValueError:
+        formatted_release_date = raw_date
+
+    # Author names (optional enhancement)
+    author_names = []
+    for a in detail_data.get("authors", []):
+        author_key = a.get("author", {}).get("key", "")
+        if author_key:
+            author_response = requests.get(f"https://openlibrary.org{author_key}.json")
+            if author_response.status_code == 200:
+                author_data = author_response.json()
+                name = author_data.get("name")
+                if name:
+                    author_names.append(name)
+
+    # Recommendations: based on shared subjects (limit to 8)
+    subjects = detail_data.get("subjects", [])
+    recommendations = []
+    if subjects:
+        subject = subjects[0].replace(" ", "+")
+        rec_response = requests.get(f"https://openlibrary.org/search.json?subject={subject}")
+        if rec_response.status_code == 200:
+            rec_data = rec_response.json()
+            for doc in rec_data.get("docs", []):
+                rec_id = doc.get("key", "").split("/")[-1]
+                rec_title = doc.get("title", "Untitled")
+                rec_cover_id = doc.get("cover_i")
+                rec_cover_url = f"https://covers.openlibrary.org/b/id/{rec_cover_id}-M.jpg" if rec_cover_id else None
+                recommendations.append({
+                    "id": rec_id,
+                    "title": rec_title,
+                    "poster_path": rec_cover_url,
+                    "media_type": "book",
+                })
+                if len(recommendations) >= 8:
+                    break
+
+    return render(request, "core/detail.html", {
+        "item": None,
+        "item_id": None,
+        "source": "openlib",
+        "source_id": work_id,
+        "in_my_list": False,
+        "media_type": "book",
+        "title": title,
+        "overview": description,
+        "banner_url": None,
+        "poster_url": poster_url,
+        "release_date": formatted_release_date,
+        "genres": [],  # Could later be extracted from subjects
+        "cast": [{"name": name, "character": ""} for name in author_names],
+        "recommendations": recommendations,
+        "seasons": None,
+        "page_type": "book",
+    })
+
+def save_openlib_item(work_id):
+    # Fetch from Open Library API
+    detail_url = f"https://openlibrary.org/works/{work_id}.json"
+    detail_response = requests.get(detail_url)
+
+    if detail_response.status_code != 200:
+        raise Exception("Failed to fetch book details from Open Library.")
+
+    detail_data = detail_response.json()
+
+    # Title and description
+    title = detail_data.get("title", "Untitled")
+    description_raw = detail_data.get("description", "")
+    if isinstance(description_raw, dict):
+        description = description_raw.get("value", "")
+    else:
+        description = description_raw or ""
+
+    description = re.sub(r'- \[.*?\]\(https?://[^\)]+\)', '', description)  # Remove list of markdown links
+    description = re.sub(r'\[.*?\]:\s+https?://\S+', '', description)       # Remove link footnotes if present
+    description = re.sub(r'-{2,}', '', description)                         # Remove long dashed lines
+    description = re.sub(r'See:\s*$', '', description)                      # Remove dangling 'See:' if left
+    description = re.sub(r'\(\[.*?\]\[\d+\]\)', '', description)
+    description = re.sub(r'\[.*?\]\[\d+\]', '', description)  # Remove [Source][1]
+    description = re.sub(r'\[.*?\]\(https?://[^\)]+\)', '', description)
+    description = description.strip()
+
+    # Authors
+    author_names = []
+    for a in detail_data.get("authors", []):
+        author_key = a.get("author", {}).get("key", "")
+        if author_key:
+            author_response = requests.get(f"https://openlibrary.org{author_key}.json")
+            if author_response.status_code == 200:
+                author_data = author_response.json()
+                name = author_data.get("name")
+                if name:
+                    author_names.append(name)
+
+    # Best available cover (pick last instead of first if possible)
+    cover_ids = detail_data.get("covers", [])
+    cover_id = cover_ids[0] if cover_ids else None
+
+    poster_url = f"https://covers.openlibrary.org/b/id/{cover_id}-L.jpg" if cover_id else None
+    local_poster = download_image(poster_url, f"posters/openlib_{work_id}.jpg") if poster_url else ""
+
+    if local_poster.startswith("media/"):
+        local_poster = local_poster[len("media/"):]
+
+    # No banner art available for books
+    banner_url = None
+    local_banner = ""
+
+    # Format release date (from `created`)
+    release_date = None
+    raw_date = detail_data.get("created", {}).get("value", "")
+    try:
+        if raw_date:
+            parsed_date = datetime.datetime.strptime(raw_date[:10], "%Y-%m-%d")
+            release_date = parsed_date.strftime("%Y-%m-%d")
+    except ValueError:
+        release_date = None
+
+    # Save to DB
+    MediaItem.objects.create(
+        title=title,
+        media_type="book",
+        source="openlib",
+        source_id=work_id,
+        cover_url=local_poster,
+        banner_url=local_banner,
+        overview=description,
+        release_date=release_date,
+        cast=[{"name": name, "character": ""} for name in author_names],
+        seasons=None,
+        related_titles=[],
+        screenshots=[],
+    )
+
+    return JsonResponse({"success": True, "message": "Book added to list"})
+
 
 # Game Details
-
-
 @ensure_csrf_cookie
 @require_GET
 def igdb_detail(request, igdb_id):
@@ -1629,6 +1968,9 @@ def add_to_list(request):
 
     if source == "igdb":
         return save_igdb_item(source_id)
+    
+    if source == "openlib":
+        return save_openlib_item(source_id)
 
     return JsonResponse({"error": "Unsupported source"}, status=400)
 
@@ -1791,6 +2133,10 @@ def get_item(request, item_id):
 
         elif item.source == "igdb":
             # IGDB does not have episode/season style totals; leave as is
+            total_main = None
+            total_secondary = None
+
+        elif item.source == "openlib":
             total_main = None
             total_secondary = None
 
@@ -2130,7 +2476,59 @@ def upload_banner(request):
         for chunk in uploaded_file.chunks():
             destination.write(chunk)
 
+    relative_url = f"/media/banners/{base_name}{ext}"
+
+    try:
+        item = MediaItem.objects.get(source=source, source_id=source_id)
+        if not item.banner_url:
+            item.banner_url = relative_url
+            item.save(update_fields=["banner_url"])
+    except MediaItem.DoesNotExist:
+        pass  # No item found yet — maybe it's added later
+
     return JsonResponse({"success": True, "url": f"/media/banners/{base_name}{ext}"})
+
+@ensure_csrf_cookie
+@require_POST
+def upload_cover(request):
+    uploaded_file = request.FILES.get("cover")
+    source = request.POST.get("source")
+    source_id = request.POST.get("id")
+
+    if not uploaded_file or not source or not source_id:
+        return JsonResponse({"error": "Missing required data."}, status=400)
+
+    ext = os.path.splitext(uploaded_file.name)[1].lower()
+    if ext not in [".jpg", ".jpeg", ".png"]:
+        return JsonResponse({"error": "Unsupported file type."}, status=400)
+
+    poster_dir = os.path.join(settings.MEDIA_ROOT, "posters")
+    os.makedirs(poster_dir, exist_ok=True)
+
+    base_name = f"{source}_{source_id}"
+    new_path = os.path.join(poster_dir, base_name + ext)
+
+    for existing_ext in [".jpg", ".jpeg", ".png"]:
+        old_path = os.path.join(poster_dir, base_name + existing_ext)
+        if os.path.exists(old_path) and old_path != new_path:
+            os.remove(old_path)
+
+    with open(new_path, "wb+") as destination:
+        for chunk in uploaded_file.chunks():
+            destination.write(chunk)
+
+    relative_url = f"/media/posters/{base_name}{ext}"
+
+    try:
+        item = MediaItem.objects.get(source=source, source_id=source_id)
+        if not item.cover_url:
+            item.cover_url = relative_url
+            item.save(update_fields=["cover_url"])
+    except MediaItem.DoesNotExist:
+        pass
+
+    return JsonResponse({"success": True, "url": relative_url})
+
 
 @ensure_csrf_cookie
 @require_POST
@@ -2157,6 +2555,8 @@ def refresh_item(request):
             return save_mal_item(media_type, source_id)
         elif source == "igdb":
             return save_igdb_item(source_id)
+        elif source == "openlib":
+            return save_openlib_item(source_id)
         else:
             return JsonResponse({"error": "Unsupported source."}, status=400)
 
@@ -2164,3 +2564,27 @@ def refresh_item(request):
         return JsonResponse({"error": "Item not found."}, status=404)
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
+
+@ensure_csrf_cookie
+@require_POST
+def update_nav_items(request):
+    try:
+        data = json.loads(request.body)
+        items = data.get("items", [])
+
+        for item_data in items:
+            nav_id = item_data.get("id")
+            position = item_data.get("position")
+            visible = item_data.get("visible", True)
+
+            try:
+                nav_item = NavItem.objects.get(id=nav_id)
+                nav_item.position = position
+                nav_item.visible = visible
+                nav_item.save()
+            except NavItem.DoesNotExist:
+                continue  # Skip invalid IDs
+
+        return JsonResponse({"success": True})
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)}, status=400)

@@ -1,5 +1,5 @@
 {% extends 'core/base.html' %}
-
+{% load static %}
 {% block head %}
 {{ block.super }}
 <link rel="stylesheet" href="/static/core/css/settings.css">
@@ -10,15 +10,45 @@
   <h1>Settings</h1>
 
 <div class="settings-section">
+  <button class="collapsible">Preferences</button>
+  <div class="collapsible-content">
+    <h3>Navigation Buttons</h3>
+    <form id="nav-items-form">
+      {% for item in nav_items %}
+        <div class="nav-item-row" data-id="{{ item.id }}">
+          <span class="nav-item-name">{{ item.name }}</span>
+          
+          <button type="button" class="move-up" title="Move up">↑</button>
+          <button type="button" class="move-down" title="Move down">↓</button>
+
+          <label class="toggle-label">
+            Show<input type="checkbox" class="toggle-visible" {% if item.visible %}checked{% endif %}>
+          </label>
+        </div>
+      {% endfor %}
+      <button type="submit" class="save-nav-btn">Save Changes</button>
+    </form>
+    <p style="font-size: 0.9rem; margin-top: 0.5rem; text-align: center;">
+      Here you can reorder the navigation buttons and hide/show them.  <br/> <b> The hidden buttons will disappear on all the other pages, but will still appear on the Settings page header. </b>
+    </p>
+  </div>
+</div>
+
+<div class="settings-section">
   <button class="collapsible">Backup</button>
   <div class="collapsible-content">
     <div class="backup-actions">
-      <button id="download-backup-btn">Download Backup</button>
+      <button id="download-backup-btn">Download Backup
+        <span class="spinner" style="display:none;"></span>
+      </button>
       <input type="file" id="upload-backup-input" accept=".zip" style="display: none;" />
-      <button id="upload-backup-btn">Load Backup</button>
+      <button id="upload-backup-btn">Load Backup
+        <span class="spinner" style="display:none;"></span>
+      </button>
     </div>
     <p style="font-size: 0.9rem; margin-top: 0.5rem; text-align: center;">
-      Here you can save or restore your entire media list and all saved images (covers, banners, cast, etc).  <br/> <b> It may take a while for the download to start with large lists. </b>
+      <br/>Here you can save or restore your entire media list and all saved images (covers, banners, cast, etc).  <br/><br/> <b>It may take 1-2 minutes for the download to start or for the backup to load with large lists. </b>
+      <br/> <b>Keep the downloaded backup file as it is (.zip). </b>
     </p>
   </div>
 </div>
@@ -79,125 +109,5 @@
 
 {% block script %}
 {{ block.super }}
-<script>
-  document.addEventListener("DOMContentLoaded", () => {
-    document.querySelectorAll(".save-btn").forEach(btn => {
-      btn.addEventListener("click", async () => {
-        const row = btn.closest("tr");
-        const id = row.dataset.id;
-        const keyName = row.querySelector(".key-name").value;
-        const key1 = row.querySelector(".key-1").value;
-        const key2 = row.querySelector(".key-2").value;
-
-        const response = await fetch("/api/update_key/", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-CSRFToken": getCookie("csrftoken"),
-          },
-          body: JSON.stringify({ id, name: keyName, key_1: key1, key_2: key2 }),
-        });
-
-        const data = await response.json();
-        alert(data.message || data.error);
-      });
-    });
-
-    document.querySelectorAll(".delete-btn").forEach(btn => {
-      btn.addEventListener("click", async () => {
-        const row = btn.closest("tr");
-        const id = row.dataset.id;
-
-        const response = await fetch("/api/delete_key/", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-CSRFToken": getCookie("csrftoken"),
-          },
-          body: JSON.stringify({ id }),
-        });
-
-        const data = await response.json();
-        alert(data.message || data.error);
-        if (response.ok) row.remove();
-      });
-    });
-
-    document.getElementById("add-key-btn").addEventListener("click", async () => {
-      const name = document.getElementById("new-name").value;
-      const key1 = document.getElementById("new-key-1").value;
-      const key2 = document.getElementById("new-key-2").value;
-
-      if (!name) return alert("Please select an API name.");
-
-      const response = await fetch("/api/add_key/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRFToken": getCookie("csrftoken"),
-        },
-        body: JSON.stringify({ name, key_1: key1, key_2: key2 }),
-      });
-
-      const data = await response.json();
-      alert(data.message || data.error);
-      if (response.ok) location.reload();
-    });
-
-    function getCookie(name) {
-      const value = `; ${document.cookie}`;
-      const parts = value.split(`; ${name}=`);
-      if (parts.length === 2) return parts.pop().split(";").shift();
-    }
-
-    // Collapse behavior
-    document.querySelectorAll(".collapsible").forEach(button => {
-      button.addEventListener("click", () => {
-        button.classList.toggle("active");
-        // No manual style changes; CSS handles show/hide based on .active
-      });
-    });
-  });
-</script>
-
-<script>
-  function getCookie(name) {
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) return parts.pop().split(";").shift();
-}
-document.getElementById("download-backup-btn").addEventListener("click", function () {
-  window.location.href = "/backup/export/";
-});
-
-document.getElementById("upload-backup-btn").addEventListener("click", function () {
-  document.getElementById("upload-backup-input").click();
-});
-
-document.getElementById("upload-backup-input").addEventListener("change", function () {
-  const file = this.files[0];
-  if (!file) return;
-
-  const formData = new FormData();
-  formData.append("backup_zip", file);
-  const csrftoken = getCookie("csrftoken");
-
-  fetch("/backup/import/", {
-  method: "POST",
-  headers: {
-    "X-CSRFToken": csrftoken,
-  },
-  body: formData,
-})
-  .then((response) => response.json())
-  .then((data) => {
-    alert(data.message || data.error || "Import finished.");
-    window.location.reload();
-  })
-  .catch((err) => {
-    console.error("Backup import failed:", err);
-    alert("Backup import failed.");
-  });
-});
-</script>
+<script src="{% static 'core/js/settings.js' %}"></script>
 {% endblock %}

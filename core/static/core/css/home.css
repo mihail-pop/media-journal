@@ -64,7 +64,6 @@ body {
 .separator-bar {
   height: 45px;
   background-color: #151F2E;
-  margin-bottom: 1rem;
   display: flex;
   justify-content: flex-end; /* pushes children to the right */
   align-items: center; /* vertically center if needed */
@@ -178,7 +177,6 @@ body {
 /* --- Section Headers --- */
 .status-header,
 .favorites-header {
-  margin-top: 50px;
   margin-bottom: 10px;
   font-weight: bold;
   font-size: 1.3rem;
@@ -189,7 +187,8 @@ body {
 .stats-section {
   display: flex;
   justify-content: center;
-  gap: 0rem;
+  gap: 6.30rem;
+  margin-bottom: 2rem;
 }
 
 .stats-activity {
@@ -275,9 +274,6 @@ body {
 }
 
 .activity-graph {
-  flex: 1;
-  
-  padding: 1.5rem;
   border-radius: 12px;
   display: flex;
   flex-direction: column;
@@ -286,9 +282,14 @@ body {
 
 .activity-graph h3 {
   color: #8596A5;
-  font-size: 1.1rem;
-  margin-bottom: 1rem;
   max-width:530px;
+  margin-bottom: 1rem;
+}
+
+.extra-stats-class h3 {
+  color: #8596A5;
+  max-width:530px;
+  margin-bottom: 1rem;
 }
 
 .activity-grid {
@@ -296,7 +297,7 @@ body {
   display: flex;
   gap: 8px;
   padding: 15px; /* or any value you prefer */
-  border-radius: 6px; /* optional, to soften the edges */
+  border-radius: 4px; /* optional, to soften the edges */
   max-width: 530px;
 }
 
@@ -328,10 +329,10 @@ body {
 
 /* --- Stats Section Layout --- */
 .stats-summary-box {
-  transform: scale(0.92);
-  padding: 3rem 1.5rem 1.5rem 1.5rem; /* top right bottom left */
+  min-width: 31.5rem;
+  padding: 2rem 1.5rem 1.5rem 1.5rem; /* top right bottom left */
   background-color: #151F2E;
-  border-radius: 6px;
+  border-radius: 4px;
   color: #EDF1F5;
 }
 
@@ -354,13 +355,13 @@ body {
   flex-wrap: wrap;
   gap: 1rem;
   margin-bottom: 1.2rem;
+  justify-content: center;
 }
 
 .stats-block {
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 100px;
 }
 
 .stats-block-label {
@@ -371,11 +372,12 @@ body {
   text-align: center;
   width: 100%;
   box-sizing: border-box;
+  font-size: 1rem; 
 }
 
 .stats-block-count {
   margin-top: 0.5rem;
-  font-size: 1.1rem;
+  font-size: 0.9rem;
   font-weight: 500;
   color: #EDF1F5;
 }
@@ -399,7 +401,7 @@ body {
   margin-top: 1.5rem;
   display: flex;
   justify-content: center;
-  gap: 3rem;
+  gap: 1.5rem;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
@@ -427,7 +429,7 @@ body {
 /* Value below remains unstyled */
 .extra-stat-value {
   margin-top: 0.4rem;
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: 500;
   color: #EDF1F5;
 }
@@ -447,6 +449,10 @@ body {
 }
 
 .extra-stat-row:nth-child(3) .extra-stat-label { /* Chapters Read */
+  background-color: #F06292;
+}
+
+.extra-stat-row:nth-child(4) .extra-stat-label { /* Chapters Read */
   background-color: #A142F4;
 }
 
@@ -474,6 +480,10 @@ body {
 .notifications-button{
   margin-right: 14vw;
   gap: 6px;
+}
+
+.notifications-button:hover{
+  color: #adbfce;
 }
 
 .discover-button {
@@ -577,29 +587,6 @@ body {
   color: #aaa;
 }
 
-
-@media (max-width: 900px) {
-  .favorites-row {
-    flex-direction: column;
-  }
-}
-
-/* --- Responsive --- */
-@media (max-width: 900px) {
-  .banner-rotator {
-    height: 200px;
-  }
-
-  .card img {
-    height: 220px;
-  }
-
-  .stats-section {
-    flex-direction: column;
-    padding: 1rem;
-  }
-}
-
 .favorites-section {
   max-width: 1400px;
   margin: 0 auto;
@@ -654,4 +641,37 @@ body {
 
 .favorites-overlay .close-button:hover {
   background: #e04345;
+}
+
+.recent-activity ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.recent-activity li {
+  padding: 0.4rem 0;
+  font-size: 1rem;
+  border-bottom: 2px solid #151F2E;
+}
+
+.recent-activity {
+  max-width:35rem;
+}
+
+.recent-activity a {
+  text-decoration: none;
+  color: inherit;
+  margin-left: 0.5rem;
+}
+
+.recent-activity a:hover {
+  color: #adbfce; /* on hover, maybe yellow to match your theme */
+}
+
+/* --- Responsive --- */
+@media (orientation: portrait) {
+  .activity-graph {
+    display: none;
+  }
 }

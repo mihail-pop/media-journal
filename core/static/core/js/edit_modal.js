@@ -37,6 +37,9 @@ document.addEventListener("DOMContentLoaded", function () {
       showField("progress_secondary");
       if (mainLabel) mainLabel.textContent = "Chapter Progress";
       if (secondaryLabel) secondaryLabel.textContent = "Volume Progress";
+    } else if (mediaType === "book") {
+      showField("progress_main");
+      if (mainLabel) mainLabel.textContent = "Pages Read";
     }
   }
 
@@ -50,6 +53,7 @@ function updateTotalDisplays(item) {
     anime: { main: "episodes", secondary: "" },
     game: { main: "hours", secondary: "years" },
     manga: { main: "chapters", secondary: "volumes" },
+    book: { main: "pages", secondary: "" },
   };
 
   const mediaType = item.media_type;

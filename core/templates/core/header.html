@@ -3,23 +3,13 @@
   <div class="navbar container">
     <div class="logo">Media Journal</div>
 
-    <ul class="nav-center">
-      <li><a href="/">Home</a></li>
-      <li><a href="/movies">Movies</a></li>
-      <li><a href="/tvshows">TV Shows</a></li>
-      <li><a href="/anime">Anime</a></li>
-      <li><a href="/games">Games</a></li>
-      <li><a href="/manga">Manga</a></li>
-    <!--
-      <li class="dropdown">
-        <button class="dropbtn">More Media ⮟</button>
-        <ul class="dropdown-content">
-          <li><a href="/games">Games</a></li>
-          <li><a href="/books">Books</a></li>
-          <li><a href="/manga">Manga</a></li>
-        </ul>
-      </li> -->
-    </ul>
+<ul class="nav-center">
+  {% for item in nav_items %}
+    <li><a href="{% if item.name == 'home' %}/{% else %}/{{ item.name }}{% endif %}">
+      {{ item.name|title }}
+    </a></li>
+  {% endfor %}
+</ul>
 
     <ul class="nav-right">
       <li class="search-container">

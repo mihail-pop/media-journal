@@ -96,3 +96,21 @@ class FavoritePerson(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.type})"
+    
+class NavItem(models.Model):
+    CATEGORY_CHOICES = [
+        ("home", "Home"),
+        ("movies", "Movies"),
+        ("tvshows", "TV Shows"),
+        ("anime", "Anime"),
+        ("games", "Games"),
+        ("manga", "Manga"),
+        ("books", "Books"),
+    ]
+
+    name = models.CharField(max_length=20, choices=CATEGORY_CHOICES, unique=True)
+    visible = models.BooleanField(default=True)
+    position = models.PositiveIntegerField(default=1)
+
+    def __str__(self):
+        return f"{self.get_name_display()} (pos: {self.position}, visible: {self.visible})"

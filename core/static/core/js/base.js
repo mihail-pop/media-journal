@@ -28,6 +28,7 @@ document.addEventListener("DOMContentLoaded", () => {
     anime: "/api/mal_search/",
     manga: "/api/mal_search/",
     game: "/api/igdb_search/",
+    book: "/api/openlib_search/",
   };
 
   async function doSearch(query) {
@@ -42,7 +43,7 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const params = new URLSearchParams();
       params.append("q", query);
-      if (["anime", "manga", "movie", "tv"].includes(pageType)) {
+      if (["anime", "manga", "movie", "tv", "book"].includes(pageType)) {
         params.append("type", pageType);
       }
 
@@ -67,8 +68,11 @@ document.addEventListener("DOMContentLoaded", () => {
           poster = item.poster_path;
         }
 
-        const prefix = pageType === "anime" || pageType === "manga" ? "mal" :
-                       pageType === "game" ? "igdb" : "tmdb";
+  const prefix =
+    pageType === "anime" || pageType === "manga" ? "mal" :
+    pageType === "game" ? "igdb" :
+    pageType === "book" ? "openlib" :
+    "tmdb";
 
         return `
           <div class="search-card">

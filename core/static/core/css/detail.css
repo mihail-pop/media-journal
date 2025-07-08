@@ -274,34 +274,6 @@ body {
   box-shadow: 0 1px 6px rgba(0, 0, 0, 0.15);
 }
 
-/* --- RESPONSIVE --- */
-@media (max-width: 768px) {
-  .top-content {
-    flex-direction: column;
-    padding-top: 160px;
-  }
-
-  .poster {
-    position: static;
-    margin: 0 auto;
-    top: 0;
-  }
-
-  .text-info {
-    text-align: center;
-  }
-
-  .edit-favorite-wrapper {
-    justify-content: center;
-  }
-
-  .double-recs {
-    flex-direction: column;
-  }
-}
-
-
-
 /* Container for the inline search */
 #person-search-container {
   margin-bottom: 1.5rem;
@@ -491,8 +463,8 @@ body {
 
 .change-banner-btn {
   position: absolute;
-  top: 22.5rem;
-  right: 16px;
+  top: 22rem;
+  right: 1rem;
   padding: 6px 12px;
   background: #0b1622;
   color: #cecece;
@@ -508,10 +480,29 @@ body {
   background: #25394f;
 }
 
+.change-cover-btn {
+  position: absolute;
+  top: 24rem;
+  right: 1rem;
+  padding: 6px 12px;
+  background: #0b1622;
+  color: #cecece;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  z-index: 10;
+  transition: background 0.2s ease;
+}
+
+.change-cover-btn:hover {
+  background: #25394f;
+}
+
 .refresh-btn {
   position: absolute;
-  top: 25.5rem;
-  right: 16px;
+  top: 26rem;
+  right: 1rem;
   padding: 6px 12px;
   background: #0b1622;
   color: #cecece;
@@ -526,3 +517,4 @@ body {
 .refresh-btn:hover {
   background-color: #25394f;
 }
+

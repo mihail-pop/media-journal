@@ -75,6 +75,48 @@ function openBannerUpload(source, id) {
   document.body.removeChild(input);
 }
 
+function openCoverUpload(source, id) {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = ".jpg,.jpeg,.png";
+  input.style.display = "none";
+
+  input.onchange = () => {
+    const file = input.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("cover", file);
+    formData.append("source", source);
+    formData.append("id", id);
+
+    fetch("/upload-cover/", {
+      method: "POST",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+      },
+      body: formData,
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.url) {
+          const cover = document.getElementById("detail-cover");
+          if (cover) {
+            const timestamp = new Date().getTime();
+            cover.src = data.url + "?t=" + timestamp;
+            setTimeout(() => window.location.reload(true), 1000);
+          }
+        } else {
+          alert(data.error || "Failed to upload cover.");
+        }
+      });
+  };
+
+  document.body.appendChild(input);
+  input.click();
+  document.body.removeChild(input);
+}
+
 const screenshotsData = JSON.parse(document.getElementById("screenshots-data").textContent);
 let currentIndex = 0;
 

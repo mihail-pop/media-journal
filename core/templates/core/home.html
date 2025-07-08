@@ -55,25 +55,8 @@
 
 <!-- Stats Section -->
 <section class="stats-section">
-  <div class="activity-graph">
-    <h3>Activity History</h3>
-    <div class="activity-grid">
-      {% for column in activity_columns %}
-        <div class="activity-column">
-          {% for day in column %}
-            <div class="activity-cell 
-                        {% if day.count == 0 %}activity-none
-                        {% elif day.count == 1 %}activity-low
-                        {% else %}activity-high{% endif %}"
-                 title="{{ day.date }} — {{ day.count }} item{{ day.count|pluralize }} added">
-            </div>
-          {% endfor %}
-        </div>
-      {% endfor %}
-    </div>
-  </div>
 <div class="extra-stats-class">
-  <h2>Stats</h2>
+  <h3>Stats</h3>
   <div class="stats-summary-box">
 
     <!-- Colored category blocks -->
@@ -110,6 +93,31 @@
     {% endif %}
   </div>
   </div>
+
+  <div class="activity-graph">
+    <h3>Activity History</h3>
+    <div class="activity-grid">
+      {% for column in activity_columns %}
+        <div class="activity-column">
+          {% for day in column %}
+            <div class="activity-cell 
+                        {% if day.count == 0 %}activity-none
+                        {% elif day.count == 1 %}activity-low
+                        {% else %}activity-high{% endif %}"
+                 title="{{ day.date }} — {{ day.count }} item{{ day.count|pluralize }} added">
+            </div>
+          {% endfor %}
+        </div>
+      {% endfor %}
+    </div>
+      <div class="recent-activity">
+  <ul>
+{% for entry in recent_activity %}
+  <li><a href="{{ entry.url }}">{{ entry.message }}</a></li>
+{% endfor %}
+  </ul>
+</div>
+  </div>
 </section>
 
 
@@ -133,6 +141,8 @@
   <a href="{% url 'mal_detail' media_type=item.media_type mal_id=item.source_id %}">
 {% elif item.media_type == 'game' %}
   <a href="{% url 'igdb_detail' igdb_id=item.source_id %}">
+{% elif item.media_type == 'book' %}
+  <a href="{% url 'openlib_detail' work_id=item.source_id %}">
 {% else %}
   <a href="#">
 {% endif %}
@@ -167,6 +177,8 @@
             <a href="{% url 'mal_detail' media_type=item.media_type mal_id=item.source_id %}">
           {% elif item.media_type == 'game' %}
             <a href="{% url 'igdb_detail' igdb_id=item.source_id %}">
+          {% elif item.media_type == 'book' %}
+            <a href="{% url 'openlib_detail' work_id=item.source_id %}">
           {% else %}
             <a href="#">
           {% endif %}
