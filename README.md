@@ -1,20 +1,23 @@
 ## Overview
 
-I’ve always wanted to build a simple, all-in-one media tracking app that keeps working even if an API goes down. **Media Journal** is my take on that idea.
+I’ve always wanted to build a media tracker app with a clean interface and thoughtful design—something that not only looks good but also keeps working even if an API goes down for a while. Media Journal is my attempt at making that.
 
-The app includes all the core features I initially set out to implement. I use it myself and plan to maintain it for the years to come. Support for books will be added in the future, but beyond that, I don’t plan to introduce major new features—keeping it simple makes it easier to maintain and use.
+I plan to use this app for years to come, so I’ll keep it maintained no matter what. If others find it useful too, even better.
+
+Right now, the app includes all the core features I originally set out to build. I still plan to improve the mobile UI, but aside from that, I don’t intend to add major new features—keeping it simple makes it easier to use and maintain.
 
 ### Main Features
 
 - **Local Storage**:  All items added to your lists are saved locally, including their associated images (on average, less than 1 MB per item).
 - **Automatic Updates**: TV shows, anime, and manga are checked automatically for sequels or new seasons.  
 - **Data Portability**: Export and import your lists for backup or transfer.  
-- **Organized Lists**: Separate categories for Movies, TV Shows, Anime, Manga, and Games.  
+- **Organized Lists**: Separate categories for Movies, TV Shows, Anime, Manga, Books and Games.  
 - **Detailed Tracking**: Record progress, scores, status, and notes for each entry.  
-- **Personalized Dashboard**: You can see stats and favorites (including characters and actors) on the home page.
+- **Personalized Dashboard**: You can see stats, activity and favorites (including characters and actors) on the home page.
+- **Customizable Experience**: There are numerous small features that let you tailor the interface.
 
 ## Demo  
-| <img src="https://github.com/user-attachments/assets/00012d40-b481-4e67-969a-cc7b99abf568" width="500" /> | <img src="https://github.com/user-attachments/assets/1d5f49cb-7f0b-4fd7-93ba-5c77c8266884" width="500" /> |
+| <img src="https://github.com/user-attachments/assets/eaa68bd5-4090-42c6-9905-3aa2e82b26d7" width="500" /> | <img src="https://github.com/user-attachments/assets/1d5f49cb-7f0b-4fd7-93ba-5c77c8266884" width="500" /> |
 | :-----------------------------------------: | :-----------------------------------------: |
 |                 Home Page                    |               List Example                   |
 
