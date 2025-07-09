@@ -11,7 +11,7 @@
 ## Features
 
 - Separate lists for movies, tv shows, games, anime, manga, and books.
-- Track progress, ratings, status, and personal notes.
+- Track progress, ratings, status, and notes.
 - Home page shows stats, favorites, and recent activity.
 - You can also favorite actors and characters.
 - Saves your lists and images locally (less than 1MB per item).
@@ -47,7 +47,7 @@
 3. Inside the app navigate to **Settings → API Keys**.
    You will need to add your own API keys. In that section there are instructions on how to obtain them.
 
-### Windows
+### Windows - [Youtube Tutorial](https://youtu.be/AGMv3L0hziY)
 
 1. Download [Python 3.13.0](https://www.python.org/downloads/release/python-3130/).
 
