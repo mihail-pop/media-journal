@@ -1,11 +1,11 @@
 <h1 align="center">Media Journal</h1>
 
 <h3 align="center">
-  A media tracker app designed to be clean, simple to use, and reliable even when an API goes down for a while.
+  A media tracker app designed to be clean, simple to use, and reliable with APIs.
 </h3>
 <br/>
 
-<div align="center"> I plan to use this app from now on for my media, so I will keep it maintained. If others join me and find it useful too, even better. </div>
+<div align="center"> I will use this app from now on for my media, so I will keep it maintained. If others join me and find it useful too, even better. </div>
 
 
 ## Features
