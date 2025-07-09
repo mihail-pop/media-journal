@@ -1,40 +1,41 @@
-## Overview
+<h1 align="center">Media Journal</h1>
 
-I’ve always wanted to build a media tracker app with a clean interface and thoughtful design—something that not only looks good but also keeps working even if an API goes down for a while. Media Journal is my attempt at making that.
+<h3 align="center">
+  A media tracker app designed to be clean, simple to use, and reliable even when an API goes down for a while.
+</h3>
+<br/>
 
-I plan to use this app for years to come, so I’ll keep it maintained no matter what. If others find it useful too, even better.
+<div align="center"> I plan to use this app from now on for my media, so I will keep it maintained. If others join me and find it useful too, even better. </div>
 
-Right now, the app includes all the core features I originally set out to build. I still plan to improve the mobile UI, but aside from that, I don’t intend to add major new features—keeping it simple makes it easier to use and maintain.
 
-### Main Features
+## Features
 
-- **Local Storage**:  All items added to your lists are saved locally, including their associated images (on average, less than 1 MB per item).
-- **Automatic Updates**: TV shows, anime, and manga are checked automatically for sequels or new seasons.  
-- **Data Portability**: Export and import your lists for backup or transfer.  
-- **Organized Lists**: Separate categories for Movies, TV Shows, Anime, Manga, Books and Games.  
-- **Detailed Tracking**: Record progress, scores, status, and notes for each entry.  
-- **Personalized Dashboard**: You can see stats, activity and favorites (including characters and actors) on the home page.
-- **Customizable Experience**: There are numerous small features that let you tailor the interface.
+- Separate lists for movies, tv shows, games, anime, manga, and books.
+- Track progress, ratings, status, and personal notes.
+- Home page shows stats, favorites, and recent activity.
+- You can also favorite actors and characters.
+- Saves your lists and images locally (less than 1MB per item).
+- Import/export your data for backup or transfer.
+- Automatically checks for sequels and new seasons (tv shows, anime, manga).
 
 ## Demo  
-| <img src="https://github.com/user-attachments/assets/eaa68bd5-4090-42c6-9905-3aa2e82b26d7" width="500" /> | <img src="https://github.com/user-attachments/assets/1d5f49cb-7f0b-4fd7-93ba-5c77c8266884" width="500" /> |
+| <img src="https://github.com/user-attachments/assets/9dfbe6f7-56eb-425d-8f8f-72362dd43416" width="500" /> | <img src="https://github.com/user-attachments/assets/1d5f49cb-7f0b-4fd7-93ba-5c77c8266884" width="500" /> |
 | :-----------------------------------------: | :-----------------------------------------: |
-|                 Home Page                    |               List Example                   |
+|                 Home                    |               Movies                   |
 
-| <img src="https://github.com/user-attachments/assets/8d4f32af-7adf-4f07-b048-2221cc245157" width="500" /> | <img src="https://github.com/user-attachments/assets/65ef3080-67b1-424a-a894-1276284c2567" width="500" /> |
+| <img src="https://github.com/user-attachments/assets/0b9027f5-60bb-4f46-8f39-913995805068" width="500" /> | <img src="https://github.com/user-attachments/assets/65ef3080-67b1-424a-a894-1276284c2567" width="500" /> |
 | :-----------------------------------------: | :-----------------------------------------: |
-|               Details Page                  |               Edit                   |
+|               Details                  |               Edit                   |
 
-## Requirements  
-- **Python** (Developed with version **3.13.0**)  
-- **Dependencies**: Install using the command below:  
 
-```sh
-pip install -r requirements.txt
-```
+
+
+
+
+
 ## Setup
 
-### Docker 
+### If you have Docker 
 1. Open a terminal in the project folder and run:
    ```sh
    docker-compose build
@@ -45,50 +46,42 @@ pip install -r requirements.txt
    ```
 3. Now you can open the app in your browser at: http://localhost:8000
 
-4. Navigate to **Settings → API Keys** in the app.
-   Here you will need to add your API keys — instructions on how to obtain them are provided in that section.
+4. Inside the app navigate to **Settings → API Keys**.
+   You will need to add your own API keys. In that section there are instructions on how to obtain them.
 
-### Windows - Simple Step-by-Step Guide
+### Windows
 
-1. Ensure Python is installed. During installation, **make sure to check** the option:  
+1. Download [Python 3.13.0](https://www.python.org/downloads/release/python-3130/).
+
+   During installation check the option:  
    *“Add Python to PATH”*.
 
 2. Download the project:  
-   Click the green **Code** button → **Download ZIP** → Extract it to your desired location.
-   Or if you want to easly keep up with the updates you can clone the repository using Git:
-    ```sh
-   git clone https://github.com/mihail-pop/media-journal
-   ```
-   This will create a folder with the full project and Git history. To update it later, simply run:
-    ```sh
-   git pull
-   ```
-4. Open a terminal inside the project folder:  
-   Right-click inside the extracted folder → Select **Open in Terminal**.
+   Click the green **Code** button → **Download ZIP** → Extract it to your desired location. (Or you can use Git)
 
-5. Install the dependencies by running:  
+3. Open a terminal inside the project folder:  
+   Right-click inside `...\media-journal-main\media-journal-main` → Select **Open in Terminal**.
+
+4. Install the dependencies:  
    ```sh
    pip install -r requirements.txt
    ```
-   Tip: If you work with multiple Python projects, consider creating a virtual environment (venv) before installing dependencies. Otherwise, you can skip this step.
    
-6. Create the db.sqlite3 by running:
+5. Create the database:
    ```sh
-   python manage.py makemigrations
    python manage.py migrate
    ```
-7. Start the app by running:
+6. Start the app:
    ```sh
    python manage.py runserver
    ```
-8. Now you can open the app in your browser at: http://localhost:8000
-9. Navigate to **Settings → API Keys** in the app.
-   Here you will need to add your API keys — instructions on how to obtain them are provided in that section.
+7. Open the app in your browser at: http://localhost:8000
+8. Inside the app navigate to **Settings → API Keys**.
+   You will need to add your own API keys. In that section there are instructions on how to obtain them.
 
 ### Optional Tips
 
-- To easily start the app in the future, you can create a `.bat` file that runs the command and hides the terminal window.  
-  You can even set this `.bat` file to run automatically at Windows startup or user logon, so you don’t have to worry about starting the app manually.
+- To easily start the app in the future, you can create a `.bat` file that runs the `runserver` command and a `.vbs` file in the shell:startup folder to start that bat file at startup.
 
 - To access the app from your phone or other devices on the same network, run the server using your PC’s IPv4 address instead of `localhost`:
 
