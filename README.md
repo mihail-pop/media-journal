@@ -1,11 +1,11 @@
 <h1 align="center">Media Journal</h1>
 
 <h3 align="center">
-  A media tracker app designed to be clean, simple to use, and reliable with APIs.
+  A media tracker app designed to be clean, simple to use, and reliable.
 </h3>
 <br/>
 
-<div align="center"> I will use this app from now on for my media, so I will keep it maintained. If others join me and find it useful too, even better. </div>
+<div align="center"> I will use this app from now on for my media, so I will keep it maintained. If others find it useful too, even better. </div>
 
 
 ## Features
@@ -44,9 +44,7 @@
    ```sh
    docker-compose up
    ```
-3. Now you can open the app in your browser at: http://localhost:8000
-
-4. Inside the app navigate to **Settings → API Keys**.
+3. Inside the app navigate to **Settings → API Keys**.
    You will need to add your own API keys. In that section there are instructions on how to obtain them.
 
 ### Windows
