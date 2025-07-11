@@ -78,7 +78,7 @@ function openBannerUpload(source, id) {
 function openCoverUpload(source, id) {
   const input = document.createElement("input");
   input.type = "file";
-  input.accept = ".jpg,.jpeg,.png";
+  input.accept = ".jpg";
   input.style.display = "none";
 
   input.onchange = () => {
