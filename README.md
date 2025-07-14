@@ -18,7 +18,7 @@
 - Import/export your data for backup or transfer.
 - Automatically checks for sequels and new seasons (tv shows, anime, manga).
 
-## Demo  
+## Demo
 | <img src="https://github.com/user-attachments/assets/9dfbe6f7-56eb-425d-8f8f-72362dd43416" width="500" /> | <img src="https://github.com/user-attachments/assets/1d5f49cb-7f0b-4fd7-93ba-5c77c8266884" width="500" /> |
 | :-----------------------------------------: | :-----------------------------------------: |
 |                 Home                    |               Movies                   |
@@ -35,7 +35,7 @@
 
 ## Setup
 
-### If you have Docker 
+### If you have Docker
 1. Open a terminal in the project folder and run:
    ```sh
    docker-compose build
@@ -47,24 +47,37 @@
 3. Inside the app navigate to **Settings → API Keys**.
    You will need to add your own API keys. In that section there are instructions on how to obtain them.
 
+## Configuration
+
+The application can be configured using environment variables.
+
+- `CSRF_TRUSTED_ORIGINS`: A comma-separated list of trusted origins for POST requests. This is necessary if you are accessing the application from a different domain.
+
+  For example, in `docker-compose.yml`:
+
+  ```yaml
+  environment:
+    - CSRF_TRUSTED_ORIGINS=https://your-domain.com,https://another-domain.com
+  ```
+
 ### Windows - [Youtube Tutorial](https://youtu.be/AGMv3L0hziY)
 
 1. Download [Python 3.13.0](https://www.python.org/downloads/release/python-3130/).
 
-   During installation check the option:  
+   During installation check the option:
    *“Add Python to PATH”*.
 
-2. Download the project:  
+2. Download the project:
    Click the green **Code** button → **Download ZIP** → Extract it to your desired location. (Or you can use Git)
 
-3. Open a terminal inside the project folder:  
+3. Open a terminal inside the project folder:
    Right-click inside `...\media-journal-main\media-journal-main` → Select **Open in Terminal**.
 
-4. Install the dependencies:  
+4. Install the dependencies:
    ```sh
    pip install -r requirements.txt
    ```
-   
+
 5. Create the database:
    ```sh
    python manage.py migrate
