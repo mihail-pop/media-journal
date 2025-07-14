@@ -13,7 +13,6 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 from pathlib import Path
 import os
 
-
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
@@ -35,6 +34,11 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
+trusted_origins_str = os.environ.get('CSRF_TRUSTED_ORIGINS')
+if trusted_origins_str:
+    CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in trusted_origins_str.split(',')]
+else:
+    CSRF_TRUSTED_ORIGINS = []
 
 # Application definition
 
