@@ -88,7 +88,7 @@ function initBannerRotator() {
     .map(card => {
       const bannerUrl = card.dataset.bannerUrl;
       const notes = card.dataset.notes?.trim();
-      return bannerUrl && !bannerUrl.includes("fallback")
+      return bannerUrl && !bannerUrl.includes("placeholder")
         ? { bannerUrl, notes }
         : null;
     })

@@ -33,9 +33,8 @@
 
 
 
-## Setup
+## Setup for Docker
 
-### If you have Docker
 1. Open a terminal in the project folder and run:
    ```sh
    docker-compose build
@@ -47,7 +46,7 @@
 3. Inside the app navigate to **Settings → API Keys**.
    You will need to add your own API keys. In that section there are instructions on how to obtain them.
 
-## Configuration
+### Configuration
 
 The application can be configured using environment variables.
 
@@ -60,7 +59,7 @@ The application can be configured using environment variables.
     - CSRF_TRUSTED_ORIGINS=https://your-domain.com,https://another-domain.com
   ```
 
-### Windows - [Youtube Tutorial](https://youtu.be/AGMv3L0hziY)
+## Setup for Windows - [Youtube Tutorial](https://youtu.be/AGMv3L0hziY)
 
 1. Download [Python 3.13.0](https://www.python.org/downloads/release/python-3130/).
 
