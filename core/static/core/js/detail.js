@@ -399,7 +399,7 @@ function renderExtraInfo(mediaType, data) {
     }
 
     if (data.status) {
-      safeHTML.push(`<p><span class="label">Status - </span> ${data.status}</p>`);
+      safeHTML.push(`<p><span class="label">Status: </span> ${data.status}</p>`);
     }
 
 if (data.homepage) {
@@ -409,18 +409,18 @@ if (data.homepage) {
     let label = hostname.split('.')[0]; // get the first part (e.g., sonypictures)
 
     safeHTML.push(
-      `<p><span class="label">Available on - </span> <a href="${data.homepage}" target="_blank">${label}</a></p>`
+      `<p><span class="label">Available on: </span> <a href="${data.homepage}" target="_blank">${label}</a></p>`
     );
   } catch (e) {
     // fallback in case URL parsing fails
     safeHTML.push(
-      `<p><span class="label">Available on - </span> <a href="${data.homepage}" target="_blank">${data.homepage}</a></p>`
+      `<p><span class="label">Available on: </span> <a href="${data.homepage}" target="_blank">${data.homepage}</a></p>`
     );
   }
 }
 
   if (data.genres?.length) {
-    safeHTML.push(`<p><span class="label">Genres - </span> ${data.genres.join(", ")}</p>`);
+    safeHTML.push(`<p><span class="label">Genres: </span> ${data.genres.join(", ")}</p>`);
   }
 
 

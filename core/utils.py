@@ -660,7 +660,6 @@ def get_game_extra_info(game_id):
             return {}
 
         game = data[0]
-        print(json.dumps(game, indent=2))
         return {
             "platforms": [p.get("name") for p in game.get("platforms", [])] if game.get("platforms") else [],
             "genres": [g.get("name") for g in game.get("genres", [])] if game.get("genres") else [],
