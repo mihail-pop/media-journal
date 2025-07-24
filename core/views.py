@@ -1,4 +1,4 @@
-from core.utils import download_image, fetch_anilist_data, get_trending_anime, get_trending_games, get_trending_manga, get_trending_movies, get_trending_tv, get_igdb_token
+from core.utils import download_image, fetch_anilist_data, get_trending_anime, get_trending_games, get_trending_manga, get_trending_movies, get_trending_tv, get_igdb_token, get_anime_extra_info, get_game_extra_info, get_manga_extra_info, get_movie_extra_info, get_tv_extra_info
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_POST
 from django.db.models import Case, When, IntegerField, Value, F
@@ -2590,3 +2590,30 @@ def update_nav_items(request):
         return JsonResponse({"success": True})
     except Exception as e:
         return JsonResponse({"success": False, "error": str(e)}, status=400)
+    
+def get_extra_info(request):
+    media_type = request.GET.get("media_type")
+    item_id = request.GET.get("item_id")
+
+    if not media_type or not item_id:
+        return JsonResponse({"error": "Missing parameters"}, status=400)
+
+    try:
+        item_id = int(item_id)
+    except ValueError:
+        return JsonResponse({"error": "Invalid item_id"}, status=400)
+
+    if media_type == "movie":
+        data = get_movie_extra_info(item_id)
+    elif media_type == "tv":
+        data = get_tv_extra_info(item_id)
+    elif media_type == "anime":
+        data = get_anime_extra_info(item_id)
+    elif media_type == "manga":
+        data = get_manga_extra_info(item_id)
+    elif media_type == "game":
+        data = get_game_extra_info(item_id)
+    else:
+        data = {}
+
+    return JsonResponse(data)

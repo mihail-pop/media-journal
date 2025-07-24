@@ -1,3 +1,5 @@
+from datetime import datetime
+import json
 import os
 from pathlib import Path
 import requests
@@ -457,3 +459,215 @@ def get_trending_games():
 
     except Exception:
         return []
+
+
+def get_movie_extra_info(tmdb_id):
+    try:
+        api_key = APIKey.objects.get(name="tmdb").key_1
+    except APIKey.DoesNotExist:
+        return {}
+
+    url = f"https://api.themoviedb.org/3/movie/{tmdb_id}"
+    params = {"api_key": api_key}
+
+    try:
+        response = requests.get(url, params=params)
+        if response.status_code != 200:
+            return {}
+
+        data = response.json()
+
+        return {
+            "runtime": data.get("runtime"),  # in minutes
+            "genres": [genre["name"] for genre in data.get("genres", [])],
+            "status": data.get("status"),  # e.g. Released, Post Production
+            "homepage": data.get("homepage"),
+            "vote_average": round(data.get("vote_average", 0), 1)
+        }
+
+    except Exception:
+        return {}
+    
+def get_tv_extra_info(tmdb_id):
+    try:
+        api_key = APIKey.objects.get(name="tmdb").key_1
+    except APIKey.DoesNotExist:
+        return {}
+
+    url = f"https://api.themoviedb.org/3/tv/{tmdb_id}"
+    params = {"api_key": api_key}
+
+    try:
+        response = requests.get(url, params=params)
+        if response.status_code != 200:
+            return {}
+
+        data = response.json()
+
+        # Handle optional fields safely
+        next_episode = data.get("next_episode_to_air")
+        next_episode_air_date = next_episode.get("air_date") if next_episode else None
+
+        return {
+            "status": data.get("status"),
+            "next_episode_to_air": next_episode_air_date,
+            "last_air_date": data.get("last_air_date"),
+            "networks": [n.get("name") for n in data.get("networks", [])],
+            "vote_average": round(data.get("vote_average", 0), 1),
+            "homepage": data.get("homepage"),
+            "genres": [genre["name"] for genre in data.get("genres", [])],
+        }
+
+    except Exception as e:
+        print("TV API error:", e)
+        return {}
+    
+def get_anime_extra_info(mal_id):
+    query = '''
+    query ($idMal: Int) {
+      Media(idMal: $idMal, type: ANIME) {
+        status          # FINISHED, RELEASING, NOT_YET_RELEASED, CANCELLED
+        averageScore
+        format          # TV, MOVIE, OVA, etc.
+        genres
+        nextAiringEpisode {
+        episode
+        airingAt
+        }
+        studios(isMain: true) {
+          nodes {
+            name
+          }
+        }
+      }
+    }
+    '''
+
+    variables = {"idMal": int(mal_id)}
+    headers = {"Content-Type": "application/json"}
+
+    try:
+        response = requests.post(
+            "https://graphql.anilist.co",
+            json={"query": query, "variables": variables},
+            headers=headers
+        )
+
+        if response.status_code != 200:
+            return {}
+
+        data = response.json().get("data", {}).get("Media", {})
+
+        next_airing_data = data.get("nextAiringEpisode")
+        if next_airing_data and next_airing_data.get("airingAt"):
+            next_airing_timestamp = next_airing_data["airingAt"]
+            next_airing = datetime.fromtimestamp(next_airing_timestamp).strftime("%d %B %Y")
+            next_episode = next_airing_data.get("episode")
+        else:
+            next_airing = None
+            next_episode = None
+        
+        return {
+            "status": data.get("status"),
+            "averageScore": round(data.get("averageScore", 0) / 10, 1) if data.get("averageScore") is not None else None,
+            "format": data.get("format"),
+            "studios": [studio["name"] for studio in data.get("studios", {}).get("nodes", [])],
+            "next_airing": next_airing,
+            "next_episode": next_episode,
+            "genres": data.get("genres", []),
+        }
+
+    except Exception as e:
+        print(f"Error in get_anime_extra_info: {e}")
+        return {}
+    
+def get_manga_extra_info(mal_id):
+    query = '''
+    query ($idMal: Int) {
+      Media(idMal: $idMal, type: MANGA) {
+        status          # FINISHED, RELEASING, CANCELLED, etc.
+        averageScore
+        format          # MANGA, NOVEL, ONE_SHOT, etc.
+        genres
+        studios(isMain: true) {
+          nodes {
+            name
+          }
+        }
+      }
+    }
+    '''
+
+    variables = {"idMal": int(mal_id)}
+    headers = {"Content-Type": "application/json"}
+
+    try:
+        response = requests.post(
+            "https://graphql.anilist.co",
+            json={"query": query, "variables": variables},
+            headers=headers
+        )
+
+        if response.status_code != 200:
+            return {}
+
+        data = response.json().get("data", {}).get("Media", {})
+
+        return {
+            "status": data.get("status"),
+            "averageScore": round(data.get("averageScore", 0) / 10, 1) if data.get("averageScore") is not None else None,
+            "format": data.get("format"),
+            "genres": data.get("genres", []),
+            "studios": [studio["name"] for studio in data.get("studios", {}).get("nodes", [])],
+        }
+
+    except Exception:
+        return {}
+    
+def get_game_extra_info(game_id):
+    token = get_igdb_token()
+    if not token:
+        return {}
+
+    try:
+        igdb_keys = APIKey.objects.get(name="igdb")
+    except APIKey.DoesNotExist:
+        return {}
+
+    headers = {
+        "Client-ID": igdb_keys.key_1,
+        "Authorization": f"Bearer {token}",
+    }
+
+    # Request fields we want for extra info
+    body = f'''
+        fields
+            platforms.name,
+            genres.name,
+            involved_companies.company.name,
+            rating,
+            websites.url;
+        where id = {game_id};
+    '''
+
+    try:
+        response = requests.post("https://api.igdb.com/v4/games", headers=headers, data=body)
+        if response.status_code != 200:
+            return {}
+
+        data = response.json()
+        if not data:
+            return {}
+
+        game = data[0]
+        print(json.dumps(game, indent=2))
+        return {
+            "platforms": [p.get("name") for p in game.get("platforms", [])] if game.get("platforms") else [],
+            "genres": [g.get("name") for g in game.get("genres", [])] if game.get("genres") else [],
+            "involved_companies": [c.get("company", {}).get("name") for c in game.get("involved_companies", []) if c.get("company")] if game.get("involved_companies") else [],
+            "rating": round(game["rating"] / 10, 1) if game.get("rating") is not None else None,
+            "websites": [w.get("url") for w in game.get("websites", [])] if game.get("websites") else [],
+        }
+
+    except Exception:
+        return {}

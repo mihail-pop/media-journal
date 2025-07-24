@@ -11,12 +11,43 @@ document.addEventListener("DOMContentLoaded", function () {
   const bannerImg = document.getElementById("rotating-banner");
   let bannerPool = [];
 
+  const mediaType = document.body.dataset.mediaType || "default";
+  const filterKey = `listFilterStatus_${mediaType}`; // e.g., listFilterStatus_movie
+  const viewKey = `listViewType_${mediaType}`; // new key for view mode
+
+  // === FILTER STATE ===
+  let currentStatus = sessionStorage.getItem(filterKey) || "all";
+  let currentSearch = "";
+  let currentView = sessionStorage.getItem(viewKey) || "card"; // default card view
+
+  // === Set active filter button ===
+  const matchingBtn = document.querySelector(`.filter-btn[data-filter="${currentStatus}"]`);
+  if (matchingBtn) {
+    filterButtons.forEach(b => b.classList.remove("active"));
+    matchingBtn.classList.add("active");
+  }
+
+  // === Show the correct view immediately ===
+  if (currentView === "card") {
+    cardBtn.classList.add("active");
+    listBtn.classList.remove("active");
+    cardView.style.display = "block";
+    listView.style.display = "none";
+  } else {
+    listBtn.classList.add("active");
+    cardBtn.classList.remove("active");
+    listView.style.display = "block";
+    cardView.style.display = "none";
+  }
+
   // === VIEW TOGGLE ===
   cardBtn.addEventListener("click", () => {
     cardBtn.classList.add("active");
     listBtn.classList.remove("active");
     cardView.style.display = "block";
     listView.style.display = "none";
+    currentView = "card";
+    sessionStorage.setItem(viewKey, currentView);
     applyFilters();
   });
 
@@ -25,12 +56,10 @@ document.addEventListener("DOMContentLoaded", function () {
     cardBtn.classList.remove("active");
     listView.style.display = "block";
     cardView.style.display = "none";
+    currentView = "list";
+    sessionStorage.setItem(viewKey, currentView);
     applyFilters();
   });
-
-  // === FILTER STATE ===
-  let currentStatus = "all";
-  let currentSearch = "";
 
   // === STATUS FILTER BUTTONS ===
   filterButtons.forEach((btn) => {
@@ -38,6 +67,7 @@ document.addEventListener("DOMContentLoaded", function () {
       filterButtons.forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
       currentStatus = btn.dataset.filter;
+      sessionStorage.setItem(filterKey, currentStatus); // Save filter scoped by media type
       applyFilters();
     });
   });
@@ -79,64 +109,62 @@ document.addEventListener("DOMContentLoaded", function () {
 
   applyFilters();
 
-let firstLoad = true;
+  // Banner rotator code unchanged ...
+  let firstLoad = true;
 
-function initBannerRotator() {
-  const cards = [...document.querySelectorAll(".card")];
+  function initBannerRotator() {
+    const cards = [...document.querySelectorAll(".card")];
 
-  bannerPool = cards
-    .map(card => {
-      const bannerUrl = card.dataset.bannerUrl;
-      const notes = card.dataset.notes?.trim();
-      return bannerUrl && !bannerUrl.includes("placeholder")
-        ? { bannerUrl, notes }
-        : null;
-    })
-    .filter(Boolean);
+    bannerPool = cards
+      .map(card => {
+        const bannerUrl = card.dataset.bannerUrl;
+        const notes = card.dataset.notes?.trim();
+        return bannerUrl && !bannerUrl.includes("placeholder")
+          ? { bannerUrl, notes }
+          : null;
+      })
+      .filter(Boolean);
 
-  if (bannerPool.length === 0) return;
+    if (bannerPool.length === 0) return;
 
-  updateBanner();
-  setInterval(updateBanner, 30000);
-}
-
-function updateBanner() {
-  if (bannerPool.length === 0) return;
-  const random = Math.floor(Math.random() * bannerPool.length);
-  const { bannerUrl, notes } = bannerPool[random];
-
-  const quoteBox = document.querySelector(".banner-quote");
-
-  if (firstLoad) {
-    // Immediately show banner without fade
-    bannerImg.src = bannerUrl;
-    bannerImg.style.opacity = 1;
-
-    if (quoteBox) {
-      quoteBox.innerText = notes ? `“${notes}”\n\n~You` : "";
-      quoteBox.style.display = notes ? "block" : "none";
-      quoteBox.style.opacity = notes ? 1 : 0;
-    }
-
-    firstLoad = false;  // next time fade will apply
-    return;
+    updateBanner();
+    setInterval(updateBanner, 30000);
   }
 
-  // Fade out
-  bannerImg.style.opacity = 0;
-  if (quoteBox) quoteBox.style.opacity = 0;
+  function updateBanner() {
+    if (bannerPool.length === 0) return;
+    const random = Math.floor(Math.random() * bannerPool.length);
+    const { bannerUrl, notes } = bannerPool[random];
 
-  setTimeout(() => {
-    bannerImg.src = bannerUrl;
-    if (quoteBox) {
-      quoteBox.innerText = notes ? `“${notes}”\n\n~You` : "";
-      quoteBox.style.display = notes ? "block" : "none";
-      quoteBox.style.opacity = notes ? 1 : 0;
+    const quoteBox = document.querySelector(".banner-quote");
+
+    if (firstLoad) {
+      bannerImg.src = bannerUrl;
+      bannerImg.style.opacity = 1;
+
+      if (quoteBox) {
+        quoteBox.innerText = notes ? `“${notes}”\n\n~You` : "";
+        quoteBox.style.display = notes ? "block" : "none";
+        quoteBox.style.opacity = notes ? 1 : 0;
+      }
+
+      firstLoad = false;
+      return;
     }
-    // Fade back in
-    bannerImg.style.opacity = 1;
-  }, 1000);
-}
 
-initBannerRotator();
+    bannerImg.style.opacity = 0;
+    if (quoteBox) quoteBox.style.opacity = 0;
+
+    setTimeout(() => {
+      bannerImg.src = bannerUrl;
+      if (quoteBox) {
+        quoteBox.innerText = notes ? `“${notes}”\n\n~You` : "";
+        quoteBox.style.display = notes ? "block" : "none";
+        quoteBox.style.opacity = notes ? 1 : 0;
+      }
+      bannerImg.style.opacity = 1;
+    }, 1000);
+  }
+
+  initBannerRotator();
 });

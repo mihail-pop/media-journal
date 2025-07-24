@@ -397,3 +397,6 @@ body {
 }
 
 
+#card-view, #list-view {
+  display: none;
+}

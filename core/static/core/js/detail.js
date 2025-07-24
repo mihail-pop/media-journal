@@ -350,3 +350,220 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 });
+
+document.getElementById("more-info-btn").addEventListener("click", async function() {
+  const btn = this;
+  const container = document.getElementById("extra-info-container");
+  const mediaType = document.body.dataset.mediaType; // e.g., "movie", "tv", "anime"
+  const itemId = document.body.dataset.itemId;
+
+  btn.disabled = true;
+  btn.textContent = "Loading...";
+
+  try {
+    const response = await fetch(`/api/get-extra-info/?media_type=${mediaType}&item_id=${itemId}`);
+    if (!response.ok) throw new Error("Network response was not ok");
+
+    const data = await response.json();
+
+    // Render the data as HTML in the container (you'll write this function)
+    container.innerHTML = renderExtraInfo(mediaType, data);
+
+    btn.style.display = "none"; // Hide button after successful fetch
+  } catch (error) {
+    container.innerHTML = `<p style="color:red;">Failed to load extra information.</p>`;
+    btn.disabled = false;
+    btn.textContent = "More information";
+    console.error(error);
+  }
+});
+
+// Helper function to render the extra info HTML per media type
+function renderExtraInfo(mediaType, data) {
+  if (!data) return "<p>No extra information available.</p>";
+
+  const safeHTML = [];
+
+  if (mediaType === "movie") {
+    const runtime = data.runtime;
+
+    if (data.vote_average !== undefined && data.vote_average !== null) {
+      safeHTML.push(`<p>⭐${data.vote_average}/10 TMDB</p>`);
+    }
+
+    if (runtime) {
+      const hours = Math.floor(runtime / 60);
+      const minutes = runtime % 60;
+      const runtimeFormatted = `${hours} hour${hours !== 1 ? 's' : ''} ${minutes} minute${minutes !== 1 ? 's' : ''}`;
+      safeHTML.push(`<p> ${runtimeFormatted}</p>`);
+    }
+
+    if (data.status) {
+      safeHTML.push(`<p><span class="label">Status - </span> ${data.status}</p>`);
+    }
+
+if (data.homepage) {
+  try {
+    const urlObj = new URL(data.homepage);
+    let hostname = urlObj.hostname.replace(/^www\./, ''); // remove 'www.'
+    let label = hostname.split('.')[0]; // get the first part (e.g., sonypictures)
+
+    safeHTML.push(
+      `<p><span class="label">Available on - </span> <a href="${data.homepage}" target="_blank">${label}</a></p>`
+    );
+  } catch (e) {
+    // fallback in case URL parsing fails
+    safeHTML.push(
+      `<p><span class="label">Available on - </span> <a href="${data.homepage}" target="_blank">${data.homepage}</a></p>`
+    );
+  }
+}
+
+  if (data.genres?.length) {
+    safeHTML.push(`<p><span class="label">Genres - </span> ${data.genres.join(", ")}</p>`);
+  }
+
+
+
+    return safeHTML.join("\n");
+  }
+
+  if (mediaType === "tv") {
+
+    if (data.vote_average !== undefined && data.vote_average !== null) {
+      safeHTML.push(`<p>⭐${data.vote_average}/10 TMDB</p>`);
+    }
+
+    if (data.status) {
+      safeHTML.push(`<p><span class="label">Status: </span> ${data.status}</p>`);
+    }
+    
+if (data.next_episode_to_air) {
+  const nextDate = new Date(data.next_episode_to_air).toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+  safeHTML.push(`<p><span class="label">Next episode to air: </span> ${nextDate}</p>`);
+}
+
+if (data.last_air_date) {
+  const lastDate = new Date(data.last_air_date).toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+  safeHTML.push(`<p><span class="label">Last air date: </span> ${lastDate}</p>`);
+}
+
+    if (data.type) {
+      safeHTML.push(`<p><span class="label">Type: </span> ${data.type}</p>`);
+    }
+
+    if (data.networks?.length) {
+      safeHTML.push(`<p><span class="label">Network: </span> ${data.networks.join(", ")}</p>`);
+    }
+
+if (data.homepage) {
+  try {
+    const urlObj = new URL(data.homepage);
+    let hostname = urlObj.hostname.replace(/^www\./, ''); // remove 'www.'
+    let label = hostname.split('.')[0]; // get the first part (e.g., sonypictures)
+
+    safeHTML.push(
+      `<p><span class="label">Available on: </span> <a href="${data.homepage}" target="_blank">${label}</a></p>`
+    );
+  } catch (e) {
+    // fallback in case URL parsing fails
+    safeHTML.push(
+      `<p><span class="label">Available on: </span> <a href="${data.homepage}" target="_blank">${data.homepage}</a></p>`
+    );
+  }
+}
+
+    if (data.genres?.length) {
+      safeHTML.push(`<p><span class="label">Genres:</span> ${data.genres.join(", ")}</p>`);
+    }
+
+    return safeHTML.join("\n");
+  }
+
+  if (mediaType === "anime" || mediaType === "manga") {
+
+    if (data.averageScore) {
+      safeHTML.push(`<p>⭐${data.averageScore}/10 AniList</p>`);
+    }
+
+if (data.status) {
+  const formattedStatus = data.status.charAt(0) + data.status.slice(1).toLowerCase();
+  safeHTML.push(`<p><span class="label">Status:</span> ${formattedStatus}</p>`);
+}
+
+if (data.next_airing && data.next_episode) {
+  safeHTML.push(`<p><span class="label">Next episode to air: </span> Episode ${data.next_episode} on ${data.next_airing}</p>`);
+}
+
+    if (data.format) {
+      safeHTML.push(`<p><span class="label">Format:</span> ${data.format}</p>`);
+    }
+
+    if (data.studios?.length) {
+      safeHTML.push(`<p><span class="label">Studio:</span> ${data.studios.join(", ")}</p>`);
+    }
+    
+
+if (data.genres?.length) {
+  safeHTML.push(`<p><span class="label">Genres: </span> ${data.genres.join(", ")}</p>`);
+}
+
+    return safeHTML.join("\n");
+  }
+
+  if (mediaType === "game") {
+
+    if (data.rating) {
+      safeHTML.push(`<p>⭐${data.rating}/10 IGDB</p>`);
+    }
+
+    if (data.platforms?.length) {
+      safeHTML.push(`<p><span class="label">Platforms:</span> ${data.platforms.join(", ")}</p>`);
+    }
+
+    if (data.genres?.length) {
+      safeHTML.push(`<p><span class="label">Genres:</span> ${data.genres.join(", ")}</p>`);
+    }
+
+    if (data.involved_companies?.length) {
+      safeHTML.push(`<p><span class="label">Involved companies:</span> ${data.involved_companies.join(", ")}</p>`);
+    }
+
+if (data.websites?.length) {
+  const websiteLinks = data.websites.map(url => {
+    try {
+      const urlObj = new URL(url);
+      const parts = urlObj.hostname.split(".");
+
+      // Remove common subdomains like www, en, m, store, apps, etc.
+      const filteredParts = parts.filter(part =>
+        !["www", "en", "m", "store", "apps"].includes(part)
+      );
+
+      // Use the second-to-last part as label if domain has more than 2 parts
+      let label = filteredParts.length >= 2
+        ? filteredParts[filteredParts.length - 2]
+        : filteredParts[0];
+
+      return `<a href="${url}" target="_blank">${label}</a>`;
+    } catch (e) {
+      return `<a href="${url}" target="_blank">${url}</a>`;
+    }
+  }).join(", ");
+
+  safeHTML.push(`<p><span class="label">Available on:</span> ${websiteLinks}</p>`);
+}
+
+    return safeHTML.join("\n");
+  }
+
+  return "<p>No extra information available for this media type.</p>";
+}

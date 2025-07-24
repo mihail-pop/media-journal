@@ -8,7 +8,7 @@
 {% endblock %}
 
 {% block content %}
-<body data-media-type="{{ media_type }}"></body>
+<body data-media-type="{{ media_type }}" data-item-id="{{ source_id }}"></body>
 
 {% with banner=banner_url|default_if_none:'' %}
   <div class="banner-section {% if not banner %}no-banner{% endif %}"
@@ -62,24 +62,20 @@
     </div>
   </div>
 
-  <div class="right-column">
-    <!-- Main info + buttons -->
-    <div class="text-info">
-      <h1>{{ title }}</h1>
-      <p class="overview">{{ overview|safe }}</p>
-      <p class="release-date">{{ release_date }}</p>
-    </div>
+<div class="right-column">
+  <div class="text-info">
+    <h1>{{ title }}</h1>
+    <p class="overview">{{ overview|safe }}</p>
+    <p class="release-date">{{ release_date }}</p>
 
-          <!-- 
-      {% if genres %}
-        <p><strong>Genres:</strong> {{ genres|join:", " }}</p>
-      {% endif %}
-
-      {% if platforms %}
-        <p><strong>Platforms:</strong> {{ platforms|join:", " }}</p>
-      {% endif %}
-      -->
-   </div>
+    <!-- More info button -->
+    {% if media_type != "book" %}
+    <button id="more-info-btn" class="more-info-btn">More information</button>
+    {% endif %}
+    <!-- Container for extra info -->
+    <div id="extra-info-container" style="margin-top:1em;"></div>
+  </div>
+</div>
   </div>
  </div>
 </div>

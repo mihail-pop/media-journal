@@ -42,4 +42,6 @@ urlpatterns = [
     path("upload-cover/", views.upload_cover, name="upload_cover"),
     path("refresh-item/", views.refresh_item, name="refresh_item"),
     path("update-nav-items/", views.update_nav_items, name="update_nav_items"),
+    path("api/get-extra-info/", views.get_extra_info, name="get_extra_info"),
+
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

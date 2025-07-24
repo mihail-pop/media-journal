@@ -9,6 +9,7 @@
 {% endblock %}
 
 {% block content %}
+<body data-media-type="movies"></body>
 <!-- Top Banner Rotator -->
 <div class="banner-rotator">
   <img id="rotating-banner" src="{% static 'core/img/placeholder.png' %}" alt="Banner">
@@ -28,7 +29,7 @@
 <div class="filter-buttons-wrapper">
   <h3>Lists</h3>
   <div class="filter-buttons">
-    <button class="filter-btn active" data-filter="all">
+    <button class="filter-btn" data-filter="all">
       <span class="btn-text">All</span>
       <span class="btn-count">{{ items|length }}</span>
     </button>
@@ -43,7 +44,7 @@
 
     <h3>List Toggle</h3>
     <div class="view-toggle">
-      <button id="card-view-btn" class="toggle-btn active">Card View</button>
+      <button id="card-view-btn" class="toggle-btn">Card View</button>
       <button id="list-view-btn" class="toggle-btn">List View</button>
     </div>
   </aside>
@@ -67,7 +68,7 @@
                data-title="{{ item.title|escape }}"
                data-cover-url="{{ item.cover_url|default:'/static/core/img/placeholder.png' }}"
                data-banner-url="{{ item.banner_url|default:'/static/core/img/placeholder.png' }}"
-               data-notes="{{ item.notes|escape }}">
+               data-notes="{{ item.notes|default_if_none:''|escape }}">
 
             <a href="{% url 'tmdb_detail' media_type=item.media_type tmdb_id=item.source_id %}" class="card-link">
               <div class="card-image"><img src="{{ item.cover_url|default:'/static/core/img/placeholder.png' }}" alt="{{ item.title }}" loading="lazy"></div> <!-- Check if this is working, lazy loading -->
