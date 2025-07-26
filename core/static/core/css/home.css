@@ -41,23 +41,34 @@ body {
   box-sizing: border-box;
 }
 
+/* The quote container on right side, initially hidden */
 .banner-quote {
-  display: none;
+  display: none; /* toggle via JS */
   color: white;
   font-style: italic;
   padding: 1rem 2rem;
   text-align: right;
-  height: 50%;
-  margin-top: auto;
-  margin-bottom: 2rem;
-  max-width: 40%;
+  max-height: 50%;
+  min-height: 10%;
+  max-width: 30%;
+  min-width: 5%;
   overflow-y: auto;
   white-space: pre-wrap;
   box-sizing: border-box;
   background: rgba(0, 0, 0, 0.4);
-  pointer-events: auto;
+  pointer-events: auto; /* allow text selection if needed */
   border-radius: 0 0 0 12px;
+
+  margin-top: auto;       /* push it down inside flex container */
+  margin-bottom: 2rem;    /* add some space from bottom */
+
   transition: opacity 1s ease-in-out;
+
+  scrollbar-width: none; /* for Firefox */
+  -ms-overflow-style: none;  /* for IE and Edge */
+}
+.banner-quote::-webkit-scrollbar {
+  display: none;
 }
 
 /* --- Section Separator --- */
