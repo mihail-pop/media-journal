@@ -104,18 +104,32 @@
                         {% if day.count == 0 %}activity-none
                         {% elif day.count == 1 %}activity-low
                         {% else %}activity-high{% endif %}"
-                 title="{{ day.date }} — {{ day.count }} item{{ day.count|pluralize }} added">
+                 title="{{ day.date }} ~ {{ day.count }} item{{ day.count|pluralize }}">
             </div>
           {% endfor %}
         </div>
       {% endfor %}
     </div>
       <div class="recent-activity">
-  <ul>
-{% for entry in recent_activity %}
-  <li><a href="{{ entry.url }}">{{ entry.message }}</a></li>
-{% endfor %}
-  </ul>
+<ul id="recent-activity-list">
+  {% for entry in recent_activity %}
+    <li class="{% if forloop.counter > 2 %}recent-activity-hidden{% endif %}">
+      <a href="{{ entry.url }}" class="activity-entry">
+        <span class="activity-left">{{ entry.message_main }}</span>
+        <span class="activity-right">{{ entry.message_time }}</span>
+        <div class="activity-thumbnail">
+          <img src="{{ entry.cover_url }}" alt="{{ entry.title }}">
+        </div>
+      </a>
+    </li>
+  {% endfor %}
+</ul>
+
+{% if recent_activity|length > 2 %}
+  <div class="show-more-activity-wrapper">
+    <button id="show-more-activity-btn">Show More</button>
+  </div>
+{% endif %}
 </div>
   </div>
 </section>
@@ -129,7 +143,7 @@
       {% for category, items in row %}
         {% if items %}
         <div class="favorites-column">
-          <h2 class="favorites-header" onclick="openFavoritesOverlay('{{ category }}')">{{ category }}</h2>
+          <h2> <span class="favorites-header" onclick="openFavoritesOverlay('{{ category }}')">{{ category }}</span></h2>
           <div class="card-grid">
             {% for item in items|slice:":25" %}
             <div class="card"
@@ -201,7 +215,7 @@
   <div class="favorites-row">
     {% if favorite_characters %}
     <div class="favorites-column">
-      <h2 class="favorites-header" onclick="openFavoritesOverlay('characters')">Characters</h2>
+      <h2> <span class="favorites-header" onclick="openFavoritesOverlay('characters')">Characters</span></h2>
       <div class="card-grid">
         {% for person in favorite_characters|slice:":25" %}
         <div class="card">
@@ -217,7 +231,7 @@
 
     {% if favorite_actors %}
     <div class="favorites-column">
-      <h2 class="favorites-header" onclick="openFavoritesOverlay('actors')">Actors</h2>
+      <h2><span class="favorites-header" onclick="openFavoritesOverlay('actors')">Actors</span></h2>
       <div class="card-grid">
         {% for person in favorite_actors|slice:":25" %}
         <div class="card">
@@ -248,8 +262,9 @@
           <span class="hover-title-text">{{ person.name }}</span>
         </div>
         <div class="reorder-buttons">
-          <button class="move-up-btn" title="Move Up" aria-label="Move Up">⬆️</button>
-          <button class="move-down-btn" title="Move Down" aria-label="Move Down">⬇️</button>
+          <button class="move-up-btn" title="Move Left" aria-label="Move Left">⬅️</button>
+          <button class="move-down-btn" title="Move Right" aria-label="Move Right">➡️</button>
+          <button class="delete-person-btn" title="Remove" aria-label="Remove">❌</button>
         </div>
       </div>
       {% endfor %}
@@ -271,8 +286,9 @@
           <span class="hover-title-text">{{ person.name }}</span>
         </div>
         <div class="reorder-buttons">
-          <button class="move-up-btn" title="Move Up" aria-label="Move Up">⬆️</button>
-          <button class="move-down-btn" title="Move Down" aria-label="Move Down">⬇️</button>
+          <button class="move-up-btn" title="Move Left" aria-label="Move Left">⬅️</button>
+          <button class="move-down-btn" title="Move Right" aria-label="Move Right">➡️</button>
+          <button class="delete-person-btn" title="Remove" aria-label="Remove">❌</button>
         </div>
       </div>
       {% endfor %}

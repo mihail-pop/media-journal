@@ -16,11 +16,11 @@
       {% for type, label in media_sections %}
         {% with section_items=media_items|filter_by_media_type:type %}
         {% if section_items %}
-        <div class="discover-section">
+        <div class="discover-section" data-section="{{ type }}">
           <h2 class="section-title">{{ label }}</h2>
           <div class="card-grid">
             {% for item in section_items %}
-            <div class="card card-vertical"
+            <div class="card card-vertical {% if forloop.counter > 10 %}hidden{% endif %}"
                  data-id="{{ item.id }}"
                  data-media-type="{{ item.media_type }}"
                  data-title="{{ item.title|escape }}"
@@ -58,6 +58,11 @@
             </div>
             {% endfor %}
           </div>
+          {% if section_items|length > 10 %}
+          <div class="load-more-container">
+            <button class="load-more-btn" data-section="{{ type }}">Show More</button>
+          </div>
+          {% endif %}
         </div>
         {% endif %}
         {% endwith %}
@@ -67,4 +72,6 @@
     {% endif %}
   </section>
 </div>
+
+<script src="{% static 'core/js/discover.js' %}"></script>
 {% endblock %}

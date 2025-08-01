@@ -36,6 +36,7 @@ urlpatterns = [
     path('api/character_search/', views.character_search_view, name='character_search'),
     path('api/actor_search/', views.actor_search_view, name='actor_search'),
     path('api/toggle_favorite_person/', views.toggle_favorite_person_view, name='toggle_favorite_person'),
+    path("api/delete_favorite_person/<int:person_id>/", views.delete_favorite_person, name="delete_favorite_person"),
     path('api/favorite-persons/reorder/', views.update_favorite_person_order, name='favorite_person_reorder'),
     path("upload-game-screenshots/", views.upload_game_screenshots, name="upload_game_screenshots"),
     path("upload-banner/", views.upload_banner, name="upload_banner"),
@@ -43,5 +44,7 @@ urlpatterns = [
     path("refresh-item/", views.refresh_item, name="refresh_item"),
     path("update-nav-items/", views.update_nav_items, name="update_nav_items"),
     path("api/get-extra-info/", views.get_extra_info, name="get_extra_info"),
-
+    path("api/check_planned_movie_statuses/", views.check_planned_movie_statuses, name="check_planned_movie_statuses"),
+    path("api/check_planned_tvseries_statuses/", views.check_planned_tvseries_statuses, name="check_planned_tvseries_statuses"),
+    path("api/check_planned_anime_manga_statuses/", views.check_planned_anime_manga_statuses, name="check_planned_anime_manga_statuses"),
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

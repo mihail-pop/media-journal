@@ -18,7 +18,21 @@
   z-index: 20000; /* Raised above search overlay */
   opacity: 1;
   transition: opacity 0.3s ease;
+  animation: modalFade 0.25s ease-in-out forwards;
 }
+
+@keyframes modalFade {
+  0% {
+    opacity: 0;
+  }
+  60% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
 
 /* Modal container centered on screen */
 .modal {
@@ -42,7 +56,23 @@
   opacity: 1;
   transition: opacity 0.3s ease, transform 0.3s ease;
   padding: 0; /* Reset default padding */
+  animation: modalPop 0.25s ease-in-out;
+  transform-origin: center center;
 }
+
+@keyframes modalPop {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.95);
+  }
+  60% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
 
 /* Content wrapper inside modal */
 .modal-content {
@@ -440,18 +470,18 @@ textarea[name="notes"]::-webkit-scrollbar {
 /* Selected (pink background) versions */
 
 .face.selected.face-bad {
-  background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 496 496" xmlns="http://www.w3.org/2000/svg"><path fill="%23f8d4e0" d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zm80 168c17.7 0 32 14.3 32 32s-14.3 32-32 32-32-14.3-32-32 14.3-32 32-32zm-160 0c17.7 0 32 14.3 32 32s-14.3 32-32 32-32-14.3-32-32 14.3-32 32-32zm170.2 218.2C315.8 367.4 282.9 352 248 352s-67.8 15.4-90.2 42.2c-13.5 16.3-38.1-4.2-24.6-20.5C161.7 339.6 203.6 320 248 320s86.3 19.6 114.7 53.8c13.6 16.2-11 36.7-24.5 20.4z"/></svg>');
-  color: #f8d4e0; /* pink fill */
+  background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 496 496" xmlns="http://www.w3.org/2000/svg"><path fill="%23e53935" d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zm80 168c17.7 0 32 14.3 32 32s-14.3 32-32 32-32-14.3-32-32 14.3-32 32-32zm-160 0c17.7 0 32 14.3 32 32s-14.3 32-32 32-32-14.3-32-32 14.3-32 32-32zm170.2 218.2C315.8 367.4 282.9 352 248 352s-67.8 15.4-90.2 42.2c-13.5 16.3-38.1-4.2-24.6-20.5C161.7 339.6 203.6 320 248 320s86.3 19.6 114.7 53.8c13.6 16.2-11 36.7-24.5 20.4z"/></svg>');
+  color: #E53935;
 }
 
 .face.selected.face-neutral {
-  background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 496 496" xmlns="http://www.w3.org/2000/svg"><path fill="%23f8d4e0" d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zm-80 168c17.7 0 32 14.3 32 32s-14.3 32-32 32-32-14.3-32-32 14.3-32 32-32zm176 192H152c-21.2 0-21.2-32 0-32h192c21.2 0 21.2 32 0 32zm-16-128c-17.7 0-32-14.3-32-32s14.3-32 32-32 32 14.3 32 32-14.3 32-32 32z"/></svg>');
-  color: #f8d4e0;
+  background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 496 496" xmlns="http://www.w3.org/2000/svg"><path fill="%23fbc02d" d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zm-80 168c17.7 0 32 14.3 32 32s-14.3 32-32 32-32-14.3-32-32 14.3-32 32-32zm176 192H152c-21.2 0-21.2-32 0-32h192c21.2 0 21.2 32 0 32zm-16-128c-17.7 0-32-14.3-32-32s14.3-32 32-32 32 14.3 32 32-14.3 32-32 32z"/></svg>');
+  color: #FBC02D;
 }
 
 .face.selected.face-good {
-  background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 496 496" xmlns="http://www.w3.org/2000/svg"><path fill="%23f8d4e0" d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zm80 168c17.7 0 32 14.3 32 32s-14.3 32-32 32-32-14.3-32-32 14.3-32 32-32zm-160 0c17.7 0 32 14.3 32 32s-14.3 32-32 32-32-14.3-32-32 14.3-32 32-32zm194.8 170.2C334.3 380.4 292.5 400 248 400s-86.3-19.6-114.8-53.8c-13.6-16.3 11-36.7 24.6-20.5 22.4 26.9 55.2 42.2 90.2 42.2s67.8-15.4 90.2-42.2c13.4-16.2 38.1 4.2 24.6 20.5z"/></svg>');
-  color: #f8d4e0;
+  background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 496 496" xmlns="http://www.w3.org/2000/svg"><path fill="%234caf50" d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zm80 168c17.7 0 32 14.3 32 32s-14.3 32-32 32-32-14.3-32-32 14.3-32 32-32zm-160 0c17.7 0 32 14.3 32 32s-14.3 32-32 32-32-14.3-32-32 14.3-32 32-32zm194.8 170.2C334.3 380.4 292.5 400 248 400s-86.3-19.6-114.8-53.8c-13.6-16.3 11-36.7 24.6-20.5 22.4 26.9 55.2 42.2 90.2 42.2s67.8-15.4 90.2-42.2c13.4-16.2 38.1 4.2 24.6 20.5z"/></svg>');
+  color: #4CAF50;
 }
 
 .face::after {
@@ -463,8 +493,8 @@ textarea[name="notes"]::-webkit-scrollbar {
   transition: background-color 0.2s ease;
 }
 
-.face:hover::after {
-  background-color: rgba(255, 255, 255, 0.3); /* subtle bright overlay */
+.face:hover {
+  filter: brightness(1.2);
 }
 
 

@@ -120,15 +120,29 @@ function openCoverUpload(source, id) {
 const screenshotsData = JSON.parse(document.getElementById("screenshots-data").textContent);
 let currentIndex = 0;
 
-function changeScreenshot(direction) {
+function updateScreenshot(index) {
   const img = document.getElementById("screenshot-image");
   img.style.opacity = 0;
 
+  // Remove old highlight
+  document.querySelectorAll('.thumbnail').forEach((thumb, i) => {
+    thumb.classList.toggle('active-thumbnail', i === index);
+  });
+
   setTimeout(() => {
-    currentIndex = (currentIndex + direction + screenshotsData.length) % screenshotsData.length;
+    currentIndex = index;
     img.src = screenshotsData[currentIndex].url;
     img.style.opacity = 1;
   }, 200);
+}
+
+function changeScreenshot(direction) {
+  let newIndex = (currentIndex + direction + screenshotsData.length) % screenshotsData.length;
+  updateScreenshot(newIndex);
+}
+
+function setScreenshot(index) {
+  updateScreenshot(index);
 }
 
 function showArrows(container) {
@@ -440,6 +454,7 @@ if (data.homepage) {
     
 if (data.next_episode_to_air) {
   const nextDate = new Date(data.next_episode_to_air).toLocaleDateString("en-GB", {
+    weekday: "long",
     day: "2-digit",
     month: "long",
     year: "numeric",
@@ -449,6 +464,7 @@ if (data.next_episode_to_air) {
 
 if (data.last_air_date) {
   const lastDate = new Date(data.last_air_date).toLocaleDateString("en-GB", {
+    weekday: "long",
     day: "2-digit",
     month: "long",
     year: "numeric",
@@ -516,6 +532,16 @@ if (data.genres?.length) {
   safeHTML.push(`<p><span class="label">Genres: </span> ${data.genres.join(", ")}</p>`);
 }
 
+if (data.external_links?.length) {
+  const linkItems = data.external_links.map(link => {
+    const label = link.language && link.language.toLowerCase() !== "english"
+      ? `${link.site} (${link.language})`
+      : link.site;
+    return `<a href="${link.url}" target="_blank" rel="noopener noreferrer">${label}</a>`;
+  });
+  safeHTML.push(`<p><span class="label">External Links:</span> ${linkItems.join(", ")}</p>`);
+}
+
     return safeHTML.join("\n");
   }
 
@@ -538,30 +564,41 @@ if (data.genres?.length) {
     }
 
 if (data.websites?.length) {
-  const websiteLinks = data.websites.map(url => {
-    try {
-      const urlObj = new URL(url);
-      const parts = urlObj.hostname.split(".");
+  const seen = new Set();
 
-      // Remove common subdomains like www, en, m, store, apps, etc.
-      const filteredParts = parts.filter(part =>
-        !["www", "en", "m", "store", "apps"].includes(part)
-      );
+  const websiteLinks = data.websites
+    .filter(url => {
+      if (seen.has(url)) return false;
+      seen.add(url);
+      return true;
+    })
+    .map(url => {
+      try {
+        const urlObj = new URL(url);
+        const parts = urlObj.hostname.split(".");
 
-      // Use the second-to-last part as label if domain has more than 2 parts
-      let label = filteredParts.length >= 2
-        ? filteredParts[filteredParts.length - 2]
-        : filteredParts[0];
+        // Remove common subdomains like www, en, m, store, apps, etc.
+        const filteredParts = parts.filter(part =>
+          !["www", "en", "m", "store", "apps"].includes(part)
+        );
 
-      return `<a href="${url}" target="_blank">${label}</a>`;
-    } catch (e) {
-      return `<a href="${url}" target="_blank">${url}</a>`;
-    }
-  }).join(", ");
+        // Use the second-to-last part as label if domain has more than 2 parts
+        let label = filteredParts.length >= 2
+          ? filteredParts[filteredParts.length - 2]
+          : filteredParts[0];
 
-  safeHTML.push(`<p><span class="label">Available on:</span> ${websiteLinks}</p>`);
+        // Capitalize first letter
+        label = label.charAt(0).toUpperCase() + label.slice(1);
+
+        return `<a href="${url}" target="_blank">${label}</a>`;
+      } catch (e) {
+        return `<a href="${url}" target="_blank">${url}</a>`;
+      }
+    })
+    .join(", ");
+
+  safeHTML.push(`<p><span class="label">External Links:</span> ${websiteLinks}</p>`);
 }
-
     return safeHTML.join("\n");
   }
 

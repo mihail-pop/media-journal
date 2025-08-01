@@ -5,6 +5,10 @@ body {
   color: #8596A5;
 }
 
+html {
+  overflow-y: scroll;
+}
+
 .status-header {
   margin-top: 50px;    /* adjust this value as you want */
   margin-bottom: 10px; /* adjust this value as you want */
@@ -399,4 +403,60 @@ body {
 
 #card-view, #list-view {
   display: none;
+}
+
+.status-dot {
+  position: absolute;
+  top: -10px;      /* align to top edge */
+  left: -10px;     /* align to left edge */
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  z-index: 10;
+  box-shadow: 0 0 8px 2px rgba(0,0,0,0.6);
+}
+
+#check-status-container {
+  display: none;
+}
+
+.status-legend {
+  margin-top: 8px;
+  font-size: 14px;
+  color: #ddd; /* or your text color */
+}
+
+.status-legend div {
+  display: flex;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.legend-dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 8px;
+  box-shadow: 0 0 6px currentColor;
+}
+
+.legend-dot.green {
+  background-color: green;
+  color: green;
+}
+
+.legend-dot.orange {
+  background-color: orange;
+  color: orange;
+}
+
+.legend-dot.red {
+  background-color: red;
+  color: red;
+}
+
+.legend-dot.gray {
+  background-color: gray;
+  color: gray;
 }

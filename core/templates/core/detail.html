@@ -173,14 +173,23 @@
     {% endif %}
 </div>
 {% if screenshots %}
-  <!-- Screenshot Rotator -->
   <div class="screenshot-rotator" onmouseenter="showArrows(this)" onmouseleave="hideArrows(this)">
     <img id="screenshot-image" src="{{ screenshots.0.url }}" alt="Screenshot" />
     <button class="rotator-btn left" onclick="changeScreenshot(-1)" style="display: none;">‹</button>
     <button class="rotator-btn right" onclick="changeScreenshot(1)" style="display: none;">›</button>
   </div>
 
-  <!-- Inject JSON data safely -->
+  <div class="screenshots-list">
+    {% for shot in screenshots %}
+      <img 
+        src="{{ shot.url }}" 
+        alt="Screenshot {{ forloop.counter }}" 
+        class="thumbnail {% if forloop.first %}active-thumbnail{% endif %}" 
+        onclick="setScreenshot({{ forloop.counter0 }})" 
+      />
+    {% endfor %}
+  </div>
+
   {{ screenshots|json_script:"screenshots-data" }}
 {% endif %}
 </section>

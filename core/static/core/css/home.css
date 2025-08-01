@@ -100,7 +100,6 @@ body {
   flex-direction: column;
   position: relative;
   transition: transform 0.15s ease-in-out;
-  cursor: pointer;
   width: 85px;
   height: 115px;
   overflow:visible;
@@ -199,7 +198,7 @@ body {
   display: flex;
   justify-content: center;
   gap: 6.30rem;
-  margin-bottom: 2rem;
+
 }
 
 .stats-activity {
@@ -224,10 +223,18 @@ body {
 }
 
 .favorites-header {
-  margin-bottom: 0.8rem;
+  display: inline;
   font-size: 1.2rem;
   font-weight: bold;
   color: #8596A5;
+  margin-bottom: 0.8rem;
+  cursor: pointer;
+}
+
+h2 {
+  margin: 0;
+  margin-bottom: 0.8rem;
+  margin-top: 0.7rem;
 }
 
 
@@ -330,12 +337,10 @@ body {
 
 .activity-low {
   background-color: #7c899a;
-  cursor: pointer;
 }
 
 .activity-high {
   background-color: #abbacd;
-  cursor: pointer;
 }
 
 /* --- Stats Section Layout --- */
@@ -545,6 +550,13 @@ body {
   
 }
 
+#notifications-dropdown {
+  white-space: nowrap;
+}
+
+#notifications-dropdown[hidden] {
+  display: none !important;
+}
 /* Notification list */
 .notifications-dropdown ul {
   list-style: none;
@@ -606,14 +618,18 @@ body {
 /* Hide reorder buttons by default */
 .reorder-buttons {
   position: absolute;
-  flex-direction: column;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: row;
   gap: 4px;
   opacity: 0;
   transition: opacity 0.3s ease;
-  pointer-events: none; /* prevent accidental clicks when hidden */
+  pointer-events: none;
   z-index: 1000;
+  bottom: -10px;
 }
-
 /* Show buttons when hovering over the card */
 .card:hover .reorder-buttons {
   opacity: 1;
@@ -622,7 +638,7 @@ body {
 
 /* Style for the buttons */
 .reorder-buttons button {
-  background-color: rgba(0, 0, 0, 0.6);
+  background: none;
   border: none;
   color: #fff;
   cursor: pointer;
@@ -631,8 +647,8 @@ body {
   border-radius: 4px;
   user-select: none;
   line-height: 1;
-  width: 30px;
-  height: 30px;
+  width: 25px;
+  height: 25px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -641,9 +657,9 @@ body {
 }
 
 .reorder-buttons button:hover {
-  background-color: rgba(0, 0, 0, 0.85);
+  
+  transform: scale(1.2);
 }
-
 .favorites-overlay .close-button {
   background: #151F2E;
   color: white;
@@ -678,6 +694,70 @@ body {
 
 .recent-activity a:hover {
   color: #adbfce; /* on hover, maybe yellow to match your theme */
+}
+
+.recent-activity-hidden {
+  display: none;
+}
+
+.activity-entry {
+  position: relative; /* Add this */
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  text-decoration: none;
+  color: inherit;
+}
+
+.activity-left {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.activity-right {
+  flex-shrink: 0;
+  font-size: 1em;
+}
+
+.activity-thumbnail {
+  position: absolute;
+  top: 50%;
+  left: calc(100% + 1rem); /* 1rem gap from the right edge of the link box */
+  transform: translateY(-50%);
+  display: none;
+  z-index: 10;
+}
+
+.activity-thumbnail img {
+  width: 120px;
+  height: auto;
+  border-radius: 0.5rem;
+  box-shadow: 0 0 10px rgba(0,0,0,0.4);
+}
+
+/* Show thumbnail only on hover */
+.activity-entry:hover .activity-thumbnail {
+  display: block;
+}
+
+.show-more-activity-wrapper {
+  text-align: right;
+  margin-top: 0.5rem;
+}
+
+#show-more-activity-btn {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  background-color: #1f2a38;
+  color: #8596A5;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+#show-more-activity-btn:hover {
+  background-color: #32445b;
 }
 
 /* --- Responsive --- */

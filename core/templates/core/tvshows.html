@@ -47,6 +47,16 @@
       <button id="card-view-btn" class="toggle-btn">Card View</button>
       <button id="list-view-btn" class="toggle-btn">List View</button>
     </div>
+
+<div class="check-status-container" id="check-status-container">
+  <h3>Status Overview</h3>
+  <button id="check-status-btn" class="toggle-btn">Get Status</button>
+  <div class="status-legend">
+    <div><span class="legend-dot green"></span> Ended or not releasing</div>
+    <div><span class="legend-dot orange"></span> Releasing</div>
+    <div><span class="legend-dot red"></span> Not yet released</div>
+  </div>
+</div>
   </aside>
 
   <!-- Content Area -->
@@ -68,7 +78,8 @@
                data-title="{{ item.title|escape }}"
                data-cover-url="{{ item.cover_url|default:'/static/core/img/placeholder.png' }}"
                data-banner-url="{{ item.banner_url|default:'/static/core/img/placeholder.png' }}"
-               data-notes="{{ item.notes|default_if_none:''|escape }}">
+               data-notes="{{ item.notes|default_if_none:''|escape }}"
+               data-source-id="{{ item.source_id }}">
 
             <a href="{% url 'tmdb_detail' media_type=item.media_type tmdb_id=item.source_id %}" class="card-link">
               <div class="card-image"><img src="{{ item.cover_url|default:'/static/core/img/placeholder.png' }}" alt="{{ item.title }}" loading="lazy"></div> <!-- Check if this is working, lazy loading -->

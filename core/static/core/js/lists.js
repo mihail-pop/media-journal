@@ -105,6 +105,12 @@ document.addEventListener("DOMContentLoaded", function () {
       // Show/hide the whole group
       group.style.display = visibleItems.length > 0 ? "" : "none";
     });
+
+    const statusBtnContainer = document.getElementById("check-status-container");
+if (statusBtnContainer) {
+  statusBtnContainer.style.display = (currentStatus === "planned") ? "block" : "none";
+}
+
   }
 
   applyFilters();
@@ -167,4 +173,57 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   initBannerRotator();
+});
+
+document.getElementById("check-status-btn").addEventListener("click", () => {
+  const mediaType = document.body.getAttribute("data-media-type");
+  let apiUrl = "";
+
+  switch (mediaType) {
+    case "movies":
+      apiUrl = "/api/check_planned_movie_statuses/";
+      break;
+    case "tvshows":
+      apiUrl = "/api/check_planned_tvseries_statuses/";
+      break;
+    case "anime":
+    case "manga":
+      apiUrl = `/api/check_planned_anime_manga_statuses/?media_type=${mediaType}`;
+      break;
+    default:
+      console.warn("Unknown media type for status check");
+      return;
+  }
+
+  fetch(apiUrl)
+    .then(response => response.json())
+    .then(statuses => {
+      for (const [sourceId, status] of Object.entries(statuses)) {
+        const card = document.querySelector(`.card[data-source-id="${sourceId}"]`);
+        if (card && !card.querySelector(".status-dot")) {
+          const dot = document.createElement("div");
+          dot.classList.add("status-dot");
+
+          if (mediaType === "movies") {
+            if (status === "Released") dot.style.backgroundColor = "green";
+            else if (status.includes("Production")) dot.style.backgroundColor = "red";
+            else dot.style.backgroundColor = "red";
+
+          } else if (mediaType === "tvshows") {
+            if (status === "Ended") dot.style.backgroundColor = "green";
+            else if (status === "Returning with upcoming episode") dot.style.backgroundColor = "orange";
+            else if (status === "In Production") dot.style.backgroundColor = "red";
+            else dot.style.backgroundColor = "red";
+
+          } else if (mediaType === "anime" || mediaType === "manga") {
+            if (status === "Finished") dot.style.backgroundColor = "green";
+            else if (status === "Releasing") dot.style.backgroundColor = "orange";
+            else if (status === "Not yet released") dot.style.backgroundColor = "red";
+            else dot.style.backgroundColor = "gray"; // for Cancelled or unknown
+          }
+
+          card.appendChild(dot);
+        }
+      }
+    });
 });

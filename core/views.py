@@ -6,7 +6,7 @@ from django.core.files.storage import default_storage
 from django.core.serializers import deserialize
 from core.background import start_tmdb_background_loop, start_anilist_background_loop
 from django.core.serializers import serialize
-from django.http import FileResponse
+from django.http import FileResponse, HttpResponseBadRequest
 from django.shortcuts import render
 from django.conf import settings
 from django.http import JsonResponse
@@ -314,8 +314,9 @@ def home(request):
     activity_data = []
     for i in range(167):
         day = start_date + timedelta(days=i)
+        formatted_date = day.strftime("%A %d %B %Y")
         activity_data.append({
-            "date": day.isoformat(),
+            "date": formatted_date,
             "count": count_by_day.get(day, 0),
         })
 
@@ -341,23 +342,23 @@ def home(request):
     favorite_characters = FavoritePerson.objects.filter(type="character").order_by("position")
     favorite_actors = FavoritePerson.objects.filter(type="actor").order_by("position")
 
-    recent_items = MediaItem.objects.order_by("-date_added")[:2]
+    recent_items = MediaItem.objects.order_by("-date_added")[:12]
     recent_activity = []
 
     for item in recent_items:
         time_ago = timesince(item.date_added).split(",")[0] + " ago"
         if item.status == "completed":
-            message = f"Completed {item.title} {time_ago}"
+            action = f"Completed {item.title}"
         elif item.status == "planned":
-            message = f"Planned {item.title} {time_ago}"
+            action = f"Planned {item.title}"
         elif item.status == "dropped":
-            message = f"Dropped {item.title} {time_ago}"
+            action = f"Dropped {item.title}"
         elif item.status == "ongoing":
-            message = f"Started {item.title} {time_ago}"
+            action = f"Started {item.title}"
         elif item.status == "on_hold":
-            message = f"Put {item.title} on hold {time_ago}"
+            action = f"Put {item.title} on hold"
         else:
-            message = f"Added {item.title} {time_ago}"
+            action = f"Added {item.title}"
     
         # Generate the detail URL
         if item.source == "tmdb" and item.media_type in ["movie", "tv"]:
@@ -371,11 +372,15 @@ def home(request):
         else:
             url = "#"
         
+        cover_url = item.cover_url or "/static/core/img/placeholder.png"
+
         recent_activity.append({
-            "message": message,
+            "message_main": action,
+            "message_time": time_ago,
             "media_type": item.media_type,
             "title": item.title,
             "url": url,
+            "cover_url": cover_url,
         })
 
     return render(request, "core/home.html", {
@@ -672,20 +677,24 @@ def igdb_search(request):
         "Authorization": f"Bearer {token}",
     }
 
-    # IGDB uses a POST request with a query language (IGDB API docs)
-    data = f'search "{query}"; fields id,name,cover.url; where category = (0, 1, 2, 4,5,8,9,10,11,3); limit 10;'
+    data = f'''
+    search "{query}";
+    fields id, name, cover.url;
+    where category = (0, 1, 2, 3, 4, 5, 8, 9, 10, 11);
+    limit 30;
+    '''
 
     response = requests.post("https://api.igdb.com/v4/games", headers=headers, data=data)
     if response.status_code != 200:
         return JsonResponse({"error": "Failed to fetch from IGDB."}, status=500)
 
+    query_lower = query.lower()
     results_raw = response.json()
     results = []
+
     for item in results_raw:
         cover_url = None
         if "cover" in item and item["cover"] and "url" in item["cover"]:
-            # IGDB returns URLs like "//images.igdb.com/igdb/image/upload/t_thumb/co1abc.jpg"
-            # prepend https:
             cover_url = "https:" + item["cover"]["url"].replace("t_thumb", "t_cover_big")
 
         results.append({
@@ -694,7 +703,21 @@ def igdb_search(request):
             "poster_path": cover_url,
         })
 
+    # Manual relevance ranking
+    def rank(item):
+        name = item["title"].lower()
+        if name == query_lower:
+            return 0
+        if name.startswith(query_lower):
+            return 1
+        if query_lower in name:
+            return 2
+        return 3
+
+    results.sort(key=rank)
+
     return JsonResponse({"results": results[:10]})
+
 
 # Movies/Shows Search
 
@@ -1995,12 +2018,17 @@ def edit_item(request, item_id):
             if "total_secondary" in data and data["total_secondary"] not in [None, ""]:
                 item.total_secondary = int(data["total_secondary"])
 
+            # Always define new_status to avoid UnboundLocalError
+            new_status = old_status
+
             # Update status if present
             if "status" in data and data["status"] != "":
                 new_status = data["status"]
                 item.status = new_status
-            else:
-                new_status = old_status
+
+            # If status changed, update date_added
+            if new_status != old_status:
+                item.date_added = timezone.now()
 
             # Update progress fields if present (manual input)
             if "progress_main" in data and data["progress_main"] not in [None, ""]:
@@ -2410,7 +2438,11 @@ def delete_favorite_person_and_reorder(person_id):
         return True
     except FavoritePerson.DoesNotExist:
         return False
-    
+
+@ensure_csrf_cookie
+def delete_favorite_person(request, person_id):
+    success = delete_favorite_person_and_reorder(person_id)
+    return JsonResponse({"success": success})
 
 @ensure_csrf_cookie
 def character_search_view(request):
@@ -2617,3 +2649,168 @@ def get_extra_info(request):
         data = {}
 
     return JsonResponse(data)
+
+def check_planned_movie_statuses(request):
+    try:
+        api_key = APIKey.objects.get(name="tmdb").key_1
+    except APIKey.DoesNotExist:
+        return JsonResponse({"error": "TMDB API key not found."}, status=500)
+
+    planned_movies = MediaItem.objects.filter(media_type='movie', status='planned')
+    status_map = {}  # {tmdb_id (str): status}
+    request_count = 0
+
+    for item in planned_movies:
+        tmdb_id = item.source_id
+        if not tmdb_id:
+            continue
+
+        url = f"https://api.themoviedb.org/3/movie/{tmdb_id}"
+        params = {"api_key": api_key}
+
+        try:
+            response = requests.get(url, params=params)
+            request_count += 1
+
+            if request_count >= 300:
+                time.sleep(60)
+                request_count = 0
+            else:
+                time.sleep(0.025)
+
+            if response.status_code == 200:
+                data = response.json()
+                status_map[str(tmdb_id)] = data.get("status", "Unknown")
+            else:
+                status_map[str(tmdb_id)] = "Error"
+        except Exception:
+            status_map[str(tmdb_id)] = "Error"
+
+    return JsonResponse(status_map)
+
+def check_planned_tvseries_statuses(request):
+    try:
+        api_key = APIKey.objects.get(name="tmdb").key_1
+    except APIKey.DoesNotExist:
+        return JsonResponse({"error": "TMDB API key not found."}, status=500)
+
+    planned_series = MediaItem.objects.filter(media_type='tv', status='planned')
+    status_map = {}  # {tmdb_id: status}
+    request_count = 0
+
+    for item in planned_series:
+        tmdb_id = item.source_id
+        if not tmdb_id:
+            continue
+
+        url = f"https://api.themoviedb.org/3/tv/{tmdb_id}"
+        params = {"api_key": api_key}
+
+        try:
+            response = requests.get(url, params=params)
+            request_count += 1
+
+            if request_count >= 300:
+                time.sleep(60)
+                request_count = 0
+            else:
+                time.sleep(0.025)
+
+            if response.status_code == 200:
+                data = response.json()
+
+                status = data.get("status", "Unknown")
+                next_episode = data.get("next_episode_to_air")
+                # Logic per your description:
+                if status == "Ended":
+                    status_map[tmdb_id] = "Ended"
+                elif status == "In Production":
+                    status_map[tmdb_id] = "In Production"
+                elif status == "Returning Series":
+                    if next_episode:
+                        status_map[tmdb_id] = "Returning with upcoming episode"
+                    else:
+                        # Assume finished airing or hasn't started airing yet
+                        status_map[tmdb_id] = "Ended"
+                else:
+                    status_map[tmdb_id] = status
+            else:
+                status_map[tmdb_id] = "Error"
+        except Exception:
+            status_map[tmdb_id] = "Error"
+
+    return JsonResponse(status_map)
+
+def check_planned_anime_manga_statuses(request):
+    import requests
+    from django.http import JsonResponse, HttpResponseBadRequest
+
+    ANILIST_API_URL = "https://graphql.anilist.co"
+
+    media_type = request.GET.get("media_type")
+    if media_type not in ("anime", "manga"):
+        return HttpResponseBadRequest("Invalid or missing media_type parameter. Must be 'anime' or 'manga'.")
+
+    planned_items = MediaItem.objects.filter(media_type=media_type, status="planned")
+    headers = {"Content-Type": "application/json"}
+    status_map = {}
+
+    def chunks(lst, size):
+        for i in range(0, len(lst), size):
+            yield lst[i:i + size]
+
+    # Prepare list of (mal_id, item)
+    item_list = [(item.source_id, item) for item in planned_items if item.source_id and item.source_id.isdigit()]
+
+    request_count = 0
+
+    for batch in chunks(item_list, 25):
+
+        request_count += 1
+        if request_count >= 12:
+            time.sleep(60)
+            request_count = 0
+        else:
+            time.sleep(0.1)
+
+        aliases = []
+        for i, (mal_id, _) in enumerate(batch):
+            aliases.append(f"i{i}: Media(idMal: {mal_id}, type: {media_type.upper()}) {{ status }}")
+
+        query = f"query {{\n  {'\n  '.join(aliases)}\n}}"
+
+        try:
+            response = requests.post(
+                ANILIST_API_URL,
+                json={"query": query},
+                headers=headers,
+                timeout=10
+            )
+
+            if response.status_code != 200:
+                for mal_id, _ in batch:
+                    status_map[mal_id] = "Error"
+                continue
+
+            data = response.json().get("data", {})
+            for i, (mal_id, _) in enumerate(batch):
+                entry = data.get(f"i{i}")
+                if not entry:
+                    status_map[mal_id] = "Unknown"
+                    continue
+
+                raw_status = entry.get("status")
+                if raw_status == "FINISHED":
+                    status_map[mal_id] = "Finished"
+                elif raw_status == "RELEASING":
+                    status_map[mal_id] = "Releasing"
+                elif raw_status == "NOT_YET_RELEASED":
+                    status_map[mal_id] = "Not yet released"
+                else:
+                    status_map[mal_id] = raw_status or "Unknown"
+
+        except Exception:
+            for mal_id, _ in batch:
+                status_map[mal_id] = "Error"
+
+    return JsonResponse(status_map)

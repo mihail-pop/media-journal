@@ -5,6 +5,10 @@ body {
   color: #8596A5;
 }
 
+html {
+  overflow-y: scroll;
+}
+
 .status-header {
   margin-top: 50px;    /* adjust this value as you want */
   margin-bottom: 10px; /* adjust this value as you want */

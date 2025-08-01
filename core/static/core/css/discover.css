@@ -95,3 +95,27 @@ body {
   color: #A0AAB4;
   font-size: 1.1rem;
 }
+
+  .hidden {
+    display: none;
+  }
+
+  .load-more-container {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.75rem;
+  }
+
+  .load-more-btn {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    background-color: #1f2a38;
+    color: #8596A5;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .load-more-btn:hover {
+    background-color: #32445b;
+  }

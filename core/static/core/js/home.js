@@ -215,3 +215,36 @@ document.addEventListener('DOMContentLoaded', () => {
 setupReorderButtons('actors-card-grid');
 setupReorderButtons('characters-card-grid');
 });
+
+
+document.getElementById("show-more-activity-btn")?.addEventListener("click", () => {
+  document.querySelectorAll("#recent-activity-list .recent-activity-hidden")
+    .forEach(el => el.classList.remove("recent-activity-hidden"));
+  document.getElementById("show-more-activity-btn").remove();
+});
+
+document.querySelectorAll('.delete-person-btn').forEach(button => {
+  button.addEventListener('click', function (e) {
+    e.preventDefault();
+    const card = this.closest('.card');
+    const personId = card.dataset.id;
+    const csrftoken = getCookie('csrftoken');
+
+    if (confirm("Remove this person from favorites?")) {
+      fetch(`/api/delete_favorite_person/${personId}/`, {
+        method: 'DELETE',
+        headers: {
+          'X-CSRFToken': csrftoken,
+        },
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          card.remove();
+        } else {
+          alert("Failed to delete.");
+        }
+      });
+    }
+  });
+});

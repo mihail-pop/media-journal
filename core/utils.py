@@ -239,7 +239,7 @@ def get_trending_movies():
         data = response.json()
         results = []
 
-        for item in data.get("results", [])[:10]:
+        for item in data.get("results", [])[:20]:
             poster = item.get("poster_path")
             poster_url = f"https://image.tmdb.org/t/p/w342{poster}" if poster else None
 
@@ -298,7 +298,7 @@ def get_trending_tv():
                 "media_type": "tv"
             })
 
-            if len(results) == 10:
+            if len(results) == 20:
                 break
 
         return results
@@ -309,7 +309,7 @@ def get_trending_tv():
 def get_trending_anime():
     query = '''
     query {
-      Page(perPage: 10) {
+      Page(perPage: 20) {
         media(type: ANIME, sort: TRENDING_DESC) {
           idMal
           title {
@@ -362,7 +362,7 @@ def get_trending_anime():
 def get_trending_manga():
     query = '''
     query {
-      Page(perPage: 10) {
+      Page(perPage: 20) {
         media(type: MANGA, sort: TRENDING_DESC) {
           idMal
           title {
@@ -432,7 +432,7 @@ def get_trending_games():
         'fields id, name, cover.url; '
         'where cover != null & total_rating_count > 10; '
         'sort popularity desc; '
-        'limit 10;'
+        'limit 20;'
     )
 
     try:
@@ -539,6 +539,11 @@ def get_anime_extra_info(mal_id):
             name
           }
         }
+        externalLinks {
+          site
+          url
+          language
+        }
       }
     }
     '''
@@ -561,13 +566,26 @@ def get_anime_extra_info(mal_id):
         next_airing_data = data.get("nextAiringEpisode")
         if next_airing_data and next_airing_data.get("airingAt"):
             next_airing_timestamp = next_airing_data["airingAt"]
-            next_airing = datetime.fromtimestamp(next_airing_timestamp).strftime("%d %B %Y")
+            next_airing = datetime.fromtimestamp(next_airing_timestamp).strftime("%A %d %B %Y")
             next_episode = next_airing_data.get("episode")
         else:
             next_airing = None
             next_episode = None
         
+        external_links = []
+        for link in data.get("externalLinks", []):
+            site = link.get("site")
+            url = link.get("url")
+            lang = link.get("language")
+            if site and url:
+                external_links.append({
+                    "site": site,
+                    "url": url,
+                    "language": lang or "",
+                })
+
         return {
+            "external_links": external_links,
             "status": data.get("status"),
             "averageScore": round(data.get("averageScore", 0) / 10, 1) if data.get("averageScore") is not None else None,
             "format": data.get("format"),
@@ -594,6 +612,11 @@ def get_manga_extra_info(mal_id):
             name
           }
         }
+        externalLinks {
+          site
+          url
+          language
+        }
       }
     }
     '''
@@ -613,7 +636,20 @@ def get_manga_extra_info(mal_id):
 
         data = response.json().get("data", {}).get("Media", {})
 
+        external_links = []
+        for link in data.get("externalLinks", []):
+            site = link.get("site")
+            url = link.get("url")
+            lang = link.get("language")
+            if site and url:
+                external_links.append({
+                    "site": site,
+                    "url": url,
+                    "language": lang or "",
+                })
+
         return {
+            "external_links": external_links,
             "status": data.get("status"),
             "averageScore": round(data.get("averageScore", 0) / 10, 1) if data.get("averageScore") is not None else None,
             "format": data.get("format"),
