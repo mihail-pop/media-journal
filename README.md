@@ -18,17 +18,14 @@
 - Import/export your data for backup or transfer.
 - Automatically checks for sequels and new seasons (tv shows, anime, manga).
 
-## Demo
-| <img src="https://github.com/user-attachments/assets/9dfbe6f7-56eb-425d-8f8f-72362dd43416" width="500" /> | <img src="https://github.com/user-attachments/assets/1d5f49cb-7f0b-4fd7-93ba-5c77c8266884" width="500" /> |
+## Demo - [Demo Video](https://youtu.be/85DY-WM6cI4?si=u7q5AAbQnWaxTuQN)
+| <img src="https://github.com/user-attachments/assets/0265ea9e-6404-4958-82c6-4318ecdeb848" width="500" /> | <img src="https://github.com/user-attachments/assets/2dcedab4-696b-47b5-a500-d9a2572dfa52" width="500" /> |
 | :-----------------------------------------: | :-----------------------------------------: |
 |                 Home                    |               Movies                   |
 
-| <img src="https://github.com/user-attachments/assets/0b9027f5-60bb-4f46-8f39-913995805068" width="500" /> | <img src="https://github.com/user-attachments/assets/65ef3080-67b1-424a-a894-1276284c2567" width="500" /> |
+| <img src="https://github.com/user-attachments/assets/9fe9a252-c403-48c0-8b51-66609fbeb491" width="500" /> | <img src="https://github.com/user-attachments/assets/1d6b1029-578b-4013-841d-372dc4dacd17" width="500" /> |
 | :-----------------------------------------: | :-----------------------------------------: |
 |               Details                  |               Edit                   |
-
-
-
 
 
 
