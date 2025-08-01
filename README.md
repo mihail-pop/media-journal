@@ -18,15 +18,14 @@
 - Import/export your data for backup or transfer.
 - Automatically checks for sequels and new seasons (tv shows, anime, manga).
 
-## Demo - [Demo Video](https://youtu.be/85DY-WM6cI4?si=u7q5AAbQnWaxTuQN)
+## Demo - [Youtube Demo](https://youtu.be/85DY-WM6cI4?si=u7q5AAbQnWaxTuQN)
 | <img src="https://github.com/user-attachments/assets/0265ea9e-6404-4958-82c6-4318ecdeb848" width="500" /> | <img src="https://github.com/user-attachments/assets/2dcedab4-696b-47b5-a500-d9a2572dfa52" width="500" /> |
 | :-----------------------------------------: | :-----------------------------------------: |
 |                 Home                    |               Movies                   |
 
-| <img src="https://github.com/user-attachments/assets/9fe9a252-c403-48c0-8b51-66609fbeb491" width="500" /> | <img src="https://github.com/user-attachments/assets/1d6b1029-578b-4013-841d-372dc4dacd17" width="500" /> |
+| <img src="https://github.com/user-attachments/assets/9fe9a252-c403-48c0-8b51-66609fbeb491" width="500" /> | <img src="https://github.com/user-attachments/assets/3d18a302-8d04-4ac9-9897-779bb4460c45" width="500" /> |
 | :-----------------------------------------: | :-----------------------------------------: |
 |               Details                  |               Edit                   |
-
 
 
 
