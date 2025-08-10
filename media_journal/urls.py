@@ -7,6 +7,7 @@ from django.conf.urls.static import static
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/tmdb_search/', views.tmdb_search, name='tmdb_search'),
+    path('update-rating-mode/', views.update_rating_mode, name='update_rating_mode'),
     path("api/mal_search/", views.mal_search, name="mal_search"),
     path("api/igdb_search/", views.igdb_search, name="igdb_search"),
     path("api/openlib_search/", views.openlib_search, name="openlib_search"),

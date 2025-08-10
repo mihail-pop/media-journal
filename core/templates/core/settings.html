@@ -12,6 +12,16 @@
 <div class="settings-section">
   <button class="collapsible">Preferences</button>
   <div class="collapsible-content">
+    <h3>Scoring System</h3>
+    <form id="rating-mode-form" class="scoring-system-form">
+      <select id="rating-mode-select" name="rating_mode">
+        <option value="faces" {% if current_rating_mode == 'faces' %}selected{% endif %}>Faces (😞😐😊)</option>
+        <option value="stars_5" {% if current_rating_mode == 'stars_5' %}selected{% endif %}>5 Stars (⭐)</option>
+        <option value="scale_10" {% if current_rating_mode == 'scale_10' %}selected{% endif %}>10 Points (5/10)</option>
+        <option value="scale_100" {% if current_rating_mode == 'scale_100' %}selected{% endif %}>100 Points (55/100)</option>
+      </select>
+      <button type="submit" class="save-nav-btn scoring-system-save">Save</button>
+    </form>
     <h3>Navigation Buttons</h3>
     <form id="nav-items-form">
       {% for item in nav_items %}

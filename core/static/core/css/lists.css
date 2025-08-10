@@ -1,3 +1,30 @@
+/* --- Star Rating Overlap Effect --- */
+.star-rating {
+  display: inline-block;
+  position: relative;
+  height: 1.1em;
+  line-height: 1;
+  top: -0.38em;
+}
+.star-rating .star-icon {
+  width: 1.1em;
+  height: 1.1em;
+  display: inline-block;
+  position: relative;
+  margin-left: -0.85em; /* strong overlap for cool effect */
+  z-index: 1;
+  vertical-align: middle;
+  transition: filter 0.2s;
+}
+.star-rating .star-icon:first-child {
+  margin-left: 0;
+}
+
+
+.star-rating .star-icon.empty {
+  opacity: 0.4;
+}
+
 body {
   background-color: #0b1622; /* example dark background */
   margin: 0;
@@ -256,6 +283,13 @@ html {
   align-self: flex-end;
   margin-left: auto;
   font-size: 1.1rem;
+}
+
+.rating-number {
+  font-size: 0.82rem;
+  color: #8596A5;
+  vertical-align: top;
+  position: relative;
 }
 
 .card-meta-row {

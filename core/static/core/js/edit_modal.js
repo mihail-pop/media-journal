@@ -1,5 +1,3 @@
-console.log("edit_modal.js loaded");
-
 document.addEventListener("DOMContentLoaded", function () {
   const modal = document.getElementById("edit-modal");
   const overlay = document.getElementById("edit-overlay");
@@ -78,14 +76,15 @@ function updateTotalDisplays(item) {
 }
 
   function populateForm(form, item) {
-    console.log("Populating form with item:", item);
     form.dataset.mediaType = item.media_type;
     form.dataset.itemId = item.id;
+    form.dataset.ratingMode = item.rating_mode;
     const totalMainInput = form.querySelector('input[name="total_main"]');
 if (totalMainInput) totalMainInput.value = item.total_main ?? "";
 
 const totalSecondaryInput = form.querySelector('input[name="total_secondary"]');
 if (totalSecondaryInput) totalSecondaryInput.value = item.total_secondary ?? "";
+
 
     const statusSelect = form.querySelector('select[name="status"]');
     statusSelect.innerHTML = "";
@@ -96,45 +95,175 @@ if (totalSecondaryInput) totalSecondaryInput.value = item.total_secondary ?? "";
       if (choice[0] === item.status) option.selected = true;
       statusSelect.appendChild(option);
     });
-const ratingSelect = form.querySelector('select[name="personal_rating"]');
-ratingSelect.innerHTML = "";
 
-// Build the options dynamically (keep this as is)
-const emptyOption = document.createElement("option");
-emptyOption.value = "";
-emptyOption.textContent = "No rating";
-ratingSelect.appendChild(emptyOption);
+    // --- RATING UI ---
+    const ratingSelect = form.querySelector('select[name="personal_rating"]');
+    ratingSelect.innerHTML = "";
+    // Always keep a blank option for 'no rating'
+    const emptyOption = document.createElement("option");
+    emptyOption.value = "";
+    emptyOption.textContent = "No rating";
+    ratingSelect.appendChild(emptyOption);
 
-item.item_rating_choices.forEach(choice => {
-  const option = document.createElement("option");
-  option.value = choice[0];
-  option.textContent = choice[1];
-  if (choice[0] === item.personal_rating) option.selected = true;
-  ratingSelect.appendChild(option);
-});
+    // Remove any previous dynamic rating UI
+    let ratingUi = form.querySelector('.dynamic-rating-ui');
+    if (ratingUi) ratingUi.remove();
 
-// Now sync the face buttons with the select's value
-const faces = form.querySelectorAll('.rating-faces .face');
-
-function updateFacesFromSelect() {
-  faces.forEach(face => {
-    if (face.dataset.value === ratingSelect.value) {
-      face.classList.add('selected');
-    } else {
-      face.classList.remove('selected');
+    // Helper to set select value and trigger change
+    function setRatingValue(val) {
+      ratingSelect.value = val;
+      ratingSelect.dispatchEvent(new Event('change'));
     }
-  });
-}
 
-faces.forEach(face => {
-  face.addEventListener('click', () => {
-    ratingSelect.value = face.dataset.value;
-    updateFacesFromSelect();
-  });
-});
+    // Faces mode
+    const ratingFaces = form.querySelector('.rating-faces');
+    if (item.rating_mode === 'faces') {
+      // Add options for faces (1, 50, 100)
+      [1, 50, 100].forEach(val => {
+        const opt = document.createElement('option');
+        opt.value = val;
+        opt.textContent = val === 1 ? 'Bad' : val === 50 ? 'Neutral' : 'Good';
+        if (val === item.personal_rating) opt.selected = true;
+        ratingSelect.appendChild(opt);
+      });
+      // Show face buttons
+      let faces = form.querySelectorAll('.rating-faces .face');
+      faces.forEach(face => {
+        face.style.display = '';
+        face.classList.remove('selected');
+        if (parseInt(face.dataset.value) === item.personal_rating) face.classList.add('selected');
+        face.onclick = () => {
+          setRatingValue(face.dataset.value);
+          faces.forEach(f => f.classList.toggle('selected', f === face));
+        };
+      });
+      // Show the container
+      if (ratingFaces) ratingFaces.classList.remove('modal-hidden');
+      // Hide other rating UIs if present
+      // (none for faces)
+    }
+    // 5-star mode
+    else if (item.rating_mode === 'stars_5') {
+      // Hide face buttons
+      form.querySelectorAll('.rating-faces .face').forEach(face => face.style.display = 'none');
+      if (ratingFaces) ratingFaces.classList.add('modal-hidden');
+      // Build 5 stars
+      const starDiv = document.createElement('div');
+      starDiv.className = 'dynamic-rating-ui rating-stars';
+      for (let i = 1; i <= 5; i++) {
+        const star = document.createElement('span');
+        star.className = 'star';
+        star.textContent = '★';
+        star.title = `${i} star${i > 1 ? 's' : ''}`;
+        star.dataset.value = i;
+        if (item.personal_rating === i) star.classList.add('selected');
+        star.onclick = () => {
+          setRatingValue(i);
+          // Highlight stars up to selected
+          starDiv.querySelectorAll('.star').forEach((s, idx) => {
+            s.classList.toggle('selected', idx < i);
+          });
+        };
+        starDiv.appendChild(star);
+      }
+      // Set initial highlight
+      if (item.personal_rating) {
+        starDiv.querySelectorAll('.star').forEach((s, idx) => {
+          s.classList.toggle('selected', idx < item.personal_rating);
+        });
+      }
+      // Insert after hidden select
+      ratingSelect.parentNode.insertBefore(starDiv, ratingSelect.nextSibling);
+      // Ensure select has the current value as an option (robust string check, allow 0)
+      if (item.personal_rating !== undefined && item.personal_rating !== null && item.personal_rating !== "") {
+        let found = false;
+        for (let i = 0; i < ratingSelect.options.length; i++) {
+          if (ratingSelect.options[i].value == String(item.personal_rating)) {
+            found = true;
+            break;
+          }
+        }
+        if (!found) {
+          const opt = document.createElement('option');
+          opt.value = item.personal_rating;
+          opt.textContent = `${item.personal_rating} star${item.personal_rating > 1 ? 's' : ''}`;
+          opt.selected = true;
+          ratingSelect.appendChild(opt);
+        }
+        ratingSelect.value = item.personal_rating;
+      }
+    }
+    // 1-10 or 1-100 scale
+    else if (item.rating_mode === 'scale_10' || item.rating_mode === 'scale_100') {
+      // Hide face buttons
+      form.querySelectorAll('.rating-faces .face').forEach(face => face.style.display = 'none');
+      if (ratingFaces) ratingFaces.classList.add('modal-hidden');
+      // Numeric input
+      const numDiv = document.createElement('div');
+      numDiv.className = 'dynamic-rating-ui rating-number';
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.min = item.rating_mode === 'scale_10' ? 1 : 1;
+      input.max = item.rating_mode === 'scale_10' ? 10 : 100;
+      input.value = item.personal_rating || '';
+      input.placeholder = item.rating_mode === 'scale_10' ? '1-10' : '1-100';
+      // Store last valid value
+      let lastValid = (item.personal_rating && !isNaN(item.personal_rating)) ? String(item.personal_rating) : '';
+      input.oninput = () => {
+        let val = input.value;
+        let min = parseInt(input.min);
+        let max = parseInt(input.max);
+        // Allow clearing the field
+        if (val === '') {
+          setRatingValue('');
+          return;
+        }
+        let valid = false;
+        if (item.rating_mode === 'scale_10') {
+          valid = /^\d{1,2}$/.test(val) && Number(val) >= min && Number(val) <= max;
+        } else if (item.rating_mode === 'scale_100') {
+          valid = /^\d{1,3}$/.test(val) && Number(val) >= min && Number(val) <= max;
+        }
+        if (valid) {
+          lastValid = val;
+          setRatingValue(Number(val));
+        } else {
+          // revert to last valid value only if not clearing
+          input.value = lastValid;
+          setRatingValue(lastValid ? Number(lastValid) : '');
+        }
+      };
+      numDiv.appendChild(input);
+      ratingSelect.parentNode.insertBefore(numDiv, ratingSelect.nextSibling);
+      // Ensure select has the current value as an option (robust string check, allow 0)
+      if (item.personal_rating !== undefined && item.personal_rating !== null && item.personal_rating !== "") {
+        let found = false;
+        for (let i = 0; i < ratingSelect.options.length; i++) {
+          if (ratingSelect.options[i].value == String(item.personal_rating)) {
+            found = true;
+            break;
+          }
+        }
+        if (!found) {
+          const opt = document.createElement('option');
+          opt.value = item.personal_rating;
+          opt.textContent = item.personal_rating;
+          opt.selected = true;
+          ratingSelect.appendChild(opt);
+        }
+        ratingSelect.value = item.personal_rating;
+      }
+    }
+    // fallback: hide all rating UIs
+    else {
+      form.querySelectorAll('.rating-faces .face').forEach(face => face.style.display = 'none');
+      if (ratingFaces) ratingFaces.classList.add('modal-hidden');
+    }
 
-// call once after options built and select value set
-updateFacesFromSelect();
+    // Always call change event to sync UI
+    ratingSelect.dispatchEvent(new Event('change'));
+
+
 
     form.querySelector('[name="notes"]').value = item.notes || "";
     form.querySelector('[name="progress_main"]').value = item.progress_main ?? "";
@@ -306,12 +435,15 @@ document.getElementById("edit-delete-btn")?.addEventListener("click", function (
 });
 
 
+
   // Submit form
   const form = document.getElementById("edit-form");
   if (form) {
     form.addEventListener("submit", function (e) {
+      // --- Always sync custom rating UI to select before serializing form ---
+      const ratingSelect = form.querySelector('select[name="personal_rating"]');
+
       e.preventDefault();
-      console.log("Form submitted");
 
       const itemId = form.dataset.itemId;
       if (!itemId) {
@@ -319,8 +451,89 @@ document.getElementById("edit-delete-btn")?.addEventListener("click", function (
         return;
       }
 
+
+      // If stars UI is present, get selected star value
+      const starsDiv = form.querySelector('.rating-stars');
+      let customRatingHandled = false;
+      if (starsDiv) {
+        const stars = Array.from(starsDiv.querySelectorAll('.star'));
+        let selectedStars = 0;
+        for (let i = 0; i < stars.length; i++) {
+          if (stars[i].classList.contains('selected')) selectedStars++;
+        }
+        if (selectedStars > 0) {
+          // Ensure select has this value as an option
+          let found = false;
+          for (let i = 0; i < ratingSelect.options.length; i++) {
+            if (ratingSelect.options[i].value == String(selectedStars)) {
+              found = true;
+              break;
+            }
+          }
+          if (!found) {
+            const opt = document.createElement('option');
+            opt.value = selectedStars;
+            opt.textContent = `${selectedStars} star${selectedStars > 1 ? 's' : ''}`;
+            opt.selected = true;
+            ratingSelect.appendChild(opt);
+          }
+          ratingSelect.value = selectedStars;
+        } else {
+          ratingSelect.value = '';
+        }
+        customRatingHandled = true;
+      }
+      // If number input UI is present, get its value
+      const numberDiv = form.querySelector('.rating-number');
+      if (numberDiv) {
+        const numInput = numberDiv.querySelector('input[type="number"]');
+        if (numInput) {
+          if (numInput.value !== '') {
+            // Ensure select has this value as an option
+            let found = false;
+            for (let i = 0; i < ratingSelect.options.length; i++) {
+              if (ratingSelect.options[i].value == String(numInput.value)) {
+                found = true;
+                break;
+              }
+            }
+            if (!found) {
+              const opt = document.createElement('option');
+              opt.value = numInput.value;
+              opt.textContent = numInput.value;
+              opt.selected = true;
+              ratingSelect.appendChild(opt);
+            }
+            ratingSelect.value = numInput.value;
+          } else {
+            ratingSelect.value = '';
+          }
+        }
+        customRatingHandled = true;
+      }
+      // For faces, the select is already set by UI logic
+      // Make sure the select is not disabled
+      ratingSelect.disabled = false;
+
+      // Only use fallback if no custom UI handled the value
+      // For faces mode, do NOT auto-select 1 (bad) if nothing is chosen
+      if (!customRatingHandled && !ratingSelect.value) {
+        const ratingMode = form.dataset.ratingMode || (window.currentRatingMode || null);
+        if (ratingMode !== 'faces') {
+          for (let i = 0; i < ratingSelect.options.length; i++) {
+            if (ratingSelect.options[i].value !== "") {
+              ratingSelect.value = ratingSelect.options[i].value;
+              break;
+            }
+          }
+        }
+        // else: leave as blank for faces mode
+      }
+
+
       const formData = Object.fromEntries(new FormData(form));
-      console.log("Data to send:", formData);
+      // Debug: log the value being sent for personal_rating
+      console.log("[DEBUG] Submitting personal_rating:", formData.personal_rating, "(all formData:", formData, ")");
 
       fetch(`/edit-item/${itemId}/`, {
         method: "POST",
@@ -332,7 +545,6 @@ document.getElementById("edit-delete-btn")?.addEventListener("click", function (
       })
         .then(res => res.json())
         .then(res => {
-          console.log("Server response:", res);
           if (res.success) {
             location.reload();
           } else {

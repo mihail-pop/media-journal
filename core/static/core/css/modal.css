@@ -1,3 +1,48 @@
+.rating-stars {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  background-color: #0b1622;
+  border-radius: 6px;
+  padding: 0.35rem 0.5rem;
+}
+
+.star {
+  font-size: 1.5rem;
+  color: #bbb;
+  cursor: pointer;
+  transition: color 0.2s;
+  user-select: none;
+  line-height: 0.9;
+  vertical-align: middle;
+  display: inline-block;
+}
+.star.selected {
+  color: #FFD600;
+  text-shadow: 0 1px 4px #ffecb3;
+}
+.star:hover,
+.star:focus {
+  color: #FFC107;
+  outline: none;
+}
+
+.rating-number input[type="number"] {
+  width: 70px;
+  font-size: 1.1rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  background: #0B1622;
+  text-align: center;
+  outline: none;
+  margin-left: 2px;
+  height: 2rem;
+  width: 8rem;
+}
+.rating-number input[type="number"]:focus {
+  border-color: #3DB4F2;
+  background: #0B1622;
+}
 /* Utility class to hide modal elements specifically */
 .modal-hidden {
   display: none !important;
@@ -506,6 +551,10 @@ textarea[name="notes"]::-webkit-scrollbar {
   justify-content: center;
   border: 0;   /* Blue border */
   background-color: #0B1622;
+}
+.rating-faces.modal-hidden {
+  display: none !important;
+  padding: 0 !important;
 }
 
 /* Chrome, Safari, Edge, Opera */

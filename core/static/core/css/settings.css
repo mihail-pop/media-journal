@@ -1,3 +1,26 @@
+
+/* --- Scoring System Section --- */
+.scoring-system-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 2rem;
+  gap: 1rem;
+}
+
+#rating-mode-select {
+  min-width: 11rem;
+  max-width: 11rem;
+  font-size: 1rem;
+  text-align: center;
+  background-color: #151F2E;
+  color: #8596A5;
+  border: 1px solid #8596A5;
+}
+
+.scoring-system-save {
+  margin: 0.1rem !important;
+}
 /* settings.css */
 
 body {

@@ -1,4 +1,5 @@
-from core.utils import download_image, fetch_anilist_data, get_trending_anime, get_trending_games, get_trending_manga, get_trending_movies, get_trending_tv, get_igdb_token, get_anime_extra_info, get_game_extra_info, get_manga_extra_info, get_movie_extra_info, get_tv_extra_info
+from django.apps import apps
+from core.utils import download_image, fetch_anilist_data, get_trending_anime, get_trending_games, get_trending_manga, get_trending_movies, get_trending_tv, get_igdb_token, get_anime_extra_info, get_game_extra_info, get_manga_extra_info, get_movie_extra_info, get_tv_extra_info, rating_to_display, display_to_rating
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_POST
 from django.db.models import Case, When, IntegerField, Value, F
@@ -57,20 +58,26 @@ def movies(request):
     )
     
     rating_ordering = Case(
-        When(personal_rating=3, then=Value(1)),
-        When(personal_rating=2, then=Value(2)),
-        When(personal_rating=1, then=Value(3)),
-        When(personal_rating=None, then=Value(4)),
-        default=Value(4),
+        When(personal_rating=None, then=Value(0)),  # Null rating gets lowest priority
+        default=F('personal_rating'),  # Use actual rating for ordering
         output_field=IntegerField(),
     )
     
     movies = MediaItem.objects.filter(media_type="movie").annotate(
         status_order=status_ordering,
         rating_order=rating_ordering
-    ).order_by('status_order', 'rating_order', 'title')
+    ).order_by('status_order', '-rating_order', 'title')
 
-    return render(request, 'core/movies.html', {'items': movies, 'page_type': 'movie'})
+    # Get current rating mode from AppSettings
+    AppSettings = apps.get_model('core', 'AppSettings')
+    settings = AppSettings.objects.first()
+    rating_mode = settings.rating_mode if settings else 'faces'
+
+    return render(request, 'core/movies.html', {
+        'items': movies,
+        'page_type': 'movie',
+        'rating_mode': rating_mode,
+    })
 
 
 @ensure_csrf_cookie
@@ -86,20 +93,26 @@ def tvshows(request):
     )
     
     rating_ordering = Case(
-        When(personal_rating=3, then=Value(1)),
-        When(personal_rating=2, then=Value(2)),
-        When(personal_rating=1, then=Value(3)),
-        When(personal_rating=None, then=Value(4)),
-        default=Value(4),
+        When(personal_rating=None, then=Value(0)),  # Null rating gets lowest priority
+        default=F('personal_rating'),  # Use actual rating for ordering
         output_field=IntegerField(),
     )
     
     tvshows = MediaItem.objects.filter(media_type="tv").annotate(
         status_order=status_ordering,
         rating_order=rating_ordering
-    ).order_by('status_order', 'rating_order', 'title')
+    ).order_by('status_order', '-rating_order', 'title')
 
-    return render(request, 'core/tvshows.html', {'items': tvshows, 'page_type': 'tv'})
+    # Get current rating mode from AppSettings
+    AppSettings = apps.get_model('core', 'AppSettings')
+    settings = AppSettings.objects.first()
+    rating_mode = settings.rating_mode if settings else 'faces'
+
+    return render(request, 'core/tvshows.html', {
+        'items': tvshows,
+        'page_type': 'tv',
+        'rating_mode': rating_mode,
+    })
 
 
 @ensure_csrf_cookie
@@ -115,20 +128,26 @@ def anime(request):
     )
     
     rating_ordering = Case(
-        When(personal_rating=3, then=Value(1)),
-        When(personal_rating=2, then=Value(2)),
-        When(personal_rating=1, then=Value(3)),
-        When(personal_rating=None, then=Value(4)),
-        default=Value(4),
+        When(personal_rating=None, then=Value(0)),  # Null rating gets lowest priority
+        default=F('personal_rating'),  # Use actual rating for ordering
         output_field=IntegerField(),
     )
     
     anime = MediaItem.objects.filter(media_type="anime").annotate(
         status_order=status_ordering,
         rating_order=rating_ordering
-    ).order_by('status_order', 'rating_order', 'title')
+    ).order_by('status_order', '-rating_order', 'title')
 
-    return render(request, 'core/anime.html', {'items': anime, 'page_type': 'anime'})
+    # Get current rating mode from AppSettings
+    AppSettings = apps.get_model('core', 'AppSettings')
+    settings = AppSettings.objects.first()
+    rating_mode = settings.rating_mode if settings else 'faces'
+
+    return render(request, 'core/anime.html', {
+        'items': anime,
+        'page_type': 'anime',
+        'rating_mode': rating_mode,
+    })
 
 
 @ensure_csrf_cookie
@@ -144,20 +163,26 @@ def games(request):
     )
     
     rating_ordering = Case(
-        When(personal_rating=3, then=Value(1)),
-        When(personal_rating=2, then=Value(2)),
-        When(personal_rating=1, then=Value(3)),
-        When(personal_rating=None, then=Value(4)),
-        default=Value(4),
+        When(personal_rating=None, then=Value(0)),  # Null rating gets lowest priority
+        default=F('personal_rating'),  # Use actual rating for ordering
         output_field=IntegerField(),
     )
     
     games = MediaItem.objects.filter(media_type="game").annotate(
         status_order=status_ordering,
         rating_order=rating_ordering
-    ).order_by('status_order', 'rating_order', 'title')
+    ).order_by('status_order', '-rating_order', 'title')
 
-    return render(request, 'core/games.html', {'items': games, 'page_type': 'game'})
+    # Get current rating mode from AppSettings
+    AppSettings = apps.get_model('core', 'AppSettings')
+    settings = AppSettings.objects.first()
+    rating_mode = settings.rating_mode if settings else 'faces'
+
+    return render(request, 'core/games.html', {
+        'items': games,
+        'page_type': 'game',
+        'rating_mode': rating_mode,
+    })
 
 
 @ensure_csrf_cookie
@@ -173,20 +198,26 @@ def manga(request):
     )
     
     rating_ordering = Case(
-        When(personal_rating=3, then=Value(1)),
-        When(personal_rating=2, then=Value(2)),
-        When(personal_rating=1, then=Value(3)),
-        When(personal_rating=None, then=Value(4)),
-        default=Value(4),
+        When(personal_rating=None, then=Value(0)),  # Null rating gets lowest priority
+        default=F('personal_rating'),  # Use actual rating for ordering
         output_field=IntegerField(),
     )
     
     manga = MediaItem.objects.filter(media_type="manga").annotate(
         status_order=status_ordering,
         rating_order=rating_ordering
-    ).order_by('status_order', 'rating_order', 'title')
+    ).order_by('status_order', '-rating_order', 'title')
 
-    return render(request, 'core/manga.html', {'items': manga, 'page_type': 'manga'})
+    # Get current rating mode from AppSettings
+    AppSettings = apps.get_model('core', 'AppSettings')
+    settings = AppSettings.objects.first()
+    rating_mode = settings.rating_mode if settings else 'faces'
+
+    return render(request, 'core/manga.html', {
+        'items': manga,
+        'page_type': 'manga',
+        'rating_mode': rating_mode,
+    })
 
 
 @ensure_csrf_cookie
@@ -202,20 +233,26 @@ def books(request):
     )
     
     rating_ordering = Case(
-        When(personal_rating=3, then=Value(1)),
-        When(personal_rating=2, then=Value(2)),
-        When(personal_rating=1, then=Value(3)),
-        When(personal_rating=None, then=Value(4)),
-        default=Value(4),
+        When(personal_rating=None, then=Value(0)),  # Null rating gets lowest priority
+        default=F('personal_rating'),  # Use actual rating for ordering
         output_field=IntegerField(),
     )
     
     books = MediaItem.objects.filter(media_type="book").annotate(
         status_order=status_ordering,
         rating_order=rating_ordering
-    ).order_by('status_order', 'rating_order', 'title')
+    ).order_by('status_order', '-rating_order', 'title')
 
-    return render(request, 'core/books.html', {'items': books, 'page_type': 'book'})
+    # Get current rating mode from AppSettings
+    AppSettings = apps.get_model('core', 'AppSettings')
+    settings = AppSettings.objects.first()
+    rating_mode = settings.rating_mode if settings else 'faces'
+
+    return render(request, 'core/books.html', {
+        'items': books,
+        'page_type': 'book',
+        'rating_mode': rating_mode,
+    })
 
 
 @ensure_csrf_cookie
@@ -423,6 +460,10 @@ def settings_page(request):
     existing_names = [key.name for key in keys]
     allowed_names = APIKey.NAME_CHOICES  # [('tmdb', 'TMDb'), ('igdb', 'IGDB'), ...]
 
+    AppSettings = apps.get_model('core', 'AppSettings')
+    settings = AppSettings.objects.first()
+    current_rating_mode = settings.rating_mode if settings else 'faces'
+
     nav_items = NavItem.objects.all().order_by("position")
     for item in nav_items:
         item.display_name = item.get_name_display()
@@ -432,6 +473,7 @@ def settings_page(request):
         'allowed_names': allowed_names,
         'existing_names': existing_names,
         'nav_items': nav_items,
+        "current_rating_mode": current_rating_mode,
     })
 
 
@@ -2050,9 +2092,30 @@ def edit_item(request, item_id):
                 if item.total_secondary is not None:
                     item.progress_secondary = item.total_secondary
 
-            # Update other fields
             if "personal_rating" in data:
-                item.personal_rating = data["personal_rating"] or None
+                # Get current rating mode (try to get from AppSettings, fallback to 'faces')
+                AppSettings = apps.get_model('core', 'AppSettings')
+                try:
+                    settings = AppSettings.objects.first()
+                    rating_mode = settings.rating_mode if settings else 'faces'
+                except Exception:
+                    rating_mode = 'faces'
+
+                # data["personal_rating"] is the display value (int or None/empty string)
+                display_value = data["personal_rating"]
+                if display_value in [None, "", "null"]:
+                    item.personal_rating = None
+                else:
+                    # Convert display_value to int and then to internal rating
+                    try:
+                        display_value_int = int(display_value)
+                    except ValueError:
+                        display_value_int = None
+
+                    if display_value_int is None:
+                        item.personal_rating = None
+                    else:
+                        item.personal_rating = display_to_rating(display_value_int, rating_mode)
 
             if "notes" in data:
                 item.notes = data["notes"]
@@ -2170,13 +2233,28 @@ def get_item(request, item_id):
             total_main = None
             total_secondary = None
 
+        AppSettings = apps.get_model('core', 'AppSettings')
+        try:
+            settings = AppSettings.objects.first()
+            rating_mode = settings.rating_mode if settings else 'faces'
+        except Exception:
+            rating_mode = 'faces'
+
+        display_rating = rating_to_display(item.personal_rating, rating_mode)
+    
+        RATING_CHOICES = [
+            (1, "Bad"),
+            (50, "Neutral"),
+            (100, "Good"),
+        ]
+
         return JsonResponse({
             "success": True,
             "item": {
                 "id": item.id,
                 "media_type": item.media_type,
                 "status": item.status,
-                "personal_rating": item.personal_rating,
+                "personal_rating": display_rating,
                 "notes": item.notes,
                 "progress_main": item.progress_main if item.progress_main else None,
                 "total_main": total_main,
@@ -2184,7 +2262,8 @@ def get_item(request, item_id):
                 "total_secondary": total_secondary,
                 "favorite": item.favorite,
                 "item_status_choices": MediaItem.STATUS_CHOICES,
-                "item_rating_choices": MediaItem.RATING_CHOICES,
+                "item_rating_choices": RATING_CHOICES,
+                "rating_mode": rating_mode,
             }
         })
     except MediaItem.DoesNotExist:
@@ -2814,3 +2893,27 @@ def check_planned_anime_manga_statuses(request):
                 status_map[mal_id] = "Error"
 
     return JsonResponse(status_map)
+
+# --- Settings: Update Rating Mode ---
+from django.views.decorators.http import require_POST
+
+@ensure_csrf_cookie
+@require_POST
+def update_rating_mode(request):
+    import json
+    try:
+        data = json.loads(request.body)
+        new_mode = data.get("rating_mode")
+        valid_modes = {"faces", "stars_5", "scale_10", "scale_100"}
+        if new_mode not in valid_modes:
+            return JsonResponse({"success": False, "error": "Invalid rating mode."})
+        AppSettings = apps.get_model('core', 'AppSettings')
+        settings = AppSettings.objects.first()
+        if not settings:
+            settings = AppSettings.objects.create(rating_mode=new_mode)
+        else:
+            settings.rating_mode = new_mode
+            settings.save()
+        return JsonResponse({"success": True})
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)})

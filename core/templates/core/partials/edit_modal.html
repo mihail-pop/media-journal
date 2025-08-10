@@ -41,15 +41,18 @@
 <div class="form-group vertical-label">
   <label for="personal_rating">Rating</label>
 
-  <!-- hidden select, kept for JS -->
-  <select name="personal_rating" id="personal_rating" style="display:none;"></select>
+  <!-- hidden select, always used for form submission -->
+  <select name="personal_rating" id="personal_rating" style="position:absolute; left:-9999px; width:1px; height:1px; visibility:hidden;"></select>
 
-  <!-- faces UI -->
+  <!-- faces UI (shown only in faces mode by JS) -->
   <div class="rating-faces">
     <button type="button" data-value="1" class="face face-bad" title="Bad"></button>
-    <button type="button" data-value="2" class="face face-neutral" title="Neutral"></button>
-    <button type="button" data-value="3" class="face face-good" title="Good"></button>
+    <button type="button" data-value="50" class="face face-neutral" title="Neutral"></button>
+    <button type="button" data-value="100" class="face face-good" title="Good"></button>
   </div>
+
+  <!-- dynamic rating UI (stars or number input, inserted by JS) -->
+  <div class="dynamic-rating-ui-placeholder"></div>
 </div>
 </div>
         <input type="hidden" name="total_main" value="{{ total_main|default_if_none:'' }}" /> 

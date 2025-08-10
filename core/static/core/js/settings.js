@@ -1,3 +1,38 @@
+// ----- CSRF Token Getter (must be global) -----
+function getCookie(name) {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(";").shift();
+}
+
+// ----- Rating Mode (Scoring System) -----
+  const ratingModeForm = document.getElementById("rating-mode-form");
+  if (ratingModeForm) {
+    ratingModeForm.addEventListener("submit", function(e) {
+      e.preventDefault();
+      const select = document.getElementById("rating-mode-select");
+      const value = select.value;
+      fetch("/update-rating-mode/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": getCookie("csrftoken"),
+        },
+        body: JSON.stringify({ rating_mode: value }),
+      })
+        .then(res => res.json())
+        .then(res => {
+          if (res.success) {
+            location.reload();
+          } else {
+            alert(res.error || "Failed to update scoring system.");
+          }
+        })
+        .catch(err => {
+          alert("Request failed.");
+        });
+    });
+  }
 document.addEventListener("DOMContentLoaded", function () {
   // ----- Navigation Buttons Logic -----
   const navForm = document.getElementById("nav-items-form");

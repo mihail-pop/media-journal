@@ -37,12 +37,6 @@ class MediaItem(models.Model):
         ("on_hold", "On Hold"),
     ]
 
-    RATING_CHOICES = [
-        (1, "Bad"),
-        (2, "Neutral"),
-        (3, "Good"),
-    ]
-
     title = models.CharField(max_length=300)
     media_type = models.CharField(max_length=20, choices=MEDIA_TYPES)
     source = models.CharField(max_length=50)              
@@ -67,7 +61,14 @@ class MediaItem(models.Model):
     total_main = models.PositiveIntegerField(null=True, blank=True)
     total_secondary = models.PositiveIntegerField(null=True, blank=True)
 
-    personal_rating = models.PositiveIntegerField(choices=RATING_CHOICES, null=True, blank=True)
+    # Before:
+    # personal_rating = models.PositiveIntegerField(choices=RATING_CHOICES, null=True, blank=True)
+
+    # After:
+    personal_rating = models.PositiveSmallIntegerField(
+        null=True,
+        blank=True
+    )  # No choices, stores values from 1–100
     favorite = models.BooleanField(default=False)
 
     date_added = models.DateTimeField(auto_now_add=True)
@@ -114,3 +115,18 @@ class NavItem(models.Model):
 
     def __str__(self):
         return f"{self.get_name_display()} (pos: {self.position}, visible: {self.visible})"
+    
+class AppSettings(models.Model):
+    rating_mode = models.CharField(
+        max_length=20,
+        choices=[
+            ('faces', 'Faces'),
+            ('stars_5', '1–5 Stars'),
+            ('scale_10', '1–10'),
+            ('scale_100', '1–100'),
+        ],
+        default='faces'
+    )
+
+    def __str__(self):
+        return f"App Settings ({self.rating_mode})"
