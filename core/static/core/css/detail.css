@@ -630,3 +630,55 @@ a:hover {
   color: #00bfff; /* Keep the same color on hover/focus */
   outline: none;
 }
+
+@media (orientation: portrait) {
+  .change-banner-btn{
+    top: 50rem;
+    left: 4rem;
+    right: auto;
+    transform: scale(2);
+  }
+  .change-cover-btn{
+    top: 55rem;
+    left: 4rem;
+    right: auto;
+    transform: scale(2);
+  }
+  .refresh-btn{
+    top: 60rem;
+    left: 4rem;
+    right: auto;
+    transform: scale(2);
+  }
+
+  .left-column{
+    margin-top: -14rem;
+  }
+
+  .edit-favorite-wrapper{
+    transform: scale(1.5);
+  }
+
+  .release-date{
+    transform: scale(1.5);
+    margin-left: 2rem !important;
+    max-width: 8rem;
+  }
+
+  .more-info-btn{
+    transform: scale(1.7);
+    margin-left: 2.75rem !important;
+  }
+
+  .top-colored-section{
+    min-height: 40rem;
+  }
+
+  #extra-info-container{
+    transform: scale(2);
+    margin-left: 9.75rem !important;
+    margin-top: 7rem !important;
+    max-width: 20rem !important;
+  }
+
+}

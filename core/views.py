@@ -519,6 +519,28 @@ def discover_view(request):
     }
     return render(request, "core/discover.html", context)
 
+@ensure_csrf_cookie
+def board(request):
+    firebase_url = "https://media-journal-6c8cf-default-rtdb.europe-west1.firebasedatabase.app"
+
+    # Get only the fields we need for posting
+    items = MediaItem.objects.values(
+        "id",
+        "title",
+        "media_type",
+        "source",
+        "source_id",
+        "status"
+    ).order_by("title")
+
+    media_types = dict(MediaItem.MEDIA_TYPES)
+
+    return render(request, "core/board.html", {
+        "firebase_url": firebase_url,
+        "items": list(items),        # Convert QuerySet to list for JSON serialization in template
+        "media_types": media_types   # For dropdown
+    })
+
 # Anime
 
 @ensure_csrf_cookie

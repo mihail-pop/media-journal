@@ -256,3 +256,20 @@ table select {
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+@media (orientation: portrait) {
+  body {
+    padding-top: 12rem;
+  }
+  .settings-page-content{
+    transform: scale(1.7);
+    transform-origin: top;
+    max-width: 30rem;
+  }
+
+  #nav-items-form{
+    transform: scale(1.3);
+    transform-origin: top;
+    padding-bottom: 5rem;
+  }
+}

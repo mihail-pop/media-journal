@@ -26,6 +26,7 @@ urlpatterns = [
     path('books/', views.books, name='books'),
     path('manga/', views.manga, name='manga'),
     path("discover/", views.discover_view, name="discover"),
+    path("board/", views.board, name="board"),
     path('get-item/<int:item_id>/', views.get_item, name='get_item'),
     path('settings/', views.settings_page, name='settings'),
     path('api/add_key/', views.add_key, name='add_key'),

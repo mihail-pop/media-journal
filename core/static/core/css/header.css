@@ -192,12 +192,15 @@ header {
 
   .navbar {
     min-height: 60px;
+    flex-wrap: wrap;
+    justify-content: space-evenly;
+    gap: 5rem 1rem;
   }
 
-  /* Allow buttons to wrap onto multiple lines */
+  /* Hide separate containers, let all items flow together */
   .nav-center,
   .nav-right {
-    flex-wrap: wrap;       /* enable wrapping */
+    display: contents;
   }
 
   /* MUCH bigger buttons */
@@ -205,20 +208,11 @@ header {
   .nav-right a,
   .dropbtn,
   .search-icon-button {
-    font-size: 2.5rem;       /* bigger font */
-    padding: 16px 28px;      /* bigger tappable area */
+    font-size: 3rem;
+    padding: 16px 28px;
     border-radius: 10px;
     line-height: 1.4;
-    white-space: nowrap;     /* keep text on one line */
-  }
-
-  /* More generous spacing */
-  .nav-center {
-    gap: 1rem 1.2rem;        /* horizontal and vertical gap */
-  }
-
-  .nav-right {
-    gap: 1rem 1.2rem;
+    white-space: nowrap;
   }
 
   /* Bigger search icon */
@@ -226,5 +220,8 @@ header {
     width: 50px;
     height: 50px;
     margin-top: 0;
+  }
+  header{
+    max-height: 15rem;
   }
 }

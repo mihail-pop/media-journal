@@ -119,3 +119,17 @@ body {
   .load-more-btn:hover {
     background-color: #32445b;
   }
+
+  /* --- Responsive --- */
+@media (orientation: portrait) {
+  body {
+    padding-top: 15rem;
+  }
+  .card-grid{
+    grid-template-columns: repeat(3, 150px);
+  }
+  .list-content{
+    transform: scale(1.7);
+    transform-origin: top;
+  }
+}

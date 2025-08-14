@@ -1,0 +1,79 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block head %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'core/css/board.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<div class="separator-bar"></div>
+
+<div class="list-page-container">
+  <section class="list-content">
+    <!-- Modal Overlay and Card -->
+    <div id="modal-overlay" class="modal-overlay" style="display:none;"></div>
+    <div id="post-modal" class="post-modal" style="display:none;">
+      <div class="post-modal-card">
+        <h2 class="modal-title">Create a Post</h2>
+        <div class="modal-group">
+          <select id="media-type-select">
+            <option value="">Select type...</option>
+            {% for key, label in media_types.items %}
+              <option value="{{ key }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="modal-group" id="search-container" style="display:none;">
+          <input type="text" id="media-search" placeholder="Search title...">
+          <div id="search-results" class="search-results"></div>
+        </div>
+        <div class="modal-group" id="username-container" style="display:none;">
+          <input type="text" id="username-input" placeholder="Enter your username...(optional)">
+        </div>
+        <div class="modal-group" id="post-preview"></div>
+        <div class="modal-actions">
+          <button id="send-post-btn" disabled>Post</button>
+          <button id="close-modal-btn" class="close-modal-btn">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="board-root" data-firebase-url="{{ firebase_url }}">
+      <div class="board-feed">
+<div class="section-header">
+  <h2 class="section-title" style="color:#EDF1F5; margin-bottom: 1.5rem; font-size:1.5rem; font-weight:700;">Activity</h2>
+  <button id="make-post-btn" class="make-post-btn" style="display: flex; align-items: center;">
+    Post
+    <svg class="post-icon" width="28" height="28" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0;">
+      <path d="M12 5c.552 0 1 .448 1 1v5h5c.552 0 1 .448 1 1s-.448 1-1 1h-5v5c0 .552-.448 1-1 1s-1-.448-1-1v-5H6c-.552 0-1-.448-1-1s.448-1 1-1h5V6c0-.552.448-1 1-1z"/>
+    </svg>
+  </button>
+</div>
+        <div id="posts-container">
+          <p class="empty-message">Loading posts...</p>
+        </div>
+      </div>
+    </div>
+    <template id="comment-template">
+      <div class="comment">
+        <span class="comment-username"></span>: <span class="comment-text"></span>
+        <small class="comment-timestamp"></small>
+      </div>
+    </template>
+    <template id="comment-box-template">
+      <div class="comment-box">
+        <input type="text" class="comment-username-input" placeholder="Your name">
+        <input type="text" class="comment-input" placeholder="Write a comment...">
+        <button class="send-comment-btn">Send</button>
+      </div>
+    </template>
+
+    {{ items|json_script:"media-items-json" }}
+  </section>
+</div>
+
+<script src="{% static 'core/js/board.js' %}"></script>
+{% endblock %}

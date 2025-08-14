@@ -473,14 +473,16 @@ h2 {
 }
 
 .discover-button,
-.notifications-wrapper {
+.notifications-wrapper, 
+.board-button{
   position: relative;
   display: inline-block;
   font-family: Arial, sans-serif;
 }
 
 .discover-button,
-.notifications-button {
+.notifications-button,
+.board-button {
   background-color: transparent;
   border: none;
   color: #8596A5;
@@ -502,7 +504,8 @@ h2 {
   color: #adbfce;
 }
 
-.discover-button {
+.discover-button,
+.board-button {
   text-decoration: none;
 }
 
@@ -511,7 +514,9 @@ h2 {
 }
 
 .discover-button:hover,
-.discover-button:hover svg {
+.discover-button:hover svg,
+.board-button:hover,
+.board-button:hover svg {
   color: #e91e63; /* bright yellow/orange for text */
   fill: #e91e63;  /* same bright color for the flame SVG */
   transition: color 0.3s ease, fill 0.3s ease;
@@ -762,7 +767,47 @@ h2 {
 
 /* --- Responsive --- */
 @media (orientation: portrait) {
-  .activity-graph {
-    display: none;
+  .stats-section {
+  display: flex;
+  flex-direction: column; /* stack items vertically */
+  justify-content: center; /* centers them along main axis (vertical now) */
+  gap: 2rem; /* vertical spacing between sections */
+  align-items: center;
+  transform: scale(1.5);
+  margin-top: 15rem;
+  margin-bottom: 15rem;
+  max-width: 67vw;
+  margin-left: 10rem;
+}
+  .stats-summary-box{
+    max-width: 32rem !important;
+  }
+.separator-bar {
+  transform: scale(2);
+  max-width: 67vw;       /* makes it fill the viewport */
+  box-sizing: border-box; /* makes padding count toward width */
+  transform-origin: center;
+}
+  .notifications-button{
+    margin-right: 2rem;
+  }
+
+  .stats-summary-box{
+    min-width: 0;
+    max-width: 32rem;
+    max-width: 70vw;
+  }
+  .favorites-column{
+    max-width: 35%;
+    transform: scale(1.2);
+    padding-block: 4rem;
+  }
+  /* Show thumbnail only on hover */
+.activity-entry:hover .activity-thumbnail {
+  display: none;;
+}
+
+  .favorites-section{
+    margin-top: 3rem;
   }
 }
