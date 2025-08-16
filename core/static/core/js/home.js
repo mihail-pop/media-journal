@@ -248,3 +248,14 @@ document.querySelectorAll('.delete-person-btn').forEach(button => {
     }
   });
 });
+
+window.addEventListener("load", () => {
+  const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+  if (!isMobile) return;  // only reload on phones
+
+  // Only do this once per session so it doesn't loop forever
+  if (!sessionStorage.getItem("statsReloaded")) {
+    sessionStorage.setItem("statsReloaded", "yes");
+    location.reload();
+  }
+});

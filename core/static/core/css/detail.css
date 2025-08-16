@@ -640,13 +640,13 @@ a:hover {
   }
   .change-cover-btn{
     top: 55rem;
-    left: 4rem;
+    left: 3.5rem;
     right: auto;
     transform: scale(2);
   }
   .refresh-btn{
     top: 60rem;
-    left: 4rem;
+    left: 3rem;
     right: auto;
     transform: scale(2);
   }
@@ -656,29 +656,55 @@ a:hover {
   }
 
   .edit-favorite-wrapper{
-    transform: scale(1.5);
+    transform: scale(1.8);
   }
 
+  .text-info h1 {
+    font-size: 3rem;
+  }
   .release-date{
-    transform: scale(1.5);
-    margin-left: 2rem !important;
-    max-width: 8rem;
+    font-size: 2rem;
   }
 
   .more-info-btn{
-    transform: scale(1.7);
-    margin-left: 2.75rem !important;
+    font-size: 2rem;
   }
 
   .top-colored-section{
     min-height: 40rem;
+    margin-top: 7rem;
   }
 
+  /* Only remove margin if there’s a banner that is NOT empty */
+  .banner-section:not(.no-banner) ~ .top-colored-section {
+    margin-top: 0;
+  }
+  body {
+    background-color: #151f2e;
+  }
+  .text-info p{
+    font-size: 2rem;
+  }
   #extra-info-container{
-    transform: scale(2);
-    margin-left: 9.75rem !important;
-    margin-top: 7rem !important;
-    max-width: 20rem !important;
+    font-size: 2rem;
+  }
+
+  .modal{
+    transform: scale(2) !important;
+    margin-right: 30rem;
+    width: auto !important;
+    top: 30% !important;
+    left: 28% !important;
+  }
+
+  .modal-body form {
+    padding-left: 6rem!important;
+    padding-right: 6rem!important;
+    padding-top: 2rem!important;
+  }
+
+  .modal-actions-top{
+    right: 1rem !important;
   }
 
 }

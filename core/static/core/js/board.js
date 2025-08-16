@@ -283,7 +283,7 @@ commentIcon.addEventListener('click', async () => {
       // Username input (above comment box, small)
       const commentUsername = document.createElement('input');
       commentUsername.type = 'text';
-      commentUsername.placeholder = '(optional) Username...';
+      commentUsername.placeholder = '(Optional) Username';
       commentUsername.className = 'comment-username-input';
       commentUsername.style.width = '210px';
       commentUsername.style.marginBottom = '4px';

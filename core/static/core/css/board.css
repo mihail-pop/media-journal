@@ -495,9 +495,10 @@ body, html {
   }
 
   main{
-    transform: scale(1.9);
+    transform: scale(2.5);
     transform-origin: top;
   }
+
 
   .board-post{
     min-width: 0;
@@ -505,6 +506,10 @@ body, html {
 
   .board-post p {
     font-size: 1rem;
+  }
+
+  .board-post{
+    max-width: 20rem;
   }
 
   .post-modal {

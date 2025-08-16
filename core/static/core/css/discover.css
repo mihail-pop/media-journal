@@ -128,8 +128,11 @@ body {
   .card-grid{
     grid-template-columns: repeat(3, 150px);
   }
-  .list-content{
+  main{
     transform: scale(1.7);
     transform-origin: top;
+    max-width: 10rem;
+    margin-left: 25.5rem;
   }
+
 }

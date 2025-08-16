@@ -457,14 +457,16 @@ html {
   }
 
   .sidebar{
-    transform: scale(1.5);
+    transform: scale(2);
     transform-origin: top;
     max-width: 40rem;
-
+    width: 64%;
+    padding-bottom: 7rem;
+    padding-right: 0rem;
   }
 
   .list-content{
-    transform: scale(1.5);
+    transform: scale(2);
     transform-origin: top;
     max-width: 40rem;
 
@@ -501,4 +503,42 @@ html {
     right: 14rem !important;
   }
 
+  .list-page-container {
+        flex-direction: column;
+        padding-left: 16.3rem;
+        padding-right: 0rem;
+    }
+
+    .card-grid{
+       gap: 0.6rem 0.3rem;
+    }
+
+    .filter-buttons, .view-toggle{
+      flex-direction: row;
+    }
+
+    .filter-btn{
+      gap: 0.2rem;
+    }
+
+    .list-table{
+      max-width: 29rem;
+    }
+
+    .list-content{
+      max-width: 29rem;
+    }
+
+    .check-status-container{
+        margin-bottom: 8rem;
+    }
+
+    .filter-btn{
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .btn-count {
+    display: none;
+  }
 }
