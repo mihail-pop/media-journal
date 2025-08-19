@@ -2,11 +2,10 @@ version: '3.9'
 
 services:
   media-journal:
-    build: .
+    image: ghcr.io/mihail-pop/media-journal:latest
     ports:
       - "8000:8000"
     volumes:
-      - .:/app                      # Mount project files for live reload/development
       - ./media:/app/media          # Persist media files
       - ./data:/app/data            # Persist SQLite database folder
     environment:
