@@ -1,6 +1,9 @@
 # Use an official Python base image
 FROM python:3.13-slim
 
+# Link the image to the GitHub repo
+LABEL org.opencontainers.image.source="https://github.com/mihail-pop/media-journal"
+
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
