@@ -5,7 +5,7 @@
 </h3>
 <br/>
 
-<div align="center"> I will use this app from now on for my media, so I will keep it maintained. If others find it useful too, even better. </div>
+<div align="center"> I will use this app from now on for my media, so I will keep it maintained. If others find it useful too, even better! </div>
 
 
 ## Features
@@ -30,16 +30,20 @@
 
 
 ## Setup for Docker
+1. Clone the repository:
+    ```sh
+   git clone https://github.com/mihail-pop/media-journal
+   ```
 
-1. Open a terminal in the project folder and run:
+3. Open a terminal in the project folder and run:
    ```sh
    docker-compose build
    ```
-2. Then, for this and all future runs, start the app with:
+4. Then, for this and all future runs, start the app with:
    ```sh
    docker-compose up
    ```
-3. Inside the app navigate to **Settings → API Keys**.
+5. Inside the app navigate to **Settings → API Keys**.
    You will need to add your own API keys. In that section there are instructions on how to obtain them.
 
 ### Configuration
@@ -63,7 +67,7 @@ The application can be configured using environment variables.
    *“Add Python to PATH”*.
 
 2. Download the project:
-   Click the green **Code** button → **Download ZIP** → Extract it to your desired location. (Or you can use Git)
+   Click the green **Code** button → **Download ZIP** → Extract it to your desired location. (Or you can use git clone)
 
 3. Open a terminal inside the project folder:
    Right-click inside `...\media-journal-main\media-journal-main` → Select **Open in Terminal**.
