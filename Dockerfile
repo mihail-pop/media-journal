@@ -15,13 +15,8 @@ COPY . /app/
 RUN pip install --upgrade pip && \
     pip install -r requirements.txt
 
-# Copy entrypoint script
-COPY entrypoint.sh /app/
-RUN chmod +x /app/entrypoint.sh
-
 # Expose the port Django runs on
 EXPOSE 8000
 
-# Use entrypoint script to run migrations, then start server
-ENTRYPOINT ["/app/entrypoint.sh"]
+# Run Django server directly
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]

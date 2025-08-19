@@ -1,15 +1,15 @@
-version: '3.9'
-
 services:
   media-journal:
     build: .
     ports:
       - "8000:8000"
     volumes:
-      - .:/app                      # Mount project files for live reload/development
-      - ./media:/app/media          # Persist media files
-      - ./data:/app/data            # Persist SQLite database folder
+      - .:/app
+      - ./media:/app/media
+      - ./data:/app/data
     environment:
       - PYTHONDONTWRITEBYTECODE=1
       - PYTHONUNBUFFERED=1
-    command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
