@@ -32,18 +32,15 @@
 ## Setup for Docker
 1. Clone the repository:
     ```sh
-   git clone https://github.com/mihail-pop/media-journal
-   ```
+    git clone https://github.com/mihail-pop/media-journal
+    ```
 
-3. Open a terminal in the project folder and run:
-   ```sh
-   docker-compose build
-   ```
-4. Then, for this and all future runs, start the app with:
-   ```sh
-   docker-compose up
-   ```
-5. Inside the app navigate to **Settings → API Keys**.
+2. Open a terminal in the project folder and start the app with:
+    ```sh
+    docker-compose up
+    ```
+
+3. Inside the app, navigate to **Settings → API Keys**.  
    You will need to add your own API keys. In that section there are instructions on how to obtain them.
 
 ### Configuration
