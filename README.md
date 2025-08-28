@@ -12,11 +12,11 @@
 
 - Separate lists for movies, tv shows, games, anime, manga, and books.
 - Track progress, ratings, status, and notes.
-- Home page shows stats, favorites, and recent activity.
-- You can also favorite actors and characters.
-- Saves your lists and images locally (less than 1MB per item).
-- Import/export your data for backup or transfer.
-- Automatically checks for sequels and new seasons (tv shows, anime, manga).
+- Home page shows stats, recent activity and favorites (including actors and characters).
+- Multiple rating systems (3 faces, 5 stars, 1-10, 1-100).
+- Import/export your data for backup or transfer (no CSV imports from other sites).
+- Automated check for sequels and new seasons (tv shows, anime, manga).
+- Get status for planned movies, tv shows, anime, manga.
 
 ## Demo - [Youtube Demo](https://youtu.be/85DY-WM6cI4?si=u7q5AAbQnWaxTuQN)
 | <img src="https://github.com/user-attachments/assets/0265ea9e-6404-4958-82c6-4318ecdeb848" width="500" /> | <img src="https://github.com/user-attachments/assets/2dcedab4-696b-47b5-a500-d9a2572dfa52" width="500" /> |
