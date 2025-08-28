@@ -39,7 +39,8 @@
     ```sh
     docker-compose up
     ```
-
+  The application will be available at [http://localhost:8090](http://localhost:8090).
+  
 3. Inside the app, navigate to **Settings → API Keys**.  
    You will need to add your own API keys. In that section there are instructions on how to obtain them.
 
