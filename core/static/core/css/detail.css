@@ -631,6 +631,65 @@ a:hover {
   outline: none;
 }
 
+.trailer-grid {
+  display: grid;
+  grid-template-columns: 1fr; /* single column by default */
+}
+
+#trailer-container h2 {
+  margin-top: 0;
+}
+
+.trailer-grid iframe {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 8px;
+  border: none;
+  margin-bottom: 1rem;
+}
+
+.relation-list {
+  display: inline; /* keeps items on the same line */
+}
+
+.relation-item {
+  position: relative;
+  display: inline-block;
+}
+
+.relation-hover-img-container {
+  position: absolute;
+  left: 100%;
+  top: -5rem;
+  width: 125px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  display: none;
+  z-index: 10;
+}
+
+.relation-hover-img-container img {
+  width: 100%;
+  display: block;
+}
+
+.relation-hover-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 2px 4px;
+  background: rgba(0,0,0,0.7);
+  color: #fff;
+  font-size: 0.7rem;
+  text-align: center;
+}
+
+.relation-item:hover .relation-hover-img-container {
+  display: block;
+}
+
 @media (orientation: portrait) {
   .change-banner-btn{
     top: 50rem;

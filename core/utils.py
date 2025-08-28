@@ -467,25 +467,76 @@ def get_movie_extra_info(tmdb_id):
     except APIKey.DoesNotExist:
         return {}
 
-    url = f"https://api.themoviedb.org/3/movie/{tmdb_id}"
+    base_url = f"https://api.themoviedb.org/3/movie/{tmdb_id}"
     params = {"api_key": api_key}
 
     try:
-        response = requests.get(url, params=params)
+        # Main movie info
+        response = requests.get(base_url, params=params)
         if response.status_code != 200:
             return {}
 
         data = response.json()
 
+        # Fetch trailers/videos
+        videos_url = f"{base_url}/videos"
+        videos_response = requests.get(videos_url, params=params)
+        trailers = []
+        if videos_response.status_code == 200:
+            videos = videos_response.json().get("results", [])
+
+            trailer_videos = [v for v in videos if v.get("site") == "YouTube" and v.get("type") == "Trailer" and v.get("key")]
+            teaser_videos = [v for v in videos if v.get("site") == "YouTube" and v.get("type") == "Teaser" and v.get("key")]
+
+            combined = trailer_videos + teaser_videos
+            trailers = [{
+                "name": v.get("name"),
+                "type": v.get("type"),
+                "youtube_id": v.get("key"),
+                "url": f"https://www.youtube.com/watch?v={v['key']}"
+            } for v in combined[:3]]
+
+        # Fetch crew
+        credits_url = f"{base_url}/credits"
+        credits_response = requests.get(credits_url, params=params)
+        staff_list = []
+        if credits_response.status_code == 200:
+            crew = credits_response.json().get("crew", [])
+            allowed_jobs = ["Director", "Writer", "Screenplay", "Producer", "Art Director"]
+            staff_list = [f"{c['name']} ({c['job']})" for c in crew if c.get("job") in allowed_jobs]
+
+        # Fetch related movies if part of a collection
+        relations = []
+        collection = data.get("belongs_to_collection")
+        if collection:
+            collection_id = collection.get("id")
+            collection_url = f"https://api.themoviedb.org/3/collection/{collection_id}"
+            collection_resp = requests.get(collection_url, params=params)
+            if collection_resp.status_code == 200:
+                items = collection_resp.json().get("parts", [])
+                # Sort by release date
+                items.sort(key=lambda x: x.get("release_date") or "")
+                for item in items:
+                    relations.append({
+                        "id": item.get("id"),
+                        "title": item.get("title"),
+                        "release_date": item.get("release_date"),
+                        "poster": f"https://image.tmdb.org/t/p/w342{item.get('poster_path')}" if item.get("poster_path") else None
+                    })
+
         return {
-            "runtime": data.get("runtime"),  # in minutes
+            "runtime": data.get("runtime"),
             "genres": [genre["name"] for genre in data.get("genres", [])],
-            "status": data.get("status"),  # e.g. Released, Post Production
+            "status": data.get("status"),
             "homepage": data.get("homepage"),
-            "vote_average": round(data.get("vote_average", 0), 1)
+            "vote_average": round(data.get("vote_average", 0), 1),
+            "trailers": trailers,
+            "staff": staff_list,
+            "relations": relations,  # Added collection movies
         }
 
-    except Exception:
+    except Exception as e:
+        print(f"Error in get_movie_extra_info: {e}")
         return {}
     
 def get_tv_extra_info(tmdb_id):
@@ -494,11 +545,12 @@ def get_tv_extra_info(tmdb_id):
     except APIKey.DoesNotExist:
         return {}
 
-    url = f"https://api.themoviedb.org/3/tv/{tmdb_id}"
+    base_url = f"https://api.themoviedb.org/3/tv/{tmdb_id}"
     params = {"api_key": api_key}
 
     try:
-        response = requests.get(url, params=params)
+        # Main TV info
+        response = requests.get(base_url, params=params)
         if response.status_code != 200:
             return {}
 
@@ -508,6 +560,33 @@ def get_tv_extra_info(tmdb_id):
         next_episode = data.get("next_episode_to_air")
         next_episode_air_date = next_episode.get("air_date") if next_episode else None
 
+        # Fetch trailers/videos
+        videos_url = f"{base_url}/videos"
+        videos_response = requests.get(videos_url, params=params)
+        trailers = []
+        if videos_response.status_code == 200:
+            videos = videos_response.json().get("results", [])
+
+            trailer_videos = [v for v in videos if v.get("site") == "YouTube" and v.get("type") == "Trailer" and v.get("key")]
+            teaser_videos = [v for v in videos if v.get("site") == "YouTube" and v.get("type") == "Teaser" and v.get("key")]
+
+            combined = trailer_videos + teaser_videos
+            trailers = [{
+                "name": v.get("name"),
+                "type": v.get("type"),
+                "youtube_id": v.get("key"),
+                "url": f"https://www.youtube.com/watch?v={v['key']}"
+            } for v in combined[:3]]
+
+        # Fetch crew
+        credits_url = f"{base_url}/credits"
+        credits_response = requests.get(credits_url, params=params)
+        staff_list = []
+        if credits_response.status_code == 200:
+            crew = credits_response.json().get("crew", [])
+            allowed_jobs = ["Director", "Writer", "Screenplay", "Producer", "Art Director"]
+            staff_list = [f"{c['name']} ({c['job']})" for c in crew if c.get("job") in allowed_jobs]
+
         return {
             "status": data.get("status"),
             "next_episode_to_air": next_episode_air_date,
@@ -516,6 +595,8 @@ def get_tv_extra_info(tmdb_id):
             "vote_average": round(data.get("vote_average", 0), 1),
             "homepage": data.get("homepage"),
             "genres": [genre["name"] for genre in data.get("genres", [])],
+            "trailers": trailers,
+            "staff": staff_list,  # Added staff
         }
 
     except Exception as e:
@@ -526,23 +607,56 @@ def get_anime_extra_info(mal_id):
     query = '''
     query ($idMal: Int) {
       Media(idMal: $idMal, type: ANIME) {
-        status          # FINISHED, RELEASING, NOT_YET_RELEASED, CANCELLED
+        status
         averageScore
-        format          # TV, MOVIE, OVA, etc.
+        format
         genres
         nextAiringEpisode {
-        episode
-        airingAt
+          episode
+          airingAt
         }
         studios(isMain: true) {
           nodes {
             name
           }
         }
+        staff {
+          edges {
+            role
+            node {
+              name {
+                full
+              }
+            }
+          }
+        }
         externalLinks {
           site
           url
           language
+        }
+        trailer {
+          id
+          site
+          thumbnail
+        }
+        relations {
+          edges {
+            relationType
+            node {
+              idMal
+              title {
+                romaji
+                english
+              }
+              type
+              format
+              status
+              coverImage {
+                large
+              }
+            }
+          }
         }
       }
     }
@@ -557,12 +671,12 @@ def get_anime_extra_info(mal_id):
             json={"query": query, "variables": variables},
             headers=headers
         )
-
         if response.status_code != 200:
             return {}
 
         data = response.json().get("data", {}).get("Media", {})
 
+        # Next airing
         next_airing_data = data.get("nextAiringEpisode")
         if next_airing_data and next_airing_data.get("airingAt"):
             next_airing_timestamp = next_airing_data["airingAt"]
@@ -571,51 +685,138 @@ def get_anime_extra_info(mal_id):
         else:
             next_airing = None
             next_episode = None
-        
+
+        # External links
         external_links = []
         for link in data.get("externalLinks", []):
-            site = link.get("site")
-            url = link.get("url")
-            lang = link.get("language")
-            if site and url:
+            if link.get("site") and link.get("url"):
                 external_links.append({
-                    "site": site,
-                    "url": url,
-                    "language": lang or "",
+                    "site": link["site"],
+                    "url": link["url"],
+                    "language": link.get("language") or "",
                 })
+
+        # Staff
+        staff_list = [
+            f"{edge['node']['name']['full']} ({edge['role']})"
+            for edge in data.get("staff", {}).get("edges", [])
+            if edge.get("node") and edge["node"].get("name") and edge.get("role")
+        ]
+
+        # Trailers
+        trailer_data = data.get("trailer") or {}
+        trailers = []
+        if trailer_data and trailer_data.get("id") and trailer_data.get("site") == "youtube":
+            trailers.append({
+                "youtube_id": trailer_data.get("id"),
+                "thumbnail": trailer_data.get("thumbnail"),
+                "url": f"https://www.youtube.com/watch?v={trailer_data['id']}"
+            })
+
+        # Relations (excluding SEQUEL/PREQUEL)
+        relations_list = []
+        for edge in data.get("relations", {}).get("edges", []):
+            node = edge.get("node")
+            if not node or edge.get("relationType") in ["SEQUEL", "PREQUEL"]:
+                continue
+
+            relation_type = edge["relationType"]
+            # Determine display type
+            display_type = "Source" if relation_type == "ADAPTATION" else relation_type.replace("_", " ").title()
+
+            relations_list.append({
+                "relation_type": relation_type,
+                "display_relation_type": display_type,
+                "id": node.get("idMal"),
+                "title": node["title"].get("english") or node["title"].get("romaji"),
+                "type": node.get("type"),
+                "format": node.get("format"),
+                "status": node.get("status"),
+                "cover": node.get("coverImage", {}).get("large"),
+            })
+
+        # Sort relations by custom order
+        relation_order = [
+            "Source", "Prequel", "Sequel", "Adaptation", "Side Story",
+            "Summary", "Spin-Off", "Alternative", "Character", "Other"
+        ]
+
+        def sort_key(rel):
+            t = rel.get("display_relation_type") or rel["relation_type"]
+            return relation_order.index(t) if t in relation_order else 999
+
+        relations_list.sort(key=sort_key)
 
         return {
             "external_links": external_links,
             "status": data.get("status"),
             "averageScore": round(data.get("averageScore", 0) / 10, 1) if data.get("averageScore") is not None else None,
             "format": data.get("format"),
+            "genres": data.get("genres", []),
             "studios": [studio["name"] for studio in data.get("studios", {}).get("nodes", [])],
+            "staff": staff_list,
+            "trailers": trailers,
+            "relations": relations_list,
             "next_airing": next_airing,
             "next_episode": next_episode,
-            "genres": data.get("genres", []),
         }
 
     except Exception as e:
         print(f"Error in get_anime_extra_info: {e}")
         return {}
+
+
     
 def get_manga_extra_info(mal_id):
     query = '''
     query ($idMal: Int) {
       Media(idMal: $idMal, type: MANGA) {
-        status          # FINISHED, RELEASING, CANCELLED, etc.
+        status
         averageScore
-        format          # MANGA, NOVEL, ONE_SHOT, etc.
+        format
         genres
         studios(isMain: true) {
           nodes {
             name
           }
         }
+        staff {
+          edges {
+            role
+            node {
+              name {
+                full
+              }
+            }
+          }
+        }
         externalLinks {
           site
           url
           language
+        }
+        trailer {
+          id
+          site
+          thumbnail
+        }
+        relations {
+          edges {
+            relationType
+            node {
+              idMal
+              title {
+                english
+                romaji
+              }
+              type
+              format
+              status
+              coverImage {
+                large
+              }
+            }
+          }
         }
       }
     }
@@ -630,23 +831,71 @@ def get_manga_extra_info(mal_id):
             json={"query": query, "variables": variables},
             headers=headers
         )
-
         if response.status_code != 200:
             return {}
 
         data = response.json().get("data", {}).get("Media", {})
 
+        # External links
         external_links = []
         for link in data.get("externalLinks", []):
-            site = link.get("site")
-            url = link.get("url")
-            lang = link.get("language")
-            if site and url:
+            if link.get("site") and link.get("url"):
                 external_links.append({
-                    "site": site,
-                    "url": url,
-                    "language": lang or "",
+                    "site": link["site"],
+                    "url": link["url"],
+                    "language": link.get("language") or "",
                 })
+
+        # Staff
+        staff_list = [
+            f"{edge['node']['name']['full']} ({edge['role']})"
+            for edge in data.get("staff", {}).get("edges", [])
+            if edge.get("node") and edge["node"].get("name") and edge.get("role")
+        ]
+
+        # Trailers
+        trailer_data = data.get("trailer") or {}
+        trailers = []
+        if trailer_data and trailer_data.get("id") and trailer_data.get("site") == "youtube":
+            trailers.append({
+                "youtube_id": trailer_data.get("id"),
+                "thumbnail": trailer_data.get("thumbnail"),
+                "url": f"https://www.youtube.com/watch?v={trailer_data['id']}"
+            })
+
+        # Relations (excluding SEQUEL/PREQUEL)
+        relations_list = []
+        for edge in data.get("relations", {}).get("edges", []):
+            node = edge.get("node")
+            if not node or edge.get("relationType") in ["SEQUEL", "PREQUEL"]:
+                continue
+
+            relation_type = edge["relationType"]
+            # For manga, display Adaptation for adaptations
+            display_type = "Adaptation" if relation_type == "ADAPTATION" else relation_type.replace("_", " ").title()
+
+            relations_list.append({
+                "relation_type": relation_type,
+                "display_relation_type": display_type,
+                "id": node.get("idMal"),
+                "title": node["title"].get("english") or node["title"].get("romaji"),
+                "type":  node.get("type"),
+                "format": node.get("format"),
+                "status": node.get("status"),
+                "cover": node.get("coverImage", {}).get("large"),
+            })
+
+        # Sort relations by custom order
+        relation_order = [
+            "Source", "Prequel", "Sequel", "Adaptation", "Side Story",
+            "Summary", "Spin-Off", "Alternative", "Character", "Other"
+        ]
+
+        def sort_key(rel):
+            t = rel.get("display_relation_type") or rel["relation_type"]
+            return relation_order.index(t) if t in relation_order else 999
+
+        relations_list.sort(key=sort_key)
 
         return {
             "external_links": external_links,
@@ -655,10 +904,15 @@ def get_manga_extra_info(mal_id):
             "format": data.get("format"),
             "genres": data.get("genres", []),
             "studios": [studio["name"] for studio in data.get("studios", {}).get("nodes", [])],
+            "staff": staff_list,
+            "trailers": trailers,
+            "relations": relations_list,
         }
 
-    except Exception:
+    except Exception as e:
+        print(f"Error in get_manga_extra_info: {e}")
         return {}
+
     
 def get_game_extra_info(game_id):
     token = get_igdb_token()
@@ -675,14 +929,16 @@ def get_game_extra_info(game_id):
         "Authorization": f"Bearer {token}",
     }
 
-    # Request fields we want for extra info
+    # Request fields we want for extra info, now including videos
     body = f'''
         fields
             platforms.name,
             genres.name,
             involved_companies.company.name,
             rating,
-            websites.url;
+            websites.url,
+            videos.video_id,
+            videos.name;
         where id = {game_id};
     '''
 
@@ -696,16 +952,41 @@ def get_game_extra_info(game_id):
             return {}
 
         game = data[0]
+
+        # Process videos: trailers first, then others, limit to 3
+        trailers = []
+        if game.get("videos"):
+            trailer_videos = []
+            other_videos = []
+            for v in game["videos"]:
+                if not v.get("video_id"):
+                    continue
+                name_lower = v.get("name", "").lower()
+                if "trailer" in name_lower:
+                    trailer_videos.append(v)
+                else:
+                    other_videos.append(v)
+
+            combined = trailer_videos + other_videos
+            trailers = [{
+                "name": v.get("name"),
+                "youtube_id": v.get("video_id"),
+                "url": f"https://www.youtube.com/watch?v={v['video_id']}"
+            } for v in combined[:3]]
+
         return {
             "platforms": [p.get("name") for p in game.get("platforms", [])] if game.get("platforms") else [],
             "genres": [g.get("name") for g in game.get("genres", [])] if game.get("genres") else [],
             "involved_companies": [c.get("company", {}).get("name") for c in game.get("involved_companies", []) if c.get("company")] if game.get("involved_companies") else [],
             "rating": round(game["rating"] / 10, 1) if game.get("rating") is not None else None,
             "websites": [w.get("url") for w in game.get("websites", [])] if game.get("websites") else [],
+            "trailers": trailers,
         }
 
     except Exception:
         return {}
+
+
     
 
 def rating_to_display(rating_value: int | None, rating_mode: str) -> int | None:

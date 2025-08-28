@@ -394,6 +394,7 @@ document.getElementById("more-info-btn").addEventListener("click", async functio
 
 // Helper function to render the extra info HTML per media type
 function renderExtraInfo(mediaType, data) {
+  console.log("Extra info received:", data);
   if (!data) return "<p>No extra information available.</p>";
 
   const safeHTML = [];
@@ -436,6 +437,56 @@ if (data.homepage) {
   if (data.genres?.length) {
     safeHTML.push(`<p><span class="label">Genres: </span> ${data.genres.join(", ")}</p>`);
   }
+
+if (data.staff?.length) {
+  const staffHTML = data.staff.map(s => `<span class="staff-member">${s}</span>`).join(", ");
+  safeHTML.push(`<p><span class="label">Staff: </span> ${staffHTML}</p>`);
+}
+
+if (data.relations?.length) {
+  const relationItems = data.relations.map(rel => {
+    const year = rel.release_date ? ` (${new Date(rel.release_date).getFullYear()})` : "";
+    const titleWithYear = `${rel.title}${year}`;
+
+const coverImg = rel.poster
+  ? `<div class="relation-hover-img-container">
+       <img src="${rel.poster}" class="relation-hover-img" />
+     </div>`
+  : "";
+
+    const linkHTML = rel.id
+      ? `<a href="/tmdb/movie/${rel.id}/" target="_blank" rel="noopener noreferrer">
+           ${titleWithYear}
+         </a>`
+      : titleWithYear;
+
+    return `<span class="relation-item">${linkHTML}${coverImg}</span>`;
+  }).join(", ");
+
+  safeHTML.push(`
+    <span class="label">Relations:</span>
+    <span class="relation-list">${relationItems}</span>
+  `);
+}
+
+if (data.trailers?.length) {
+  const trailerEmbeds = data.trailers.map(trailer => {
+    if (!trailer.youtube_id) return "";
+    return `<iframe
+              src="https://www.youtube.com/embed/${trailer.youtube_id}"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowfullscreen
+            ></iframe>`;
+  }).join("");
+
+  const container = document.getElementById("trailer-container");
+  if (container) {
+    container.innerHTML = `
+      <h2>Trailers</h2>
+      <div class="trailer-grid">${trailerEmbeds}</div>
+    `;
+  }
+}
 
 
 
@@ -501,6 +552,29 @@ if (data.homepage) {
       safeHTML.push(`<p><span class="label">Genres:</span> ${data.genres.join(", ")}</p>`);
     }
 
+if (data.staff?.length) {
+  const staffHTML = data.staff.map(s => `<span class="staff-member">${s}</span>`).join(", ");
+  safeHTML.push(`<p><span class="label">Staff: </span> ${staffHTML}</p>`);
+}
+
+if (data.trailers?.length) {
+  const trailerEmbeds = data.trailers.map(trailer => {
+    if (!trailer.youtube_id) return "";
+    return `<iframe
+              src="https://www.youtube.com/embed/${trailer.youtube_id}"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowfullscreen
+            ></iframe>`;
+  }).join("");
+
+  const container = document.getElementById("trailer-container");
+  if (container) {
+    container.innerHTML = `
+      <h2>Trailers</h2>
+      <div class="trailer-grid">${trailerEmbeds}</div>
+    `;
+  }
+}
     return safeHTML.join("\n");
   }
 
@@ -519,17 +593,69 @@ if (data.next_airing && data.next_episode) {
   safeHTML.push(`<p><span class="label">Next episode to air: </span> Episode ${data.next_episode} on ${data.next_airing}</p>`);
 }
 
-    if (data.format) {
-      safeHTML.push(`<p><span class="label">Format:</span> ${data.format}</p>`);
-    }
+if (data.format) {
+  let format = data.format;
+
+  // Formats to keep as-is
+  const specialFormats = ["TV", "OVA", "ONA"];
+  if (specialFormats.includes(format)) {
+    // leave as-is
+  } else {
+    // Replace underscores with spaces, capitalize every word
+    format = format
+      .toLowerCase()
+      .split("_")
+      .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(" ");
+  }
+
+  // Also handle MOVIE specifically if you want it as 'Movie'
+  if (format.toLowerCase() === "movie") format = "Movie";
+
+  safeHTML.push(`<p><span class="label">Format:</span> ${format}</p>`);
+}
 
     if (data.studios?.length) {
       safeHTML.push(`<p><span class="label">Studio:</span> ${data.studios.join(", ")}</p>`);
     }
     
-
 if (data.genres?.length) {
   safeHTML.push(`<p><span class="label">Genres: </span> ${data.genres.join(", ")}</p>`);
+}
+
+if (data.staff?.length) {
+  const allowedRoles = [
+    "Original Creator",
+    "Original Story",
+    "Original Character Design",
+    "Character Design",
+    "Chief Director",
+    "Director",
+    "Art Director",
+    "Story & Art",
+    "Story",
+    "Art"
+  ];
+
+  const filteredStaff = data.staff.filter(s => {
+    const match = s.match(/\(([^)]+)\)/); // first parentheses
+    if (!match) return false;
+    let role = match[1].trim();
+
+    // remove any inner parentheses
+    role = role.split("(")[0].trim();
+
+    // exact match only
+    return allowedRoles.includes(role);
+  });
+
+  if (filteredStaff.length) {
+    safeHTML.push(`
+      <p><span class="label">Staff:</span>
+        ${filteredStaff.join(", ")}
+      </p>
+    `);
+  }
 }
 
 if (data.external_links?.length) {
@@ -540,6 +666,52 @@ if (data.external_links?.length) {
     return `<a href="${link.url}" target="_blank" rel="noopener noreferrer">${label}</a>`;
   });
   safeHTML.push(`<p><span class="label">External Links:</span> ${linkItems.join(", ")}</p>`);
+}
+
+if (data.relations?.length) {
+  const relationItems = data.relations.map(rel => {
+const coverOverlay = rel.cover
+  ? `<div class="relation-hover-img-container">
+       <img src="${rel.cover}" class="relation-hover-img" />
+       <div class="relation-hover-overlay">${rel.format ? rel.format.toLowerCase() : ""}</div>
+     </div>`
+  : "";
+
+
+    const titleWithType = `${rel.title} (${rel.display_relation_type})`;
+
+    const linkHTML = rel.id
+      ? `<a href="/mal/${rel.type.toLowerCase()}/${rel.id}/" target="_blank" rel="noopener noreferrer">
+           ${titleWithType}
+         </a>`
+      : titleWithType;
+
+    return `<span class="relation-item">${linkHTML}${coverOverlay}</span>`;
+  }).join(", ");
+
+  safeHTML.push(`
+    <span class="label">Relations:</span>
+    <span class="relation-list">${relationItems}</span>
+  `);
+}
+
+if (data.trailers?.length) {
+  const trailerEmbeds = data.trailers.map(trailer => {
+    if (!trailer.youtube_id) return "";
+    return `<iframe
+              src="https://www.youtube.com/embed/${trailer.youtube_id}"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowfullscreen
+            ></iframe>`;
+  }).join("");
+
+  const container = document.getElementById("trailer-container");
+  if (container) {
+    container.innerHTML = `
+      <h2>Trailers</h2>
+      <div class="trailer-grid">${trailerEmbeds}</div>
+    `;
+  }
 }
 
     return safeHTML.join("\n");
@@ -562,6 +734,25 @@ if (data.external_links?.length) {
     if (data.involved_companies?.length) {
       safeHTML.push(`<p><span class="label">Involved companies:</span> ${data.involved_companies.join(", ")}</p>`);
     }
+
+if (data.trailers?.length) {
+  const trailerEmbeds = data.trailers.map(trailer => {
+    if (!trailer.youtube_id) return "";
+    return `<iframe
+              src="https://www.youtube.com/embed/${trailer.youtube_id}"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowfullscreen
+            ></iframe>`;
+  }).join("");
+
+  const container = document.getElementById("trailer-container");
+  if (container) {
+    container.innerHTML = `
+      <h2>Trailers</h2>
+      <div class="trailer-grid">${trailerEmbeds}</div>
+    `;
+  }
+}
 
 if (data.websites?.length) {
   const seen = new Set();
@@ -599,6 +790,7 @@ if (data.websites?.length) {
 
   safeHTML.push(`<p><span class="label">External Links:</span> ${websiteLinks}</p>`);
 }
+
     return safeHTML.join("\n");
   }
 
