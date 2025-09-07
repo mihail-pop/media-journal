@@ -765,6 +765,22 @@ h2 {
   background-color: #32445b;
 }
 
+#advanced-activity-btn,
+#toggle-activity-btn{
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  background-color: #1f2a38;
+  color: #8596A5;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+#advanced-activity-btn:hover,
+#toggle-activity-btn:hover{
+  background-color: #32445b;
+}
+
 /* --- Responsive --- */
 @media (orientation: portrait) {
   .stats-section {
@@ -809,5 +825,9 @@ h2 {
 
   .favorites-section{
     margin-top: 3rem;
+  }
+
+  .activity-graph{
+    margin-bottom: 2.5rem;
   }
 }

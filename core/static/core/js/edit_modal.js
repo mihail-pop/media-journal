@@ -86,6 +86,63 @@ const totalSecondaryInput = form.querySelector('input[name="total_secondary"]');
 if (totalSecondaryInput) totalSecondaryInput.value = item.total_secondary ?? "";
 
 
+// --- Date ---
+const dateGroup = document.getElementById("date_added_group");
+const dateInput = form.querySelector('input[name="date_added"]');
+
+if (dateGroup && dateInput) {
+    if (item.show_date_field) {
+        dateGroup.style.display = "block";
+
+        if (item.date_added) {
+            const dt = new Date(item.date_added);
+            const day = String(dt.getDate()).padStart(2, '0');
+            const month = String(dt.getMonth() + 1).padStart(2, '0'); // JS months are 0-indexed
+            const year = dt.getFullYear();
+            // Input value must stay YYYY-MM-DD for <input type="date">
+            dateInput.value = `${year}-${month}-${day}`;
+            // Optional: store display as DD MM YYYY if needed elsewhere
+            dateInput.setAttribute('data-display', `${day} ${month} ${year}`);
+        }
+
+    } else {
+        dateGroup.style.display = "none";
+    }
+}
+
+// --- Repeats (dynamic label) ---
+const repeatsGroup = document.getElementById("repeats_group");
+const repeatsInput = form.querySelector('input[name="repeats"]');
+const repeatsLabel = repeatsGroup?.querySelector('label');
+
+if (repeatsGroup && repeatsInput && repeatsLabel) {
+    if (item.show_repeats_field) {
+        repeatsGroup.style.display = "block";
+        repeatsInput.value = item.repeats ?? 0;
+
+        // Set label based on media type
+        switch (item.media_type) {
+            case "movie":
+            case "tv":
+            case "anime":
+                repeatsLabel.textContent = "Rewatches";
+                break;          
+            case "manga":
+            case "book":
+                repeatsLabel.textContent = "Rereads";
+                break;
+            case "game":
+                repeatsLabel.textContent = "Replays";
+                break;
+            default:
+                repeatsLabel.textContent = "Repeats";
+        }
+    } else {
+        repeatsGroup.style.display = "none";
+    }
+}
+
+
     const statusSelect = form.querySelector('select[name="status"]');
     statusSelect.innerHTML = "";
     item.item_status_choices.forEach(choice => {
@@ -533,7 +590,6 @@ document.getElementById("edit-delete-btn")?.addEventListener("click", function (
 
       const formData = Object.fromEntries(new FormData(form));
       // Debug: log the value being sent for personal_rating
-      console.log("[DEBUG] Submitting personal_rating:", formData.personal_rating, "(all formData:", formData, ")");
 
       fetch(`/edit-item/${itemId}/`, {
         method: "POST",

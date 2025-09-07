@@ -71,7 +71,8 @@ class MediaItem(models.Model):
     )  # No choices, stores values from 1–100
     favorite = models.BooleanField(default=False)
 
-    date_added = models.DateTimeField(auto_now_add=True)
+    date_added = models.DateTimeField(default=timezone.now)
+    repeats = models.PositiveIntegerField(default=0)
     notes = models.TextField(blank=True, null=True)
 
     last_updated = models.DateTimeField(default=timezone.now)
@@ -127,6 +128,19 @@ class AppSettings(models.Model):
         ],
         default='faces'
     )
+    show_date_field = models.BooleanField(default=False)
+    show_repeats_field = models.BooleanField(default=False)
+    theme_mode = models.CharField(
+        max_length=20,
+        choices=[
+            ('light', 'Light'),
+            ('dark', 'Dark'),
+            ('green', 'Green'),
+        ],
+        default='dark'
+    )
+
+    username = models.CharField(max_length=50, blank=True, null=True)
 
     def __str__(self):
-        return f"App Settings ({self.rating_mode})"
+        return f"App Settings ({self.rating_mode}, theme={self.theme_mode}, username={self.username})"

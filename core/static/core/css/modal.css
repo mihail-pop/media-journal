@@ -90,7 +90,7 @@
   border-radius: 16px;
   max-width: 820px;
   width: 95%;
-  max-height: 90vh;
+  /* max-height: 90vh; */
   box-sizing: border-box;
   overflow: auto;
   box-shadow:
@@ -434,12 +434,23 @@
 }
 
 #progress_main_group label,
-#progress_secondary_group label {
+#progress_secondary_group label,
+#date_added_group label,
+#repeats_group label {
   gap: 0.25rem; /* tightens spacing between items inside label */
   display: flex;
   flex-direction: column;
   width: 150px; /* or any specific value you prefer */
   max-width: 100%;
+}
+
+#date_added_group,
+#repeats_group {
+  max-width: 218px;
+}
+
+#repeats{
+  width: 135px;
 }
 
 .progress-total-display {

@@ -265,3 +265,34 @@ if (uploadBtn && uploadInput) {
     if (parts.length === 2) return parts.pop().split(";").shift();
   }
 });
+
+document.addEventListener("DOMContentLoaded", function() {
+  const preferencesForm = document.getElementById("preferences-form");
+  if (preferencesForm) {
+    preferencesForm.addEventListener("submit", function(e) {
+      e.preventDefault();
+
+      const showDate = document.getElementById("show-date-field").checked;
+      const showRepeats = document.getElementById("show-repeats-field").checked;
+
+      fetch("/settings/update_preferences/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": getCookie("csrftoken"),
+        },
+        body: JSON.stringify({
+          show_date_field: showDate,
+          show_repeats_field: showRepeats,
+        }),
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+        } else {
+          alert("Failed to save preferences.");
+        }
+      });
+    });
+  }
+});

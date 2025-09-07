@@ -14,6 +14,11 @@ function getCookie(name) {
 }
 
 function refreshItem(itemId) {
+  const refreshBtn = document.querySelector('.refresh-btn');
+  const originalText = refreshBtn.textContent;
+  refreshBtn.textContent = 'Refreshing...';
+  refreshBtn.disabled = true;
+  
   fetch("/refresh-item/", {
     method: "POST",
     headers: {
@@ -22,15 +27,31 @@ function refreshItem(itemId) {
     },
     body: JSON.stringify({ id: itemId }),
   })
-    .then((res) => res.json())
-    .then((data) => {
-      const banner = document.getElementById("detail-banner");
-      if (banner) {
-        const url = banner.src.split("?")[0];
-        banner.src = url + "?t=" + new Date().getTime();
-      }
+    .then((res) => {
+      refreshBtn.textContent = originalText;
+      refreshBtn.disabled = false;
+      showNotification("Item refreshed successfully!", "success");
       setTimeout(() => window.location.reload(true), 1000);
     });
+}
+
+function showNotification(message, type) {
+  const notification = document.createElement("div");
+  notification.textContent = message;
+  notification.style.cssText = `
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #4CAF50;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 6px;
+    z-index: 9999;
+    font-weight: 500;
+  `;
+  document.body.appendChild(notification);
+  setTimeout(() => notification.remove(), 2000);
 }
 
 function openBannerUpload(source, id) {
@@ -304,7 +325,7 @@ document.addEventListener("DOMContentLoaded", function () {
         title: addBtn.dataset.title,
         cover_url: addBtn.dataset.coverUrl,
       };
-      console.log("Sending:", data);
+      
       fetch("/api/add_to_list/", {
         method: "POST",
         headers: {
@@ -394,7 +415,7 @@ document.getElementById("more-info-btn").addEventListener("click", async functio
 
 // Helper function to render the extra info HTML per media type
 function renderExtraInfo(mediaType, data) {
-  console.log("Extra info received:", data);
+
   if (!data) return "<p>No extra information available.</p>";
 
   const safeHTML = [];
@@ -403,7 +424,17 @@ function renderExtraInfo(mediaType, data) {
     const runtime = data.runtime;
 
     if (data.vote_average !== undefined && data.vote_average !== null) {
-      safeHTML.push(`<p>⭐${data.vote_average}/10 TMDB</p>`);
+      const score = Math.round(data.vote_average * 10) / 10;
+      const percentage = (score / 10) * 100;
+      safeHTML.push(`
+        <div style="display: flex; align-items: center; gap: 12px; margin: 12px 0; padding: 8px; background: rgba(245, 197, 24, 0.1); max-width: 12rem; border-radius: 8px; border-right: 4px solid #f5c518; border-left: 4px solid #f5c518;">
+          <span style="font-weight: bold; color: #f5c518; font-size: 14px;">TMDB</span>
+          <div style="background: #333; border-radius: 10px; width: 120px; height: 8px; overflow: hidden;">
+            <div style="background: linear-gradient(90deg, #ff4444 0%, #ffaa00 50%, #00ff00 100%); height: 100%; width: ${percentage}%; transition: width 0.3s;"></div>
+          </div>
+          <span style="font-weight: bold; color: #ddd; font-size: 16px;">${score}/10</span>
+        </div>
+      `);
     }
 
     if (runtime) {
@@ -496,7 +527,17 @@ if (data.trailers?.length) {
   if (mediaType === "tv") {
 
     if (data.vote_average !== undefined && data.vote_average !== null) {
-      safeHTML.push(`<p>⭐${data.vote_average}/10 TMDB</p>`);
+      const score = Math.round(data.vote_average * 10) / 10;
+      const percentage = (score / 10) * 100;
+      safeHTML.push(`
+        <div style="display: flex; align-items: center; gap: 12px; margin: 12px 0; padding: 8px; background: rgba(245, 197, 24, 0.1); max-width: 12rem; border-right: 4px solid #f5c518; border-radius: 8px; border-left: 4px solid #f5c518;">
+          <span style="font-weight: bold; color: #f5c518; font-size: 14px;">TMDB</span>
+          <div style="background: #333; border-radius: 10px; width: 120px; height: 8px; overflow: hidden;">
+            <div style="background: linear-gradient(90deg, #ff4444 0%, #ffaa00 50%, #00ff00 100%); height: 100%; width: ${percentage}%; transition: width 0.3s;"></div>
+          </div>
+          <span style="font-weight: bold; color: #ddd; font-size: 16px;">${score}/10</span>
+        </div>
+      `);
     }
 
     if (data.status) {
@@ -581,7 +622,16 @@ if (data.trailers?.length) {
   if (mediaType === "anime" || mediaType === "manga") {
 
     if (data.averageScore) {
-      safeHTML.push(`<p>⭐${data.averageScore}/10 AniList</p>`);
+      const percentage = data.averageScore * 10;
+      safeHTML.push(`
+        <div style="display: flex; align-items: center; gap: 12px; margin: 12px 0; padding: 8px; background: rgba(2, 169, 255, 0.1); border-radius: 8px; max-width: 12rem; border-right: 4px solid #02a9ff; border-left: 4px solid #02a9ff;">
+          <span style="font-weight: bold; color: #02a9ff; font-size: 14px;">AniList</span>
+          <div style="background: #333; border-radius: 10px; width: 120px; height: 8px; overflow: hidden;">
+            <div style="background: linear-gradient(90deg, #ff4444 0%, #ffaa00 50%, #00ff00 100%); height: 100%; width: ${percentage}%; transition: width 0.3s;"></div>
+          </div>
+          <span style="font-weight: bold; color: #ddd; font-size: 16px;">${data.averageScore}/10</span>
+        </div>
+      `);
     }
 
 if (data.status) {
@@ -720,7 +770,16 @@ if (data.trailers?.length) {
   if (mediaType === "game") {
 
     if (data.rating) {
-      safeHTML.push(`<p>⭐${data.rating}/10 IGDB</p>`);
+      const percentage = data.rating * 10;
+      safeHTML.push(`
+        <div style="display: flex; align-items: center; gap: 12px; margin: 12px 0; padding: 8px; background: rgba(145, 71, 255, 0.1); border-radius: 8px; max-width: 12rem; border-right: 4px solid #9147ff; border-left: 4px solid #9147ff;">
+          <span style="font-weight: bold; color: #9147ff; font-size: 14px;">IGDB</span>
+          <div style="background: #333; border-radius: 10px; width: 120px; height: 8px; overflow: hidden;">
+            <div style="background: linear-gradient(90deg, #ff4444 0%, #ffaa00 50%, #00ff00 100%); height: 100%; width: ${percentage}%; transition: width 0.3s;"></div>
+          </div>
+          <span style="font-weight: bold; color: #ddd; font-size: 16px;">${data.rating}/10</span>
+        </div>
+      `);
     }
 
     if (data.platforms?.length) {

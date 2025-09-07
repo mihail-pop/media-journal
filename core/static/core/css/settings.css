@@ -209,7 +209,6 @@ table select {
 }
 
 .toggle-label {
-  display: flex;
   align-items: center;
   gap: 0.3rem;
   font-size: 0.9rem;
@@ -251,6 +250,39 @@ table select {
   border-radius: 50%;
   animation: spin 1s linear infinite;
   vertical-align: middle;
+}
+
+.preferences-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;   /* centers horizontally */
+  margin-top: 1rem;
+}
+
+.preferences-form .toggle-label {
+  align-items: center;
+  gap: 0.5rem;           /* spacing between text and checkbox */
+  font-size: 0.95rem;
+}
+
+.preferences-form .preferences-save {
+  margin-top: 0.5rem;
+}
+
+input[type="checkbox"] {
+  width: auto;
+  margin-left: 0.5rem;
+}
+
+.settings-separator {
+  display: block;
+  margin: 1.5rem auto;
+  width: 70%;
+  height: 6px;
+  background-color: #55626d;
+  border-radius: 3px;
+  border: none;         /* remove any border */
+  box-shadow: none;     /* remove any shadow */
 }
 
 @keyframes spin {

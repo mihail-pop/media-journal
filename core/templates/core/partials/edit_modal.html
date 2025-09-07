@@ -75,7 +75,22 @@
             <span id="progress_secondary_total_display" class="progress-total-display">/ {{ total_secondary|default_if_none:'' }}</span>
           </label>
         </div>
-        </div>
+        
+
+<!-- Date -->
+<div id="date_added_group" class="form-group" style="display: {% if show_date_field %}block{% else %}none{% endif %};">
+  <label for="date_added">Date</label>
+  <input type="date" name="date_added" id="date_added" 
+         value="{{ item.date_added|date:'Y-m-d'|default_if_none:'' }}">
+</div>
+
+<!-- Repeats (Rewatch/Reread/Replay) -->
+<div id="repeats_group" class="form-group" style="display: {% if show_repeats_field %}block{% else %}none{% endif %};">
+  <label for="repeats">Repeats</label>
+  <input type="number" name="repeats" id="repeats" min="0" value="{{ item.repeats|default_if_none:'0' }}">
+</div>
+</div>
+
 <div class="form-group notes-group">
   <label for="notes">Notes</label>
   <textarea id="notes" name="notes">{{ notes }}</textarea>

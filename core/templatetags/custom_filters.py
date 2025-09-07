@@ -1,4 +1,5 @@
 from django import template
+from django.utils.timezone import now
 
 register = template.Library()
 
@@ -38,3 +39,36 @@ def divide(value, divisor):
         return result
     except (ValueError, ZeroDivisionError, TypeError):
         return ''
+    
+@register.filter
+def timesince_one_unit(value):
+    """
+    Returns the time since `value` as a single unit, e.g.:
+    - "5 minutes ago"
+    - "3 hours ago"
+    - "2 days ago"
+    """
+    if not value:
+        return ""
+
+    delta = now() - value
+
+    minutes = int(delta.total_seconds() // 60)
+    hours = int(delta.total_seconds() // 3600)
+    days = delta.days
+    weeks = days // 7
+    months = days // 30
+    years = days // 365
+
+    if minutes < 60:
+        return f"{minutes} minute{'s' if minutes != 1 else ''} ago"
+    elif hours < 24:
+        return f"{hours} hour{'s' if hours != 1 else ''} ago"
+    elif days < 7:
+        return f"{days} day{'s' if days != 1 else ''} ago"
+    elif weeks < 4:
+        return f"{weeks} week{'s' if weeks != 1 else ''} ago"
+    elif months < 12:
+        return f"{months} month{'s' if months != 1 else ''} ago"
+    else:
+        return f"{years} year{'s' if years != 1 else ''} ago"

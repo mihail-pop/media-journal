@@ -137,6 +137,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  function processYouTubeLinks(text) {
+    const youtubeRegex = /https?:\/\/(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)([^\s]*)/g;
+    return text.replace(youtubeRegex, (match, www, urlType, videoId, params) => {
+      const timeMatch = params.match(/[&?]t=(\d+)/);
+      const startTime = timeMatch ? `?start=${timeMatch[1]}` : '';
+      return `<br><iframe width=100% height=300rem src="https://www.youtube.com/embed/${videoId}${startTime}" frameborder="0" allowfullscreen></iframe>`;
+    });
+  }
+
   function timeAgo(ts) {
     const now = Date.now() / 1000;
     const diff = Math.floor(now - ts);
@@ -263,7 +272,8 @@ commentIcon.addEventListener('click', async () => {
     postComments.forEach(comment => {
       const commentDiv = document.createElement('div');
       commentDiv.className = 'comment';
-      commentDiv.innerHTML = `<b>${comment.username || 'Anonymous'}</b> ${comment.text} <small>${timeAgo(comment.timestamp)}</small>`;
+      const processedText = processYouTubeLinks(comment.text);
+      commentDiv.innerHTML = `<b>${comment.username || 'Anonymous'}</b> ${processedText} <small>${timeAgo(comment.timestamp)}</small>`;
       commentsSection.appendChild(commentDiv);
     });
   } else {
@@ -406,7 +416,8 @@ sendBtn.addEventListener('click', async () => {
   // Update UI
   const commentDiv = document.createElement('div');
   commentDiv.className = 'comment';
-  commentDiv.innerHTML = `<b>${username}</b> ${text} <small>${timeAgo(commentData.timestamp)}</small>`;
+  const processedText = processYouTubeLinks(text);
+  commentDiv.innerHTML = `<b>${username}</b> ${processedText} <small>${timeAgo(commentData.timestamp)}</small>`;
   // Remove "No comments yet." if present
   const noCommentsMsg = Array.from(commentsSection.querySelectorAll('.comment')).find(
     el => el.textContent === 'No comments yet.'

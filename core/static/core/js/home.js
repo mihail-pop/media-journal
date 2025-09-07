@@ -217,10 +217,24 @@ setupReorderButtons('characters-card-grid');
 });
 
 
-document.getElementById("show-more-activity-btn")?.addEventListener("click", () => {
-  document.querySelectorAll("#recent-activity-list .recent-activity-hidden")
-    .forEach(el => el.classList.remove("recent-activity-hidden"));
-  document.getElementById("show-more-activity-btn").remove();
+const toggleBtn = document.getElementById("toggle-activity-btn");
+const advancedBtn = document.getElementById("advanced-activity-btn");
+const hiddenActivities = document.querySelectorAll("#recent-activity-list .recent-activity-hidden");
+
+toggleBtn?.addEventListener("click", () => {
+  if (toggleBtn.dataset.state === "more") {
+    hiddenActivities.forEach(el => el.classList.remove("recent-activity-hidden"));
+    toggleBtn.textContent = "Show Less";
+    toggleBtn.dataset.state = "less";
+  } else {
+    hiddenActivities.forEach(el => el.classList.add("recent-activity-hidden"));
+    toggleBtn.textContent = "Show More";
+    toggleBtn.dataset.state = "more";
+  }
+});
+
+advancedBtn?.addEventListener("click", () => {
+  window.location.href = "/history/";
 });
 
 document.querySelectorAll('.delete-person-btn').forEach(button => {

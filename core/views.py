@@ -3,6 +3,7 @@ from core.utils import download_image, fetch_anilist_data, get_trending_anime, g
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_POST
 from django.db.models import Case, When, IntegerField, Value, F
+from django.conf import settings
 from django.core.files.storage import default_storage
 from django.core.serializers import deserialize
 from core.background import start_tmdb_background_loop, start_anilist_background_loop
@@ -254,6 +255,19 @@ def books(request):
         'rating_mode': rating_mode,
     })
 
+@ensure_csrf_cookie
+def history(request):
+    # Load all items
+    items = MediaItem.objects.all().order_by('-date_added')  # newest first
+
+    # For sidebar: calculate latest 3 years dynamically
+    current_year = timezone.now().year
+    latest_years = [current_year - i for i in range(3)]  # e.g., 2025, 2024, 2023
+
+    return render(request, 'core/history.html', {
+        'items': items,
+        'latest_years': latest_years,
+    })
 
 @ensure_csrf_cookie
 def home(request):
@@ -458,11 +472,14 @@ def update_favorite_person_order(request):
 def settings_page(request):
     keys = APIKey.objects.all().order_by("name")
     existing_names = [key.name for key in keys]
-    allowed_names = APIKey.NAME_CHOICES  # [('tmdb', 'TMDb'), ('igdb', 'IGDB'), ...]
+    allowed_names = APIKey.NAME_CHOICES
 
     AppSettings = apps.get_model('core', 'AppSettings')
     settings = AppSettings.objects.first()
-    current_rating_mode = settings.rating_mode if settings else 'faces'
+    if not settings:
+        settings = AppSettings.objects.create()  # ensure one exists
+
+    current_rating_mode = settings.rating_mode
 
     nav_items = NavItem.objects.all().order_by("position")
     for item in nav_items:
@@ -474,7 +491,23 @@ def settings_page(request):
         'existing_names': existing_names,
         'nav_items': nav_items,
         "current_rating_mode": current_rating_mode,
+        "show_date_field": settings.show_date_field,
+        "show_repeats_field": settings.show_repeats_field,
     })
+
+@require_POST
+def update_preferences(request):
+    data = json.loads(request.body.decode("utf-8"))
+    AppSettings = apps.get_model('core', 'AppSettings')
+    settings = AppSettings.objects.first()
+    if not settings:
+        settings = AppSettings.objects.create()
+
+    settings.show_date_field = data.get("show_date_field", False)
+    settings.show_repeats_field = data.get("show_repeats_field", False)
+    settings.save()
+
+    return JsonResponse({"success": True})
 
 
 @ensure_csrf_cookie
@@ -2114,12 +2147,33 @@ def edit_item(request, item_id):
                 if item.total_secondary is not None:
                     item.progress_secondary = item.total_secondary
 
+            
+            if "date_added" in data and data["date_added"]:
+                try:
+                    # data["date_added"] comes as YYYY-MM-DD
+                    old_dt = item.date_added or timezone.now()
+                    year, month, day = map(int, data["date_added"].split('-'))
+                    # keep old hours/minutes/seconds
+                    dt = timezone.datetime(year, month, day, old_dt.hour, old_dt.minute, old_dt.second)
+                    if settings.USE_TZ:
+                        dt = timezone.make_aware(dt, timezone.get_current_timezone())
+                    item.date_added = dt
+                except Exception as e:
+                    print("Failed to parse date_added:", e)
+
+            if "repeats" in data:
+                try:
+                    item.repeats = max(0, int(data["repeats"]))
+                except (ValueError, TypeError):
+                    item.repeats = 0
+
+
             if "personal_rating" in data:
                 # Get current rating mode (try to get from AppSettings, fallback to 'faces')
                 AppSettings = apps.get_model('core', 'AppSettings')
                 try:
-                    settings = AppSettings.objects.first()
-                    rating_mode = settings.rating_mode if settings else 'faces'
+                    app_settings = AppSettings.objects.first()
+                    rating_mode = app_settings.rating_mode if app_settings else 'faces'
                 except Exception:
                     rating_mode = 'faces'
 
@@ -2286,6 +2340,10 @@ def get_item(request, item_id):
                 "item_status_choices": MediaItem.STATUS_CHOICES,
                 "item_rating_choices": RATING_CHOICES,
                 "rating_mode": rating_mode,
+                "repeats": item.repeats or 0,
+                "date_added": item.date_added.isoformat() if item.date_added else None,
+                "show_date_field": settings.show_date_field,
+                "show_repeats_field": settings.show_repeats_field,
             }
         })
     except MediaItem.DoesNotExist:
@@ -2680,20 +2738,42 @@ def refresh_item(request):
         source_id = item.source_id
         media_type = item.media_type
 
+        # Save user data
+        user_data = {
+            'status': item.status,
+            'progress_main': item.progress_main,
+            'progress_secondary': item.progress_secondary,
+            'personal_rating': item.personal_rating,
+            'favorite': item.favorite,
+            'date_added': item.date_added,
+            'repeats': item.repeats,
+            'notes': item.notes,
+            'screenshots': item.screenshots,
+        }
+
         # Delete the existing item
         delete_item(request, item_id)
 
         # Re-save the item based on its source
         if source == "tmdb":
-            return save_tmdb_item(media_type, source_id)
+            save_tmdb_item(media_type, source_id)
         elif source == "mal":
-            return save_mal_item(media_type, source_id)
+            save_mal_item(media_type, source_id)
         elif source == "igdb":
-            return save_igdb_item(source_id)
+            save_igdb_item(source_id)
         elif source == "openlib":
-            return save_openlib_item(source_id)
+            save_openlib_item(source_id)
         else:
             return JsonResponse({"error": "Unsupported source."}, status=400)
+
+        # Restore user data
+        new_item = MediaItem.objects.get(source=source, source_id=source_id, media_type=media_type)
+        for field, value in user_data.items():
+            setattr(new_item, field, value)
+        new_item.last_updated = timezone.now()
+        new_item.save()
+
+        return JsonResponse({"message": "Item refreshed successfully."})
 
     except MediaItem.DoesNotExist:
         return JsonResponse({"error": "Item not found."}, status=404)
@@ -2915,9 +2995,6 @@ def check_planned_anime_manga_statuses(request):
                 status_map[mal_id] = "Error"
 
     return JsonResponse(status_map)
-
-# --- Settings: Update Rating Mode ---
-from django.views.decorators.http import require_POST
 
 @ensure_csrf_cookie
 @require_POST

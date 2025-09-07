@@ -214,7 +214,7 @@ html {
 /* --- Main List Content --- */
 .list-content {
   width: 80%;
-  margin-top: -20px;
+  margin-top: -45px;
 }
 
 /* --- Card View Grid --- */
@@ -506,7 +506,7 @@ html {
 
   .modal{
     overflow: visible !important;
-    min-height: 60rem;
+    min-height: 67rem;
   }
 
   .modal-content{

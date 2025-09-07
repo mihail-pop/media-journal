@@ -12,6 +12,7 @@
 <div class="settings-section">
   <button class="collapsible">Preferences</button>
   <div class="collapsible-content">
+
     <h3>Scoring System</h3>
     <form id="rating-mode-form" class="scoring-system-form">
       <select id="rating-mode-select" name="rating_mode">
@@ -22,6 +23,29 @@
       </select>
       <button type="submit" class="save-nav-btn scoring-system-save">Save</button>
     </form>
+
+    <hr class="settings-separator">
+
+    <h3>Edit Modal</h3>
+<form id="preferences-form" class="preferences-form">
+  <label class="toggle-label">
+    Display "Date" field
+    <input type="checkbox" id="show-date-field" name="show_date_field"
+      {% if show_date_field %}checked{% endif %}>
+  </label>
+  <br>
+  <label class="toggle-label">
+    Display "Repeats" field (Rewatch/Reread/Replay)
+    <input type="checkbox" id="show-repeats-field" name="show_repeats_field"
+      {% if show_repeats_field %}checked{% endif %}>
+  </label>
+  <br>
+  <button type="submit" class="save-nav-btn preferences-save">Save</button>
+</form>
+
+    <hr class="settings-separator">
+
+
     <h3>Navigation Buttons</h3>
     <form id="nav-items-form">
       {% for item in nav_items %}
@@ -36,8 +60,9 @@
           </label>
         </div>
       {% endfor %}
-      <button type="submit" class="save-nav-btn">Save Changes</button>
+      <button type="submit" class="save-nav-btn">Save</button>
     </form>
+
     <p style="font-size: 0.9rem; margin-top: 0.5rem; text-align: center;">
       Here you can reorder the navigation buttons and hide/show them.  <br/> <b> The hidden buttons will disappear on all the other pages, but will still appear on the Settings page header. </b>
     </p>
@@ -90,7 +115,7 @@
           <tr>
             <td>
               <select id="new-name">
-                <option value="">-- Select API --</option>
+                <option value="">Select API</option>
                 {% for key_name, key_label in allowed_names %}
                 {% if key_name not in existing_names %}
                 <option value="{{ key_name }}">{{ key_label }}</option>
@@ -107,13 +132,24 @@
 <p style="font-size: 0.9rem; margin-top: 0.5rem; text-align: left; margin-left: 1rem;">
   Here you can add the required API keys for the web app to work. You can get the API keys from each site in around 2-5 minutes.
   <br/>
-  <br/> <b> TMDb </b> needs ID and you can find the steps on how to get their keys <a href="https://developers.themoviedb.org/3/getting-started/introduction" target="_blank" rel="noopener noreferrer" style="color:white">here</a>.   
-  <br/> <b> IGDB </b> needs ID and Secret and you can find the steps on how to get their keys <a href="https://api-docs.igdb.com/#getting-started" target="_blank" rel="noopener noreferrer" style="color:white">here</a>.
-  <br/> <b> AniList </b> needs ID and Secret and you can find the steps on how to get their keys <a href="https://docs.anilist.co/guide/auth/" target="_blank" rel="noopener noreferrer" style="color:white">here</a> (Creating an application section).
-  <br/> <b> MAL </b> needs ID and you can find the steps on how to get their keys <a href="https://myanimelist.net/apiconfig" target="_blank" rel="noopener noreferrer" style="color:white">here</a> (you need to login first).
+  <br/> <b> TMDb </b> needs ID and you can find the steps on how to get their keys <a href="https://developers.themoviedb.org/3/getting-started/introduction" target="_blank" rel="noopener noreferrer" style="color:white">here</a>.  <a href="https://imgur.com/a/iU3RsvR" target="_blank" rel="noopener noreferrer"  style="color: white; text-decoration: none;">(Example)</a>
+  <br/> <b> IGDB </b> needs ID and Secret and you can find the steps on how to get their keys <a href="https://api-docs.igdb.com/#getting-started" target="_blank" rel="noopener noreferrer" style="color:white">here</a>.  <a href="https://imgur.com/a/sp6uWVl" target="_blank" rel="noopener noreferrer" style="color: white; text-decoration: none;">(Example)</a>
+  <br/> <b> AniList </b> needs ID and Secret and you can find the steps on how to get their keys <a href="https://docs.anilist.co/guide/auth/" target="_blank" rel="noopener noreferrer" style="color:white">here</a> (at the "Creating an application" section).  <a href="https://imgur.com/a/Zgrkygo" target="_blank" rel="noopener noreferrer" style="color: white; text-decoration: none;">(Example)</a>
+  <br/> <b> MAL </b> needs ID and you can find the steps on how to get their keys <a href="https://myanimelist.net/apiconfig" target="_blank" rel="noopener noreferrer" style="color:white">here</a> (you need to login first).  <a href="https://imgur.com/a/d9NkhmN" target="_blank" rel="noopener noreferrer" style="color: white; text-decoration: none;">(Example)</a>
 </p>
     </div>
   </div>
+
+  <div class="settings-section">
+  <button class="collapsible">Information</button>
+  <div class="collapsible-content">
+    <p style="font-size: 0.9rem; margin-top: 0.5rem; text-align: center;">
+      <a href="https://www.steamgriddb.com/heroes" target="_blank" rel="noopener noreferrer" style="color: white; text-decoration: none;">SteamGridDB</a> is a great site to get wide banners and covers for your games.
+
+      <br/><br/><br/> I will update this section with other tools when I find more or other relevant information. :P
+    </p>
+  </div>
+</div>
 </div>
 {% endblock %}
 
