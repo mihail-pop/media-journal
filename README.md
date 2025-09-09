@@ -97,3 +97,10 @@ The application can be configured using environment variables.
   python manage.py runserver <IPv4_address>:8000
   ```
    You can find your IPv4 address by running `ipconfig` in the terminal.
+
+## Licensing & Philosophy
+
+I will never ask for donations or try to monetize this app in any shape or form.
+
+I added the AGPL license to make it easier for possible contributors, but I disagree with the "commercial use" clause. Most likely, nobody will be interested in profiting from this app, and even if it is technically permitted under the license, I personally disapprove of it.
+
