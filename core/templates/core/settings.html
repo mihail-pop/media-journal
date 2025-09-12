@@ -9,147 +9,167 @@
 <div class="settings-page-content">
   <h1>Settings</h1>
 
-<div class="settings-section">
-  <button class="collapsible">Preferences</button>
-  <div class="collapsible-content">
+  <div class="settings-tabs">
+    <button class="tab-button active" data-tab="preferences">Preferences</button>
+    <button class="tab-button" data-tab="backup">Backup</button>
+    <button class="tab-button" data-tab="api-keys">API Keys</button>
+    <button class="tab-button" data-tab="information">Information</button>
+  </div>
 
-    <h3>Scoring System</h3>
-    <form id="rating-mode-form" class="scoring-system-form">
-      <select id="rating-mode-select" name="rating_mode">
-        <option value="faces" {% if current_rating_mode == 'faces' %}selected{% endif %}>Faces (😞😐😊)</option>
-        <option value="stars_5" {% if current_rating_mode == 'stars_5' %}selected{% endif %}>5 Stars (⭐)</option>
-        <option value="scale_10" {% if current_rating_mode == 'scale_10' %}selected{% endif %}>10 Points (5/10)</option>
-        <option value="scale_100" {% if current_rating_mode == 'scale_100' %}selected{% endif %}>100 Points (55/100)</option>
-      </select>
-      <button type="submit" class="save-nav-btn scoring-system-save">Save</button>
-    </form>
+  <div class="tab-content active" id="preferences">
+    <div class="preferences-container">
+      <div class="preferences-section">
+        <h3>Scoring System</h3>
+        <form id="rating-mode-form" class="scoring-system-form">
+          <select id="rating-mode-select" name="rating_mode">
+            <option value="faces" {% if current_rating_mode == 'faces' %}selected{% endif %}>Faces (😞😐😊)</option>
+            <option value="stars_5" {% if current_rating_mode == 'stars_5' %}selected{% endif %}>5 Stars (⭐)</option>
+            <option value="scale_10" {% if current_rating_mode == 'scale_10' %}selected{% endif %}>10 Points (5/10)</option>
+            <option value="scale_100" {% if current_rating_mode == 'scale_100' %}selected{% endif %}>100 Points (55/100)</option>
+          </select>
+          <button type="submit" class="save-nav-btn scoring-system-save">Save</button>
+        </form>
+      </div>
 
-    <hr class="settings-separator">
-
-    <h3>Edit Modal</h3>
-<form id="preferences-form" class="preferences-form">
-  <label class="toggle-label">
-    Display "Date" field
-    <input type="checkbox" id="show-date-field" name="show_date_field"
-      {% if show_date_field %}checked{% endif %}>
-  </label>
-  <br>
-  <label class="toggle-label">
-    Display "Repeats" field (Rewatch/Reread/Replay)
-    <input type="checkbox" id="show-repeats-field" name="show_repeats_field"
-      {% if show_repeats_field %}checked{% endif %}>
-  </label>
-  <br>
-  <button type="submit" class="save-nav-btn preferences-save">Save</button>
-</form>
-
-    <hr class="settings-separator">
-
-
-    <h3>Navigation Buttons</h3>
-    <form id="nav-items-form">
-      {% for item in nav_items %}
-        <div class="nav-item-row" data-id="{{ item.id }}">
-          <span class="nav-item-name">{{ item.name }}</span>
-          
-          <button type="button" class="move-up" title="Move up">↑</button>
-          <button type="button" class="move-down" title="Move down">↓</button>
-
+      <div class="preferences-section">
+        <h3>Edit Modal</h3>
+        <form id="preferences-form" class="preferences-form">
           <label class="toggle-label">
-            Show<input type="checkbox" class="toggle-visible" {% if item.visible %}checked{% endif %}>
+            <b>Display date field</b>
+            <input type="checkbox" id="show-date-field" name="show_date_field"
+              {% if show_date_field %}checked{% endif %}>
           </label>
-        </div>
-      {% endfor %}
-      <button type="submit" class="save-nav-btn">Save</button>
-    </form>
+          <label class="toggle-label">
+            <b>Display repeats field <br>(Rewatches/Replays/Rereads)</b>
+            <input type="checkbox" id="show-repeats-field" name="show_repeats_field"
+              {% if show_repeats_field %}checked{% endif %}>
+          </label>
+          <button type="submit" class="save-nav-btn preferences-save">Save</button>
+        </form>
+      </div>
 
-    <p style="font-size: 0.9rem; margin-top: 0.5rem; text-align: center;">
-      Here you can reorder the navigation buttons and hide/show them.  <br/> <b> The hidden buttons will disappear on all the other pages, but will still appear on the Settings page header. </b>
-    </p>
-  </div>
-</div>
-
-<div class="settings-section">
-  <button class="collapsible">Backup</button>
-  <div class="collapsible-content">
-    <div class="backup-actions">
-      <button id="download-backup-btn">Download Backup
-        <span class="spinner" style="display:none;"></span>
-      </button>
-      <input type="file" id="upload-backup-input" accept=".zip" style="display: none;" />
-      <button id="upload-backup-btn">Load Backup
-        <span class="spinner" style="display:none;"></span>
-      </button>
-    </div>
-    <p style="font-size: 0.9rem; margin-top: 0.5rem; text-align: center;">
-      <br/>Here you can save or restore your entire media list and all saved images (covers, banners, cast, etc).  <br/><br/> <b>It may take 1-2 minutes for the download to start or for the backup to load with large lists. </b>
-      <br/> <b>Keep the downloaded backup file as it is (.zip). </b>
-    </p>
-  </div>
-</div>
-
-  <div class="settings-section">
-    <button class="collapsible">API Keys</button>
-    <div class="collapsible-content">
-      <table>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>ID</th>
-            <th>Secret</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody id="key-table">
-          {% for key in keys %}
-          <tr data-id="{{ key.id }}">
-            <td><input type="text" class="key-name" value="{{ key.name }}" readonly /></td>
-            <td><input type="text" class="key-1" value="{{ key.key_1 }}" /></td>
-            <td><input type="text" class="key-2" value="{{ key.key_2 }}" /></td>
-            <td>
-              <button class="save-btn">Save</button>
-              <button class="delete-btn">Delete</button>
-            </td>
-          </tr>
+      <div class="preferences-section nav-buttons-section">
+        <h3>Navigation Buttons</h3>
+        <form id="nav-items-form">
+          {% for item in nav_items %}
+            <div class="nav-item-row" data-id="{{ item.id }}">
+              <span class="nav-item-name">{{ item.name }}</span>
+              <div class="nav-buttons-container">
+                <button type="button" class="move-up" title="Move up">←</button>
+                <button type="button" class="move-down" title="Move down">→</button>
+                <label class="toggle-label">
+                  <input type="checkbox" class="toggle-visible" {% if item.visible %}checked{% endif %} data-tooltip="{% if item.visible %}Hide{% else %}Show{% endif %}">
+                </label>
+              </div>
+            </div>
           {% endfor %}
-          <tr>
-            <td>
-              <select id="new-name">
-                <option value="">Select API</option>
-                {% for key_name, key_label in allowed_names %}
-                {% if key_name not in existing_names %}
-                <option value="{{ key_name }}">{{ key_label }}</option>
-                {% endif %}
-                {% endfor %}
-              </select>
-            </td>
-            <td><input type="text" id="new-key-1" placeholder="id" /></td>
-            <td><input type="text" id="new-key-2" placeholder="secret (optional*)" /></td>
-            <td><button id="add-key-btn">Add</button></td>
-          </tr>
-        </tbody>
-      </table>
-<p style="font-size: 0.9rem; margin-top: 0.5rem; text-align: left; margin-left: 1rem;">
-  Here you can add the required API keys for the web app to work. You can get the API keys from each site in around 2-5 minutes.
-  <br/>
-  <br/> <b> TMDb </b> needs ID and you can find the steps on how to get their keys <a href="https://developers.themoviedb.org/3/getting-started/introduction" target="_blank" rel="noopener noreferrer" style="color:white">here</a>.  <a href="https://imgur.com/a/iU3RsvR" target="_blank" rel="noopener noreferrer"  style="color: white; text-decoration: none;">(Example)</a>
-  <br/> <b> IGDB </b> needs ID and Secret and you can find the steps on how to get their keys <a href="https://api-docs.igdb.com/#getting-started" target="_blank" rel="noopener noreferrer" style="color:white">here</a>.  <a href="https://imgur.com/a/sp6uWVl" target="_blank" rel="noopener noreferrer" style="color: white; text-decoration: none;">(Example)</a>
-  <br/> <b> AniList </b> needs ID and Secret and you can find the steps on how to get their keys <a href="https://docs.anilist.co/guide/auth/" target="_blank" rel="noopener noreferrer" style="color:white">here</a> (at the "Creating an application" section).  <a href="https://imgur.com/a/Zgrkygo" target="_blank" rel="noopener noreferrer" style="color: white; text-decoration: none;">(Example)</a>
-  <br/> <b> MAL </b> needs ID and you can find the steps on how to get their keys <a href="https://myanimelist.net/apiconfig" target="_blank" rel="noopener noreferrer" style="color:white">here</a> (you need to login first).  <a href="https://imgur.com/a/d9NkhmN" target="_blank" rel="noopener noreferrer" style="color: white; text-decoration: none;">(Example)</a>
-</p>
+          <button type="submit" class="save-nav-btn nav-form-save">Save</button>
+        </form>
+    <p style="font-size: 0.9rem; margin-top: 1.5rem; text-align: center; color: #8596a5;">
+      <b> The hidden buttons will disappear on all the other pages, but will still appear on the Settings page header. </b>
+    </p>
+      </div>
     </div>
   </div>
 
-  <div class="settings-section">
-  <button class="collapsible">Information</button>
-  <div class="collapsible-content">
-    <p style="font-size: 0.9rem; margin-top: 0.5rem; text-align: center;">
-      <a href="https://www.steamgriddb.com/heroes" target="_blank" rel="noopener noreferrer" style="color: white; text-decoration: none;">SteamGridDB</a> is a great site to get wide banners and covers for your games.
-
-      <br/><br/><br/> I will update this section with other tools when I find more or other relevant information. :P
-    </p>
+  <div class="tab-content" id="backup">
+    <div class="preferences-container">
+      <div class="preferences-section">
+        <h3>Backup & Restore</h3>
+        <div class="backup-actions">
+          <button id="download-backup-btn">Download Backup
+            <span class="spinner" style="display:none;"></span>
+          </button>
+          <input type="file" id="upload-backup-input" accept=".zip" style="display: none;" />
+          <button id="upload-backup-btn">Load Backup
+            <span class="spinner" style="display:none;"></span>
+          </button>
+        </div>
+        <p style="font-size: 0.9rem; margin-top: 1rem; text-align: center; color: #8596a5;">
+          It may take <b>1 to 5 minutes</b> for the download to start or for the backup to load with large lists. 
+          <br/><br/> <b>Keep the downloaded backup file as it is (.zip). </b>
+        </p>
+      </div>
+    </div>
   </div>
-</div>
+
+  <div class="tab-content" id="api-keys">
+    <div class="preferences-container">
+      <div class="preferences-section" style="grid-column: 1 / -1; max-width: none;">
+        <h3>API Keys Management</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>ID</th>
+              <th>Secret</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="key-table">
+            {% for key in keys %}
+            <tr data-id="{{ key.id }}">
+              <td><input type="text" class="key-name" value="{{ key.name }}" readonly /></td>
+              <td><input type="text" class="key-1" value="{{ key.key_1 }}" /></td>
+              <td><input type="text" class="key-2" value="{{ key.key_2 }}" /></td>
+              <td>
+                <button class="save-btn">Save</button>
+                <button class="delete-btn">Delete</button>
+              </td>
+            </tr>
+            {% endfor %}
+            <tr>
+              <td>
+                <select id="new-name">
+                  <option value="">Select API</option>
+                  {% for key_name, key_label in allowed_names %}
+                  {% if key_name not in existing_names %}
+                  <option value="{{ key_name }}">{{ key_label }}</option>
+                  {% endif %}
+                  {% endfor %}
+                </select>
+              </td>
+              <td><input type="text" id="new-key-1" placeholder="id" /></td>
+              <td><input type="text" id="new-key-2" placeholder="secret (optional*)" /></td>
+              <td><button id="add-key-btn">Add</button></td>
+            </tr>
+          </tbody>
+        </table>
+        <p style="font-size: 0.9rem; margin-top: 1rem; text-align: left; color: #8596a5;">
+          Here you can add the required API keys for the web app to work. You can get the API keys from each site in around 2-5 minutes.
+          <br/>
+          <br/> <b> TMDB </b> needs <b>ID</b> and you can find the steps on how to get their keys <a href="https://developers.themoviedb.org/3/getting-started/introduction" target="_blank" rel="noopener noreferrer" style="color:white">here</a>.  <a href="https://imgur.com/a/iU3RsvR" target="_blank" rel="noopener noreferrer"  style="color: white; text-decoration: none;">(Example)</a>
+          <br/> <b> IGDB </b> needs <b>ID</b> and <b>Secret</b> and you can find the steps on how to get their keys <a href="https://api-docs.igdb.com/#getting-started" target="_blank" rel="noopener noreferrer" style="color:white">here</a>.  <a href="https://imgur.com/a/sp6uWVl" target="_blank" rel="noopener noreferrer" style="color: white; text-decoration: none;">(Example)</a>
+          <br/> <b> AniList </b> needs <b>ID</b> and <b>Secret</b> and you can find the steps on how to get their keys <a href="https://docs.anilist.co/guide/auth/" target="_blank" rel="noopener noreferrer" style="color:white">here</a> (at the "Creating an application" section).  <a href="https://imgur.com/a/Zgrkygo" target="_blank" rel="noopener noreferrer" style="color: white; text-decoration: none;">(Example)</a>
+          <br/><br/> (Optional)<b> MAL </b> needs <b>ID</b> and you can find the steps on how to get their keys <a href="https://myanimelist.net/apiconfig" target="_blank" rel="noopener noreferrer" style="color:white">here</a> (you need to login first).  <a href="https://imgur.com/a/d9NkhmN" target="_blank" rel="noopener noreferrer" style="color: white; text-decoration: none;">(Example)</a>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-content" id="information">
+    <div class="preferences-container">
+      <div class="preferences-section">
+        <h3>Useful Resources</h3>
+        <p style="font-size: 0.9rem; margin-top: 1rem; text-align: center; color: #8596a5;">
+          <a href="https://www.steamgriddb.com/heroes" target="_blank" rel="noopener noreferrer" style="color: white; text-decoration: none;">SteamGridDB</a> is a great site to get wide banners and covers for your games.
+          <br> Since animated gif, png and webp files are supported, you can use banners like <a href="https://www.steamgriddb.com/hero/14911" target="_blank" rel="noopener noreferrer" style="color: white; text-decoration: none;">this one</a> or covers like <a href="https://www.steamgriddb.com/grid/570887" target="_blank" rel="noopener noreferrer" style="color: white; text-decoration: none;">this one</a>.
+        </br>Make sure you press on <b>download image</b> before you <b>Save As</b> so that you get the correct file format (webp/png not webm).
+        </br></br></br>
+        </p>
+        <h3>Version Information</h3>
+        <div id="version-info" style="text-align: center; margin-bottom: 2rem;">
+          <p style="color: #8596a5; margin: 0.5rem 0; font-weight: bold;">Your Release <span id="current-version">Loading...</span></p>
+          <p style="color: #8596a5; margin: 0.5rem 0; font-weight: bold;">Latest Release <span id="latest-version">Loading...</span></p>
+          <p id="update-status" style="margin: 0.5rem 0; font-weight: bold;"></p>
+        </div>
+        <p style="font-size: 0.9rem; margin-top: 1rem; text-align: center; color: #8596a5;">
+          <br/><br/><br/> <a href="https://github.com/mihail-pop/media-journal/issues" target="_blank" rel="noopener noreferrer" style="color: white; text-decoration: none;">[Report an issue]</a> <a href="https://github.com/mihail-pop/media-journal/discussions" target="_blank" rel="noopener noreferrer" style="color: white; text-decoration: none;">[Ask a question]</a>
+          <br/> (More information and tips to come!)
+        </p>
+      </div>
+    </div>
+  </div>
 </div>
 {% endblock %}
 

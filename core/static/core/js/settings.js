@@ -5,6 +5,25 @@ function getCookie(name) {
   if (parts.length === 2) return parts.pop().split(";").shift();
 }
 
+function showNotification(message, type) {
+  const notification = document.createElement("div");
+  notification.textContent = message;
+  notification.style.cssText = `
+    position: fixed;
+    top: 4rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #4CAF50;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 6px;
+    z-index: 9999;
+    font-weight: 500;
+  `;
+  document.body.appendChild(notification);
+  setTimeout(() => notification.remove(), 2000);
+}
+
 // ----- Rating Mode (Scoring System) -----
   const ratingModeForm = document.getElementById("rating-mode-form");
   if (ratingModeForm) {
@@ -23,7 +42,7 @@ function getCookie(name) {
         .then(res => res.json())
         .then(res => {
           if (res.success) {
-            location.reload();
+            showNotification("Scoring system saved successfully!");
           } else {
             alert(res.error || "Failed to update scoring system.");
           }
@@ -88,7 +107,7 @@ document.addEventListener("DOMContentLoaded", function () {
         .then(res => res.json())
         .then(res => {
           if (res.success) {
-            location.reload();
+            setTimeout(() => window.location.reload(true));
           } else {
             alert("Update failed.");
           }
@@ -199,6 +218,7 @@ if (downloadBtn) {
         a.click();
         a.remove();
         window.URL.revokeObjectURL(url);
+        showNotification("Backup downloaded successfully!");
       })
       .catch((err) => {
         console.error(err);
@@ -237,7 +257,11 @@ if (uploadBtn && uploadInput) {
     })
       .then((response) => response.json())
       .then((data) => {
-        alert(data.message || data.error || "Import finished.");
+        if (data.message && !data.error) {
+          showNotification("Backup loaded successfully!");
+        } else {
+          alert(data.error || "Import failed.");
+        }
         window.location.reload();
       })
       .catch((err) => {
@@ -251,10 +275,18 @@ if (uploadBtn && uploadInput) {
   });
 }
 
-  // ----- Collapsible Sections -----
-  document.querySelectorAll(".collapsible").forEach(button => {
+  // ----- Tab Functionality -----
+  document.querySelectorAll(".tab-button").forEach(button => {
     button.addEventListener("click", () => {
-      button.classList.toggle("active");
+      const tabId = button.dataset.tab;
+      
+      // Remove active class from all tabs and content
+      document.querySelectorAll(".tab-button").forEach(btn => btn.classList.remove("active"));
+      document.querySelectorAll(".tab-content").forEach(content => content.classList.remove("active"));
+      
+      // Add active class to clicked tab and corresponding content
+      button.classList.add("active");
+      document.getElementById(tabId).classList.add("active");
     });
   });
 
@@ -289,6 +321,7 @@ document.addEventListener("DOMContentLoaded", function() {
       .then(response => response.json())
       .then(data => {
         if (data.success) {
+          showNotification("Edit modal preferences saved successfully!");
         } else {
           alert("Failed to save preferences.");
         }
@@ -296,3 +329,37 @@ document.addEventListener("DOMContentLoaded", function() {
     });
   }
 });
+// Update tooltip text dynamically for checkboxes
+document.addEventListener("DOMContentLoaded", function() {
+  const checkboxes = document.querySelectorAll('.toggle-visible');
+  
+  checkboxes.forEach(checkbox => {
+    checkbox.addEventListener('change', function() {
+      this.setAttribute('data-tooltip', this.checked ? 'Hide' : 'Show');
+    });
+  });
+
+  // Version checking
+  checkVersions();
+});
+
+function checkVersions() {
+  fetch('/api/version_info/')
+    .then(response => response.json())
+    .then(data => {
+      document.getElementById('current-version').textContent = data.current_version;
+      document.getElementById('latest-version').textContent = data.latest_version;
+      
+      const status = document.getElementById('update-status');
+      if (data.current_version === data.latest_version) {
+        status.textContent = '✓ You have the latest version';
+        status.style.color = '#4CAF50';
+      } else {
+        status.innerHTML = '<a href="https://github.com/mihail-pop/media-journal/releases" target="_blank" style="color: #ff9800; text-decoration: none;">⚠ Update available</a>';
+      }
+    })
+    .catch(() => {
+      document.getElementById('current-version').textContent = 'Unknown';
+      document.getElementById('latest-version').textContent = 'Unable to check';
+    });
+}

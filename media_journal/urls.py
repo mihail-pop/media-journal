@@ -31,6 +31,7 @@ urlpatterns = [
     path('get-item/<int:item_id>/', views.get_item, name='get_item'),
     path('settings/', views.settings_page, name='settings'),
     path("settings/update_preferences/", views.update_preferences, name="update_preferences"),
+    path('api/version_info/', views.version_info_api, name='version_info_api'),
     path('api/add_key/', views.add_key, name='add_key'),
     path('api/update_key/', views.update_key, name='update_key'),
     path('api/delete_key/', views.delete_key, name='delete_key'),

@@ -2098,8 +2098,6 @@ def add_to_list(request):
 
 
 # Edit item
-
-
 @ensure_csrf_cookie
 def edit_item(request, item_id):
     if request.method == "POST":
@@ -2123,8 +2121,30 @@ def edit_item(request, item_id):
                 new_status = data["status"]
                 item.status = new_status
 
-            # If status changed, update date_added
-            if new_status != old_status:
+            # --- Handle date_added with comparison ---
+            user_date = data.get("date_added")
+            if user_date:
+                try:
+                    year, month, day = map(int, user_date.split("-"))
+                    # Build candidate datetime using old time component
+                    old_dt = item.date_added or timezone.now()
+                    candidate_dt = timezone.datetime(year, month, day,
+                                                     old_dt.hour, old_dt.minute, old_dt.second)
+                    if settings.USE_TZ:
+                        candidate_dt = timezone.make_aware(candidate_dt, timezone.get_current_timezone())
+
+                    # Compare just the date part with current item.date_added
+                    if item.date_added and item.date_added.date() != candidate_dt.date():
+                        # User actually changed the date → take their value
+                        item.date_added = candidate_dt
+                    elif new_status != old_status:
+                        # User sent the same date but status changed → update to now
+                        item.date_added = timezone.now()
+                    # else: same date, no status change → leave unchanged
+                except Exception as e:
+                    print("Failed to parse date_added:", e)
+            elif new_status != old_status:
+                # No date provided, but status changed → update to now
                 item.date_added = timezone.now()
 
             # Update progress fields if present (manual input)
@@ -2147,26 +2167,11 @@ def edit_item(request, item_id):
                 if item.total_secondary is not None:
                     item.progress_secondary = item.total_secondary
 
-            
-            if "date_added" in data and data["date_added"]:
-                try:
-                    # data["date_added"] comes as YYYY-MM-DD
-                    old_dt = item.date_added or timezone.now()
-                    year, month, day = map(int, data["date_added"].split('-'))
-                    # keep old hours/minutes/seconds
-                    dt = timezone.datetime(year, month, day, old_dt.hour, old_dt.minute, old_dt.second)
-                    if settings.USE_TZ:
-                        dt = timezone.make_aware(dt, timezone.get_current_timezone())
-                    item.date_added = dt
-                except Exception as e:
-                    print("Failed to parse date_added:", e)
-
             if "repeats" in data:
                 try:
                     item.repeats = max(0, int(data["repeats"]))
                 except (ValueError, TypeError):
                     item.repeats = 0
-
 
             if "personal_rating" in data:
                 # Get current rating mode (try to get from AppSettings, fallback to 'faces')
@@ -2177,12 +2182,10 @@ def edit_item(request, item_id):
                 except Exception:
                     rating_mode = 'faces'
 
-                # data["personal_rating"] is the display value (int or None/empty string)
                 display_value = data["personal_rating"]
                 if display_value in [None, "", "null"]:
                     item.personal_rating = None
                 else:
-                    # Convert display_value to int and then to internal rating
                     try:
                         display_value_int = int(display_value)
                     except ValueError:
@@ -2206,7 +2209,6 @@ def edit_item(request, item_id):
             return JsonResponse({"success": False, "error": str(e)})
 
     return JsonResponse({"success": False, "error": "Invalid request"})
-
 
 
 @ensure_csrf_cookie
@@ -2647,7 +2649,7 @@ def upload_banner(request):
         return JsonResponse({"error": "Missing required data."}, status=400)
 
     ext = os.path.splitext(uploaded_file.name)[1].lower()
-    if ext not in [".jpg", ".jpeg", ".png"]:
+    if ext not in [".jpg", ".jpeg", ".png", ".webp", ".gif"]:
         return JsonResponse({"error": "Unsupported file type."}, status=400)
 
     # Build full file path: media/banners/source_id.ext
@@ -2659,7 +2661,7 @@ def upload_banner(request):
     new_path = os.path.join(banner_dir, base_name + ext)
 
     # Delete any existing file with same base name but different ext
-    for existing_ext in [".jpg", ".jpeg", ".png"]:
+    for existing_ext in [".jpg", ".jpeg", ".png", ".webp", ".gif"]:
         old_path = os.path.join(banner_dir, base_name + existing_ext)
         if os.path.exists(old_path) and old_path != new_path:
             os.remove(old_path)
@@ -2673,9 +2675,8 @@ def upload_banner(request):
 
     try:
         item = MediaItem.objects.get(source=source, source_id=source_id)
-        if not item.banner_url:
-            item.banner_url = relative_url
-            item.save(update_fields=["banner_url"])
+        item.banner_url = relative_url
+        item.save(update_fields=["banner_url"])
     except MediaItem.DoesNotExist:
         pass  # No item found yet — maybe it's added later
 
@@ -2692,7 +2693,7 @@ def upload_cover(request):
         return JsonResponse({"error": "Missing required data."}, status=400)
 
     ext = os.path.splitext(uploaded_file.name)[1].lower()
-    if ext not in [".jpg", ".jpeg", ".png"]:
+    if ext not in [".jpg", ".jpeg", ".png", ".webp", ".gif"]:
         return JsonResponse({"error": "Unsupported file type."}, status=400)
 
     poster_dir = os.path.join(settings.MEDIA_ROOT, "posters")
@@ -2701,7 +2702,7 @@ def upload_cover(request):
     base_name = f"{source}_{source_id}"
     new_path = os.path.join(poster_dir, base_name + ext)
 
-    for existing_ext in [".jpg", ".jpeg", ".png"]:
+    for existing_ext in [".jpg", ".jpeg", ".png", ".webp", ".gif"]:
         old_path = os.path.join(poster_dir, base_name + existing_ext)
         if os.path.exists(old_path) and old_path != new_path:
             os.remove(old_path)
@@ -2714,9 +2715,8 @@ def upload_cover(request):
 
     try:
         item = MediaItem.objects.get(source=source, source_id=source_id)
-        if not item.cover_url:
-            item.cover_url = relative_url
-            item.save(update_fields=["cover_url"])
+        item.cover_url = relative_url
+        item.save(update_fields=["cover_url"])
     except MediaItem.DoesNotExist:
         pass
 
@@ -2751,6 +2751,21 @@ def refresh_item(request):
             'screenshots': item.screenshots,
         }
 
+        # Backup screenshot files
+        screenshot_backups = []
+        if item.screenshots:
+            for shot in item.screenshots:
+                url = shot.get('url', '')
+                if url.startswith('/media/'):
+                    file_path = os.path.join(settings.MEDIA_ROOT, url.replace('/media/', ''))
+                    if os.path.exists(file_path):
+                        with open(file_path, 'rb') as f:
+                            screenshot_backups.append({
+                                'url': url,
+                                'data': f.read(),
+                                'is_full_url': shot.get('is_full_url', False)
+                            })
+
         # Delete the existing item
         delete_item(request, item_id)
 
@@ -2770,6 +2785,15 @@ def refresh_item(request):
         new_item = MediaItem.objects.get(source=source, source_id=source_id, media_type=media_type)
         for field, value in user_data.items():
             setattr(new_item, field, value)
+        
+        # Restore screenshot files
+        if screenshot_backups:
+            for backup in screenshot_backups:
+                file_path = os.path.join(settings.MEDIA_ROOT, backup['url'].replace('/media/', ''))
+                os.makedirs(os.path.dirname(file_path), exist_ok=True)
+                with open(file_path, 'wb') as f:
+                    f.write(backup['data'])
+        
         new_item.last_updated = timezone.now()
         new_item.save()
 
@@ -3016,3 +3040,18 @@ def update_rating_mode(request):
         return JsonResponse({"success": True})
     except Exception as e:
         return JsonResponse({"success": False, "error": str(e)})
+    
+
+def version_info_api(request):
+    current_version = "v1.3.0"  # Update this 
+    
+    try:
+        response = requests.get("https://api.github.com/repos/mihail-pop/media-journal/releases/latest", timeout=5)
+        latest_version = response.json().get("tag_name", "Unknown")
+    except:
+        latest_version = "Unable to check"
+    
+    return JsonResponse({
+        "current_version": current_version,
+        "latest_version": latest_version
+    })

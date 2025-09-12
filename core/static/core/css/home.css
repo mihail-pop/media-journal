@@ -517,8 +517,8 @@ h2 {
 .discover-button:hover svg,
 .board-button:hover,
 .board-button:hover svg {
-  color: #e91e63; /* bright yellow/orange for text */
-  fill: #e91e63;  /* same bright color for the flame SVG */
+  color: #adbfce; /* bright yellow/orange for text */
+  fill: #adbfce;  /* same bright color for the flame SVG */
   transition: color 0.3s ease, fill 0.3s ease;
 }
 

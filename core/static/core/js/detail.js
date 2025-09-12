@@ -30,8 +30,8 @@ function refreshItem(itemId) {
     .then((res) => {
       refreshBtn.textContent = originalText;
       refreshBtn.disabled = false;
-      showNotification("Item refreshed successfully!", "success");
-      setTimeout(() => window.location.reload(true), 1000);
+      sessionStorage.setItem("refreshSuccess", "1");
+      setTimeout(() => window.location.reload(true));
     });
 }
 
@@ -40,7 +40,7 @@ function showNotification(message, type) {
   notification.textContent = message;
   notification.style.cssText = `
     position: fixed;
-    top: 20px;
+    top: 4rem;
     left: 50%;
     transform: translateX(-50%);
     background: #4CAF50;
@@ -54,10 +54,26 @@ function showNotification(message, type) {
   setTimeout(() => notification.remove(), 2000);
 }
 
+function bustImageCache() {
+  const timestamp = new Date().getTime();
+  document.querySelectorAll('img').forEach(img => {
+    const src = img.src;
+    if (src && !src.includes('placeholder.png')) {
+      img.src = src.split('?')[0] + '?t=' + timestamp;
+    }
+  });
+  
+  const banner = document.querySelector('.banner-section');
+  if (banner && banner.dataset.banner) {
+    const url = banner.dataset.banner.split('?')[0] + '?t=' + timestamp;
+    banner.style.backgroundImage = `url("${url}")`;
+  }
+}
+
 function openBannerUpload(source, id) {
   const input = document.createElement("input");
   input.type = "file";
-  input.accept = ".jpg";
+  input.accept = ".jpg,.jpeg,.png,.webp,.gif";
   input.style.display = "none";
 
   input.onchange = () => {
@@ -79,12 +95,9 @@ function openBannerUpload(source, id) {
       .then((res) => res.json())
       .then((data) => {
         if (data.success && data.url) {
-          const banner = document.getElementById("detail-banner");
-          if (banner) {
-            const timestamp = new Date().getTime();
-            banner.src = data.url + "?t=" + timestamp;
-            setTimeout(() => window.location.reload(true), 1000);
-          }
+          bustImageCache();
+          sessionStorage.setItem("refreshSuccess", "1");
+          setTimeout(() => window.location.reload(true));
         } else {
           alert(data.error || "Failed to upload banner.");
         }
@@ -99,7 +112,7 @@ function openBannerUpload(source, id) {
 function openCoverUpload(source, id) {
   const input = document.createElement("input");
   input.type = "file";
-  input.accept = ".jpg";
+  input.accept = ".jpg,.jpeg,.png,.webp,.gif";
   input.style.display = "none";
 
   input.onchange = () => {
@@ -121,12 +134,9 @@ function openCoverUpload(source, id) {
       .then((res) => res.json())
       .then((data) => {
         if (data.success && data.url) {
-          const cover = document.getElementById("detail-cover");
-          if (cover) {
-            const timestamp = new Date().getTime();
-            cover.src = data.url + "?t=" + timestamp;
-            setTimeout(() => window.location.reload(true), 1000);
-          }
+          bustImageCache();
+          sessionStorage.setItem("refreshSuccess", "1");
+          setTimeout(() => window.location.reload(true));
         } else {
           alert(data.error || "Failed to upload cover.");
         }
@@ -177,6 +187,11 @@ function hideArrows(container) {
 }
 
 document.addEventListener("DOMContentLoaded", function () {
+  if (sessionStorage.getItem("refreshSuccess") === "1") {
+    showNotification("Item refreshed successfully!", "success");
+    sessionStorage.removeItem("refreshSuccess");
+  }
+
   const searchInput = document.getElementById("person-search-input");
   const searchBtn = document.getElementById("person-search-btn");
   const resultsContainer = document.getElementById("person-search-results");
