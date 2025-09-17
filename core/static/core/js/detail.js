@@ -38,12 +38,13 @@ function refreshItem(itemId) {
 function showNotification(message, type) {
   const notification = document.createElement("div");
   notification.textContent = message;
+  const bgColor = type === "warning" ? "#FF9800" : "#4CAF50";
   notification.style.cssText = `
     position: fixed;
     top: 4rem;
     left: 50%;
     transform: translateX(-50%);
-    background: #4CAF50;
+    background: ${bgColor};
     color: white;
     padding: 12px 24px;
     border-radius: 6px;
@@ -51,7 +52,8 @@ function showNotification(message, type) {
     font-weight: 500;
   `;
   document.body.appendChild(notification);
-  setTimeout(() => notification.remove(), 2000);
+  const duration = type === "warning" ? 20000 : 2000;
+  setTimeout(() => notification.remove(), duration);
 }
 
 function bustImageCache() {
@@ -333,6 +335,8 @@ document.addEventListener("DOMContentLoaded", function () {
   const addBtn = document.getElementById("add-to-list-button");
   if (addBtn) {
     addBtn.addEventListener("click", function () {
+      showNotification("Adding to your list...", "warning");
+      
       const data = {
         source: addBtn.dataset.source,
         source_id: addBtn.dataset.sourceId,
@@ -353,6 +357,7 @@ document.addEventListener("DOMContentLoaded", function () {
         .then((data) => {
           if (data.message) {
             sessionStorage.setItem("openEditModal", "true");
+            sessionStorage.setItem("refreshSuccess", "1");
             location.reload();
           } else if (data.error) {
             alert("Error: " + data.error);

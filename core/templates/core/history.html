@@ -4,8 +4,8 @@
 
 {% block head %}
 {{ block.super }}
-<link rel="stylesheet" href="{% static 'core/css/history.css' %}">
-<link rel="stylesheet" href="{% static 'core/css/modal.css' %}">
+<link rel="stylesheet" href="{% static 'core/css/history.css' %}?v={{ version }}">
+<link rel="stylesheet" href="{% static 'core/css/modal.css' %}?v={{ version }}">
 {% endblock %}
 
 {% block content %}
@@ -134,6 +134,6 @@
 {% endblock %}
 
 {% block script %}
-<script src="{% static 'core/js/edit_modal.js' %}"></script>
-<script src="{% static 'core/js/history.js' %}"></script>
+<script src="{% static 'core/js/edit_modal.js' %}?v={{ version }}"></script>
+<script src="{% static 'core/js/history.js' %}?v={{ version }}"></script>
 {% endblock %}

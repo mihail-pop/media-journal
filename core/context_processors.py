@@ -8,3 +8,6 @@ def nav_items(request):
         item.display_name = item.get_name_display()
 
     return {"nav_items": items}
+
+def version_context(request):
+    return {'version': 'v1.4.1'}  # Update this with each release

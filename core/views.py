@@ -1199,7 +1199,20 @@ def tmdb_season_detail(request, tmdb_id, season_number):
             all_seasons = main_show.seasons or []
             season_nav = get_season_navigation(all_seasons, int(season_number))
         except MediaItem.DoesNotExist:
-            season_nav = {}
+            # Fallback: fetch seasons from TMDB API
+            try:
+                api_key = APIKey.objects.get(name="tmdb").key_1
+                show_url = f"https://api.themoviedb.org/3/tv/{tmdb_id}"
+                show_params = {"api_key": api_key}
+                show_response = requests.get(show_url, params=show_params)
+                if show_response.status_code == 200:
+                    show_data = show_response.json()
+                    all_seasons = show_data.get('seasons', [])
+                    season_nav = get_season_navigation(all_seasons, int(season_number))
+                else:
+                    season_nav = {}
+            except (APIKey.DoesNotExist, Exception):
+                season_nav = {}
         
         return render(request, "core/season_detail.html", {
             "item": item,
@@ -3372,7 +3385,8 @@ def update_rating_mode(request):
     
 
 def version_info_api(request):
-    current_version = "v1.4.0"  # Update this 
+    from core.context_processors import version_context
+    current_version = version_context(request)['version']
     
     try:
         response = requests.get("https://api.github.com/repos/mihail-pop/media-journal/releases/latest", timeout=5)

@@ -20,7 +20,7 @@ def start_tmdb_background_loop():
             now = timezone.now()
             cutoff = now - timedelta(days=30)
 
-            items = MediaItem.objects.filter(media_type="tv", source="tmdb")
+            items = MediaItem.objects.filter(media_type="tv", source="tmdb").exclude(source_id__contains="_s")
             eligible = [item for item in items if item.last_updated < cutoff]
 
             for item in eligible[:30]:

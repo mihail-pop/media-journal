@@ -5,8 +5,8 @@
 <head>
   <meta charset="UTF-8" />
   <title>Media Journal</title>
-  <link rel="stylesheet" href="{% static 'core/css/header.css' %}" />
-  <link rel="stylesheet" href="{% static 'core/css/search.css' %}" />
+  <link rel="stylesheet" href="{% static 'core/css/header.css' %}?v={{ version }}" />
+  <link rel="stylesheet" href="{% static 'core/css/search.css' %}?v={{ version }}" />
   <link rel="icon" href="/static/core/icons/favicon.ico" type="image/x-icon">
 </head>
 {% endblock %}
@@ -55,7 +55,7 @@
 
 
 {% block script %}
-  <script src="{% static 'core/js/base.js' %}"></script>
+  <script src="{% static 'core/js/base.js' %}?v={{ version }}"></script>
 {% endblock %}
 </body>
 </html>
