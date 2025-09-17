@@ -468,42 +468,32 @@ def get_movie_extra_info(tmdb_id):
         return {}
 
     base_url = f"https://api.themoviedb.org/3/movie/{tmdb_id}"
-    params = {"api_key": api_key}
+    params = {"api_key": api_key, "append_to_response": "videos,credits,recommendations"}
 
     try:
-        # Main movie info
+        # Single API call with all data
         response = requests.get(base_url, params=params)
         if response.status_code != 200:
             return {}
 
         data = response.json()
 
-        # Fetch trailers/videos
-        videos_url = f"{base_url}/videos"
-        videos_response = requests.get(videos_url, params=params)
-        trailers = []
-        if videos_response.status_code == 200:
-            videos = videos_response.json().get("results", [])
+        # Process videos/trailers
+        videos = data.get("videos", {}).get("results", [])
+        trailer_videos = [v for v in videos if v.get("site") == "YouTube" and v.get("type") == "Trailer" and v.get("key")]
+        teaser_videos = [v for v in videos if v.get("site") == "YouTube" and v.get("type") == "Teaser" and v.get("key")]
+        combined = trailer_videos + teaser_videos
+        trailers = [{
+            "name": v.get("name"),
+            "type": v.get("type"),
+            "youtube_id": v.get("key"),
+            "url": f"https://www.youtube.com/watch?v={v['key']}"
+        } for v in combined[:3]]
 
-            trailer_videos = [v for v in videos if v.get("site") == "YouTube" and v.get("type") == "Trailer" and v.get("key")]
-            teaser_videos = [v for v in videos if v.get("site") == "YouTube" and v.get("type") == "Teaser" and v.get("key")]
-
-            combined = trailer_videos + teaser_videos
-            trailers = [{
-                "name": v.get("name"),
-                "type": v.get("type"),
-                "youtube_id": v.get("key"),
-                "url": f"https://www.youtube.com/watch?v={v['key']}"
-            } for v in combined[:3]]
-
-        # Fetch crew
-        credits_url = f"{base_url}/credits"
-        credits_response = requests.get(credits_url, params=params)
-        staff_list = []
-        if credits_response.status_code == 200:
-            crew = credits_response.json().get("crew", [])
-            allowed_jobs = ["Director", "Writer", "Screenplay", "Producer", "Art Director"]
-            staff_list = [f"{c['name']} ({c['job']})" for c in crew if c.get("job") in allowed_jobs]
+        # Process crew
+        crew = data.get("credits", {}).get("crew", [])
+        allowed_jobs = ["Director", "Writer", "Screenplay", "Producer", "Art Director"]
+        staff_list = [f"{c['name']} ({c['job']})" for c in crew if c.get("job") in allowed_jobs]
 
         # Fetch related movies if part of a collection
         relations = []
@@ -524,6 +514,14 @@ def get_movie_extra_info(tmdb_id):
                         "poster": f"https://image.tmdb.org/t/p/w342{item.get('poster_path')}" if item.get("poster_path") else None
                     })
 
+        # Process recommendations
+        recs = data.get("recommendations", {}).get("results", [])[:16]
+        recommendations = [{
+            "id": rec["id"],
+            "title": rec.get("title"),
+            "poster_path": rec.get("poster_path")
+        } for rec in recs]
+
         return {
             "runtime": data.get("runtime"),
             "genres": [genre["name"] for genre in data.get("genres", [])],
@@ -532,7 +530,8 @@ def get_movie_extra_info(tmdb_id):
             "vote_average": round(data.get("vote_average", 0), 1),
             "trailers": trailers,
             "staff": staff_list,
-            "relations": relations,  # Added collection movies
+            "relations": relations,
+            "recommendations": recommendations,
         }
 
     except Exception as e:
@@ -546,10 +545,10 @@ def get_tv_extra_info(tmdb_id):
         return {}
 
     base_url = f"https://api.themoviedb.org/3/tv/{tmdb_id}"
-    params = {"api_key": api_key}
+    params = {"api_key": api_key, "append_to_response": "videos,credits,recommendations"}
 
     try:
-        # Main TV info
+        # Single API call with all data
         response = requests.get(base_url, params=params)
         if response.status_code != 200:
             return {}
@@ -560,32 +559,30 @@ def get_tv_extra_info(tmdb_id):
         next_episode = data.get("next_episode_to_air")
         next_episode_air_date = next_episode.get("air_date") if next_episode else None
 
-        # Fetch trailers/videos
-        videos_url = f"{base_url}/videos"
-        videos_response = requests.get(videos_url, params=params)
-        trailers = []
-        if videos_response.status_code == 200:
-            videos = videos_response.json().get("results", [])
+        # Process videos/trailers
+        videos = data.get("videos", {}).get("results", [])
+        trailer_videos = [v for v in videos if v.get("site") == "YouTube" and v.get("type") == "Trailer" and v.get("key")]
+        teaser_videos = [v for v in videos if v.get("site") == "YouTube" and v.get("type") == "Teaser" and v.get("key")]
+        combined = trailer_videos + teaser_videos
+        trailers = [{
+            "name": v.get("name"),
+            "type": v.get("type"),
+            "youtube_id": v.get("key"),
+            "url": f"https://www.youtube.com/watch?v={v['key']}"
+        } for v in combined[:3]]
 
-            trailer_videos = [v for v in videos if v.get("site") == "YouTube" and v.get("type") == "Trailer" and v.get("key")]
-            teaser_videos = [v for v in videos if v.get("site") == "YouTube" and v.get("type") == "Teaser" and v.get("key")]
+        # Process crew
+        crew = data.get("credits", {}).get("crew", [])
+        allowed_jobs = ["Director", "Writer", "Screenplay", "Producer", "Art Director"]
+        staff_list = [f"{c['name']} ({c['job']})" for c in crew if c.get("job") in allowed_jobs]
 
-            combined = trailer_videos + teaser_videos
-            trailers = [{
-                "name": v.get("name"),
-                "type": v.get("type"),
-                "youtube_id": v.get("key"),
-                "url": f"https://www.youtube.com/watch?v={v['key']}"
-            } for v in combined[:3]]
-
-        # Fetch crew
-        credits_url = f"{base_url}/credits"
-        credits_response = requests.get(credits_url, params=params)
-        staff_list = []
-        if credits_response.status_code == 200:
-            crew = credits_response.json().get("crew", [])
-            allowed_jobs = ["Director", "Writer", "Screenplay", "Producer", "Art Director"]
-            staff_list = [f"{c['name']} ({c['job']})" for c in crew if c.get("job") in allowed_jobs]
+        # Process recommendations
+        recs = data.get("recommendations", {}).get("results", [])[:16]
+        recommendations = [{
+            "id": rec["id"],
+            "title": rec.get("name"),
+            "poster_path": rec.get("poster_path")
+        } for rec in recs]
 
         return {
             "status": data.get("status"),
@@ -596,7 +593,8 @@ def get_tv_extra_info(tmdb_id):
             "homepage": data.get("homepage"),
             "genres": [genre["name"] for genre in data.get("genres", [])],
             "trailers": trailers,
-            "staff": staff_list,  # Added staff
+            "staff": staff_list,
+            "recommendations": recommendations,
         }
 
     except Exception as e:
@@ -654,6 +652,22 @@ def get_anime_extra_info(mal_id):
               status
               coverImage {
                 large
+              }
+            }
+          }
+        }
+        recommendations(sort: RATING_DESC, perPage: 16) {
+          edges {
+            node {
+              mediaRecommendation {
+                idMal
+                title {
+                  romaji
+                  english
+                }
+                coverImage {
+                  large
+                }
               }
             }
           }
@@ -747,6 +761,17 @@ def get_anime_extra_info(mal_id):
 
         relations_list.sort(key=sort_key)
 
+        # Process recommendations
+        recommendations = []
+        for edge in data.get("recommendations", {}).get("edges", []):
+            node = edge.get("node", {}).get("mediaRecommendation")
+            if node and node.get("idMal"):
+                recommendations.append({
+                    "id": node["idMal"],
+                    "title": node["title"].get("english") or node["title"].get("romaji"),
+                    "poster_path": node.get("coverImage", {}).get("large")
+                })
+
         return {
             "external_links": external_links,
             "status": data.get("status"),
@@ -759,6 +784,7 @@ def get_anime_extra_info(mal_id):
             "relations": relations_list,
             "next_airing": next_airing,
             "next_episode": next_episode,
+            "recommendations": recommendations,
         }
 
     except Exception as e:
@@ -814,6 +840,22 @@ def get_manga_extra_info(mal_id):
               status
               coverImage {
                 large
+              }
+            }
+          }
+        }
+        recommendations(sort: RATING_DESC, perPage: 16) {
+          edges {
+            node {
+              mediaRecommendation {
+                idMal
+                title {
+                  romaji
+                  english
+                }
+                coverImage {
+                  large
+                }
               }
             }
           }
@@ -897,6 +939,17 @@ def get_manga_extra_info(mal_id):
 
         relations_list.sort(key=sort_key)
 
+        # Process recommendations
+        recommendations = []
+        for edge in data.get("recommendations", {}).get("edges", []):
+            node = edge.get("node", {}).get("mediaRecommendation")
+            if node and node.get("idMal"):
+                recommendations.append({
+                    "id": node["idMal"],
+                    "title": node["title"].get("english") or node["title"].get("romaji"),
+                    "poster_path": node.get("coverImage", {}).get("large")
+                })
+
         return {
             "external_links": external_links,
             "status": data.get("status"),
@@ -907,6 +960,7 @@ def get_manga_extra_info(mal_id):
             "staff": staff_list,
             "trailers": trailers,
             "relations": relations_list,
+            "recommendations": recommendations,
         }
 
     except Exception as e:
@@ -974,6 +1028,32 @@ def get_game_extra_info(game_id):
                 "url": f"https://www.youtube.com/watch?v={v['video_id']}"
             } for v in combined[:3]]
 
+        # Fetch similar games (recommendations)
+        similar_body = f'''
+            fields
+                similar_games.name,
+                similar_games.cover.url;
+            where id = {game_id};
+        '''
+        
+        recommendations = []
+        try:
+            similar_response = requests.post("https://api.igdb.com/v4/games", headers=headers, data=similar_body)
+            if similar_response.status_code == 200:
+                similar_data = similar_response.json()
+                if similar_data and similar_data[0].get("similar_games"):
+                    for similar in similar_data[0]["similar_games"][:16]:
+                        cover_url = None
+                        if similar.get("cover") and similar["cover"].get("url"):
+                            cover_url = "https:" + similar["cover"]["url"].replace("t_thumb", "t_cover_big")
+                        recommendations.append({
+                            "id": similar.get("id"),
+                            "title": similar.get("name"),
+                            "poster_path": cover_url
+                        })
+        except Exception:
+            pass
+
         return {
             "platforms": [p.get("name") for p in game.get("platforms", [])] if game.get("platforms") else [],
             "genres": [g.get("name") for g in game.get("genres", [])] if game.get("genres") else [],
@@ -981,6 +1061,7 @@ def get_game_extra_info(game_id):
             "rating": round(game["rating"] / 10, 1) if game.get("rating") is not None else None,
             "websites": [w.get("url") for w in game.get("websites", [])] if game.get("websites") else [],
             "trailers": trailers,
+            "recommendations": recommendations,
         }
 
     except Exception:

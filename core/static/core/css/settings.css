@@ -395,6 +395,13 @@ input[type="checkbox"] {
   to { transform: rotate(360deg); }
 }
 
+/* Information section link hover effects */
+#information a:hover,
+#api-keys a:hover {
+  color: #b8c5d4 !important;
+  transition: color 0.2s ease;
+}
+
 @media (orientation: portrait) {
   body {
     padding-top: 12rem;

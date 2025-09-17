@@ -166,9 +166,10 @@
             {% for item in items|slice:":25" %}
             <div class="card"
                  data-banner-url="{{ item.banner_url|default:'/static/core/img/placeholder.png' }}"
-                 data-notes="{{ item.notes|escape }}">
+                 data-notes="{{ item.notes|escape }}"
+                 data-id="{{ item.id }}">
 {% if item.media_type in 'movie,tvshow' %}
-  <a href="{% url 'tmdb_detail' media_type=item.media_type tmdb_id=item.source_id %}">
+  <a href="{% if '_s' in item.source_id %}/tmdb/season/{% with parts=item.source_id|split:'_s' %}{{ parts.0 }}/{{ parts.1 }}/{% endwith %}{% else %}{% url 'tmdb_detail' media_type=item.media_type tmdb_id=item.source_id %}{% endif %}" class="card-link">
 {% elif item.media_type == 'anime' or item.media_type == 'manga' %}
   <a href="{% url 'mal_detail' media_type=item.media_type mal_id=item.source_id %}">
 {% elif item.media_type == 'game' %}
@@ -198,13 +199,16 @@
   {% if items %}
   <div class="favorites-overlay hidden" id="overlay-{{ category|slugify }}">
     <div class="overlay-content">
-      <h2>{{ category }}</h2>
-      <button class="close-button" onclick="closeFavoritesOverlay('{{ category|slugify }}')">Close</button>
-      <div class="card-grid">
+      <button class="close-button" onclick="closeFavoritesOverlay('{{ category|slugify }}')">✕</button>
+      <div class="card-grid" id="{{ category|slugify }}-card-grid">
         {% for item in items %}
-        <div class="card">
+        <div class="card" data-id="{{ item.id }}">
+          <div class="reorder-buttons">
+            <button class="move-up-btn" title="Move Left" aria-label="Move Left">⬅️</button>
+            <button class="move-down-btn" title="Move Right" aria-label="Move Right">➡️</button>
+          </div>
           {% if item.media_type in 'movie,tvshow' %}
-            <a href="{% url 'tmdb_detail' media_type=item.media_type tmdb_id=item.source_id %}">
+            <a href="{% if '_s' in item.source_id %}/tmdb/season/{% with parts=item.source_id|split:'_s' %}{{ parts.0 }}/{{ parts.1 }}/{% endwith %}{% else %}{% url 'tmdb_detail' media_type=item.media_type tmdb_id=item.source_id %}{% endif %}" class="card-link">
           {% elif item.media_type == 'anime' or item.media_type == 'manga' %}
             <a href="{% url 'mal_detail' media_type=item.media_type mal_id=item.source_id %}">
           {% elif item.media_type == 'game' %}
@@ -270,8 +274,7 @@
 {% if favorite_characters %}
 <div class="favorites-overlay hidden" id="overlay-characters">
   <div class="overlay-content">
-    <h2>Characters</h2>
-    <button class="close-button" onclick="closeFavoritesOverlay('characters')">Close</button>
+    <button class="close-button" onclick="closeFavoritesOverlay('characters')">✕</button>
     <div class="card-grid" id="characters-card-grid">
       {% for person in favorite_characters %}
       <div class="card" data-id="{{ person.id }}">
@@ -294,8 +297,7 @@
 {% if favorite_actors %}
 <div class="favorites-overlay hidden" id="overlay-actors">
   <div class="overlay-content">
-    <h2>Actors</h2>
-    <button class="close-button" onclick="closeFavoritesOverlay('actors')">Close</button>
+    <button class="close-button" onclick="closeFavoritesOverlay('actors')">✕</button>
     <div class="card-grid" id="actors-card-grid">
       {% for person in favorite_actors %}
       <div class="card" data-id="{{ person.id }}">

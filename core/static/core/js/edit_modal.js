@@ -330,6 +330,14 @@ if (repeatsGroup && repeatsInput && repeatsLabel) {
     if (favInput) favInput.checked = !!item.favorite;
 
     updateFieldVisibility(item.media_type);
+    
+    // Hide season progress for individual seasons after fields are shown
+    console.log('Debug - media_type:', item.media_type, 'title:', item.title);
+    if (item.media_type === "tv" && item.title && item.title.includes('Season')) {
+      console.log('Hiding season progress for:', item.title);
+      hideField("progress_secondary");
+    }
+    
     updateTotalDisplays(item);
   }
 

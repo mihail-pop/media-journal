@@ -50,6 +50,7 @@ class MediaItem(models.Model):
 
     cast = models.JSONField(blank=True, null=True)        # Unified for all media types
     seasons = models.JSONField(blank=True, null=True)     # Only for TV series
+    episodes = models.JSONField(blank=True, null=True)    # Episode details for seasons
     related_titles = models.JSONField(blank=True, null=True)  # Prequels/Sequels for anime/manga
     screenshots = models.JSONField(blank=True, null=True)
 
@@ -70,6 +71,7 @@ class MediaItem(models.Model):
         blank=True
     )  # No choices, stores values from 1–100
     favorite = models.BooleanField(default=False)
+    favorite_position = models.PositiveIntegerField(null=True, blank=True)
 
     date_added = models.DateTimeField(default=timezone.now)
     repeats = models.PositiveIntegerField(default=0)

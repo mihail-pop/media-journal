@@ -1,6 +1,6 @@
 body {
   background-color: #0b1622;
-  color: #ddd;
+  color: rgb(159, 173, 189);
   margin: 0;
 }
 
@@ -9,9 +9,7 @@ a {
   text-decoration: none; /* optional */
 }
 
-a:hover {
-  color: #57d5ff; /* or any custom hover color */
-}
+
 
 .detail-container {
   max-width: 1200px;
@@ -40,9 +38,9 @@ a:hover {
   flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: center; /* vertically center content */
+  justify-content: space-between;
   margin-top: -150px;
-  /* keep text left aligned by default */
+  min-height: 13.5rem;
 }
 
 /* --- BANNER SECTION --- */
@@ -80,9 +78,10 @@ a:hover {
 /* --- TOP SECTION (under banner) --- */
 .top-colored-section {
   background-color: #151f2e;
-  padding: 2rem 1rem 1rem;
+  padding: 1.5rem 1rem 1rem;
   position: relative;
   z-index: 2;
+  min-height: 13rem;
 }
 
 .poster {
@@ -111,8 +110,8 @@ a:hover {
 
 .text-info h1 {
   font-size: 1.5rem;
-  margin: 0 0 1rem 0;
-  color: rgb(236, 236, 236);
+  margin: 0 0 0.7rem 0;
+  color: rgb(159, 173, 189);
 }
 
 .text-info p {
@@ -121,28 +120,75 @@ a:hover {
 }
 
 .release-date {
-  color: #ccc;
+  color: rgb(114, 138, 161);
   margin-bottom: 15px;
+  font-size: 0.9rem;
+}
+
+.overview-container {
+  position: relative;
+  max-width: 1000px;
 }
 
 .overview {
   font-size: 0.9rem;
   line-height: 1.4;
   margin-top: 10px;
-  color: #ddd;
-  max-width: 1000px;
+  color: rgb(114, 138, 161);
+  max-height: 8.8rem;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  position: relative;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+}
+
+
+
+.overview.expanded {
+  max-height: none;
+}
+
+.overview:hover{
+  color: rgb(159, 173, 189);
+}
+
+
+
+.read-more-btn {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(to top, #151f2e 60%, transparent);
+  border: none;
+  color: rgb(159, 173, 189);
+  padding: 1rem 2rem 0.5rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.overview-container:hover .read-more-btn {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 /* --- EDIT + FAVORITE --- */
 .edit-favorite-wrapper {
-  margin-top: 1.2rem;
+  margin-top: 0.6rem;
   display: flex;
   align-items: center;
   gap: 1rem;
 }
 
 .edit-card-btn,
-#add-to-list-button {
+#add-to-list-button,
+#add-season-to-list-button {
   background-color: #00bfff;
   border: none;
   padding: 0.6rem 1.2rem;
@@ -153,7 +199,8 @@ a:hover {
 }
 
 .edit-card-btn:hover,
-#add-to-list-button:hover {
+#add-to-list-button:hover,
+#add-season-to-list-button:hover {
   background-color: #0099cc;
 }
 
@@ -204,12 +251,12 @@ a:hover {
 /* --- MAIN PAGE SECTION --- */
 .main-colored-section {
   background-color: #0b1622;
-  padding: 2rem 1rem;
+  padding: 0.5rem 1rem;
   min-height: calc(100vh - 600px);
 }
 
 /* --- SECTION LAYOUTS --- */
-.cast-section, .seasons-section, .recommendations-section, .screenshots-section {
+.cast-section, .seasons-section, .recommendations-section, .screenshots-section, .episodes-section {
   margin-bottom: 40px;
 }
 
@@ -226,12 +273,13 @@ a:hover {
   width: 120px;
   text-align: center;
   text-decoration: none;
-  color: white;
+  color: rgb(159, 173, 189);
   box-shadow: 0 1px 5px rgba(0,0,0,0.6);
   transition: transform 0.2s ease;
+  display: block;
 }
 
-.rec-card:hover, .recommendation:hover {
+.rec-card:hover, .recommendation:hover, .season-card:hover {
   transform: scale(1.05);
 }
 
@@ -249,13 +297,13 @@ a:hover {
 }
 
 .character-name, .episode-count, .air-date {
-  color: #bbb;
+  color: rgb(114, 138, 161);
 }
 
 .rec-title {
   font-weight: bold;
   margin-top: 2px;
-  color: rgb(243, 243, 243);
+  color: rgb(159, 173, 189);
 }
 
 .recommendations-list a {
@@ -297,13 +345,13 @@ a:hover {
   border: none;
   font-size: 1rem;
   background-color: #151f2e;
-  color: #cecece;
+  color: rgb(159, 173, 189);
   box-shadow: inset 0 0 4px #0008;
   transition: box-shadow 0.3s ease;
 }
 
 #person-search-input::placeholder {
-  color: #cecece; /* placeholder color */
+  color: rgb(159, 173, 189); /* placeholder color */
 }
 
 #person-search-input:focus {
@@ -515,19 +563,212 @@ a:hover {
   margin: 0;
   font-size: 1.5rem;
   white-space: nowrap;
-  color: rgb(236, 236, 236);
+  color: rgb(159, 173, 189);
 }
 
 .cast-header h2{
-  color: rgb(236, 236, 236);
+  color: rgb(159, 173, 189);
 }
 
 .recommendations-section h2{
-  color: rgb(236, 236, 236);
+  color: rgb(159, 173, 189);
 }
 
 .seasons-section h2{
-  color: rgb(236, 236, 236);
+  color: rgb(159, 173, 189);
+}
+
+.episodes-section h2{
+  color: rgb(159, 173, 189);
+}
+
+/* --- EPISODES SECTION --- */
+.episodes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.episode-card {
+  display: flex;
+  background: #151f2e;
+  border-radius: 6px;
+  padding: 12px;
+  gap: 15px;
+  box-shadow: 0 1px 5px rgba(0,0,0,0.6);
+  transition: background-color 0.2s ease;
+}
+
+
+
+.episode-image-container {
+  position: relative;
+  width: 160px;
+  height: 90px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.episode-card img {
+  width: 160px;
+  height: 90px;
+  object-fit: cover;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.expand-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  border-radius: 4px;
+}
+
+.episode-image-container:hover .expand-overlay {
+  opacity: 1;
+}
+
+.expand-icon {
+  color: white;
+  font-size: 2rem;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.image-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1000;
+  display: none;
+}
+
+.image-modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+}
+
+.image-modal-content {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  max-width: 90%;
+  max-height: 90%;
+}
+
+.image-modal-content img {
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: 8px;
+}
+
+.image-modal-close {
+  position: absolute;
+  right: 0;
+  background: none;
+  color: white;
+  border: none;
+  font-size: 2rem;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.image-modal-close:hover {
+  color: rgb(192, 191, 191);
+}
+
+.episode-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.episode-info h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: rgb(159, 173, 189);
+  font-weight: 600;
+}
+
+.episode-overview {
+  margin: 0;
+  font-size: 0.9rem;
+  color: rgb(114, 138, 161);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  position: relative;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+.episode-overview:hover {
+  color: rgb(159, 173, 189);
+}
+
+.episode-overview-container {
+  position: relative;
+}
+
+.episode-read-more-btn {
+  position: absolute;
+  bottom: -1.8rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(21, 31, 46, 0.95);
+  border: 1px solid #2a3b4d;
+  color: rgb(159, 173, 189);
+  padding: 0.3rem 0.8rem;
+  cursor: pointer;
+  font-size: 0.8rem;
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.episode-overview-container:hover .episode-read-more-btn {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.episode-read-more-btn:hover {
+  background: rgba(31, 42, 56, 0.95);
+}
+
+.episode-air-date {
+  margin: 0;
+  font-size: 0.85rem;
+  color: rgb(114, 138, 161);
+  margin-top: auto;
 }
 
 
@@ -539,7 +780,7 @@ a:hover {
 .inline-form button {
   background-color: #151f2e;
   border: none;
-  color: #cecece;
+  color: rgb(159, 173, 189);
   padding: 0.4em 1em;
   font-size: 1rem;
   border-radius: 4px;
@@ -555,57 +796,60 @@ a:hover {
   position: absolute;
   top: 22rem;
   right: 1rem;
-  padding: 6px 12px;
-  background: #0b1622;
-  color: #cecece;
-  border: none;
+  padding: 7px 12px;
+  background: #151f2e;
+  color: rgb(114, 138, 161);
+  border: 1px solid #2a3b4d;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13px;
   z-index: 10;
-  transition: background 0.2s ease;
+  transition: all 0.2s ease;
 }
 
 .change-banner-btn:hover {
-  background: #25394f;
+  background: #1f2a38;
+  color: rgb(159, 173, 189);
 }
 
 .change-cover-btn {
   position: absolute;
   top: 24rem;
   right: 1rem;
-  padding: 6px 12px;
-  background: #0b1622;
-  color: #cecece;
-  border: none;
+  padding: 7px 12px;
+  background: #151f2e;
+  color: rgb(114, 138, 161);
+  border: 1px solid #2a3b4d;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13px;
   z-index: 10;
-  transition: background 0.2s ease;
+  transition: all 0.2s ease;
 }
 
 .change-cover-btn:hover {
-  background: #25394f;
+  background: #1f2a38;
+  color: rgb(159, 173, 189);
 }
 
 .refresh-btn {
   position: absolute;
   top: 26rem;
   right: 1rem;
-  padding: 6px 12px;
-  background: #0b1622;
-  color: #cecece;
-  border: none;
+  padding: 7px 12px;
+  background: #151f2e;
+  color: rgb(114, 138, 161);
+  border: 1px solid #2a3b4d;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13px;
   z-index: 10;
-  transition: background 0.2s ease;
+  transition: all 0.2s ease;
 }
 
 .refresh-btn:hover {
-  background-color: #25394f;
+  background: #1f2a38;
+  color: rgb(159, 173, 189);
 }
 
 .label {
@@ -616,7 +860,7 @@ a:hover {
   background-color: none;
   background: none;
   border: none;
-  color: rgb(236, 236, 236);
+  color: rgb(114, 138, 161);
   text-decoration: underline;
   cursor: pointer;
   font: inherit; /* Inherit font styling from surrounding text */
@@ -627,7 +871,7 @@ a:hover {
 .more-info-btn:focus {
   background: none;
   text-decoration: underline;
-  color: #00bfff; /* Keep the same color on hover/focus */
+  color: rgb(159, 173, 189); /* Keep the same color on hover/focus */
   outline: none;
 }
 
@@ -691,6 +935,25 @@ a:hover {
   display: block;
 }
 
+.season-navigation {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: auto;
+}
+
+.nav-btn {
+  color: rgb(114, 138, 161);
+  padding: 0.4rem 0.8rem;
+  text-decoration: none;
+  font-size: 0.85rem;
+  transition: all 0.2s ease;
+}
+
+.nav-btn:hover {
+  color: rgb(159, 173, 189);
+}
+
 @media (orientation: portrait) {
   .change-banner-btn{
     top: 50rem;
@@ -731,7 +994,7 @@ a:hover {
   }
 
   .top-colored-section{
-    min-height: 40rem;
+    min-height: 42rem;
     margin-top: 7rem;
   }
 

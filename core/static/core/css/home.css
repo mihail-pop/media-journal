@@ -92,6 +92,19 @@ body {
   padding: 22px;
 }
 
+#characters-card-grid,
+#actors-card-grid,
+#games-card-grid,
+#manga-card-grid,
+#anime-card-grid,
+#tv-shows-card-grid,
+#movies-card-grid,
+#books-card-grid{
+  background: none;
+  border: 4px solid rgb(71, 90, 109);
+  margin-bottom: 0!important;
+}
+
 /* --- Card Styles --- */
 .card {
   border-radius: 4px;
@@ -258,6 +271,7 @@ h2 {
 }
 
 .overlay-content {
+  position: relative;
   max-height: 90vh;
   overflow-y: auto;
   max-width: 1010px;
@@ -666,13 +680,26 @@ h2 {
   transform: scale(1.2);
 }
 .favorites-overlay .close-button {
-  background: #151F2E;
+  position: absolute;
+  top: -0.4rem;
+  right: 0.2rem;
+  background:  none;
   color: white;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  border: none;
+  cursor: pointer;
 }
 
+
 .favorites-overlay .close-button:hover {
-  background: #e04345;
+  color: rgb(212, 212, 212);
 }
 
 .recent-activity ul {

@@ -41,6 +41,14 @@ def divide(value, divisor):
         return ''
     
 @register.filter
+def split(value, delimiter):
+    """Split a string by delimiter and return a list"""
+    try:
+        return str(value).split(str(delimiter))
+    except (AttributeError, TypeError):
+        return []
+
+@register.filter
 def timesince_one_unit(value):
     """
     Returns the time since `value` as a single unit, e.g.:

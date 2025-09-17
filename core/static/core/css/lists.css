@@ -161,7 +161,8 @@ html {
 }
 
 .filter-btn,
-.toggle-btn {
+.toggle-btn,
+.type-filter-btn {
   display: flex;              /* make button a flex container */
   justify-content: space-between; /* push text left, count right */
   align-items: center;        /* vertically center content */
@@ -202,12 +203,14 @@ html {
 }
 
 .filter-btn:hover,
-.toggle-btn:hover {
+.toggle-btn:hover,
+.type-filter-btn:hover {
   background-color: #32445b;
 }
 
 .filter-btn.active,
-.toggle-btn.active {
+.toggle-btn.active,
+.type-filter-btn.active {
   background-color: #1f2a38;
 }
 

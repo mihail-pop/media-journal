@@ -1,0 +1,169 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block head %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'core/css/detail.css' %}" />
+  <link rel="stylesheet" href="{% static 'core/css/modal.css' %}" />
+{% endblock %}
+
+{% block content %}
+<body data-media-type="{{ media_type }}" data-item-id="{{ source_id }}"></body>
+
+{% with banner=banner_url|default_if_none:'' %}
+  <div class="banner-section {% if not banner %}no-banner{% endif %}"
+       {% if banner %}data-banner="{{ banner_url}}"{% endif %}>
+    <div class="banner-overlay"></div>
+  </div>
+{% if in_my_list %}
+<button onclick="openCoverUpload('{{ source }}', '{{ source_id }}')" class="change-cover-btn">
+  Change Cover
+</button>
+<button onclick="openBannerUpload('{{ source }}', '{{ source_id }}')" class="change-banner-btn">
+  Change Banner
+</button>
+<button onclick="refreshItem('{{ item_id }}')" class="refresh-btn">
+  Refresh Data
+</button>
+{% endif %}
+{% endwith %}
+
+<div class="top-colored-section">
+  <div class="detail-container top-content">
+    <div class="left-column">
+      <img class="poster" 
+           src="{{ poster_url }}" 
+           alt="{{ title }}" 
+           data-placeholder="{% static 'core/img/placeholder.png' %}" 
+           onerror="this.onerror=null;this.src=this.dataset.placeholder;" />
+      
+      <div class="edit-favorite-wrapper">
+        {% if in_my_list %}
+          <button id="edit-button" class="btn edit-card-btn" data-id="{{ item_id }}" data-media-type="{{ media_type }}">Edit</button>
+          <form id="favorite-form" data-item-id="{{ item_id }}">
+            <label class="favorite-checkbox">
+              <input type="checkbox" name="favorite" {% if item.favorite %}checked{% endif %}>
+              <span class="heart"></span>
+            </label>
+          </form>
+        {% else %}
+          <button id="add-season-to-list-button" class="btn"
+            data-tmdb-id="{{ tmdb_id }}"
+            data-season-number="{{ season_number }}">Add to My List</button>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="right-column">
+      <div class="text-info">
+        <h1>{{ title }}</h1>
+        <div class="overview-container">
+          <p class="overview">{{ overview|safe }}</p>
+          <button class="read-more-btn">Read More</button>
+        </div>
+        <p class="release-date">{{ release_date }}</p>
+      </div>
+      
+      <!-- Season Navigation -->
+      {% if season_nav %}
+      <div class="season-navigation">
+        <a href="/tmdb/tv/{{ tmdb_id }}/" class="nav-btn main-show"><< TV Show</a>
+        {% if season_nav.prev_season is not None %}
+          <a href="/tmdb/season/{{ tmdb_id }}/{{ season_nav.prev_season }}/" class="nav-btn prev">&lt; {{ season_nav.prev_name }}</a>
+        {% endif %}
+        {% if season_nav.next_season is not None %}
+          <a href="/tmdb/season/{{ tmdb_id }}/{{ season_nav.next_season }}/" class="nav-btn next">{{ season_nav.next_name }} &gt;</a>
+        {% endif %}
+        {% if season_nav.last_season is not None %}
+          <a href="/tmdb/season/{{ tmdb_id }}/{{ season_nav.last_season }}/" class="nav-btn last">{{ season_nav.last_name }} &gt;&gt;</a>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% include "core/partials/edit_modal.html" with media_type=media_type item_id=item_id status=item.status personal_rating=item.personal_rating notes=item.notes progress_main=item.progress_main total_main=item.total_main progress_secondary=item.progress_secondary total_secondary=item.total_secondary favorite=item.favorite %}
+
+<div class="main-colored-section">
+  <div class="detail-container">
+    
+    {% if episodes %}
+    <section class="episodes-section">
+      <h2>Episodes</h2>
+      <div class="episodes-list">
+        {% for episode in episodes %}
+        <div class="episode-card">
+          <div class="episode-image-container">
+            {% if episode.still_path %}
+            <img src="{{ episode.still_path }}" 
+                 alt="{{ episode.name }}"
+                 data-placeholder="{% static 'core/img/placeholder.png' %}"
+                 onerror="this.onerror=null;this.src=this.dataset.placeholder;"
+                 class="episode-image" />
+            {% else %}
+            <img src="{% static 'core/img/placeholder.png' %}" alt="{{ episode.name }}" class="episode-image" />
+            {% endif %}
+            <div class="expand-overlay">
+              <div class="expand-icon">⛶</div>
+            </div>
+          </div>
+          <div class="episode-info">
+            <h3>{{ episode.episode_number }}. {{ episode.name }}</h3>
+            <div class="episode-overview-container">
+              <p class="episode-overview">{{ episode.overview }}</p>
+              <button class="episode-read-more-btn">Read More</button>
+            </div>
+            <p class="episode-air-date">{{ episode.formatted_air_date }}</p>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    {% if cast %}
+    <section class="cast-section">
+      <div class="cast-header" style="display: flex; align-items: center; gap: 1rem;">
+        <h2 style="margin: 0;">Cast</h2>
+        <input type="text" id="person-search-input" placeholder="Search for a character or actor..." autocomplete="off" style="flex-grow: 1;">
+        <button id="person-search-btn" title="Search" aria-label="Search" class="search-icon-button"></button>
+      </div>
+
+      <!-- Search results above the cast list -->
+      <div id="person-search-results" class="search-results"></div>
+
+      <div class="cast-list">
+        {% for member in cast %}
+        <div class="cast-member">
+          <img src="{% if member.is_full_url %}{{ member.profile_path }}{% else %}https://image.tmdb.org/t/p/w185{{ member.profile_path }}{% endif %}"
+               alt="{{ member.name }}"
+               data-placeholder="{% static 'core/img/placeholder.png' %}"
+               onerror="this.onerror=null;this.src=this.dataset.placeholder;" />
+          <p class="actor-name">{{ member.name }}</p>
+          <p class="character-name">{{ member.character }}</p>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+  </div>
+</div>
+
+<!-- Image Modal -->
+<div id="image-modal" class="image-modal">
+  <div class="image-modal-overlay"></div>
+  <div class="image-modal-content">
+    <button class="image-modal-close">&times;</button>
+    <img id="modal-image" src="" alt="" />
+  </div>
+</div>
+{% endblock %}
+
+{% block script %}
+  {{ block.super }}
+  <script src="{% static 'core/js/detail.js' %}"></script>
+  <script src="{% static 'core/js/edit_modal.js' %}"></script>
+  <script src="{% static 'core/js/season_detail.js' %}"></script>
+{% endblock %}

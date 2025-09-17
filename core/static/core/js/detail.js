@@ -188,7 +188,7 @@ function hideArrows(container) {
 
 document.addEventListener("DOMContentLoaded", function () {
   if (sessionStorage.getItem("refreshSuccess") === "1") {
-    showNotification("Item refreshed successfully!", "success");
+    showNotification("Action has been done successfully!", "success");
     sessionStorage.removeItem("refreshSuccess");
   }
 
@@ -447,7 +447,7 @@ function renderExtraInfo(mediaType, data) {
           <div style="background: #333; border-radius: 10px; width: 120px; height: 8px; overflow: hidden;">
             <div style="background: linear-gradient(90deg, #ff4444 0%, #ffaa00 50%, #00ff00 100%); height: 100%; width: ${percentage}%; transition: width 0.3s;"></div>
           </div>
-          <span style="font-weight: bold; color: #ddd; font-size: 16px;">${score}/10</span>
+          <span style="font-weight: bold; color: white; font-size: 16px;">${score}/10</span>
         </div>
       `);
     }
@@ -534,7 +534,34 @@ if (data.trailers?.length) {
   }
 }
 
-
+// Render recommendations if available
+if (data.recommendations?.length) {
+  const recSection = document.querySelector('.recommendations-section');
+  if (!recSection) {
+    const mainSection = document.querySelector('.main-colored-section .detail-container');
+    if (mainSection) {
+      const recHTML = `
+        <section class="recommendations-section">
+          <h2>Recommendations</h2>
+          <div class="recommendations-list">
+            ${data.recommendations.map(rec => `
+              <div class="recommendation">
+                <a href="/tmdb/movie/${rec.id}/" title="${rec.title}">
+                  <img src="https://image.tmdb.org/t/p/w185${rec.poster_path}" 
+                       alt="${rec.title}" 
+                       data-placeholder="/static/core/img/placeholder.png" 
+                       onerror="this.onerror=null;this.src=this.dataset.placeholder;" />
+                  <p class="rec-title">${rec.title}</p>
+                </a>
+              </div>
+            `).join('')}
+          </div>
+        </section>
+      `;
+      mainSection.insertAdjacentHTML('beforeend', recHTML);
+    }
+  }
+}
 
     return safeHTML.join("\n");
   }
@@ -550,7 +577,7 @@ if (data.trailers?.length) {
           <div style="background: #333; border-radius: 10px; width: 120px; height: 8px; overflow: hidden;">
             <div style="background: linear-gradient(90deg, #ff4444 0%, #ffaa00 50%, #00ff00 100%); height: 100%; width: ${percentage}%; transition: width 0.3s;"></div>
           </div>
-          <span style="font-weight: bold; color: #ddd; font-size: 16px;">${score}/10</span>
+          <span style="font-weight: bold; color: white; font-size: 16px;">${score}/10</span>
         </div>
       `);
     }
@@ -631,6 +658,36 @@ if (data.trailers?.length) {
     `;
   }
 }
+
+// Render recommendations if available
+if (data.recommendations?.length) {
+  const recSection = document.querySelector('.recommendations-section');
+  if (!recSection) {
+    const mainSection = document.querySelector('.main-colored-section .detail-container');
+    if (mainSection) {
+      const recHTML = `
+        <section class="recommendations-section">
+          <h2>Recommendations</h2>
+          <div class="recommendations-list">
+            ${data.recommendations.map(rec => `
+              <div class="recommendation">
+                <a href="/tmdb/tv/${rec.id}/" title="${rec.title}">
+                  <img src="https://image.tmdb.org/t/p/w185${rec.poster_path}" 
+                       alt="${rec.title}" 
+                       data-placeholder="/static/core/img/placeholder.png" 
+                       onerror="this.onerror=null;this.src=this.dataset.placeholder;" />
+                  <p class="rec-title">${rec.title}</p>
+                </a>
+              </div>
+            `).join('')}
+          </div>
+        </section>
+      `;
+      mainSection.insertAdjacentHTML('beforeend', recHTML);
+    }
+  }
+}
+
     return safeHTML.join("\n");
   }
 
@@ -644,7 +701,7 @@ if (data.trailers?.length) {
           <div style="background: #333; border-radius: 10px; width: 120px; height: 8px; overflow: hidden;">
             <div style="background: linear-gradient(90deg, #ff4444 0%, #ffaa00 50%, #00ff00 100%); height: 100%; width: ${percentage}%; transition: width 0.3s;"></div>
           </div>
-          <span style="font-weight: bold; color: #ddd; font-size: 16px;">${data.averageScore}/10</span>
+          <span style="font-weight: bold; color: white; font-size: 16px;">${data.averageScore}/10</span>
         </div>
       `);
     }
@@ -779,6 +836,35 @@ if (data.trailers?.length) {
   }
 }
 
+// Render recommendations if available
+if (data.recommendations?.length) {
+  const recSection = document.querySelector('.recommendations-section');
+  if (!recSection) {
+    const mainSection = document.querySelector('.main-colored-section .detail-container');
+    if (mainSection) {
+      const recHTML = `
+        <section class="recommendations-section">
+          <h2>Recommendations</h2>
+          <div class="recommendations-list">
+            ${data.recommendations.map(rec => `
+              <div class="recommendation">
+                <a href="/mal/${mediaType}/${rec.id}/" title="${rec.title}">
+                  <img src="${rec.poster_path}" 
+                       alt="${rec.title}" 
+                       data-placeholder="/static/core/img/placeholder.png" 
+                       onerror="this.onerror=null;this.src=this.dataset.placeholder;" />
+                  <p class="rec-title">${rec.title}</p>
+                </a>
+              </div>
+            `).join('')}
+          </div>
+        </section>
+      `;
+      mainSection.insertAdjacentHTML('beforeend', recHTML);
+    }
+  }
+}
+
     return safeHTML.join("\n");
   }
 
@@ -792,7 +878,7 @@ if (data.trailers?.length) {
           <div style="background: #333; border-radius: 10px; width: 120px; height: 8px; overflow: hidden;">
             <div style="background: linear-gradient(90deg, #ff4444 0%, #ffaa00 50%, #00ff00 100%); height: 100%; width: ${percentage}%; transition: width 0.3s;"></div>
           </div>
-          <span style="font-weight: bold; color: #ddd; font-size: 16px;">${data.rating}/10</span>
+          <span style="font-weight: bold; color: white; font-size: 16px;">${data.rating}/10</span>
         </div>
       `);
     }
@@ -865,8 +951,61 @@ if (data.websites?.length) {
   safeHTML.push(`<p><span class="label">External Links:</span> ${websiteLinks}</p>`);
 }
 
+// Render recommendations if available
+if (data.recommendations?.length) {
+  const recSection = document.querySelector('.recommendations-section');
+  if (!recSection) {
+    const mainSection = document.querySelector('.main-colored-section .detail-container');
+    if (mainSection) {
+      const recHTML = `
+        <section class="recommendations-section">
+          <h2>Recommendations</h2>
+          <div class="recommendations-list">
+            ${data.recommendations.map(rec => `
+              <div class="recommendation">
+                <a href="/igdb/game/${rec.id}/" title="${rec.title}">
+                  <img src="${rec.poster_path || '/static/core/img/placeholder.png'}" 
+                       alt="${rec.title}" 
+                       data-placeholder="/static/core/img/placeholder.png" 
+                       onerror="this.onerror=null;this.src=this.dataset.placeholder;" />
+                  <p class="rec-title">${rec.title}</p>
+                </a>
+              </div>
+            `).join('')}
+          </div>
+        </section>
+      `;
+      mainSection.insertAdjacentHTML('beforeend', recHTML);
+    }
+  }
+}
+
     return safeHTML.join("\n");
   }
 
   return "<p>No extra information available for this media type.</p>";
 }
+// Overview read more functionality
+document.addEventListener("DOMContentLoaded", function() {
+  document.querySelectorAll('.overview-container').forEach(container => {
+    const overview = container.querySelector('.overview');
+    const btn = container.querySelector('.read-more-btn');
+    
+    if (!overview || !btn) return;
+    
+    // Check if text is actually truncated
+    if (overview.scrollHeight <= overview.clientHeight) {
+      btn.style.display = 'none';
+    } else {
+      btn.style.display = 'block';
+    }
+    
+    btn.addEventListener('click', function(e) {
+      e.preventDefault();
+      overview.style.webkitLineClamp = 'unset';
+      overview.style.maxHeight = 'none';
+      overview.style.overflow = 'visible';
+      this.style.display = 'none';
+    });
+  });
+});

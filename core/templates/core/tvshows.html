@@ -42,6 +42,23 @@
   </div>
 </div>
 
+{% if has_seasons %}
+<div class="filter-buttons-wrapper">
+  <h3>Type</h3>
+  <div class="filter-buttons">
+    <button class="type-filter-btn" data-type="both">
+      <span class="btn-text">Both</span>
+    </button>
+    <button class="type-filter-btn" data-type="shows">
+      <span class="btn-text">TV Shows</span>
+    </button>
+    <button class="type-filter-btn" data-type="seasons">
+      <span class="btn-text">Seasons</span>
+    </button>
+  </div>
+</div>
+{% endif %}
+
     <h3>List Toggle</h3>
     <div class="view-toggle">
       <button id="card-view-btn" class="toggle-btn">Card View</button>
@@ -81,7 +98,7 @@
                data-notes="{{ item.notes|default_if_none:''|escape }}"
                data-source-id="{{ item.source_id }}">
 
-            <a href="{% url 'tmdb_detail' media_type=item.media_type tmdb_id=item.source_id %}" class="card-link">
+            <a href="{% if '_s' in item.source_id %}/tmdb/season/{% with parts=item.source_id|split:'_s' %}{{ parts.0 }}/{{ parts.1 }}/{% endwith %}{% else %}{% url 'tmdb_detail' media_type=item.media_type tmdb_id=item.source_id %}{% endif %}" class="card-link">
               <div class="card-image"><img src="{{ item.cover_url|default:'/static/core/img/placeholder.png' }}" alt="{{ item.title }}" loading="lazy"></div> <!-- Check if this is working, lazy loading -->
               <div class="card-title-overlay">
                 <span class="card-title">{{ item.title }}</span>
@@ -167,7 +184,7 @@
                 data-banner-url="{{ item.banner_url|default:'/static/core/img/placeholder.png' }}">
               
               <td>
-                <a href="{% url 'tmdb_detail' media_type=item.media_type tmdb_id=item.source_id %}">
+                <a href="{% if '_s' in item.source_id %}/tmdb/season/{{ item.source_id|cut:'_s'|slice:':-1' }}/{{ item.source_id|slice:'-1:' }}/{% else %}{% url 'tmdb_detail' media_type=item.media_type tmdb_id=item.source_id %}{% endif %}">
                   {{ item.title }}
                   <button class="edit-card-btn">⋯</button>
                 </a>

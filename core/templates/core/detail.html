@@ -65,7 +65,10 @@
 <div class="right-column">
   <div class="text-info">
     <h1>{{ title }}</h1>
-    <p class="overview">{{ overview|safe }}</p>
+    <div class="overview-container">
+      <p class="overview">{{ overview|safe }}</p>
+      <button class="read-more-btn">Read More</button>
+    </div>
     <p class="release-date">{{ release_date }}</p>
 
     <!-- More info button -->
@@ -73,7 +76,7 @@
     <button id="more-info-btn" class="more-info-btn">More information</button>
     {% endif %}
     <!-- Container for extra info -->
-    <div id="extra-info-container" style="margin-top:1em;"></div>
+    <div id="extra-info-container" style="margin-top:0.5em;"></div>
   </div>
 </div>
   </div>
@@ -91,7 +94,7 @@
     <section class="recommendations-section double-recs">
       {% if prequels %}
       <div class="rec-block">
-        <h2>Prequels</h2>
+        <h2>Prequel</h2>
         <div class="recommendations-list">
           {% for rec in prequels %}
           <a href="/mal/{{ media_type }}/{{ rec.id }}/" class="rec-card" title="{{ rec.title }}">
@@ -108,7 +111,7 @@
 
       {% if sequels %}
       <div class="rec-block">
-        <h2>Sequels</h2>
+        <h2>Sequel</h2>
         <div class="recommendations-list">
           {% for rec in sequels %}
           <a href="/mal/{{ media_type }}/{{ rec.id }}/" class="rec-card" title="{{ rec.title }}">
@@ -130,7 +133,7 @@
       <h2>Seasons</h2>
       <div class="seasons-list">
         {% for season in seasons %}
-        <div class="season-card">
+        <a href="/tmdb/season/{{ source_id }}/{{ season.season_number }}/" class="season-card">
   <img 
     src="{{ season.poster_path_full|default:'' }}"
     alt="{{ season.name }}"
@@ -140,7 +143,7 @@
           <p class="season-name">{{ season.name }}</p>
           <p class="episode-count">{{ season.episode_count }} episodes</p>
           <p class="air-date">{{ season.air_date }}</p>
-        </div>
+        </a>
         {% endfor %}
       </div>
     </section>

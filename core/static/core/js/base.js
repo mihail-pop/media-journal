@@ -9,6 +9,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (openSearchBtn) {
     openSearchBtn.addEventListener("click", () => {
       overlay.classList.remove("hidden");
+      document.body.style.overflow = "hidden";
       overlaySearchInput.value = "";
       overlaySearchInput.focus();
     });
@@ -35,6 +36,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!query.trim()) {
       resultsContainer.innerHTML = "";
       overlay.classList.add("hidden");
+      document.body.style.overflow = "";
       return;
     }
 
@@ -116,6 +118,7 @@ document.addEventListener("DOMContentLoaded", () => {
   overlay.addEventListener("click", e => {
     if (e.target === overlay) {
       overlay.classList.add("hidden");
+      document.body.style.overflow = "";
       resultsContainer.innerHTML = "";
     }
   });
@@ -124,7 +127,17 @@ document.addEventListener("DOMContentLoaded", () => {
   document.addEventListener("keydown", e => {
     if (e.key === "Escape" && !overlay.classList.contains("hidden")) {
       overlay.classList.add("hidden");
+      document.body.style.overflow = "";
       resultsContainer.innerHTML = "";
     }
   });
+
+  // Prevent page scrolling when overlay is open and redirect to search results
+  overlay.addEventListener("wheel", e => {
+    e.preventDefault();
+    const searchGrid = resultsContainer.querySelector(".search-card-grid");
+    if (searchGrid) {
+      searchGrid.scrollTop += e.deltaY;
+    }
+  }, { passive: false });
 });

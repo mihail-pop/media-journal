@@ -55,8 +55,8 @@
             <div class="nav-item-row" data-id="{{ item.id }}">
               <span class="nav-item-name">{{ item.name }}</span>
               <div class="nav-buttons-container">
-                <button type="button" class="move-up" title="Move up">←</button>
-                <button type="button" class="move-down" title="Move down">→</button>
+                <button type="button" class="move-up" title="Move left">←</button>
+                <button type="button" class="move-down" title="Move right">→</button>
                 <label class="toggle-label">
                   <input type="checkbox" class="toggle-visible" {% if item.visible %}checked{% endif %} data-tooltip="{% if item.visible %}Hide{% else %}Show{% endif %}">
                 </label>
@@ -85,7 +85,7 @@
             <span class="spinner" style="display:none;"></span>
           </button>
         </div>
-        <p style="font-size: 0.9rem; margin-top: 1rem; text-align: center; color: #8596a5;">
+        <p style="font-size: 0.95rem; margin-top: 1rem; text-align: center; color: #8596a5;">
           It may take <b>1 to 5 minutes</b> for the download to start or for the backup to load with large lists. 
           <br/><br/> <b>Keep the downloaded backup file as it is (.zip). </b>
         </p>
@@ -135,8 +135,8 @@
             </tr>
           </tbody>
         </table>
-        <p style="font-size: 0.9rem; margin-top: 1rem; text-align: left; color: #8596a5;">
-          Here you can add the required API keys for the web app to work. You can get the API keys from each site in around 2-5 minutes.
+        <p style="font-size: 0.95rem; margin-top: 1rem; text-align: left; color: #8596a5;">
+          Here you can add the required API keys for the web app to work. You can get the API keys from each site in around 2 to 5 minutes.
           <br/>
           <br/> <b> TMDB </b> needs <b>ID</b> and you can find the steps on how to get their keys <a href="https://developers.themoviedb.org/3/getting-started/introduction" target="_blank" rel="noopener noreferrer" style="color:white">here</a>.  <a href="https://imgur.com/a/iU3RsvR" target="_blank" rel="noopener noreferrer"  style="color: white; text-decoration: none;">(Example)</a>
           <br/> <b> IGDB </b> needs <b>ID</b> and <b>Secret</b> and you can find the steps on how to get their keys <a href="https://api-docs.igdb.com/#getting-started" target="_blank" rel="noopener noreferrer" style="color:white">here</a>.  <a href="https://imgur.com/a/sp6uWVl" target="_blank" rel="noopener noreferrer" style="color: white; text-decoration: none;">(Example)</a>
@@ -151,12 +151,17 @@
     <div class="preferences-container">
       <div class="preferences-section">
         <h3>Useful Resources</h3>
-        <p style="font-size: 0.9rem; margin-top: 1rem; text-align: center; color: #8596a5;">
-          <a href="https://www.steamgriddb.com/heroes" target="_blank" rel="noopener noreferrer" style="color: white; text-decoration: none;">SteamGridDB</a> is a great site to get wide banners and covers for your games.
-          <br> Since animated gif, png and webp files are supported, you can use banners like <a href="https://www.steamgriddb.com/hero/14911" target="_blank" rel="noopener noreferrer" style="color: white; text-decoration: none;">this one</a> or covers like <a href="https://www.steamgriddb.com/grid/570887" target="_blank" rel="noopener noreferrer" style="color: white; text-decoration: none;">this one</a>.
-        </br>Make sure you press on <b>download image</b> before you <b>Save As</b> so that you get the correct file format (webp/png not webm).
-        </br></br></br>
-        </p>
+        <div style="font-size: 0.95rem; margin-top: 1rem; text-align: left; color: #8596a5; line-height: 1.6;">
+          <p><a href="https://www.steamgriddb.com" target="_blank" rel="noopener noreferrer" style="color: white; text-decoration: none;">SteamGridDB</a> - a site to get <a href="https://www.steamgriddb.com/heroes/all/all/all/1" target="_blank" rel="noopener noreferrer" style="color: white; text-decoration: none;">banners</a> and <a href="https://www.steamgriddb.com/grids/600x900/all/all/1" target="_blank" rel="noopener noreferrer" style="color: white; text-decoration: none;">covers</a> for your games.</p>
+          
+          <p>• Animated gif, png and webp files are supported, so you can get animated <a href="https://www.steamgriddb.com/profile/76561198374208390/heroes" target="_blank" rel="noopener noreferrer" style="color: white; text-decoration: none;">banners</a> and <a href="https://www.steamgriddb.com/profile/76561198374208390/grids/1" target="_blank" rel="noopener noreferrer" style="color: white; text-decoration: none;">covers</a>.
+          <br/>• On SteamGridDB make sure you press on the <b>Download</b> button before you <b>Save As</b> the animated files so that you get the correct file format (webp/png not webm).</p>
+          
+          <p><a href="https://wallhaven.cc" target="_blank" rel="noopener noreferrer" style="color: white; text-decoration: none;">WallHaven</a> - a site to get banners and covers for your media.</p>
+
+          <p>• You will most likely need to crop the images to center them properly.</p>
+        </div>
+        <br/><br/><br/>
         <h3>Version Information</h3>
         <div id="version-info" style="text-align: center; margin-bottom: 2rem;">
           <p style="color: #8596a5; margin: 0.5rem 0; font-weight: bold;">Your Release <span id="current-version">Loading...</span></p>

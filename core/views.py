@@ -2,7 +2,7 @@ from django.apps import apps
 from core.utils import download_image, fetch_anilist_data, get_trending_anime, get_trending_games, get_trending_manga, get_trending_movies, get_trending_tv, get_igdb_token, get_anime_extra_info, get_game_extra_info, get_manga_extra_info, get_movie_extra_info, get_tv_extra_info, rating_to_display, display_to_rating
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_POST
-from django.db.models import Case, When, IntegerField, Value, F
+from django.db.models import Case, When, IntegerField, Value, F, Q
 from django.conf import settings
 from django.core.files.storage import default_storage
 from django.core.serializers import deserialize
@@ -40,6 +40,38 @@ logger = logging.getLogger(__name__)
 
 IGDB_ACCESS_TOKEN = None
 IGDB_TOKEN_EXPIRY = 0
+
+def get_season_navigation(seasons, current_season):
+    """Generate navigation data for season detail pages"""
+    nav = {}
+    
+    # Sort seasons by season_number, handle specials (season 0)
+    sorted_seasons = sorted(seasons, key=lambda s: s.get('season_number', 0))
+    
+    current_index = next((i for i, s in enumerate(sorted_seasons) if s.get('season_number') == current_season), None)
+    if current_index is None:
+        return nav
+    
+    # Previous season
+    if current_index > 0:
+        prev_season = sorted_seasons[current_index - 1]
+        nav['prev_season'] = prev_season.get('season_number')
+        nav['prev_name'] = 'Specials' if prev_season.get('season_number') == 0 else f"Season {prev_season.get('season_number')}"
+    
+    # Next season
+    if current_index < len(sorted_seasons) - 1:
+        next_season = sorted_seasons[current_index + 1]
+        nav['next_season'] = next_season.get('season_number')
+        nav['next_name'] = 'Specials' if next_season.get('season_number') == 0 else f"Season {next_season.get('season_number')}"
+    
+    # Last season (if there are more than 2 seasons ahead)
+    if current_index < len(sorted_seasons) - 2:
+        last_season = sorted_seasons[-1]
+        if last_season.get('season_number') != 0:  # Don't show "Last Season" for specials
+            nav['last_season'] = last_season.get('season_number')
+            nav['last_name'] = f"Season {last_season.get('season_number')}"
+    
+    return nav
 
 
 
@@ -108,11 +140,15 @@ def tvshows(request):
     AppSettings = apps.get_model('core', 'AppSettings')
     settings = AppSettings.objects.first()
     rating_mode = settings.rating_mode if settings else 'faces'
+    
+    # Check if there are any seasons in the list
+    has_seasons = tvshows.filter(Q(source_id__contains='_s') | Q(title__contains='Season')).exists()
 
     return render(request, 'core/tvshows.html', {
         'items': tvshows,
         'page_type': 'tv',
         'rating_mode': rating_mode,
+        'has_seasons': has_seasons,
     })
 
 
@@ -271,7 +307,7 @@ def history(request):
 
 @ensure_csrf_cookie
 def home(request):
-    favorites = MediaItem.objects.filter(favorite=True)
+    favorites = MediaItem.objects.filter(favorite=True).order_by('favorite_position', 'date_added')
     start_tmdb_background_loop()
     start_anilist_background_loop()
 
@@ -413,7 +449,12 @@ def home(request):
     
         # Generate the detail URL
         if item.source == "tmdb" and item.media_type in ["movie", "tv"]:
-            url = reverse("tmdb_detail", args=[item.media_type, item.source_id])
+            if "_s" in item.source_id:  # it's a season
+                show_id = item.source_id.split("_s")[0]
+                season_number = item.source_id.split("_s")[1]
+                url = reverse('tmdb_season_detail', args=[show_id, season_number])
+            else:
+                url = reverse("tmdb_detail", args=[item.media_type, item.source_id])
         elif item.source == "mal" and item.media_type in ["anime", "manga"]:
             url = reverse("mal_detail", args=[item.media_type, item.source_id])
         elif item.source == "igdb" and item.media_type == "game":
@@ -463,6 +504,25 @@ def update_favorite_person_order(request):
             for position, person_id in enumerate(new_order, start=1):
                 FavoritePerson.objects.filter(id=person_id).update(position=position)
 
+        return JsonResponse({"success": True})
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+
+@ensure_csrf_cookie
+@require_POST
+def update_favorite_media_order(request):
+    try:
+        data = json.loads(request.body)
+        new_order = data.get("order", [])
+        
+        if not isinstance(new_order, list):
+            return JsonResponse({"error": "Invalid data format"}, status=400)
+        
+        with transaction.atomic():
+            for position, media_id in enumerate(new_order, start=1):
+                MediaItem.objects.filter(id=media_id).update(favorite_position=position)
+        
         return JsonResponse({"success": True})
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
@@ -590,7 +650,7 @@ def mal_search(request):
 
     graphql_query = '''
     query ($search: String, $type: MediaType) {
-      Page(perPage: 10) {
+      Page(perPage: 20) {
         media(search: $search, type: $type) {
           idMal
           title {
@@ -714,7 +774,7 @@ def openlib_search(request):
     data = response.json()
     results = []
 
-    for item in data.get("docs", [])[:10]:
+    for item in data.get("docs", []):
         title = item.get("title") or "Untitled"
         author = ", ".join(item.get("author_name", []))
         year = item.get("first_publish_year", "")
@@ -777,7 +837,6 @@ def igdb_search(request):
     data = f'''
     search "{query}";
     fields id, name, cover.url;
-    where category = (0, 1, 2, 3, 4, 5, 8, 9, 10, 11);
     limit 30;
     '''
 
@@ -813,7 +872,7 @@ def igdb_search(request):
 
     results.sort(key=rank)
 
-    return JsonResponse({"results": results[:10]})
+    return JsonResponse({"results": results})
 
 
 # Movies/Shows Search
@@ -863,7 +922,7 @@ def tmdb_search(request):
         for item in data.get("results", [])
     ]
 
-    return JsonResponse({"results": results[:10]})
+    return JsonResponse({"results": results})
 
 # Movie and show details
 
@@ -1091,6 +1150,265 @@ def save_tmdb_item(media_type, tmdb_id):
 
     except Exception as e:
         return JsonResponse({"error": f"Failed to save: {str(e)}"})
+
+
+@ensure_csrf_cookie
+@require_GET
+def tmdb_season_detail(request, tmdb_id, season_number):
+    # Check if season already exists in database
+    season_source_id = f"{tmdb_id}_s{season_number}"
+    item = None
+    try:
+        item = MediaItem.objects.get(source="tmdb", source_id=season_source_id, media_type="tv")
+        
+        # Format episode data for display
+        episodes = item.episodes or []
+        for episode in episodes:
+            if episode.get('air_date'):
+                try:
+                    parsed_date = datetime.datetime.strptime(episode['air_date'], "%Y-%m-%d")
+                    episode['formatted_air_date'] = parsed_date.strftime("%d %B %Y")
+                except ValueError:
+                    episode['formatted_air_date'] = episode['air_date']
+        
+        # Handle cast
+        cast_data = []
+        for member in item.cast or []:
+            profile = member.get("profile_path")
+            is_full_url = profile.startswith("http") or profile.startswith("/media/") if profile else False
+            cast_data.append({
+                "name": member.get("name"),
+                "character": member.get("character"),
+                "profile_path": profile,
+                "is_full_url": is_full_url,
+            })
+        
+        # Format release date from DB
+        raw_date = item.release_date or ""
+        formatted_release_date = ""
+        try:
+            if raw_date:
+                parsed_date = datetime.datetime.strptime(raw_date, "%Y-%m-%d")
+                formatted_release_date = parsed_date.strftime("%d %B %Y")
+        except ValueError:
+            formatted_release_date = raw_date
+        
+        # Get navigation data from main show
+        try:
+            main_show = MediaItem.objects.get(source="tmdb", source_id=tmdb_id, media_type="tv")
+            all_seasons = main_show.seasons or []
+            season_nav = get_season_navigation(all_seasons, int(season_number))
+        except MediaItem.DoesNotExist:
+            season_nav = {}
+        
+        return render(request, "core/season_detail.html", {
+            "item": item,
+            "item_id": item.id,
+            "source": "tmdb",
+            "source_id": season_source_id,
+            "tmdb_id": tmdb_id,
+            "season_number": season_number,
+            "in_my_list": True,
+            "media_type": "tv",
+            "title": item.title,
+            "overview": item.overview,
+            "banner_url": item.banner_url,
+            "poster_url": item.cover_url,
+            "release_date": formatted_release_date,
+            "cast": cast_data,
+            "episodes": episodes,
+            "page_type": "tv",
+            "season_nav": season_nav,
+        })
+    except MediaItem.DoesNotExist:
+        pass
+    
+    # Fetch from TMDB API
+    try:
+        api_key = APIKey.objects.get(name="tmdb").key_1
+    except APIKey.DoesNotExist:
+        return JsonResponse({"error": "TMDB API key not found."}, status=500)
+    
+    # Get season details
+    season_url = f"https://api.themoviedb.org/3/tv/{tmdb_id}/season/{season_number}"
+    season_params = {"api_key": api_key, "append_to_response": "credits"}
+    season_response = requests.get(season_url, params=season_params)
+    
+    if season_response.status_code != 200:
+        return JsonResponse({"error": "Failed to fetch season details from TMDB."}, status=500)
+    
+    season_data = season_response.json()
+    
+    # Get main show details for context
+    show_url = f"https://api.themoviedb.org/3/tv/{tmdb_id}"
+    show_params = {"api_key": api_key}
+    show_response = requests.get(show_url, params=show_params)
+    show_data = show_response.json() if show_response.status_code == 200 else {}
+    
+    # Format data
+    poster_url = f"https://image.tmdb.org/t/p/w500{season_data.get('poster_path')}" if season_data.get('poster_path') else None
+    banner_url = f"https://image.tmdb.org/t/p/original{show_data.get('backdrop_path')}" if show_data.get('backdrop_path') else None
+    
+    # Cast data
+    cast_data = []
+    for actor in season_data.get("credits", {}).get("cast", [])[:8]:
+        profile_url = f"https://image.tmdb.org/t/p/w185{actor.get('profile_path')}" if actor.get('profile_path') else ""
+        cast_data.append({
+            "name": actor.get("name"),
+            "character": actor.get("character"),
+            "profile_path": profile_url,
+            "is_full_url": True,
+        })
+    
+    # Episodes data
+    episodes = []
+    for episode in season_data.get("episodes", []):
+        air_date = episode.get("air_date", "")
+        formatted_air_date = ""
+        if air_date:
+            try:
+                parsed_date = datetime.datetime.strptime(air_date, "%Y-%m-%d")
+                formatted_air_date = parsed_date.strftime("%d %B %Y")
+            except ValueError:
+                formatted_air_date = air_date
+        
+        episodes.append({
+            "episode_number": episode.get("episode_number"),
+            "name": episode.get("name"),
+            "overview": episode.get("overview", ""),
+            "air_date": air_date,
+            "formatted_air_date": formatted_air_date,
+            "still_path": f"https://image.tmdb.org/t/p/w1280{episode.get('still_path')}" if episode.get('still_path') else None,
+        })
+    
+    # Format release date
+    raw_date = season_data.get("air_date", "")
+    formatted_release_date = ""
+    if raw_date:
+        try:
+            parsed_date = datetime.datetime.strptime(raw_date, "%Y-%m-%d")
+            formatted_release_date = parsed_date.strftime("%d %B %Y")
+        except ValueError:
+            formatted_release_date = raw_date
+    
+    season_title = f"{show_data.get('name', 'Unknown Show')} {season_data.get('name', f'Season {season_number}')}"
+    
+    # Get season navigation data
+    all_seasons = show_data.get('seasons', [])
+    season_nav = get_season_navigation(all_seasons, int(season_number))
+    
+    return render(request, "core/season_detail.html", {
+        "item": None,
+        "item_id": None,
+        "source": "tmdb",
+        "source_id": season_source_id,
+        "tmdb_id": tmdb_id,
+        "season_number": season_number,
+        "in_my_list": False,
+        "media_type": "tv",
+        "title": season_title,
+        "overview": season_data.get("overview", ""),
+        "banner_url": banner_url,
+        "poster_url": poster_url,
+        "release_date": formatted_release_date,
+        "cast": cast_data,
+        "episodes": episodes,
+        "page_type": "tv",
+        "season_nav": season_nav,
+    })
+
+
+def save_tmdb_season(tmdb_id, season_number):
+    try:
+        api_key = APIKey.objects.get(name="tmdb").key_1
+        
+        # Get season details
+        season_url = f"https://api.themoviedb.org/3/tv/{tmdb_id}/season/{season_number}"
+        season_params = {"api_key": api_key, "append_to_response": "credits"}
+        season_response = requests.get(season_url, params=season_params)
+        
+        if season_response.status_code != 200:
+            return JsonResponse({"error": "Failed to fetch season details."})
+        
+        season_data = season_response.json()
+        
+        # Get main show details
+        show_url = f"https://api.themoviedb.org/3/tv/{tmdb_id}"
+        show_params = {"api_key": api_key}
+        show_response = requests.get(show_url, params=show_params)
+        show_data = show_response.json() if show_response.status_code == 200 else {}
+        
+        # Download images
+        poster_url = f"https://image.tmdb.org/t/p/w500{season_data.get('poster_path')}" if season_data.get('poster_path') else ""
+        banner_url = f"https://image.tmdb.org/t/p/original{show_data.get('backdrop_path')}" if show_data.get('backdrop_path') else ""
+        
+        season_source_id = f"{tmdb_id}_s{season_number}"
+        local_poster = download_image(poster_url, f"posters/tmdb_{season_source_id}.jpg") if poster_url else ""
+        local_banner = download_image(banner_url, f"banners/tmdb_{season_source_id}.jpg") if banner_url else ""
+        
+        # Cast data
+        cast_data = []
+        for i, actor in enumerate(season_data.get("credits", {}).get("cast", [])[:8]):
+            profile_url = f"https://image.tmdb.org/t/p/w185{actor.get('profile_path')}" if actor.get('profile_path') else ""
+            local_profile = download_image(profile_url, f"cast/tmdb_{season_source_id}_{i}.jpg") if profile_url else ""
+            cast_data.append({
+                "name": actor.get("name"),
+                "character": actor.get("character"),
+                "profile_path": local_profile,
+            })
+        
+        # Episodes data
+        episodes_data = []
+        for episode in season_data.get("episodes", []):
+            still_url = f"https://image.tmdb.org/t/p/w1280{episode.get('still_path')}" if episode.get('still_path') else ""
+            local_still = download_image(still_url, f"episodes/tmdb_{season_source_id}_e{episode.get('episode_number', 0)}.jpg") if still_url else ""
+            
+            episodes_data.append({
+                "episode_number": episode.get("episode_number"),
+                "name": episode.get("name"),
+                "overview": episode.get("overview", ""),
+                "air_date": episode.get("air_date", ""),
+                "still_path": local_still,
+            })
+        
+        season_title = f"{show_data.get('name', 'Unknown Show')} {season_data.get('name', f'Season {season_number}')}"
+        
+        MediaItem.objects.create(
+            title=season_title,
+            media_type="tv",
+            source="tmdb",
+            source_id=season_source_id,
+            cover_url=local_poster,
+            banner_url=local_banner,
+            overview=season_data.get("overview", ""),
+            release_date=season_data.get("air_date", ""),
+            cast=cast_data,
+            episodes=episodes_data,
+            total_main=len(episodes_data),
+            total_secondary=1,
+        )
+        
+        return JsonResponse({"message": "Season added to your list."})
+    
+    except Exception as e:
+        return JsonResponse({"error": f"Failed to save season: {str(e)}"})
+
+
+@ensure_csrf_cookie
+@require_POST
+def add_season_to_list(request):
+    try:
+        data = json.loads(request.body)
+        tmdb_id = data.get('tmdb_id')
+        season_number = data.get('season_number')
+        
+        if not tmdb_id or season_number is None:
+            return JsonResponse({"error": "Missing tmdb_id or season_number"}, status=400)
+        
+        return save_tmdb_season(tmdb_id, season_number)
+    
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
 
 
 @ensure_csrf_cookie
@@ -2248,6 +2566,11 @@ def delete_item(request, item_id):
             if p.startswith("/media/"):
                 paths_to_check.append(os.path.join(media_root, p.replace("/media/", "")))
 
+        for episode in item.episodes or []:
+            p = episode.get("still_path", "")
+            if p.startswith("/media/"):
+                paths_to_check.append(os.path.join(media_root, p.replace("/media/", "")))
+
         for path in paths_to_check:
             try:
                 if os.path.exists(path):
@@ -2275,7 +2598,8 @@ def get_item(request, item_id):
         total_secondary = item.total_secondary
 
         # Fetch live data only if values aren't already stored
-        if item.source == "tmdb" and item.media_type == "tv":
+        # Skip API calls for season entries (source_id contains '_s')
+        if item.source == "tmdb" and item.media_type == "tv" and "_s" not in item.source_id:
             try:
                 api_key = APIKey.objects.get(name="tmdb").key_1
                 url = f"https://api.themoviedb.org/3/tv/{item.source_id}"
@@ -2330,6 +2654,7 @@ def get_item(request, item_id):
             "success": True,
             "item": {
                 "id": item.id,
+                "title": item.title,
                 "media_type": item.media_type,
                 "status": item.status,
                 "personal_rating": display_rating,
@@ -2371,7 +2696,7 @@ def create_backup(request):
 
         # Copy media
         media_root = settings.MEDIA_ROOT
-        folders = ["posters", "banners", "cast", "related", "screenshots", "seasons", "favorites/actors", "favorites/characters"]
+        folders = ["posters", "banners", "cast", "related", "screenshots", "seasons", "episodes", "favorites/actors", "favorites/characters"]
         for folder in folders:
             src = os.path.join(media_root, folder)
             dst = os.path.join(temp_dir, folder)
@@ -2771,7 +3096,11 @@ def refresh_item(request):
 
         # Re-save the item based on its source
         if source == "tmdb":
-            save_tmdb_item(media_type, source_id)
+            if "_s" in source_id:  # It's a season
+                tmdb_id, season_number = source_id.split("_s")
+                save_tmdb_season(tmdb_id, season_number)
+            else:
+                save_tmdb_item(media_type, source_id)
         elif source == "mal":
             save_mal_item(media_type, source_id)
         elif source == "igdb":

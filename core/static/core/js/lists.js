@@ -6,6 +6,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const listBtn = document.getElementById("list-view-btn");
 
   const filterButtons = document.querySelectorAll(".filter-btn");
+  const typeFilterButtons = document.querySelectorAll(".type-filter-btn");
   const searchInput = document.getElementById("search-input");
 
   const bannerImg = document.getElementById("rotating-banner");
@@ -14,17 +15,34 @@ document.addEventListener("DOMContentLoaded", function () {
   const mediaType = document.body.dataset.mediaType || "default";
   const filterKey = `listFilterStatus_${mediaType}`; // e.g., listFilterStatus_movie
   const viewKey = `listViewType_${mediaType}`; // new key for view mode
+  const typeKey = `listTypeFilter_${mediaType}`; // new key for type filter
 
   // === FILTER STATE ===
   let currentStatus = sessionStorage.getItem(filterKey) || "all";
   let currentSearch = "";
   let currentView = sessionStorage.getItem(viewKey) || "card"; // default card view
+  let currentType = localStorage.getItem(typeKey) || "both"; // default both
+  
+  // Check if type filter buttons exist (seasons present)
+  const hasTypeButtons = document.querySelectorAll(".type-filter-btn").length > 0;
+  if (!hasTypeButtons && currentType !== "both") {
+    currentType = "both";
+    localStorage.setItem(typeKey, currentType);
+  }
 
-  // === Set active filter button ===
+  // === Set active filter buttons ===
   const matchingBtn = document.querySelector(`.filter-btn[data-filter="${currentStatus}"]`);
   if (matchingBtn) {
     filterButtons.forEach(b => b.classList.remove("active"));
     matchingBtn.classList.add("active");
+  }
+  
+  if (hasTypeButtons) {
+    const matchingTypeBtn = document.querySelector(`.type-filter-btn[data-type="${currentType}"]`);
+    if (matchingTypeBtn) {
+      typeFilterButtons.forEach(b => b.classList.remove("active"));
+      matchingTypeBtn.classList.add("active");
+    }
   }
 
   // === Show the correct view immediately ===
@@ -61,6 +79,17 @@ document.addEventListener("DOMContentLoaded", function () {
     applyFilters();
   });
 
+  // === TYPE FILTER BUTTONS ===
+  typeFilterButtons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      typeFilterButtons.forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      currentType = btn.dataset.type;
+      localStorage.setItem(typeKey, currentType);
+      applyFilters();
+    });
+  });
+
   // === STATUS FILTER BUTTONS ===
   filterButtons.forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -95,7 +124,18 @@ document.addEventListener("DOMContentLoaded", function () {
         const title = item.dataset.title.toLowerCase();
         const matchesStatus = currentStatus === "all" || itemStatus === currentStatus;
         const matchesSearch = title.includes(currentSearch);
-        return matchesStatus && matchesSearch;
+        
+        // Type filtering: check if title contains "Season" to determine if it's a season
+        const isSeason = title.includes("season");
+        let matchesType = true;
+        if (currentType === "shows") {
+          matchesType = !isSeason;
+        } else if (currentType === "seasons") {
+          matchesType = isSeason;
+        }
+        // currentType === "both" matches everything
+        
+        return matchesStatus && matchesSearch && matchesType;
       });
 
       // Show/hide items
@@ -126,7 +166,7 @@ if (statusBtnContainer) {
         const bannerUrl = card.dataset.bannerUrl;
         const notes = card.dataset.notes?.trim();
         return bannerUrl && !bannerUrl.includes("placeholder")
-          ? { bannerUrl, notes }
+          ? { bannerUrl, notes: notes === "None" ? "" : notes }
           : null;
       })
       .filter(Boolean);

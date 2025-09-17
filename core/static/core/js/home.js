@@ -13,7 +13,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const bannerUrl = card.dataset.bannerUrl;
         const notes = card.dataset.notes?.trim();
         return bannerUrl && !bannerUrl.includes("placeholder")
-          ? { bannerUrl, notes }
+          ? { bannerUrl, notes: notes === "None" ? "" : notes }
           : null;
       })
       .filter(Boolean);
@@ -78,12 +78,34 @@ document.addEventListener("DOMContentLoaded", function () {
 
 function openFavoritesOverlay(category) {
   const id = `overlay-${slugify(category)}`;
-  document.getElementById(id)?.classList.remove('hidden');
+  const overlay = document.getElementById(id);
+  overlay?.classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+  
+  // Redirect scroll events to overlay
+  const overlayContent = overlay?.querySelector('.overlay-content');
+  if (overlayContent) {
+    document.addEventListener('wheel', redirectScrollToOverlay);
+    window.currentOverlayContent = overlayContent;
+  }
+  
+  // Close on outside click
+  overlay?.addEventListener('click', (e) => {
+    if (e.target === overlay) {
+      closeFavoritesOverlay(slugify(category));
+    }
+  });
 }
 
 function closeFavoritesOverlay(categorySlug) {
   const id = `overlay-${categorySlug}`;
   document.getElementById(id)?.classList.add('hidden');
+  document.body.style.overflow = '';
+  
+  // Remove scroll redirection
+  document.removeEventListener('wheel', redirectScrollToOverlay);
+  window.currentOverlayContent = null;
+  
   location.reload();
 }
 
@@ -182,12 +204,11 @@ function moveCard(card, container, direction) {
 }
 
 function saveNewOrder(container) {
-  // Extract IDs from cards (you must add data-id="{{ person.id }}" in HTML)
   const ids = Array.from(container.children).map(card => card.dataset.id);
-  console.log('Saving new order:', ids);
-
-  // Send order to backend
-  fetch('/api/favorite-persons/reorder/', {
+  const isPersonContainer = container.id.includes('actors') || container.id.includes('characters');
+  const endpoint = isPersonContainer ? '/api/favorite-persons/reorder/' : '/api/favorite-media/reorder/';
+  
+  fetch(endpoint, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -210,10 +231,16 @@ function saveNewOrder(container) {
 
 
 
-// Initialize reorder buttons on page load for actors and characters
+// Initialize reorder buttons on page load for all favorite sections
 document.addEventListener('DOMContentLoaded', () => {
-setupReorderButtons('actors-card-grid');
-setupReorderButtons('characters-card-grid');
+  setupReorderButtons('actors-card-grid');
+  setupReorderButtons('characters-card-grid');
+  setupReorderButtons('movies-card-grid');
+  setupReorderButtons('tv-shows-card-grid');
+  setupReorderButtons('anime-card-grid');
+  setupReorderButtons('manga-card-grid');
+  setupReorderButtons('games-card-grid');
+  setupReorderButtons('books-card-grid');
 });
 
 
@@ -262,6 +289,13 @@ document.querySelectorAll('.delete-person-btn').forEach(button => {
     }
   });
 });
+
+function redirectScrollToOverlay(e) {
+  if (window.currentOverlayContent) {
+    e.preventDefault();
+    window.currentOverlayContent.scrollTop += e.deltaY * 0.5;
+  }
+}
 
 window.addEventListener("load", () => {
   const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
