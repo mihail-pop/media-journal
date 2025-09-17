@@ -3372,7 +3372,7 @@ def update_rating_mode(request):
     
 
 def version_info_api(request):
-    current_version = "v1.3.0"  # Update this 
+    current_version = "v1.4.0"  # Update this 
     
     try:
         response = requests.get("https://api.github.com/repos/mihail-pop/media-journal/releases/latest", timeout=5)
