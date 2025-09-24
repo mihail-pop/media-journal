@@ -1,12 +1,7 @@
 <h1 align="center">Media Journal</h1>
 
-<h3 align="center">
-  A media tracker app designed to be clean, simple to use, and reliable.
-</h3>
-<br/>
-
-<div align="center"> I will use this app from now on for my media, so I will keep it maintained. If others find it useful too, even better! </div>
-
+This is the self-hosted media tracker app I always wanted to have. From now on I will use it and keep it maintained. I will never ask for donations or try to monetize the app in any form. People using it is more than enough!
+> **Note:** I added the open source AGPL license to make it easier for possible contributors hoping nobody would try to monetize this app with the "commercial use" clause. And I disapprove of it.
 
 ## Features
 
@@ -19,15 +14,17 @@
 - Get status for planned movies, tv shows, anime, manga.
 
 ## Demo - [Youtube Demo](https://youtu.be/85DY-WM6cI4?si=u7q5AAbQnWaxTuQN)
-| <img src="https://github.com/user-attachments/assets/0265ea9e-6404-4958-82c6-4318ecdeb848" width="500" /> | <img src="https://github.com/user-attachments/assets/2dcedab4-696b-47b5-a500-d9a2572dfa52" width="500" /> |
+| <img src="https://github.com/user-attachments/assets/bb3275ec-116c-4edc-b663-f5bc807db3eb" width="500" /> | <img src="https://github.com/user-attachments/assets/be52d370-81e7-4fbe-80d9-1a89603d2a00" width="500" /> |
 | :-----------------------------------------: | :-----------------------------------------: |
 |                 Home                    |               Movies                   |
 
-| <img src="https://github.com/user-attachments/assets/9fe9a252-c403-48c0-8b51-66609fbeb491" width="500" /> | <img src="https://github.com/user-attachments/assets/3d18a302-8d04-4ac9-9897-779bb4460c45" width="500" /> |
+| <img src="https://github.com/user-attachments/assets/a2d31299-7e06-4d82-8a30-4341c193fe53" width="500" /> | <img src="https://github.com/user-attachments/assets/0f1f1398-00c4-4d1f-84c7-42d7a0b2104d" width="500" /> |
+| :-----------------------------------------: | :-----------------------------------------: |
+|               History                  |               Discover                   |
+
+| <img src="https://github.com/user-attachments/assets/e030c577-5d06-4ffa-927a-646977ab2209"  width="500" /> | <img src="https://github.com/user-attachments/assets/b62dd560-f6aa-4555-956e-3c8035632f61" width="500" /> |
 | :-----------------------------------------: | :-----------------------------------------: |
 |               Details                  |               Edit                   |
-
-
 
 ## Setup for Docker
 1. Clone the repository:
@@ -97,10 +94,3 @@ The application can be configured using environment variables.
   python manage.py runserver <IPv4_address>:8000
   ```
    You can find your IPv4 address by running `ipconfig` in the terminal.
-
-## Licensing & Philosophy
-
-I will never ask for donations or try to monetize this app in any shape or form.
-
-I added the AGPL license to make it easier for possible contributors, but I disagree with the "commercial use" clause. Most likely, nobody will be interested in profiting from this app, and even if it is technically permitted under the license, I personally disapprove of it.
-
