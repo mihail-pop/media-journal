@@ -1,6 +1,6 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="{{ theme_mode|default:'dark' }}">
 {% block head %}
 <head>
   <meta charset="UTF-8" />
@@ -23,28 +23,39 @@
   <div id="search-results-panel" tabindex="0">
     <div class="overlay-search-bar">
       <div class="overlay-search-input-wrapper">
-        {% with page_type|lower as page %}
-          {% if page == "tv" %}
-            <input type="text" id="overlay-search-input" placeholder="Search for a TV show.." autocomplete="off">
-          {% else %}
-            {% with page|first as first_letter %}
-              {% if first_letter in "aeiou" %}
-                {% with article="an" %}
-                  <input type="text" id="overlay-search-input"
-                         placeholder="Search for {{ article }} {{ page }}.." autocomplete="off">
-                {% endwith %}
-              {% else %}
-                {% with article="a" %}
-                  <input type="text" id="overlay-search-input"
-                         placeholder="Search for {{ article }} {{ page }}.." autocomplete="off">
-                {% endwith %}
-              {% endif %}
-            {% endwith %}
-          {% endif %}
-        {% endwith %}
+        <div class="search-input-container">
+          <svg class="search-icon" width="24" height="24" viewBox="0 0 512 512" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path d="M505 442.7L405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128
+                     C416 93.1 322.9 0 208 0S0 93.1 0 208s93.1 208 208 208c48.3 0 92.7-16.4 128-44v16.3
+                     c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9 0l28.3-28.3
+                     c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7 0-128-57.2-128-128
+                     0-70.7 57.2-128 128-128 70.7 0 128 57.2 128 128
+                     0 70.7-57.2 128-128 128z"></path>
+          </svg>
+          {% with page_type|lower as page %}
+            {% if page == "tv" %}
+              <input type="text" id="overlay-search-input" placeholder="Search for a TV show.." autocomplete="off">
+            {% else %}
+              {% with page|first as first_letter %}
+                {% if first_letter in "aeiou" %}
+                  {% with article="an" %}
+                    <input type="text" id="overlay-search-input"
+                           placeholder="Search for {{ article }} {{ page }}.." autocomplete="off">
+                  {% endwith %}
+                {% else %}
+                  {% with article="a" %}
+                    <input type="text" id="overlay-search-input"
+                           placeholder="Search for {{ article }} {{ page }}.." autocomplete="off">
+                  {% endwith %}
+                {% endif %}
+              {% endwith %}
+            {% endif %}
+          {% endwith %}
+        </div>
 
-        <label class="live-search-label">
-          <input type="checkbox" id="live-search-toggle"> Live Search
+        <label class="live-search-label" id="live-search-button">
+          Live Search
+          <input type="checkbox" id="live-search-toggle">
         </label>
       </div>
     </div>

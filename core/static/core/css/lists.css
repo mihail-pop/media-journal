@@ -1,3 +1,32 @@
+:root {
+  /* Dark theme (default) */
+  --bg-primary: #0b1622;
+  --bg-secondary: #1a2332;
+  --bg-tertiary: #151f2e;
+  --bg-quaternary: #32445b;
+  --text-primary: #8596a5;
+  --text-secondary: #a8b5c4;
+  --text-tertiary: #cecece;
+  --text-light: #edf1f5;
+  --border-color: #32445b;
+  --hover-bg: #2a3441;
+  --table-bg: #1f2a38;
+}
+
+[data-theme="light"] {
+  --bg-primary: #271c19;
+  --bg-secondary: #f8f8f8;
+  --bg-tertiary: #55423d;
+  --bg-quaternary: #af7f76;
+  --text-primary: #faeee7;
+  --text-secondary: #faeee7;
+  --text-tertiary: #af7f76;
+  --text-light: #faeee7;
+  --border-color: #fffffe;
+  --hover-bg: #fffffe;
+  --table-bg: #74544d;
+}
+
 /* --- Star Rating Overlap Effect --- */
 .star-rating {
   display: inline-block;
@@ -26,10 +55,10 @@
 }
 
 body {
-  background-color: #0b1622; /* example dark background */
+  background-color: var(--bg-primary);
   margin: 0;
   padding: 0;
-  color: #8596A5;
+  color: var(--text-primary);
 }
 
 html {
@@ -44,8 +73,8 @@ html {
 
 .separator-bar {
   width: 100%;
-  height: 45px; /* or any height you want */
-  background-color: #151F2E; /* choose your color */
+  height: 45px;
+  background-color: var(--bg-tertiary);
   margin-bottom: 1.5rem;
 }
 
@@ -140,8 +169,8 @@ html {
   border-radius: 6px;
   border: none;
   font-size: 1rem;
-  background: #1f2a38;
-  color: #cecece;
+  background: var(--bg-tertiary);
+  color: var(--text-tertiary);
 }
 
 #search-input:focus {
@@ -150,7 +179,7 @@ html {
 }
 
 #search-input::placeholder {
-  color: #cecece; /* placeholder color */
+  color: var(--text-tertiary);
 }
 
 .filter-buttons,
@@ -163,14 +192,14 @@ html {
 .filter-btn,
 .toggle-btn,
 .type-filter-btn {
-  display: flex;              /* make button a flex container */
-  justify-content: space-between; /* push text left, count right */
-  align-items: center;        /* vertically center content */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   text-align: left;
   padding: 0.5rem;
   background: none;
   border: none;
-  color: #8596A5;
+  color: var(--text-primary);
   font-size: 0.95rem;
   border-radius: 6px;
   cursor: pointer;
@@ -195,23 +224,23 @@ html {
 }
 
 .sidebar h3 {
-  color: #8596A5;
+  color: var(--text-primary);
   font-weight: 600;
   font-size: 1rem;
-  margin-top: 1.5rem;   /* Adjust as needed */
-  margin-bottom: 0.75rem;  /* Adjust as needed */
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
 }
 
 .filter-btn:hover,
 .toggle-btn:hover,
 .type-filter-btn:hover {
-  background-color: #32445b;
+  background-color: var(--bg-quaternary);
 }
 
 .filter-btn.active,
 .toggle-btn.active,
 .type-filter-btn.active {
-  background-color: #1f2a38;
+  background-color: var(--bg-tertiary);
 }
 
 /* --- Main List Content --- */
@@ -259,7 +288,7 @@ html {
 /* Title & Rating Overlay */
 .card-title-overlay {
   background: rgba(14,15,15, .8);
-  color: #EDF1F5;
+  color: var(--text-light);
   padding: 0.5rem 0.6rem;
   display: flex;
   flex-direction: column;
@@ -267,12 +296,11 @@ html {
   align-items: flex-start;
   font-size: 0.8rem;
   gap: 0.5rem;
-  position: absolute;    /* new */
-  bottom: 0;                /* new */
-  left: 0;               /* new */
-  right: 0;              /* new */
-  z-index: 1;            /* ensures it stays above image */
-
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1;
   min-height: 48px;
 }
 
@@ -290,7 +318,7 @@ html {
 
 .rating-number {
   font-size: 0.82rem;
-  color: #8596A5;
+  color: var(--text-primary);
   vertical-align: top;
   position: relative;
 }
@@ -304,7 +332,7 @@ html {
 
 .card-progress {
   font-size: 0.75rem;
-  color: #8596A5;
+  color: var(--text-primary);
 }
 
 
@@ -387,21 +415,21 @@ html {
 
 .list-table th:nth-child(3),
 .list-table td:nth-child(3) {
-  color: #8596A5;
+  color: var(--text-primary);
   width: 20%;
   text-align: center;
 }
 
 .list-table th:nth-child(4),
 .list-table td:nth-child(4) {
-  color: #8596A5;
+  color: var(--text-primary);
   width: 10%;
   text-align: center;
 }
 
 .list-table th:nth-child(5),
 .list-table td:nth-child(5) {
-  color: #8596A5;
+  color: var(--text-primary);
   width: 10%;
   text-align: center;
 }
@@ -419,17 +447,17 @@ html {
 }
 
 .list-table th {
-  background-color: #1f2a38;
-  color: #8596A5;
+  background-color: var(--table-bg);
+  color: var(--text-primary);
 }
 
 .list-table td {
-  background-color: #151f2e;  
-  color: #111;
+  background-color: var(--bg-tertiary);
+  color: var(--text-secondary);
 }
 
 .list-table a {
-  color: #8596A5;
+  color: var(--text-primary);
   text-decoration: none;
 }
 
@@ -460,7 +488,7 @@ html {
 .status-legend {
   margin-top: 8px;
   font-size: 14px;
-  color: #ddd; /* or your text color */
+  color: var(--text-tertiary);
 }
 
 .status-legend div {
@@ -600,5 +628,9 @@ html {
 
     .btn-count {
     display: none;
+  }
+
+  .filter-buttons-wrapper:has(.type-filter-btn[data-type="both"]) ~ h3 + .view-toggle {
+    margin-bottom: 5rem;
   }
 }

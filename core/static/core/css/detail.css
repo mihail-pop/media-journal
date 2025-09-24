@@ -1,14 +1,48 @@
+:root {
+  /* Dark theme (default) */
+  --bg-primary: #0b1622;
+  --bg-secondary: #1a2332;
+  --bg-tertiary: #151f2e;
+  --bg-quaternary: #32445b;
+  --text-primary: #8596a5;
+  --text-secondary: #a8b5c4;
+  --text-overview: #728aa1;
+  --text-title: 	#9fadbd;
+  --border-color2: #2a3b4d;
+  --hover-bg: #2a3441;
+  --special-color: #00bfff;
+  --special-color-hover: #57d5ff;
+}
+
+[data-theme="light"] {
+  --bg-primary: #271c19;
+  --bg-secondary: #f8f8f8;
+  --bg-tertiary: #55423d;
+  --bg-quaternary: #af7f76;
+  --text-primary: #faeee7;
+  --text-secondary: #e2c7b7;
+  --text-overview: #e2c7b7;
+  --text-title: #faeee7;
+  --border-color2: #8f6d67;
+  --hover-bg: #fffffe;
+  --special-color: #df5c38;
+  --special-color-hover: #dd866e;
+}
+
 body {
-  background-color: #0b1622;
-  color: rgb(159, 173, 189);
+  background-color: var(--bg-primary);
+  color: var(--text-title);
   margin: 0;
 }
 
 a {
-  color: #00bfff;
-  text-decoration: none; /* optional */
+  color: var(--special-color);
+  text-decoration: none;
 }
 
+a:hover{
+  color: var(--special-color-hover);
+}
 
 
 .detail-container {
@@ -56,8 +90,8 @@ a {
 }
 
 .banner-section.no-banner {
-  height: 270px; /* or 150px, adjust as needed */
-  background-color: #151f2e;
+  height: 270px;
+  background-color: var(--bg-tertiary);
 }
 
 .banner-overlay {
@@ -77,7 +111,7 @@ a {
 
 /* --- TOP SECTION (under banner) --- */
 .top-colored-section {
-  background-color: #151f2e;
+  background-color: var(--bg-tertiary);
   padding: 1.5rem 1rem 1rem;
   position: relative;
   z-index: 2;
@@ -111,7 +145,7 @@ a {
 .text-info h1 {
   font-size: 1.5rem;
   margin: 0 0 0.7rem 0;
-  color: rgb(159, 173, 189);
+  color: var(--text-title);
 }
 
 .text-info p {
@@ -120,7 +154,7 @@ a {
 }
 
 .release-date {
-  color: rgb(114, 138, 161);
+  color: var(--text-overview);
   margin-bottom: 15px;
   font-size: 0.9rem;
 }
@@ -134,7 +168,7 @@ a {
   font-size: 0.9rem;
   line-height: 1.4;
   margin-top: 10px;
-  color: rgb(114, 138, 161);
+  color: var(--text-overview);
   max-height: 8.8rem;
   overflow: hidden;
   transition: max-height 0.3s ease;
@@ -152,7 +186,7 @@ a {
 }
 
 .overview:hover{
-  color: rgb(159, 173, 189);
+  color: var(--text-secondary);
 }
 
 
@@ -162,9 +196,9 @@ a {
   bottom: 0;
   left: 50%;
   transform: translateX(-50%);
-  background: linear-gradient(to top, #151f2e 60%, transparent);
+  background: linear-gradient(to top, var(--bg-tertiary) 60%, transparent);
   border: none;
-  color: rgb(159, 173, 189);
+  color: var(--text-primary);
   padding: 1rem 2rem 0.5rem;
   cursor: pointer;
   font-size: 0.9rem;
@@ -189,7 +223,7 @@ a {
 .edit-card-btn,
 #add-to-list-button,
 #add-season-to-list-button {
-  background-color: #00bfff;
+  background-color: var(--button-primary);
   border: none;
   padding: 0.6rem 1.2rem;
   border-radius: 6px;
@@ -201,7 +235,7 @@ a {
 .edit-card-btn:hover,
 #add-to-list-button:hover,
 #add-season-to-list-button:hover {
-  background-color: #0099cc;
+  background-color: var(--button-primary-hover);;
 }
 
 /* --- FAVORITE HEART --- */
@@ -250,7 +284,7 @@ a {
 
 /* --- MAIN PAGE SECTION --- */
 .main-colored-section {
-  background-color: #0b1622;
+  background-color: var(--bg-primary);
   padding: 0.5rem 1rem;
   min-height: calc(100vh - 600px);
 }
@@ -267,13 +301,13 @@ a {
 }
 
 .cast-member, .season-card, .rec-card, .recommendation {
-  background: #151f2e;
+  background: var(--bg-tertiary);
   border-radius: 6px;
   padding: 8px;
   width: 120px;
   text-align: center;
   text-decoration: none;
-  color: rgb(159, 173, 189);
+  color: var(--text-title);
   box-shadow: 0 1px 5px rgba(0,0,0,0.6);
   transition: transform 0.2s ease;
   display: block;
@@ -297,13 +331,13 @@ a {
 }
 
 .character-name, .episode-count, .air-date {
-  color: rgb(114, 138, 161);
+  color: var(--text-overview);
 }
 
 .rec-title {
   font-weight: bold;
   margin-top: 2px;
-  color: rgb(159, 173, 189);
+  color: var(--text-primary);
 }
 
 .recommendations-list a {
@@ -344,14 +378,14 @@ a {
   border-radius: 6px;
   border: none;
   font-size: 1rem;
-  background-color: #151f2e;
-  color: rgb(159, 173, 189);
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
   box-shadow: inset 0 0 4px #0008;
   transition: box-shadow 0.3s ease;
 }
 
 #person-search-input::placeholder {
-  color: rgb(159, 173, 189); /* placeholder color */
+  color: var(--text-primary);
 }
 
 #person-search-input:focus {
@@ -388,13 +422,13 @@ a {
 
 /* Each person card */
 .person-card {
-  background: #151f2e;
+  background: var(--bg-tertiary);
   border-radius: 6px;
   padding: 8px;
   width: 120px;
   text-align: center;
   text-decoration: none;
-  color: white;
+  color: var(--text-secondary);
   box-shadow: 0 1px 5px rgba(0,0,0,0.6);
   transition: transform 0.2s ease;
 }
@@ -405,14 +439,14 @@ a {
   width: 120px;
   height: 180px;
   object-fit: cover;
-  border-bottom: 1px solid #0b1622;
-  background-color: #222a3a;
+  border-bottom: 1px solid var(--bg-primary);
+  background-color: var(--hover-bg);
 }
 
 /* Person name */
 .person-name {
   font-size: 0.85rem;
-  color: #eee;
+  color: var(--text-secondary);
   margin: 6px 4px 8px;
   flex-grow: 1;
   line-height: 1.1;
@@ -563,23 +597,23 @@ a {
   margin: 0;
   font-size: 1.5rem;
   white-space: nowrap;
-  color: rgb(159, 173, 189);
+  color: var(--text-title);
 }
 
 .cast-header h2{
-  color: rgb(159, 173, 189);
+  color: var(--text-title);
 }
 
 .recommendations-section h2{
-  color: rgb(159, 173, 189);
+  color: var(--text-title);
 }
 
 .seasons-section h2{
-  color: rgb(159, 173, 189);
+  color: var(--text-title);
 }
 
 .episodes-section h2{
-  color: rgb(159, 173, 189);
+  color: var(--text-title);
 }
 
 /* --- EPISODES SECTION --- */
@@ -591,7 +625,7 @@ a {
 
 .episode-card {
   display: flex;
-  background: #151f2e;
+  background: var(--bg-tertiary);
   border-radius: 6px;
   padding: 12px;
   gap: 15px;
@@ -710,14 +744,14 @@ a {
 .episode-info h3 {
   margin: 0;
   font-size: 1rem;
-  color: rgb(159, 173, 189);
+  color: var(--text-title);
   font-weight: 600;
 }
 
 .episode-overview {
   margin: 0;
   font-size: 0.9rem;
-  color: rgb(114, 138, 161);
+  color: var(--text-overview);
   line-height: 1.4;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -730,7 +764,7 @@ a {
 }
 
 .episode-overview:hover {
-  color: rgb(159, 173, 189);
+  color: var(--text-secondary);
 }
 
 .episode-overview-container {
@@ -739,12 +773,12 @@ a {
 
 .episode-read-more-btn {
   position: absolute;
-  bottom: -1.8rem;
+  bottom: -1.4rem;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(21, 31, 46, 0.95);
-  border: 1px solid #2a3b4d;
-  color: rgb(159, 173, 189);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color2);
+  color: var(--text-secondary);
   padding: 0.3rem 0.8rem;
   cursor: pointer;
   font-size: 0.8rem;
@@ -761,13 +795,13 @@ a {
 }
 
 .episode-read-more-btn:hover {
-  background: rgba(31, 42, 56, 0.95);
+  background: var(--hover-bg);
 }
 
 .episode-air-date {
   margin: 0;
   font-size: 0.85rem;
-  color: rgb(114, 138, 161);
+  color: var(--text-overview);
   margin-top: auto;
 }
 
@@ -778,9 +812,9 @@ a {
 }
 
 .inline-form button {
-  background-color: #151f2e;
+  background-color: var(--bg-tertiary);
   border: none;
-  color: rgb(159, 173, 189);
+  color: var(--text-secondary);
   padding: 0.4em 1em;
   font-size: 1rem;
   border-radius: 4px;
@@ -789,7 +823,7 @@ a {
 }
 
 .inline-form button:hover {
-  background-color: #1f2a38;
+  background-color: var(--hover-bg);
 }
 
 .change-banner-btn {
@@ -797,9 +831,9 @@ a {
   top: 22rem;
   right: 1rem;
   padding: 7px 12px;
-  background: #151f2e;
-  color: rgb(114, 138, 161);
-  border: 1px solid #2a3b4d;
+  background: var(--bg-tertiary);
+  color: var(--text-overview);
+  border: 1px solid var(--border-color2);
   border-radius: 4px;
   cursor: pointer;
   font-size: 13px;
@@ -808,8 +842,8 @@ a {
 }
 
 .change-banner-btn:hover {
-  background: #1f2a38;
-  color: rgb(159, 173, 189);
+  background: var(--text-overview);
+  color: var(--text-title);
 }
 
 .change-cover-btn {
@@ -817,9 +851,9 @@ a {
   top: 24rem;
   right: 1rem;
   padding: 7px 12px;
-  background: #151f2e;
-  color: rgb(114, 138, 161);
-  border: 1px solid #2a3b4d;
+  background: var(--bg-tertiary);
+  color: var(--text-overview);
+  border: 1px solid var(--border-color2);
   border-radius: 4px;
   cursor: pointer;
   font-size: 13px;
@@ -828,8 +862,8 @@ a {
 }
 
 .change-cover-btn:hover {
-  background: #1f2a38;
-  color: rgb(159, 173, 189);
+  background: var(--hover-bg);
+  color: var(--text-title);
 }
 
 .refresh-btn {
@@ -837,9 +871,9 @@ a {
   top: 26rem;
   right: 1rem;
   padding: 7px 12px;
-  background: #151f2e;
-  color: rgb(114, 138, 161);
-  border: 1px solid #2a3b4d;
+  background: var(--bg-tertiary);
+  color: var(--text-overview);
+  border: 1px solid var(--border-color2);
   border-radius: 4px;
   cursor: pointer;
   font-size: 13px;
@@ -848,8 +882,8 @@ a {
 }
 
 .refresh-btn:hover {
-  background: #1f2a38;
-  color: rgb(159, 173, 189);
+  background: var(--hover-bg);
+  color: var(--text-title);
 }
 
 .label {
@@ -860,7 +894,7 @@ a {
   background-color: none;
   background: none;
   border: none;
-  color: rgb(114, 138, 161);
+  color: var(--text-overview);
   text-decoration: underline;
   cursor: pointer;
   font: inherit; /* Inherit font styling from surrounding text */
@@ -871,7 +905,7 @@ a {
 .more-info-btn:focus {
   background: none;
   text-decoration: underline;
-  color: rgb(159, 173, 189); /* Keep the same color on hover/focus */
+  color: var(--text-secondary); /* Keep the same color on hover/focus */
   outline: none;
 }
 
@@ -943,7 +977,7 @@ a {
 }
 
 .nav-btn {
-  color: rgb(114, 138, 161);
+  color: var(--text-overview);
   padding: 0.4rem 0.8rem;
   text-decoration: none;
   font-size: 0.85rem;
@@ -951,7 +985,7 @@ a {
 }
 
 .nav-btn:hover {
-  color: rgb(159, 173, 189);
+  color: var(--text-secondary);
 }
 
 @media (orientation: portrait) {
@@ -1003,7 +1037,7 @@ a {
     margin-top: 0;
   }
   body {
-    background-color: #151f2e;
+    background-color: var(--bg-tertiary);
   }
   .text-info p{
     font-size: 2rem;

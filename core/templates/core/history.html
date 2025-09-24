@@ -134,6 +134,9 @@
 {% endblock %}
 
 {% block script %}
+<script>
+  document.body.setAttribute('data-theme', '{{ theme_mode }}');
+</script>
 <script src="{% static 'core/js/edit_modal.js' %}?v={{ version }}"></script>
 <script src="{% static 'core/js/history.js' %}?v={{ version }}"></script>
 {% endblock %}

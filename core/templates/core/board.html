@@ -8,6 +8,9 @@
 {% endblock %}
 
 {% block content %}
+<script>
+  document.body.dataset.theme = '{{ theme_mode }}';
+</script>
 
 <div class="separator-bar"></div>
 
@@ -44,7 +47,7 @@
     <div id="board-root" data-firebase-url="{{ firebase_url }}">
       <div class="board-feed">
 <div class="section-header">
-  <h2 class="section-title" style="color:#EDF1F5; margin-bottom: 1.5rem; font-size:1.5rem; font-weight:700;">Activity</h2>
+  <h2 class="section-title" style="margin-bottom: 1.5rem; font-size:1.5rem; font-weight:700;">Activity</h2>
   <button id="make-post-btn" class="make-post-btn" style="display: flex; align-items: center;">
     Post
     <svg class="post-icon" width="28" height="28" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0;">

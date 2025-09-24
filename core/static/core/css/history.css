@@ -1,3 +1,34 @@
+:root {
+  /* Dark theme (default) */
+  --bg-primary: #0b1622;
+  --bg-secondary: #1a2332;
+  --bg-tertiary: #151f2e;
+  --bg-quaternary: #32445b;
+  --bg-filter: #102031;
+  --text-primary: #8596a5;
+  --text-secondary: #a8b5c4;
+  --text-tertiary: #cecece;
+  --text-light: #edf1f5;
+  --border-color: #32445b;
+  --hover-bg: #2a3441;
+  --table-bg: #1f2a38;
+}
+
+[data-theme="light"] {
+  --bg-primary: #271c19;
+  --bg-secondary: #f8f8f8;
+  --bg-tertiary: #55423d;
+  --bg-quaternary: #af7f76;
+  --bg-filter: #3b2b27;
+  --text-primary: #faeee7;
+  --text-secondary: #faeee7;
+  --text-tertiary: #af7f76;
+  --text-light: #faeee7;
+  --border-color: #fffffe;
+  --hover-bg: #fffffe;
+  --table-bg: #55423d;
+}
+
 /* --- Star Rating Overlap Effect --- */
 .star-rating {
   display: inline-block;
@@ -26,10 +57,10 @@
 }
 
 body {
-  background-color: #0b1622; /* example dark background */
+  background-color: var(--bg-primary);
   margin: 0;
   padding: 0;
-  color: #8596A5;
+  color: var(--text-primary);
 }
 
 html {
@@ -139,8 +170,8 @@ html {
   border-radius: 6px;
   border: none;
   font-size: 1rem;
-  background: #1f2a38;
-  color: #cecece;
+  background: var(--table-bg);
+  color: var(--text-tertiary);
 }
 
 #search-input:focus {
@@ -149,7 +180,7 @@ html {
 }
 
 #search-input::placeholder {
-  color: #cecece; /* placeholder color */
+  color: var(--text-tertiary);
 }
 
 .filter-buttons,
@@ -177,21 +208,21 @@ html {
 }
 
 .sidebar h3 {
-  color: #8596A5;
+  color: var(--text-primary);
   font-weight: 600;
   font-size: 1rem;
-  margin-top: 1.5rem;   /* Adjust as needed */
-  margin-bottom: 0.75rem;  /* Adjust as needed */
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
 }
 
 .filter-btn:hover,
 .toggle-btn:hover {
-  background-color: #32445b;
+  background-color: var(--bg-quaternary);
 }
 
 .filter-btn.active,
 .toggle-btn.active {
-  background-color: #1f2a38;
+  background-color: var(--table-bg);
 }
 
 .filter-group {
@@ -201,14 +232,14 @@ html {
 }
 
 .filter-btn {
-  flex: 0 1 auto;        /* let buttons shrink/grow */
-  min-width: 20px;       /* don't shrink too small */
-  max-width: 120px;      /* keep them from stretching too wide */
-  justify-content: center; /* center text since no right content */
+  flex: 0 1 auto;
+  min-width: 20px;
+  max-width: 120px;
+  justify-content: center;
   padding: 0.4rem 0.6rem;
-  background: #102031;
+  background: var(--bg-filter);
   border: none;
-  color: #8596A5;
+  color: var(--text-primary);
   font-size: 0.9rem;
   border-radius: 6px;
   cursor: pointer;
@@ -216,20 +247,20 @@ html {
 }
 
 .filter-btn:hover {
-  background-color: #32445b;
+  background-color: var(--bg-quaternary);
 }
 
 .filter-btn.active {
-  background-color: #1f2a38;
+  background-color: var(--table-bg);
 }
 
 #custom-year {
   width: 100%;
   padding: 0.5rem;
   font-size: 0.95rem;
-  color: #EDF1F5;              /* main text color */
-  background-color: #1f2a38;   /* match active buttons */
-  border: none;   /* subtle border */
+  color: var(--text-light);
+  background-color: var(--table-bg);
+  border: none;
   border-radius: 6px;
   box-sizing: border-box;
   outline: none;
@@ -238,7 +269,7 @@ html {
 }
 
 #custom-year::placeholder {
-  color: #8596A5;              /* match sidebar placeholder style */
+  color: var(--text-primary);
   opacity: 1;
 }
 
@@ -248,11 +279,11 @@ html {
 }
 
 #start-date, #end-date {
-  width: calc(60%); /* ensure equal width considering gap */
+  width: calc(60%);
   padding: 0.35rem;
   font-size: 0.85rem;
-  color: #8596A5;
-  background-color: #1f2a38;
+  color: var(--text-primary);
+  background-color: var(--table-bg);
   border: none;
   border-radius: 6px;
   box-sizing: border-box;
@@ -263,13 +294,13 @@ html {
 
 #start-date::placeholder,
 #end-date::placeholder {
-  color: #8596A5;
+  color: var(--text-primary);
   opacity: 1;
 }
 
 #start-date:focus,
 #end-date:focus {
-  background-color: #32445b;
+  background-color: var(--bg-quaternary);
 }
 /* Optional: small spacing between two inputs */
 .date-range-filter input + input {
@@ -326,7 +357,7 @@ html {
 /* Title & Rating Overlay */
 .card-title-overlay {
   background: rgba(14,15,15, .8);
-  color: #EDF1F5;
+  color: var(--text-light);
   padding: 0.5rem 0.6rem;
   display: flex;
   flex-direction: column;
@@ -334,12 +365,11 @@ html {
   align-items: flex-start;
   font-size: 0.8rem;
   gap: 0.5rem;
-  position: absolute;    /* new */
-  bottom: 0;                /* new */
-  left: 0;               /* new */
-  right: 0;              /* new */
-  z-index: 1;            /* ensures it stays above image */
-
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1;
   min-height: 48px;
 }
 
@@ -411,7 +441,7 @@ html {
 
 .rating-number {
   font-size: 0.82rem;
-  color: #8596A5;
+  color: var(--text-primary);
   vertical-align: top;
   position: relative;
 }
@@ -425,7 +455,7 @@ html {
 
 .card-progress {
   font-size: 0.75rem;
-  color: #8596A5;
+  color: var(--text-primary);
 }
 
 
@@ -508,21 +538,21 @@ html {
 
 .list-table th:nth-child(3),
 .list-table td:nth-child(3) {
-  color: #8596A5;
+  color: var(--text-primary);
   width: 20%;
   text-align: center;
 }
 
 .list-table th:nth-child(4),
 .list-table td:nth-child(4) {
-  color: #8596A5;
+  color: var(--text-primary);
   width: 10%;
   text-align: center;
 }
 
 .list-table th:nth-child(5),
 .list-table td:nth-child(5) {
-  color: #8596A5;
+  color: var(--text-primary);
   width: 10%;
   text-align: center;
 }
@@ -540,17 +570,17 @@ html {
 }
 
 .list-table th {
-  background-color: #1f2a38;
-  color: #8596A5;
+  background-color: var(--table-bg);
+  color: var(--text-primary);
 }
 
 .list-table td {
-  background-color: #151f2e;  
-  color: #111;
+  background-color: var(--bg-tertiary);
+  color: var(--text-secondary);
 }
 
 .list-table a {
-  color: #8596A5;
+  color: var(--text-primary);
   text-decoration: none;
 }
 
@@ -581,7 +611,7 @@ html {
 .status-legend {
   margin-top: 8px;
   font-size: 14px;
-  color: #ddd; /* or your text color */
+  color: var(--text-tertiary);
 }
 
 .status-legend div {

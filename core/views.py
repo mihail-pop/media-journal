@@ -1,5 +1,5 @@
 from django.apps import apps
-from core.utils import download_image, fetch_anilist_data, get_trending_anime, get_trending_games, get_trending_manga, get_trending_movies, get_trending_tv, get_igdb_token, get_anime_extra_info, get_game_extra_info, get_manga_extra_info, get_movie_extra_info, get_tv_extra_info, rating_to_display, display_to_rating
+from core.utils import download_image, fetch_anilist_data, get_igdb_token, get_anime_extra_info, get_game_extra_info, get_manga_extra_info, get_movie_extra_info, get_tv_extra_info, rating_to_display, display_to_rating, get_anilist_discover, get_tmdb_discover, get_igdb_discover
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_POST
 from django.db.models import Case, When, IntegerField, Value, F, Q
@@ -22,6 +22,7 @@ from django.urls import reverse
 from django.db import transaction
 from django.core.files.base import ContentFile
 from django.utils.timesince import timesince
+import datetime as dt
 import time
 import json
 import requests
@@ -101,15 +102,17 @@ def movies(request):
         rating_order=rating_ordering
     ).order_by('status_order', '-rating_order', 'title')
 
-    # Get current rating mode from AppSettings
+    # Get current rating mode and theme from AppSettings
     AppSettings = apps.get_model('core', 'AppSettings')
     settings = AppSettings.objects.first()
     rating_mode = settings.rating_mode if settings else 'faces'
+    theme_mode = settings.theme_mode if settings else 'dark'
 
     return render(request, 'core/movies.html', {
         'items': movies,
         'page_type': 'movie',
         'rating_mode': rating_mode,
+        'theme_mode': theme_mode,
     })
 
 
@@ -136,10 +139,11 @@ def tvshows(request):
         rating_order=rating_ordering
     ).order_by('status_order', '-rating_order', 'title')
 
-    # Get current rating mode from AppSettings
+    # Get current rating mode and theme from AppSettings
     AppSettings = apps.get_model('core', 'AppSettings')
     settings = AppSettings.objects.first()
     rating_mode = settings.rating_mode if settings else 'faces'
+    theme_mode = settings.theme_mode if settings else 'dark'
     
     # Check if there are any seasons in the list
     has_seasons = tvshows.filter(Q(source_id__contains='_s') | Q(title__contains='Season')).exists()
@@ -149,6 +153,7 @@ def tvshows(request):
         'page_type': 'tv',
         'rating_mode': rating_mode,
         'has_seasons': has_seasons,
+        'theme_mode': theme_mode,
     })
 
 
@@ -175,15 +180,17 @@ def anime(request):
         rating_order=rating_ordering
     ).order_by('status_order', '-rating_order', 'title')
 
-    # Get current rating mode from AppSettings
+    # Get current rating mode and theme from AppSettings
     AppSettings = apps.get_model('core', 'AppSettings')
     settings = AppSettings.objects.first()
     rating_mode = settings.rating_mode if settings else 'faces'
+    theme_mode = settings.theme_mode if settings else 'dark'
 
     return render(request, 'core/anime.html', {
         'items': anime,
         'page_type': 'anime',
         'rating_mode': rating_mode,
+        'theme_mode': theme_mode,
     })
 
 
@@ -210,15 +217,17 @@ def games(request):
         rating_order=rating_ordering
     ).order_by('status_order', '-rating_order', 'title')
 
-    # Get current rating mode from AppSettings
+    # Get current rating mode and theme from AppSettings
     AppSettings = apps.get_model('core', 'AppSettings')
     settings = AppSettings.objects.first()
     rating_mode = settings.rating_mode if settings else 'faces'
+    theme_mode = settings.theme_mode if settings else 'dark'
 
     return render(request, 'core/games.html', {
         'items': games,
         'page_type': 'game',
         'rating_mode': rating_mode,
+        'theme_mode': theme_mode,
     })
 
 
@@ -245,15 +254,17 @@ def manga(request):
         rating_order=rating_ordering
     ).order_by('status_order', '-rating_order', 'title')
 
-    # Get current rating mode from AppSettings
+    # Get current rating mode and theme from AppSettings
     AppSettings = apps.get_model('core', 'AppSettings')
     settings = AppSettings.objects.first()
     rating_mode = settings.rating_mode if settings else 'faces'
+    theme_mode = settings.theme_mode if settings else 'dark'
 
     return render(request, 'core/manga.html', {
         'items': manga,
         'page_type': 'manga',
         'rating_mode': rating_mode,
+        'theme_mode': theme_mode,
     })
 
 
@@ -280,15 +291,17 @@ def books(request):
         rating_order=rating_ordering
     ).order_by('status_order', '-rating_order', 'title')
 
-    # Get current rating mode from AppSettings
+    # Get current rating mode and theme from AppSettings
     AppSettings = apps.get_model('core', 'AppSettings')
     settings = AppSettings.objects.first()
     rating_mode = settings.rating_mode if settings else 'faces'
+    theme_mode = settings.theme_mode if settings else 'dark'
 
     return render(request, 'core/books.html', {
         'items': books,
         'page_type': 'book',
         'rating_mode': rating_mode,
+        'theme_mode': theme_mode,
     })
 
 @ensure_csrf_cookie
@@ -300,9 +313,15 @@ def history(request):
     current_year = timezone.now().year
     latest_years = [current_year - i for i in range(3)]  # e.g., 2025, 2024, 2023
 
+    # Get theme mode from AppSettings
+    AppSettings = apps.get_model('core', 'AppSettings')
+    settings = AppSettings.objects.first()
+    theme_mode = settings.theme_mode if settings else 'dark'
+
     return render(request, 'core/history.html', {
         'items': items,
         'latest_years': latest_years,
+        'theme_mode': theme_mode,
     })
 
 @ensure_csrf_cookie
@@ -475,17 +494,23 @@ def home(request):
             "cover_url": cover_url,
         })
 
+    # Get theme mode
+    AppSettings = apps.get_model('core', 'AppSettings')
+    settings = AppSettings.objects.first()
+    theme_mode = settings.theme_mode if settings else 'dark'
+
     return render(request, "core/home.html", {
         "favorite_sections": favorite_sections.items(),
         "favorite_characters": favorite_characters,
         "favorite_actors": favorite_actors,
         "stats": stats,
         "stats_blocks": stats_blocks,
-        "extra_stats": extra_stats,             # ⬅️ added for HTML usage
+        "extra_stats": extra_stats,
         "activity_data": activity_data,
         "activity_columns": columns,
         'notifications': notifications_list,
         "recent_activity": recent_activity,
+        "theme_mode": theme_mode,
     })
 
 
@@ -551,6 +576,7 @@ def settings_page(request):
         'existing_names': existing_names,
         'nav_items': nav_items,
         "current_rating_mode": current_rating_mode,
+        "theme_mode": settings.theme_mode,
         "show_date_field": settings.show_date_field,
         "show_repeats_field": settings.show_repeats_field,
     })
@@ -569,6 +595,24 @@ def update_preferences(request):
 
     return JsonResponse({"success": True})
 
+@require_POST
+def update_theme(request):
+    data = json.loads(request.body.decode("utf-8"))
+    theme_mode = data.get("theme_mode")
+    
+    if theme_mode not in ['light', 'dark', 'green']:
+        return JsonResponse({"error": "Invalid theme mode"}, status=400)
+    
+    AppSettings = apps.get_model('core', 'AppSettings')
+    settings = AppSettings.objects.first()
+    if not settings:
+        settings = AppSettings.objects.create()
+    
+    settings.theme_mode = theme_mode
+    settings.save()
+    
+    return JsonResponse({"success": True})
+
 
 @ensure_csrf_cookie
 @require_POST
@@ -581,36 +625,57 @@ def dismiss_notification(request, item_id):
     except MediaItem.DoesNotExist:
         return JsonResponse({"error": "Item not found"}, status=404)
 
+@require_GET
+def check_in_list(request):
+    source = request.GET.get('source')
+    source_id = request.GET.get('source_id')
+    
+    if not source or not source_id:
+        return JsonResponse({"error": "Missing parameters"}, status=400)
+    
+    exists = MediaItem.objects.filter(source=source, source_id=str(source_id)).exists()
+    return JsonResponse({"in_list": exists})
+
 
 @ensure_csrf_cookie
 def discover_view(request):
-    trending_movies = get_trending_movies()
-    trending_tv = get_trending_tv()
-    trending_anime = get_trending_anime()
-    trending_manga = get_trending_manga()
-    trending_games = get_trending_games()
+    # Get theme mode
+    AppSettings = apps.get_model('core', 'AppSettings')
+    settings = AppSettings.objects.first()
+    theme_mode = settings.theme_mode if settings else 'dark'
 
-    # Combine all trending items into a single list
-    media_items = []
-    media_items.extend(trending_movies)
-    media_items.extend(trending_tv)
-    media_items.extend(trending_anime)
-    media_items.extend(trending_manga)
-    media_items.extend(trending_games)
+    return render(request, "core/discover.html", {
+        "theme_mode": theme_mode,
+    })
 
-    MEDIA_SECTIONS = [
-    ("movie", "Trending Movies"),
-    ("tv", "Trending TV Shows"),
-    ("anime", "Trending Anime"),
-    ("manga", "Trending Manga"),
-    ("game", "Trending Games"),
-]
-
-    context = {
-        "media_items": media_items,
-        "media_sections": MEDIA_SECTIONS,
-    }
-    return render(request, "core/discover.html", context)
+@require_GET
+def discover_api(request):
+    media_type = request.GET.get('type', 'movie')
+    page = int(request.GET.get('page', 1))
+    query = request.GET.get('q', '').strip()
+    
+    # Get filters
+    sort = request.GET.get('sort', '')
+    season = request.GET.get('season', '')
+    year = request.GET.get('year', '')
+    format_filter = request.GET.get('format', '')
+    status = request.GET.get('status', '')
+    genre = request.GET.get('genre', '')
+    platform = request.GET.get('platform', '')
+    
+    try:
+        if media_type in ['anime', 'manga']:
+            results = get_anilist_discover(media_type, page, query, sort, season, year, format_filter, status)
+        elif media_type in ['movie', 'tv']:
+            results = get_tmdb_discover(media_type, page, query, sort, year)
+        elif media_type == 'game':
+            results = get_igdb_discover(page, query, sort, genre, platform, year)
+        else:
+            results = []
+            
+        return JsonResponse({'results': results})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
 
 @ensure_csrf_cookie
 def board(request):
@@ -628,10 +693,16 @@ def board(request):
 
     media_types = dict(MediaItem.MEDIA_TYPES)
 
+    # Get theme mode
+    AppSettings = apps.get_model('core', 'AppSettings')
+    settings = AppSettings.objects.first()
+    theme_mode = settings.theme_mode if settings else 'dark'
+
     return render(request, "core/board.html", {
         "firebase_url": firebase_url,
-        "items": list(items),        # Convert QuerySet to list for JSON serialization in template
-        "media_types": media_types   # For dropdown
+        "items": list(items),
+        "media_types": media_types,
+        "theme_mode": theme_mode,
     })
 
 # Anime
@@ -988,6 +1059,11 @@ def tmdb_detail(request, media_type, tmdb_id):
         except ValueError:
             formatted_release_date = raw_date
 
+        # Get theme mode
+        AppSettings = apps.get_model('core', 'AppSettings')
+        settings = AppSettings.objects.first()
+        theme_mode = settings.theme_mode if settings else 'dark'
+
         return render(request, "core/detail.html", {
             "item": item,
             "item_id": item.id,
@@ -1000,11 +1076,12 @@ def tmdb_detail(request, media_type, tmdb_id):
             "banner_url": item.banner_url,
             "poster_url": item.cover_url,
             "release_date": formatted_release_date,
-            "genres": [],  # Optional
+            "genres": [],
             "cast": cast_data,
-            "recommendations": [],  # Optional
+            "recommendations": [],
             "seasons": seasons,
             'page_type': media_type,
+            "theme_mode": theme_mode,
         })
 
     except MediaItem.DoesNotExist:
@@ -1070,6 +1147,11 @@ def tmdb_detail(request, media_type, tmdb_id):
     except ValueError:
         formatted_release_date = raw_date  # fallback to raw string if parsing fails
 
+    # Get theme mode
+    AppSettings = apps.get_model('core', 'AppSettings')
+    settings = AppSettings.objects.first()
+    theme_mode = settings.theme_mode if settings else 'dark'
+
     return render(request, "core/detail.html", {
         "item": None,
         "item_id": None,
@@ -1087,6 +1169,7 @@ def tmdb_detail(request, media_type, tmdb_id):
         "recommendations": data.get("recommendations", {}).get("results", [])[:16],
         "seasons": seasons,
         'page_type': media_type,
+        "theme_mode": theme_mode,
     })
 
 def save_tmdb_item(media_type, tmdb_id):
@@ -1214,6 +1297,11 @@ def tmdb_season_detail(request, tmdb_id, season_number):
             except (APIKey.DoesNotExist, Exception):
                 season_nav = {}
         
+        # Get theme mode
+        AppSettings = apps.get_model('core', 'AppSettings')
+        settings = AppSettings.objects.first()
+        theme_mode = settings.theme_mode if settings else 'dark'
+
         return render(request, "core/season_detail.html", {
             "item": item,
             "item_id": item.id,
@@ -1232,6 +1320,7 @@ def tmdb_season_detail(request, tmdb_id, season_number):
             "episodes": episodes,
             "page_type": "tv",
             "season_nav": season_nav,
+            "theme_mode": theme_mode,
         })
     except MediaItem.DoesNotExist:
         pass
@@ -1310,6 +1399,11 @@ def tmdb_season_detail(request, tmdb_id, season_number):
     all_seasons = show_data.get('seasons', [])
     season_nav = get_season_navigation(all_seasons, int(season_number))
     
+    # Get theme mode
+    AppSettings = apps.get_model('core', 'AppSettings')
+    settings = AppSettings.objects.first()
+    theme_mode = settings.theme_mode if settings else 'dark'
+
     return render(request, "core/season_detail.html", {
         "item": None,
         "item_id": None,
@@ -1328,6 +1422,7 @@ def tmdb_season_detail(request, tmdb_id, season_number):
         "episodes": episodes,
         "page_type": "tv",
         "season_nav": season_nav,
+        "theme_mode": theme_mode,
     })
 
 
@@ -1516,6 +1611,11 @@ def mal_detail(request, media_type, mal_id):
             if "id" not in r and "mal_id" in r:
                 r["id"] = r["mal_id"]
 
+    # Get theme mode
+    AppSettings = apps.get_model('core', 'AppSettings')
+    settings = AppSettings.objects.first()
+    theme_mode = settings.theme_mode if settings else 'dark'
+
     context = {
         "item": item,
         "item_id": item_id,
@@ -1535,6 +1635,7 @@ def mal_detail(request, media_type, mal_id):
         "in_my_list": in_my_list,
         "recommendations": recommendations,
         'page_type': media_type,
+        "theme_mode": theme_mode,
     }
 
     return render(request, "core/detail.html", context)
@@ -1869,6 +1970,11 @@ def openlib_detail(request, work_id):
         except ValueError:
             formatted_release_date = raw_date
 
+        # Get theme mode
+        AppSettings = apps.get_model('core', 'AppSettings')
+        settings = AppSettings.objects.first()
+        theme_mode = settings.theme_mode if settings else 'dark'
+
         return render(request, "core/detail.html", {
             "item": item,
             "item_id": item.id,
@@ -1878,14 +1984,15 @@ def openlib_detail(request, work_id):
             "media_type": "book",
             "title": item.title,
             "overview": item.overview,
-            "banner_url": item.banner_url,  # no wide artwork
+            "banner_url": item.banner_url,
             "poster_url": item.cover_url,
             "release_date": formatted_release_date,
-            "genres": [],  # Could map from subjects later
+            "genres": [],
             "cast": item.cast or [],
             "recommendations": [],
             "seasons": None,
             "page_type": "book",
+            "theme_mode": theme_mode,
         })
 
     except MediaItem.DoesNotExist:
@@ -1965,6 +2072,11 @@ def openlib_detail(request, work_id):
                 if len(recommendations) >= 8:
                     break
 
+    # Get theme mode
+    AppSettings = apps.get_model('core', 'AppSettings')
+    settings = AppSettings.objects.first()
+    theme_mode = settings.theme_mode if settings else 'dark'
+
     return render(request, "core/detail.html", {
         "item": None,
         "item_id": None,
@@ -1977,11 +2089,12 @@ def openlib_detail(request, work_id):
         "banner_url": None,
         "poster_url": poster_url,
         "release_date": formatted_release_date,
-        "genres": [],  # Could later be extracted from subjects
+        "genres": [],
         "cast": [{"name": name, "character": ""} for name in author_names],
         "recommendations": recommendations,
         "seasons": None,
         "page_type": "book",
+        "theme_mode": theme_mode,
     })
 
 def save_openlib_item(work_id):
@@ -2091,6 +2204,11 @@ def igdb_detail(request, igdb_id):
             except ValueError:
                 formatted_release_date = item.release_date
 
+        # Get theme mode
+        AppSettings = apps.get_model('core', 'AppSettings')
+        settings = AppSettings.objects.first()
+        theme_mode = settings.theme_mode if settings else 'dark'
+
         context = {
             "item": item,
             "item_id": item.id,
@@ -2108,6 +2226,7 @@ def igdb_detail(request, igdb_id):
             "screenshots": screenshots,
             "in_my_list": True,
             'page_type': "game",
+            "theme_mode": theme_mode,
         }
         return render(request, "core/detail.html", context)
 
@@ -2197,6 +2316,11 @@ def igdb_detail(request, igdb_id):
     genres = [g["name"] for g in game.get("genres", []) if "name" in g]
     platforms = [p["name"] for p in game.get("platforms", []) if "name" in p]
 
+    # Get theme mode
+    AppSettings = apps.get_model('core', 'AppSettings')
+    settings = AppSettings.objects.first()
+    theme_mode = settings.theme_mode if settings else 'dark'
+
     context = {
         "item": None,
         "item_id": None,
@@ -2216,6 +2340,7 @@ def igdb_detail(request, igdb_id):
         "platforms": platforms,
         "in_my_list": False,
         'page_type': "game",
+        "theme_mode": theme_mode,
     }
 
     return render(request, "core/detail.html", context)
@@ -2452,31 +2577,28 @@ def edit_item(request, item_id):
                 new_status = data["status"]
                 item.status = new_status
 
-            # --- Handle date_added with comparison ---
+            # --- Handle date_added ---
+            status_changed = new_status != old_status
             user_date = data.get("date_added")
+            
             if user_date:
                 try:
                     year, month, day = map(int, user_date.split("-"))
-                    # Build candidate datetime using old time component
-                    old_dt = item.date_added or timezone.now()
-                    candidate_dt = timezone.datetime(year, month, day,
-                                                     old_dt.hour, old_dt.minute, old_dt.second)
-                    if settings.USE_TZ:
-                        candidate_dt = timezone.make_aware(candidate_dt, timezone.get_current_timezone())
-
-                    # Compare just the date part with current item.date_added
-                    if item.date_added and item.date_added.date() != candidate_dt.date():
-                        # User actually changed the date → take their value
-                        item.date_added = candidate_dt
-                    elif new_status != old_status:
-                        # User sent the same date but status changed → update to now
-                        item.date_added = timezone.now()
-                    # else: same date, no status change → leave unchanged
-                except Exception as e:
-                    print("Failed to parse date_added:", e)
-            elif new_status != old_status:
-                # No date provided, but status changed → update to now
-                item.date_added = timezone.now()
+                    user_date_obj = datetime.date(year, month, day)
+                    current_date = item.date_added.date() if item.date_added else None
+                    
+                    if current_date and current_date != user_date_obj:
+                        # User changed date - set to current time on that date
+                        now = dt.datetime.now()
+                        item.date_added = dt.datetime.combine(user_date_obj, now.time())
+                    elif status_changed:
+                        item.date_added = dt.datetime.now()
+                except Exception:
+                    if status_changed:
+                        item.date_added = dt.datetime.now()
+            elif status_changed:
+                item.date_added = dt.datetime.now()
+                print(f"Status changed (no user date): Setting date_added to {item.date_added}")
 
             # Update progress fields if present (manual input)
             if "progress_main" in data and data["progress_main"] not in [None, ""]:
@@ -2669,6 +2791,7 @@ def get_item(request, item_id):
                 "id": item.id,
                 "title": item.title,
                 "media_type": item.media_type,
+                "source_id": item.source_id,
                 "status": item.status,
                 "personal_rating": display_rating,
                 "notes": item.notes,

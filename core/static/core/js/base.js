@@ -3,6 +3,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const overlaySearchInput = document.getElementById("overlay-search-input");
   const resultsContainer = document.getElementById("search-results");
   const liveSearchToggle = document.getElementById("live-search-toggle");
+  const liveSearchButton = document.getElementById("live-search-button");
   const openSearchBtn = document.getElementById("search-open-btn");
   const pageType = document.body.dataset.pageType;
 
@@ -12,6 +13,21 @@ document.addEventListener("DOMContentLoaded", () => {
       document.body.style.overflow = "hidden";
       overlaySearchInput.value = "";
       overlaySearchInput.focus();
+    });
+  }
+
+  // Initialize live search state from sessionStorage
+  const savedLiveSearchState = sessionStorage.getItem("liveSearchEnabled") === "true";
+  if (liveSearchToggle && liveSearchButton) {
+    liveSearchToggle.checked = savedLiveSearchState;
+    liveSearchButton.classList.toggle("active", savedLiveSearchState);
+  }
+
+  if (liveSearchButton) {
+    liveSearchButton.addEventListener("click", () => {
+      liveSearchToggle.checked = !liveSearchToggle.checked;
+      liveSearchButton.classList.toggle("active", liveSearchToggle.checked);
+      sessionStorage.setItem("liveSearchEnabled", liveSearchToggle.checked);
     });
   }
 

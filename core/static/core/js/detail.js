@@ -189,6 +189,7 @@ function hideArrows(container) {
 }
 
 document.addEventListener("DOMContentLoaded", function () {
+
   if (sessionStorage.getItem("refreshSuccess") === "1") {
     showNotification("Action has been done successfully!", "success");
     sessionStorage.removeItem("refreshSuccess");

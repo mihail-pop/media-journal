@@ -222,6 +222,9 @@
 
 {% block script %}
 {{ block.super }}
+<script>
+  document.body.setAttribute('data-theme', '{{ theme_mode }}');
+</script>
 <script src="{% static 'core/js/edit_modal.js' %}?v={{ version }}"></script>
 <script src="{% static 'core/js/lists.js' %}?v={{ version }}"></script>
 {% endblock %}

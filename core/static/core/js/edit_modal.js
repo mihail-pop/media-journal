@@ -97,11 +97,9 @@ if (dateGroup && dateInput) {
         if (item.date_added) {
             const dt = new Date(item.date_added);
             const day = String(dt.getDate()).padStart(2, '0');
-            const month = String(dt.getMonth() + 1).padStart(2, '0'); // JS months are 0-indexed
+            const month = String(dt.getMonth() + 1).padStart(2, '0');
             const year = dt.getFullYear();
-            // Input value must stay YYYY-MM-DD for <input type="date">
             dateInput.value = `${year}-${month}-${day}`;
-            // Optional: store display as DD MM YYYY if needed elsewhere
             dateInput.setAttribute('data-display', `${day} ${month} ${year}`);
         }
 
@@ -332,9 +330,7 @@ if (repeatsGroup && repeatsInput && repeatsLabel) {
     updateFieldVisibility(item.media_type);
     
     // Hide season progress for individual seasons after fields are shown
-    console.log('Debug - media_type:', item.media_type, 'title:', item.title);
-    if (item.media_type === "tv" && item.title && item.title.includes('Season')) {
-      console.log('Hiding season progress for:', item.title);
+    if (item.media_type === "tv" && item.source_id && item.source_id.includes('_s')) {
       hideField("progress_secondary");
     }
     
@@ -350,6 +346,7 @@ if (repeatsGroup && repeatsInput && repeatsLabel) {
       const mediaType = card.dataset.mediaType;
       const coverUrl = card.dataset.coverUrl;
       const bannerUrl = card.dataset.bannerUrl;
+      const sourceId = card.dataset.sourceId;
 
       const modal = document.getElementById('edit-modal');
       const banner = modal.querySelector('.modal-banner');
@@ -372,12 +369,11 @@ if (titleElement && title) {
       banner.dataset.banner = bannerUrl;
       banner.style.backgroundImage = `url("${bannerUrl}")`;
     }
-      console.log("Fetching item for ID:", itemId);
       fetch(`/get-item/${itemId}/`)
         .then(res => res.json())
         .then(data => {
           if (!data.success) return alert("Failed to load item");
-          console.log("Fetched item data:", data.item);
+
           populateForm(form, data.item);
           modal.classList.remove("modal-hidden");
           overlay.classList.remove("modal-hidden");
@@ -399,6 +395,7 @@ document.querySelectorAll("#list-view .edit-card-btn").forEach(button => {
     const coverUrl = row.dataset.coverUrl;
     const bannerUrl = row.dataset.bannerUrl;
     const title = row.dataset.title;
+    const sourceId = row.dataset.sourceId;
 
     const modal = document.getElementById('edit-modal');
     const banner = modal.querySelector('.modal-banner');
@@ -425,6 +422,7 @@ document.querySelectorAll("#list-view .edit-card-btn").forEach(button => {
       .then(res => res.json())
       .then(data => {
         if (!data.success) return alert("Failed to load item");
+
         populateForm(form, data.item);
         modal.classList.remove("modal-hidden");
         overlay.classList.remove("modal-hidden");
@@ -445,12 +443,10 @@ document.querySelectorAll("#list-view .edit-card-btn").forEach(button => {
       const form = document.getElementById("edit-form");
       if (!form) return console.error("Edit form not found");
 
-      console.log("Fetching item from detail page:", itemId);
       fetch(`/get-item/${itemId}/`)
         .then(res => res.json())
         .then(data => {
           if (!data.success) return alert("Failed to load item");
-          console.log("Fetched item data:", data.item);
           populateForm(form, data.item);
           modal.classList.remove("modal-hidden");
           overlay.classList.remove("modal-hidden");
@@ -464,13 +460,11 @@ document.querySelectorAll("#list-view .edit-card-btn").forEach(button => {
 
   // Modal close
   document.getElementById("edit-close-btn")?.addEventListener("click", () => {
-    console.log("Closing modal (button)");
     modal.classList.add("modal-hidden");
     overlay.classList.add("modal-hidden");
   });
 
   overlay?.addEventListener("click", () => {
-    console.log("Closing modal (overlay click)");
     modal.classList.add("modal-hidden");
     overlay.classList.add("modal-hidden");
   });
@@ -627,7 +621,6 @@ document.getElementById("edit-delete-btn")?.addEventListener("click", function (
       favInput.addEventListener("change", function () {
         const itemId = form.dataset.itemId;
         const newStatus = favInput.checked;
-        console.log("Toggling favorite:", newStatus);
 
         fetch(`/edit-item/${itemId}/`, {
           method: "POST",
@@ -639,7 +632,6 @@ document.getElementById("edit-delete-btn")?.addEventListener("click", function (
         })
           .then(res => res.json())
           .then(res => {
-            console.log("Favorite update response:", res);
             if (!res.success) {
               alert("Failed to update favorite.");
               favInput.checked = !newStatus;

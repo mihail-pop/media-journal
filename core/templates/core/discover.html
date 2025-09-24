@@ -1,6 +1,5 @@
 {% extends 'core/base.html' %}
 {% load static %}
-{% load custom_filters %}
 
 {% block head %}
 {{ block.super }}
@@ -11,67 +10,82 @@
 <div class="separator-bar"></div>
 
 <div class="list-page-container">
-  <section class="list-content">
-    {% if media_items %}
-      {% for type, label in media_sections %}
-        {% with section_items=media_items|filter_by_media_type:type %}
-        {% if section_items %}
-        <div class="discover-section" data-section="{{ type }}">
-          <h2 class="section-title">{{ label }}</h2>
-          <div class="card-grid">
-            {% for item in section_items %}
-            <div class="card card-vertical {% if forloop.counter > 10 %}hidden{% endif %}"
-                 data-id="{{ item.id }}"
-                 data-media-type="{{ item.media_type }}"
-                 data-title="{{ item.title|escape }}"
-                 data-cover-url="{{ item.cover_url|default:'/static/core/img/placeholder.png' }}">
+  <aside class="sidebar">
+    <input type="text" id="search-input" placeholder="Search" autocomplete="off">
+    
+    <h3>Type</h3>
+    <div class="type-filter filter-group">
+      <button class="filter-btn type-btn active" data-type="movie">Movies</button>
+      <button class="filter-btn type-btn" data-type="tv">TV Shows</button>
+      <button class="filter-btn type-btn" data-type="anime">Anime</button>
+      <button class="filter-btn type-btn" data-type="manga">Manga</button>
+      <button class="filter-btn type-btn" data-type="game">Games</button>
+    </div>
 
-              {% if item.media_type in 'movie,tv' %}
-                <a href="{% url 'tmdb_detail' media_type=item.media_type tmdb_id=item.id %}" class="card-link">
-                  <img src="{{ item.poster_path|default:'/static/core/img/placeholder.png' }}" alt="{{ item.title }}" loading="lazy">
-                  <div class="card-title-overlay">
-                    <span class="card-title">{{ item.title }}</span>
-                  </div>
-                </a>
-              {% elif item.media_type in 'manga,anime' %}
-                <a href="{% url 'mal_detail' media_type=item.media_type mal_id=item.id %}" class="card-link">
-                  <img src="{{ item.poster_path|default:'/static/core/img/placeholder.png' }}" alt="{{ item.title }}" loading="lazy">
-                  <div class="card-title-overlay">
-                    <span class="card-title">{{ item.title }}</span>
-                  </div>
-                </a>
-              {% elif item.media_type == 'game' %}
-                <a href="{% url 'igdb_detail' igdb_id=item.id %}" class="card-link">
-                  <img src="{{ item.poster_path|default:'/static/core/img/placeholder.png' }}" alt="{{ item.title }}" loading="lazy">
-                  <div class="card-title-overlay">
-                    <span class="card-title">{{ item.title }}</span>
-                  </div>
-                </a>
-              {% else %}
-                <div class="card-link">
-                  <img src="{{ item.cover_url|default:'/static/core/img/placeholder.png' }}" alt="{{ item.title }}" loading="lazy">
-                  <div class="card-title-overlay">
-                    <span class="card-title">{{ item.title }}</span>
-                  </div>
-                </div>
-              {% endif %}
-            </div>
-            {% endfor %}
-          </div>
-          {% if section_items|length > 10 %}
-          <div class="load-more-container">
-            <button class="load-more-btn" data-section="{{ type }}">Show More</button>
-          </div>
-          {% endif %}
-        </div>
-        {% endif %}
-        {% endwith %}
-      {% endfor %}
-    {% else %}
-      <p class="empty-message">No items to display.</p>
-    {% endif %}
+    <!-- Movie/TV Filters -->
+    <div id="tmdb-filters" class="filter-section">
+      <h3>Sort</h3>
+      <div class="sort-filter filter-group">
+        <button class="filter-btn sort-btn active" data-sort="popularity.desc">Popular</button>
+        <button class="filter-btn sort-btn" data-sort="release_date.desc">Latest</button>
+      </div>
+      
+      <h3>Year</h3>
+      <input type="number" id="year-input" placeholder="Year" min="1900" max="2030">
+    </div>
+
+    <!-- Anime/Manga Filters -->
+    <div id="anilist-filters" class="filter-section" style="display:none;">
+      <h3>Sort</h3>
+      <div class="sort-filter filter-group">
+        <button class="filter-btn sort-btn active" data-sort="TRENDING_DESC">Trending</button>
+        <button class="filter-btn sort-btn" data-sort="POPULARITY_DESC">Popular</button>
+      </div>
+      
+      <h3>Season</h3>
+      <div class="season-filter filter-group">
+        <button class="filter-btn season-btn" data-season="WINTER">Winter</button>
+        <button class="filter-btn season-btn" data-season="SPRING">Spring</button>
+        <button class="filter-btn season-btn" data-season="SUMMER">Summer</button>
+        <button class="filter-btn season-btn" data-season="FALL">Fall</button>
+      </div>
+      
+      <h3>Year</h3>
+      <input type="number" id="season-year-input" placeholder="Year" min="1900" max="2030">
+      
+      <h3>Status</h3>
+      <div class="status-filter filter-group">
+        <button class="filter-btn status-btn" data-status="RELEASING">Releasing</button>
+        <button class="filter-btn status-btn" data-status="FINISHED">Finished</button>
+        <button class="filter-btn status-btn" data-status="NOT_YET_RELEASED">Upcoming</button>
+      </div>
+    </div>
+
+    <!-- Game Filters -->
+    <div id="igdb-filters" class="filter-section" style="display:none;">
+      <h3>Sort</h3>
+      <div class="sort-filter filter-group">
+        <button class="filter-btn sort-btn active" data-sort="popularity">Popular</button>
+        <button class="filter-btn sort-btn" data-sort="rating">Rated</button>
+      </div>
+      
+      <h3>Year</h3>
+      <input type="number" id="game-year-input" placeholder="Year" min="1970" max="2030">
+    </div>
+  </aside>
+
+  <section class="list-content">
+    <div id="loading" style="display:none;">Loading...</div>
+    <div id="card-view" class="card-grid"></div>
+    <div id="load-more" style="display:none;">
+      <button id="load-more-btn">Load More</button>
+    </div>
   </section>
 </div>
 
+{% csrf_token %}
+<script>
+  document.body.setAttribute('data-theme', '{{ theme_mode }}');
+</script>
 <script src="{% static 'core/js/discover.js' %}?v={{ version }}"></script>
 {% endblock %}

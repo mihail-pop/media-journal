@@ -1,4 +1,5 @@
 document.addEventListener("DOMContentLoaded", function () {
+
   const cardView = document.getElementById("card-view");
   const listView = document.getElementById("list-view");
 
@@ -125,8 +126,9 @@ document.addEventListener("DOMContentLoaded", function () {
         const matchesStatus = currentStatus === "all" || itemStatus === currentStatus;
         const matchesSearch = title.includes(currentSearch);
         
-        // Type filtering: check if title contains "Season" to determine if it's a season
-        const isSeason = title.includes("season");
+        // Type filtering: check if source_id contains '_s' to determine if it's a season
+        const sourceId = item.dataset.sourceId || '';
+        const isSeason = sourceId.includes('_s');
         let matchesType = true;
         if (currentType === "shows") {
           matchesType = !isSeason;
@@ -214,6 +216,8 @@ if (statusBtnContainer) {
 
   initBannerRotator();
 });
+
+
 
 document.getElementById("check-status-btn").addEventListener("click", () => {
   const mediaType = document.body.getAttribute("data-media-type");

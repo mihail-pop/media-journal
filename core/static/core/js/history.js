@@ -1,4 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
+
   const cards = [...document.querySelectorAll(".card")];
   const searchInput = document.getElementById("search-input");
   const yearBtns = [...document.querySelectorAll(".year-btn")];
@@ -166,3 +167,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Initial run
   applyFilters();
 });
+
+// Apply theme on page load
+const theme = document.body.getAttribute('data-theme') || 'dark';
+document.documentElement.setAttribute('data-theme', theme);

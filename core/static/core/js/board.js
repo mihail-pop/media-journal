@@ -54,7 +54,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const status = mediaItem.status || 'planned';
     const mediaType = mediaItem.media_type;
     const title = mediaItem.title;
-    const url = `http://${window.location.hostname}:8000/${mediaItem.source}/${mediaType}/${mediaItem.source_id}/`;
+    
+    let url;
+    if (mediaItem.source_id.includes('_s')) {
+      const parts = mediaItem.source_id.split('_s');
+      const baseId = parts[0];
+      const seasonNum = parts[1];
+      url = `http://${window.location.hostname}:8000/tmdb/season/${baseId}/${seasonNum}/`;
+    } else {
+      url = `http://${window.location.hostname}:8000/${mediaItem.source}/${mediaType}/${mediaItem.source_id}/`;
+    }
 
     let actionText = '';
     switch (status) {
@@ -260,7 +269,7 @@ commentIcon.addEventListener('click', async () => {
   commentsVisible = true;
   commentsSection = document.createElement('div');
   commentsSection.className = 'comments-section';
-  commentsSection.style.marginTop = '8px';
+
   commentsSection.innerHTML = '';
 
   // Fetch only comments for this post
@@ -285,80 +294,34 @@ commentIcon.addEventListener('click', async () => {
       // Add comment box
       const commentBox = document.createElement('div');
       commentBox.className = 'comment-box';
-      commentBox.style.display = 'flex';
-      commentBox.style.gap = '10px';
-      commentBox.style.marginTop = '14px';
-      commentBox.style.alignItems = 'flex-end';
+
 
       // Username input (above comment box, small)
       const commentUsername = document.createElement('input');
       commentUsername.type = 'text';
       commentUsername.placeholder = '(Optional) Username';
       commentUsername.className = 'comment-username-input';
-      commentUsername.style.width = '210px';
-      commentUsername.style.marginBottom = '4px';
-      commentUsername.style.fontSize = '1rem';
-      commentUsername.style.fontWeight = '500';
-      commentUsername.style.border = '1px solid #23304a';
-      commentUsername.style.background = '#101820';
-      commentUsername.style.color = 'rgb(237, 241, 245)';
-      commentUsername.style.borderRadius = '4px';
-      commentUsername.style.padding = '6px 10px';
 
       // Comment input (expandable textarea)
       const commentInput = document.createElement('textarea');
       commentInput.placeholder = 'Write a comment...';
       commentInput.className = 'comment-input';
-      commentInput.style.flex = '1 1 auto';
-      commentInput.style.padding = '6px 10px';
-      commentInput.style.borderRadius = '4px';
-      commentInput.style.border = '1px solid #23304a';
-      commentInput.style.background = '#101820';
-      commentInput.style.color = '#EDF1F5';
-      commentInput.style.fontSize = '1rem';
-      commentInput.style.minHeight = '80px';
-      commentInput.style.maxHeight = '200px';
-      commentInput.style.resize = 'vertical';
-      commentInput.style.marginRight = '4px';
 
       // Emoji button
       const emojiBtn = document.createElement('button');
       emojiBtn.type = 'button';
       emojiBtn.className = 'emoji-btn';
       emojiBtn.textContent = '😊';
-      emojiBtn.style.background = 'none';
-      emojiBtn.style.border = 'none';
-      emojiBtn.style.fontSize = '1.3em';
-      emojiBtn.style.cursor = 'pointer';
-      emojiBtn.style.marginRight = '2px';
-      emojiBtn.style.position = 'relative';
 
       // Emoji picker
       const emojiPicker = document.createElement('div');
       emojiPicker.className = 'emoji-picker';
-      emojiPicker.style.position = 'absolute';
-
-emojiPicker.style.left = '100%';
-      emojiPicker.style.background = '#151F2E';
-      emojiPicker.style.border = '1px solid #23304a';
-      emojiPicker.style.borderRadius = '8px';
-      emojiPicker.style.padding = '8px';
-      emojiPicker.style.display = 'none';
-      emojiPicker.style.zIndex = '10';
-      emojiPicker.style.boxShadow = '0 2px 8px rgba(0,0,0,0.10)';
-      emojiPicker.style.minWidth = '30rem';
-      emojiPicker.style.maxWidth = '30rem';
-      emojiPicker.style.maxHeight = '180px';
-      emojiPicker.style.overflowY = 'auto';
 
       // Simple emoji list
       const emojis = ['😀','😁','😂','🤣','😃','😄','😅','😆','😉','😊','😍','😘','😜','🤔','😎','😢','😭','😡','👍','👎','🙏','🔥','🎉','💯','🥳','😇','🤩','😏','😬','😴','🤗','😱','🥺','😤','😈','💖','💔','💙','⭐','🌟','✨','⚡','🍶','🍺','🍻','🥂','🍷','🧂'];
       emojis.forEach(e => {
         const emojiSpan = document.createElement('span');
         emojiSpan.textContent = e;
-        emojiSpan.style.cursor = 'pointer';
-        emojiSpan.style.fontSize = '1.2em';
-        emojiSpan.style.margin = '2px';
         emojiSpan.addEventListener('click', () => {
           commentInput.value += e;
           emojiPicker.style.display = 'none';
@@ -380,16 +343,6 @@ emojiPicker.style.left = '100%';
       const sendBtn = document.createElement('button');
       sendBtn.textContent = 'Send';
       sendBtn.className = 'send-comment-btn';
-      sendBtn.style.padding = '7px 18px';
-      sendBtn.style.borderRadius = '4px';
-      sendBtn.style.border = 'none';
-      sendBtn.style.background = '#3DB4F2';
-      sendBtn.style.color = '#fff';
-      sendBtn.style.cursor = 'pointer';
-      sendBtn.style.fontWeight = 'bold';
-      sendBtn.style.fontSize = '1rem';
-      sendBtn.style.transition = 'background 0.2s';
-      sendBtn.style.boxShadow = '0 1px 4px rgba(0,0,0,0.08)';
 
 sendBtn.addEventListener('click', async () => {
   const username = commentUsername.value.trim() || 'Anonymous';

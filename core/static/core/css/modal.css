@@ -1,8 +1,61 @@
+:root {
+  /* Dark theme (default) */
+  --bg-primary: #0b1622;
+  --bg-secondary: #1a2332;
+  --bg-tertiary: #151f2e;
+  --bg-quaternary: #32445b;
+  --text-primary: #8596a5;
+  --text-secondary: #a8b5c4;
+  --text-tertiary: #9fadbd;
+  --text-light: #e0e0e0;
+  --text-dark: #333;
+  --text-label: #728ab1;
+  --text-muted: #666;
+  --text-close: #666;
+  --border-color: #32445b;
+  --hover-bg: #2a3441;
+  --modal-bg: #151f2e;
+  --input-bg: #0b1622;
+  --button-primary: #3db4f2;
+  --button-primary-hover: #0056b3;
+  --button-cancel: #6c757d;
+  --button-cancel-hover: #5a6268;
+  --button-danger: #e74c3c;
+  --close-hover-bg: #eee;
+  --close-hover-text: #222;
+}
+
+[data-theme="light"] {
+  --bg-primary: #271c19;
+  --bg-secondary: #f8f8f8;
+  --bg-tertiary: #55423d;
+  --bg-quaternary: #af7f76;
+  --text-primary: #faeee7;
+  --text-secondary: #faeee7;
+  --text-tertiary: #faeee7;
+  --text-light: #faeee7;
+  --text-dark: #d39f82;
+  --text-label: #faeee7;
+  --text-muted: #faeee7;
+  --text-close: #faeee7;
+  --border-color: #fffffe;
+  --hover-bg: #fffffe;
+  --modal-bg: #55423d;
+  --input-bg: #f8f8f8;
+  --button-primary: #8f5b4d;
+  --button-primary-hover: #aa6d5c;
+  --button-cancel: #6c757d;
+  --button-cancel-hover: #5a6268;
+  --button-danger: #dc3545;
+  --close-hover-bg: #f8f9fa;
+  --close-hover-text: #495057;
+}
+
 .rating-stars {
   display: flex;
   gap: 8px;
   align-items: center;
-  background-color: #0b1622;
+  background-color: var(--bg-primary);
   border-radius: 6px;
   padding: 0.35rem 0.5rem;
 }
@@ -32,7 +85,7 @@
   font-size: 1.1rem;
   padding: 0.2rem 0.5rem;
   border-radius: 6px;
-  background: #0B1622;
+  background: var(--bg-primary);
   text-align: center;
   outline: none;
   margin-left: 2px;
@@ -40,8 +93,7 @@
   width: 8rem;
 }
 .rating-number input[type="number"]:focus {
-  border-color: #3DB4F2;
-  background: #0B1622;
+  border-color: var(--button-primary);
 }
 /* Utility class to hide modal elements specifically */
 .modal-hidden {
@@ -86,21 +138,20 @@
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: 20001;
-  background: #151F2E;
+  background: var(--modal-bg);
   border-radius: 16px;
   max-width: 820px;
   width: 95%;
-  /* max-height: 90vh; */
   box-sizing: border-box;
   overflow: auto;
   box-shadow:
     0 8px 20px rgba(0, 0, 0, 0.15),
     0 0 0 1px rgba(0, 0, 0, 0.05);
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  color: #333;
+  color: var(--text-dark);
   opacity: 1;
   transition: opacity 0.3s ease, transform 0.3s ease;
-  padding: 0; /* Reset default padding */
+  padding: 0;
   animation: modalPop 0.25s ease-in-out;
   transform-origin: center center;
 }
@@ -192,7 +243,7 @@
   font-weight: 700;
   line-height: 1.2;
   margin: 0;
-  color: #e0e0e0;
+  color: var(--text-light);
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
 }
 
@@ -214,7 +265,7 @@
 .form-group label {
   font-weight: 600;
   margin-bottom: 0.4rem;
-  color: #444;
+  color: var(--text-label);
   text-align: left;
   user-select: none;
 }
@@ -231,8 +282,8 @@
   border-radius: 6px;
   font-size: 0.95rem;
   font-family: inherit;
-  background-color:#0B1622;
-  color: #9fadbd;
+  background-color: var(--bg-primary);
+  color: var(--text-tertiary);
   outline: none;
 }
 
@@ -262,7 +313,7 @@
 
 /* General button styles */
 .btn {
-  background-color: #3DB4F2;
+  background-color: var(--button-primary);
   color: white;
   border: none;
   padding: 0.7rem 1.4rem;
@@ -271,25 +322,24 @@
   font-weight: 600;
   font-size: 1rem;
   transition: background-color 0.25s ease, box-shadow 0.25s ease;
-
 }
 
 .btn:hover,
 .btn:focus {
-  background-color: #0056b3;
+  background-color: var(--button-primary-hover);
   box-shadow: none;
   outline: none;
 }
 
 /* Cancel button variant */
 .btn.cancel {
-  background-color: #6c757d;
+  background-color: var(--button-cancel);
   box-shadow: 0 3px 7px rgba(108, 117, 125, 0.4);
 }
 
 .btn.cancel:hover,
 .btn.cancel:focus {
-  background-color: #5a6268;
+  background-color: var(--button-cancel-hover);
   box-shadow: 0 5px 15px rgba(90, 98, 104, 0.6);
   outline: none;
 }
@@ -300,7 +350,7 @@
   top: 14px;
   right: 14px;
   background: transparent;
-  color: #666;
+  color: var(--text-close);
   font-weight: 700;
   font-size: 1.5rem;
   border: none;
@@ -310,30 +360,30 @@
   border-radius: 6px;
   transition: background-color 0.25s ease, color 0.25s ease;
   user-select: none;
-  z-index: 20; /* ⬅️ Add this to bring it above banner and cover */
+  z-index: 20;
 }
 
 .close-btn:hover,
 .close-btn:focus {
-  background-color: #eee;
-  color: #222;
+  background-color: var(--close-hover-bg);
+  color: var(--close-hover-text);
   outline: none;
   box-shadow: 0 0 4px rgba(0, 0, 0, 0.1);
 }
 
 /* Danger button (e.g., delete) */
 .danger-btn {
-  background-color: #0B1622;
-  color: #9fadbd;
+  background-color: var(--bg-primary);
+  color: var(--text-tertiary);
   display: block;
   margin-left: auto;
-  margin-right: 1.5rem; /* adds spacing from right edge */
+  margin-right: 1.5rem;
   margin-top: 1.5rem;
   width: fit-content;
 }
 
 .danger-btn:hover {
-  background-color: #e74c3c;
+  background-color: var(--button-danger);
   color: white;
   box-shadow: none;
 }
@@ -456,13 +506,13 @@
 .progress-total-display {
   margin-top: 0.2rem;
   font-size: 0.9rem;
-  color: #666;
+  color: var(--text-muted);
 }
 
 .form-group label {
   display: block;
-  margin-bottom: 0.25em; /* small gap */
-  color: #728ab1;
+  margin-bottom: 0.25em;
+  color: var(--text-label);
 }
 
 textarea[name="notes"] {
@@ -557,11 +607,11 @@ textarea[name="notes"]::-webkit-scrollbar {
 .rating-faces {
   display: flex;
   gap: 25px;
-  padding: 4px 7px;            /* Minimal padding around faces */
-  border-radius: 10px;         /* Keep rounded corners */
+  padding: 4px 7px;
+  border-radius: 10px;
   justify-content: center;
-  border: 0;   /* Blue border */
-  background-color: #0B1622;
+  border: 0;
+  background-color: var(--bg-primary);
 }
 .rating-faces.modal-hidden {
   display: none !important;

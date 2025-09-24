@@ -363,3 +363,42 @@ function checkVersions() {
       document.getElementById('latest-version').textContent = 'Unable to check';
     });
 }
+
+// Theme switching functionality
+document.addEventListener("DOMContentLoaded", function() {
+  const themeOptions = document.querySelectorAll('.theme-option:not(.disabled)');
+  
+  themeOptions.forEach(option => {
+    option.addEventListener('click', function() {
+      const theme = this.dataset.theme;
+      
+      // Apply theme immediately
+      document.documentElement.setAttribute('data-theme', theme);
+      
+      // Update active state
+      themeOptions.forEach(opt => opt.classList.remove('active'));
+      this.classList.add('active');
+      
+      // Save theme to backend
+      fetch('/settings/update_theme/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken'),
+        },
+        body: JSON.stringify({ theme_mode: theme }),
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          showNotification('Theme updated successfully!');
+        } else {
+          alert('Failed to update theme.');
+        }
+      })
+      .catch(err => {
+        alert('Request failed.');
+      });
+    });
+  });
+});

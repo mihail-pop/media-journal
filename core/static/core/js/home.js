@@ -1,4 +1,5 @@
 document.addEventListener("DOMContentLoaded", function () {
+
   const bannerImg = document.getElementById("rotating-banner");
   const quoteBox = document.querySelector(".banner-quote");
 
@@ -219,9 +220,6 @@ function saveNewOrder(container) {
     .then(response => {
       if (!response.ok) throw new Error('Failed to save order');
       return response.json();
-    })
-    .then(data => {
-      console.log('Order saved successfully', data);
     })
     .catch(error => {
       console.error('Error saving order:', error);

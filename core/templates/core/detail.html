@@ -8,7 +8,11 @@
 {% endblock %}
 
 {% block content %}
-<body data-media-type="{{ media_type }}" data-item-id="{{ source_id }}"></body>
+<script>
+  document.body.dataset.theme = '{{ theme_mode }}';
+  document.body.dataset.mediaType = '{{ media_type }}';
+  document.body.dataset.itemId = '{{ source_id }}';
+</script>
 
 {% with banner=banner_url|default_if_none:'' %}
   <div class="banner-section {% if not banner %}no-banner{% endif %}"
@@ -44,7 +48,7 @@
     <!-- Edit / Favorite buttons -->
     <div class="edit-favorite-wrapper">
       {% if in_my_list %}
-        <button id="edit-button" class="btn edit-card-btn" data-id="{{ item_id }}" data-media-type="{{ media_type }}">Edit</button>
+        <button id="edit-button" class="btn edit-card-btn" data-id="{{ item_id }}" data-media-type="{{ media_type }}" data-source-id="{{ source_id }}">Edit</button>
         <form id="favorite-form" data-item-id="{{ item_id }}">
           <label class="favorite-checkbox">
             <input type="checkbox" name="favorite" {% if item.favorite %}checked{% endif %}>

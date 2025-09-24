@@ -222,243 +222,7 @@ def fetch_anilist_data(mal_id, media_type):
         "recommendations": recommendations,
     }
 
-def get_trending_movies():
-    try:
-        api_key = APIKey.objects.get(name="tmdb").key_1
-    except APIKey.DoesNotExist:
-        return []
 
-    url = "https://api.themoviedb.org/3/trending/movie/week"
-    params = {"api_key": api_key}
-
-    try:
-        response = requests.get(url, params=params)
-        if response.status_code != 200:
-            return []
-
-        data = response.json()
-        results = []
-
-        for item in data.get("results", [])[:20]:
-            poster = item.get("poster_path")
-            poster_url = f"https://image.tmdb.org/t/p/w342{poster}" if poster else None
-
-            results.append({
-                "id": str(item["id"]),
-                "title": item.get("title", "Untitled"),
-                "poster_path": poster_url,
-                "media_type" : "movie"
-            })
-
-        return results
-
-    except Exception:
-        return []
-    
-
-def get_trending_tv():
-    try:
-        api_key = APIKey.objects.get(name="tmdb").key_1
-    except APIKey.DoesNotExist:
-        return []
-
-    url = "https://api.themoviedb.org/3/trending/tv/week"
-    params = {"api_key": api_key}
-
-    try:
-        response = requests.get(url, params=params)
-        if response.status_code != 200:
-            return []
-
-        data = response.json()
-        results = []
-
-        for item in data.get("results", []):
-            # Filter out anime based on language and country
-            original_language = item.get("original_language", "")
-            origin_country = item.get("origin_country", [])
-            genre_ids = item.get("genre_ids", [])
-
-            is_anime = (
-                original_language == "ja" or
-                "JP" in origin_country or
-                16 in genre_ids  # Genre ID 16 = Animation
-            )
-
-            if is_anime:
-                continue  # skip this item
-
-            poster = item.get("poster_path")
-            poster_url = f"https://image.tmdb.org/t/p/w342{poster}" if poster else None
-
-            results.append({
-                "id": str(item["id"]),
-                "title": item.get("name", "Untitled"),
-                "poster_path": poster_url,
-                "media_type": "tv"
-            })
-
-            if len(results) == 20:
-                break
-
-        return results
-
-    except Exception:
-        return []
-    
-def get_trending_anime():
-    query = '''
-    query {
-      Page(perPage: 20) {
-        media(type: ANIME, sort: TRENDING_DESC) {
-          idMal
-          title {
-            english
-            romaji
-          }
-          coverImage {
-            large
-          }
-        }
-      }
-    }
-    '''
-
-    headers = {"Content-Type": "application/json"}
-
-    try:
-        response = requests.post(
-            "https://graphql.anilist.co",
-            json={"query": query},
-            headers=headers
-        )
-
-        if response.status_code != 200:
-            return []
-
-        data = response.json()
-        results = []
-
-        for media in data.get("data", {}).get("Page", {}).get("media", []):
-            mal_id = media.get("idMal")
-            if not mal_id:
-                continue
-
-            title = media["title"].get("english") or media["title"].get("romaji") or "Unknown Title"
-            poster = media.get("coverImage", {}).get("large")
-
-            results.append({
-                "id": str(mal_id),
-                "title": title,
-                "poster_path": poster,
-                "media_type" : "anime"
-            })
-
-        return results
-
-    except Exception:
-        return []
-    
-def get_trending_manga():
-    query = '''
-    query {
-      Page(perPage: 20) {
-        media(type: MANGA, sort: TRENDING_DESC) {
-          idMal
-          title {
-            english
-            romaji
-          }
-          coverImage {
-            large
-          }
-        }
-      }
-    }
-    '''
-
-    headers = {"Content-Type": "application/json"}
-
-    try:
-        response = requests.post(
-            "https://graphql.anilist.co",
-            json={"query": query},
-            headers=headers
-        )
-
-        if response.status_code != 200:
-            return []
-
-        data = response.json()
-        results = []
-
-        for media in data.get("data", {}).get("Page", {}).get("media", []):
-            mal_id = media.get("idMal")
-            if not mal_id:
-                continue
-
-            title = media["title"].get("english") or media["title"].get("romaji") or "Unknown Title"
-            poster = media.get("coverImage", {}).get("large")
-
-            results.append({
-                "id": str(mal_id),
-                "title": title,
-                "poster_path": poster,
-                "media_type" : "manga"
-            })
-
-        return results
-
-    except Exception:
-        return []
-    
-def get_trending_games():
-    token = get_igdb_token()
-    if not token:
-        return []
-
-    try:
-        igdb_keys = APIKey.objects.get(name="igdb")
-    except APIKey.DoesNotExist:
-        return []
-
-    headers = {
-        "Client-ID": igdb_keys.key_1,
-        "Authorization": f"Bearer {token}",
-    }
-    
-    # Get games with cover images, sorted by popularity, limited to 10
-    body = (
-        'fields id, name, cover.url; '
-        'where cover != null & total_rating_count > 10; '
-        'sort popularity desc; '
-        'limit 20;'
-    )
-
-    try:
-        response = requests.post("https://api.igdb.com/v4/games", headers=headers, data=body)
-        if response.status_code != 200:
-            return []
-
-        results_raw = response.json()
-        results = []
-
-        for item in results_raw:
-            cover_url = None
-            if "cover" in item and item["cover"] and "url" in item["cover"]:
-                cover_url = "https:" + item["cover"]["url"].replace("t_thumb", "t_cover_big")
-
-            results.append({
-                "id": str(item["id"]),
-                "title": item.get("name", "Untitled"),
-                "poster_path": cover_url,
-                "media_type" : "game"
-            })
-
-        return results
-
-    except Exception:
-        return []
 
 
 def get_movie_extra_info(tmdb_id):
@@ -1136,3 +900,178 @@ def display_to_rating(display_value: int | None, rating_mode: str) -> int | None
         return display_value
 
     return None
+
+def get_anilist_discover(media_type, page, query='', sort='TRENDING_DESC', season='', year='', format_filter='', status=''):
+    query_text = f'''
+    query ($page: Int, $search: String, $type: MediaType, $sort: [MediaSort], $season: MediaSeason, $seasonYear: Int, $format: MediaFormat, $status: MediaStatus) {{
+      Page(page: $page, perPage: 20) {{
+        media(search: $search, type: $type, sort: $sort, season: $season, seasonYear: $seasonYear, format: $format, status: $status) {{
+          idMal
+          title {{
+            english
+            romaji
+          }}
+          coverImage {{
+            large
+          }}
+        }}
+      }}
+    }}
+    '''
+    
+    variables = {
+        "page": page,
+        "type": media_type.upper(),
+        "sort": [sort] if sort else ["TRENDING_DESC"]
+    }
+    
+    if query:
+        variables["search"] = query
+    if season:
+        variables["season"] = season
+    if year:
+        variables["seasonYear"] = int(year)
+    if format_filter:
+        variables["format"] = format_filter
+    if status:
+        variables["status"] = status
+    
+    headers = {"Content-Type": "application/json"}
+    
+    try:
+        response = requests.post(
+            "https://graphql.anilist.co",
+            json={"query": query_text, "variables": variables},
+            headers=headers
+        )
+        
+        if response.status_code != 200:
+            return []
+            
+        data = response.json()
+        results = []
+        
+        for media in data.get("data", {}).get("Page", {}).get("media", []):
+            mal_id = media.get("idMal")
+            if not mal_id:
+                continue
+                
+            title = media["title"].get("english") or media["title"].get("romaji") or "Unknown Title"
+            poster = media.get("coverImage", {}).get("large")
+            
+            results.append({
+                "id": str(mal_id),
+                "title": title,
+                "poster_path": poster,
+                "media_type": media_type
+            })
+            
+        return results
+    except Exception:
+        return []
+
+def get_tmdb_discover(media_type, page, query='', sort='popularity.desc', year=''):
+    try:
+        api_key = APIKey.objects.get(name="tmdb").key_1
+    except APIKey.DoesNotExist:
+        return []
+    
+    if query:
+        url = f"https://api.themoviedb.org/3/search/{media_type}"
+        params = {
+            "api_key": api_key,
+            "query": query,
+            "page": page
+        }
+    else:
+        url = f"https://api.themoviedb.org/3/discover/{media_type}"
+        params = {
+            "api_key": api_key,
+            "sort_by": sort,
+            "page": page
+        }
+        if year:
+            if media_type == 'movie':
+                params['year'] = year
+            else:
+                params['first_air_date_year'] = year
+    
+    try:
+        response = requests.get(url, params=params)
+        if response.status_code != 200:
+            return []
+            
+        data = response.json()
+        results = []
+        
+        for item in data.get("results", []):
+            poster = item.get("poster_path")
+            poster_url = f"https://image.tmdb.org/t/p/w342{poster}" if poster else None
+            
+            results.append({
+                "id": str(item["id"]),
+                "title": item.get("title") or item.get("name", "Untitled"),
+                "poster_path": poster_url,
+                "media_type": media_type
+            })
+            
+        return results
+    except Exception:
+        return []
+
+def get_igdb_discover(page, query='', sort='popularity', genre='', platform='', year=''):
+    token = get_igdb_token()
+    if not token:
+        return []
+        
+    try:
+        igdb_keys = APIKey.objects.get(name="igdb")
+    except APIKey.DoesNotExist:
+        return []
+    
+    headers = {
+        "Client-ID": igdb_keys.key_1,
+        "Authorization": f"Bearer {token}",
+    }
+    
+    offset = (page - 1) * 20
+    
+    if query:
+        data = f'search "{query}"; fields id, name, cover.url; limit 20; offset {offset};'
+    else:
+        conditions = ["cover != null"]
+        if genre:
+            conditions.append(f"genres = [{genre}]")
+        if platform:
+            conditions.append(f"platforms = [{platform}]")
+        if year:
+            conditions.append(f"release_dates.y = {year}")
+            
+        where_clause = " & ".join(conditions)
+        sort_clause = f"sort {sort} desc" if sort else "sort popularity desc"
+        
+        data = f'fields id, name, cover.url; where {where_clause}; {sort_clause}; limit 20; offset {offset};'
+    
+    try:
+        response = requests.post("https://api.igdb.com/v4/games", headers=headers, data=data)
+        if response.status_code != 200:
+            return []
+            
+        results_raw = response.json()
+        results = []
+        
+        for item in results_raw:
+            cover_url = None
+            if "cover" in item and item["cover"] and "url" in item["cover"]:
+                cover_url = "https:" + item["cover"]["url"].replace("t_thumb", "t_cover_big")
+                
+            results.append({
+                "id": str(item["id"]),
+                "title": item.get("name", "Untitled"),
+                "poster_path": cover_url,
+                "media_type": "game"
+            })
+            
+        return results
+    except Exception:
+        return []
