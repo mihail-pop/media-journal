@@ -1,7 +1,7 @@
 <h1 align="center">Media Journal</h1>
 
 This is the self-hosted media tracker app I always wanted to have. From now on I will use it and keep it maintained. I will never ask for donations or try to monetize the app in any form. People using it is more than enough!
-> **Note:** I added the open source AGPL license to make it easier for possible contributors hoping nobody would try to monetize this app with the "commercial use" clause. And I disapprove of it.
+> **Note:** I added the open source AGPL license to make contributing easier, hoping nobody would try to monetize the app with the "commercial use" clause. I personally disapprove of that.
 
 ## Features
 
