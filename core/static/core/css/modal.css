@@ -12,10 +12,7 @@
   --text-label: #728ab1;
   --text-muted: #666;
   --text-close: #666;
-  --border-color: #32445b;
-  --hover-bg: #2a3441;
   --modal-bg: #151f2e;
-  --input-bg: #0b1622;
   --button-primary: #3db4f2;
   --button-primary-hover: #0056b3;
   --button-cancel: #6c757d;
@@ -26,6 +23,29 @@
 }
 
 [data-theme="light"] {
+  --bg-primary: #e7f0f8;
+  --bg-secondary: #b7e0f7;
+  --bg-tertiary: #b7e0f7;
+  --bg-quaternary: #ffffff;
+  --text-primary: #0b5f97;
+  --text-secondary: #0b5f97;
+  --text-tertiary: #0b5f97;
+  --text-light: #ffffff;
+  --text-dark: #07375a;
+  --text-label: #0b5f97;
+  --text-muted: #0b5f97;
+  --text-close: #0b5f97;
+  --modal-bg: #DCECF8;
+  --button-primary: #3db4f2;
+  --button-primary-hover: #0056b3;
+  --button-cancel: #6c757d;
+  --button-cancel-hover: #5a6268;
+  --button-danger: #dc3545;
+  --close-hover-bg: #cfe8f7;
+  --close-hover-text: #0b5f97;
+}
+
+[data-theme="brown"] {
   --bg-primary: #271c19;
   --bg-secondary: #f8f8f8;
   --bg-tertiary: #55423d;
@@ -38,10 +58,7 @@
   --text-label: #faeee7;
   --text-muted: #faeee7;
   --text-close: #faeee7;
-  --border-color: #fffffe;
-  --hover-bg: #fffffe;
   --modal-bg: #55423d;
-  --input-bg: #f8f8f8;
   --button-primary: #8f5b4d;
   --button-primary-hover: #aa6d5c;
   --button-cancel: #6c757d;

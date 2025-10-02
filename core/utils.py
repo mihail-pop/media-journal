@@ -10,6 +10,20 @@ import time
 IGDB_ACCESS_TOKEN = None
 IGDB_TOKEN_EXPIRY = 0
 
+TMDB_MOVIE_GENRES = {
+    28: "Action", 12: "Adventure", 16: "Animation", 35: "Comedy", 80: "Crime",
+    99: "Documentary", 18: "Drama", 10751: "Family", 14: "Fantasy", 36: "History",
+    27: "Horror", 10402: "Music", 9648: "Mystery", 10749: "Romance", 878: "Science Fiction",
+    10770: "TV Movie", 53: "Thriller", 10752: "War", 37: "Western"
+}
+
+TMDB_TV_GENRES = {
+    10759: "Action & Adventure", 16: "Animation", 35: "Comedy", 80: "Crime",
+    99: "Documentary", 18: "Drama", 10751: "Family", 10762: "Kids", 9648: "Mystery",
+    10763: "News", 10764: "Reality", 10765: "Sci-Fi & Fantasy", 10766: "Soap",
+    10767: "Talk", 10768: "War & Politics", 37: "Western"
+}
+
 
 def get_igdb_token():
     global IGDB_ACCESS_TOKEN, IGDB_TOKEN_EXPIRY
@@ -906,6 +920,7 @@ def get_anilist_discover(media_type, page, query='', sort='TRENDING_DESC', seaso
     query ($page: Int, $search: String, $type: MediaType, $sort: [MediaSort], $season: MediaSeason, $seasonYear: Int, $format: MediaFormat, $status: MediaStatus) {{
       Page(page: $page, perPage: 20) {{
         media(search: $search, type: $type, sort: $sort, season: $season, seasonYear: $seasonYear, format: $format, status: $status) {{
+          id
           idMal
           title {{
             english
@@ -914,6 +929,20 @@ def get_anilist_discover(media_type, page, query='', sort='TRENDING_DESC', seaso
           coverImage {{
             large
           }}
+          bannerImage
+          description(asHtml: false)
+          averageScore
+          startDate {{
+            year
+            month
+            day
+          }}
+          genres
+          nextAiringEpisode {{
+            episode
+            airingAt
+          }}
+          status
         }}
       }}
     }}
@@ -946,29 +975,65 @@ def get_anilist_discover(media_type, page, query='', sort='TRENDING_DESC', seaso
         )
         
         if response.status_code != 200:
-            return []
+            return {"results": [], "hasMore": False}
             
         data = response.json()
+        raw_media = data.get("data", {}).get("Page", {}).get("media", [])
         results = []
         
-        for media in data.get("data", {}).get("Page", {}).get("media", []):
+        for media in raw_media:
+            # Use MAL ID if available, otherwise use AniList ID with 'al_' prefix
             mal_id = media.get("idMal")
-            if not mal_id:
-                continue
+            anilist_id = media.get("id")
+            
+            if mal_id:
+                item_id = str(mal_id)
+            elif anilist_id:
+                item_id = f"al_{anilist_id}"
+            else:
+                continue  # Skip if no ID at all
                 
             title = media["title"].get("english") or media["title"].get("romaji") or "Unknown Title"
             poster = media.get("coverImage", {}).get("large")
             
+            # Convert score to 1-10 scale
+            score = media.get("averageScore")
+            if score:
+                score = round(score / 10, 1)
+            
+            # Format release date
+            start_date = media.get("startDate")
+            release_date = ""
+            if start_date and start_date.get("year"):
+                month = start_date.get('month') or 1
+                day = start_date.get('day') or 1
+                release_date = f"{start_date['year']}-{month:02d}-{day:02d}"
+            
+            # Next airing info
+            next_airing = None
+            next_episode = media.get("nextAiringEpisode")
+            if next_episode and next_episode.get("airingAt"):
+                from datetime import datetime
+                next_airing = datetime.fromtimestamp(next_episode["airingAt"]).strftime("%d %b %Y")
+            
             results.append({
-                "id": str(mal_id),
+                "id": item_id,
                 "title": title,
                 "poster_path": poster,
-                "media_type": media_type
+                "backdrop_path": media.get("bannerImage"),
+                "media_type": media_type,
+                "overview": media.get("description", ""),
+                "score": score,
+                "release_date": release_date,
+                "genres": media.get("genres", []),
+                "next_airing": next_airing,
+                "status": media.get("status")
             })
-            
-        return results
-    except Exception:
-        return []
+        
+        # Add hasMore flag based on raw AniList data, not filtered results
+        return {"results": results, "hasMore": len(raw_media) == 20}
+    except Exception as e:
+        return {"results": [], "hasMore": False}
 
 def get_tmdb_discover(media_type, page, query='', sort='popularity.desc', year=''):
     try:
@@ -983,18 +1048,32 @@ def get_tmdb_discover(media_type, page, query='', sort='popularity.desc', year='
             "query": query,
             "page": page
         }
+    elif sort == "trending":
+        # Trending endpoint
+        url = f"https://api.themoviedb.org/3/trending/{media_type}/week"
+        params = {
+            "api_key": api_key,
+            "page": page
+        }
     else:
+        # Discover endpoint
         url = f"https://api.themoviedb.org/3/discover/{media_type}"
         params = {
             "api_key": api_key,
             "sort_by": sort,
-            "page": page
+            "page": page,
+            "include_adult": "false",
+            "vote_count.gte": 100
         }
+        
+        # Add year filter if provided
         if year:
             if media_type == 'movie':
-                params['year'] = year
-            else:
-                params['first_air_date_year'] = year
+                params["primary_release_date.gte"] = f"{year}-01-01"
+                params["primary_release_date.lte"] = f"{year}-12-31"
+            elif media_type == 'tv':
+                params["first_air_date.gte"] = f"{year}-01-01"
+                params["first_air_date.lte"] = f"{year}-12-31"
     
     try:
         response = requests.get(url, params=params)
@@ -1008,11 +1087,32 @@ def get_tmdb_discover(media_type, page, query='', sort='popularity.desc', year='
             poster = item.get("poster_path")
             poster_url = f"https://image.tmdb.org/t/p/w342{poster}" if poster else None
             
+            backdrop = item.get("backdrop_path")
+            backdrop_url = f"https://image.tmdb.org/t/p/w780{backdrop}" if backdrop else None
+            
+            # Convert score to 1-10 scale
+            score = item.get("vote_average")
+            if score:
+                score = round(score, 1)
+            
+            # Get release date
+            release_date = item.get("release_date") or item.get("first_air_date", "")
+            
+            # Map genre IDs to names
+            genre_map = TMDB_MOVIE_GENRES if media_type == 'movie' else TMDB_TV_GENRES
+            genres = [genre_map.get(gid, "") for gid in item.get("genre_ids", [])]
+            genres = [g for g in genres if g]  # Remove empty strings
+            
             results.append({
                 "id": str(item["id"]),
                 "title": item.get("title") or item.get("name", "Untitled"),
                 "poster_path": poster_url,
-                "media_type": media_type
+                "backdrop_path": backdrop_url,
+                "media_type": media_type,
+                "overview": item.get("overview", ""),
+                "score": score,
+                "release_date": release_date,
+                "genres": genres
             })
             
         return results
@@ -1037,7 +1137,7 @@ def get_igdb_discover(page, query='', sort='popularity', genre='', platform='', 
     offset = (page - 1) * 20
     
     if query:
-        data = f'search "{query}"; fields id, name, cover.url; limit 20; offset {offset};'
+        data = f'search "{query}"; fields id, name, cover.url, summary, rating, genres.name, first_release_date; limit 20; offset {offset};'
     else:
         conditions = ["cover != null"]
         if genre:
@@ -1050,7 +1150,7 @@ def get_igdb_discover(page, query='', sort='popularity', genre='', platform='', 
         where_clause = " & ".join(conditions)
         sort_clause = f"sort {sort} desc" if sort else "sort popularity desc"
         
-        data = f'fields id, name, cover.url; where {where_clause}; {sort_clause}; limit 20; offset {offset};'
+        data = f'fields id, name, cover.url, summary, rating, genres.name, first_release_date; where {where_clause}; {sort_clause}; limit 20; offset {offset};'
     
     try:
         response = requests.post("https://api.igdb.com/v4/games", headers=headers, data=data)
@@ -1064,12 +1164,27 @@ def get_igdb_discover(page, query='', sort='popularity', genre='', platform='', 
             cover_url = None
             if "cover" in item and item["cover"] and "url" in item["cover"]:
                 cover_url = "https:" + item["cover"]["url"].replace("t_thumb", "t_cover_big")
+            
+            # Convert score to 1-10 scale
+            score = item.get("rating")
+            if score:
+                score = round(score / 10, 1)
+            
+            # Format release date
+            release_date = ""
+            if item.get("first_release_date"):
+                from datetime import datetime
+                release_date = datetime.fromtimestamp(item["first_release_date"]).strftime("%Y-%m-%d")
                 
             results.append({
                 "id": str(item["id"]),
                 "title": item.get("name", "Untitled"),
                 "poster_path": cover_url,
-                "media_type": "game"
+                "media_type": "game",
+                "overview": item.get("summary", ""),
+                "score": score,
+                "release_date": release_date,
+                "genres": [g.get("name") for g in item.get("genres", []) if g.get("name")]
             })
             
         return results

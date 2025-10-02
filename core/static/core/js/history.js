@@ -1,6 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
 
-  const cards = [...document.querySelectorAll(".card")];
+  const cardView = document.getElementById("card-view");
+  const loadingIndicator = document.getElementById("loading-indicator");
   const searchInput = document.getElementById("search-input");
   const yearBtns = [...document.querySelectorAll(".year-btn")];
   const monthBtns = [...document.querySelectorAll(".month-btn")];
@@ -15,6 +16,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const startDateInput = document.getElementById("start-date");
   const endDateInput = document.getElementById("end-date");
 
+  // === PAGINATION STATE ===
+  let currentPage = 1;
+  let isLoading = false;
+  let hasMore = true;
+  let allItems = [];
+
   let selectedYear = "all";
   let selectedMonth = "all";
   let selectedType = "all";
@@ -24,68 +31,163 @@ document.addEventListener("DOMContentLoaded", () => {
   let startDate = null;
   let endDate = null;
 
-  function filterCards() {
-    let visibleCount = 0;
-
-    cards.forEach(card => {
-      const title = card.dataset.title?.toLowerCase() || "";
-      const year = card.dataset.year;
-      const month = card.dataset.month;
-      const date = card.dataset.date; // YYYY-MM-DD
-      const type = card.dataset.mediaType;
-      const status = card.dataset.status;
-
-      let visible = true;
-
-      if (selectedYear !== "all") visible = visible && year === String(selectedYear);
-      if (selectedMonth !== "all") visible = visible && month === String(selectedMonth).padStart(2, '0');
-      if (selectedType !== "all") visible = visible && type === selectedType;
-      if (selectedStatus !== "all") visible = visible && status === selectedStatus;
-      if (searchQuery) visible = visible && title.includes(searchQuery.toLowerCase());
-
-      if (startDate || endDate) {
-        if (date) {
-          const d = new Date(date);
-          if (startDate && d < new Date(startDate)) visible = false;
-          if (endDate && d > new Date(endDate)) visible = false;
-        }
+  // === API FUNCTIONS ===
+  async function loadItems(page = 1, reset = false) {
+    if (isLoading || (!hasMore && !reset)) return;
+    
+    isLoading = true;
+    
+    // Only show loading indicator after 200ms delay
+    const loadingTimeout = setTimeout(() => {
+      loadingIndicator.style.display = 'block';
+    }, 200);
+    
+    try {
+      const params = new URLSearchParams({
+        page: page,
+        search: searchQuery,
+        sort: sortOrder
+      });
+      
+      if (selectedYear !== 'all') params.append('year', selectedYear);
+      if (selectedMonth !== 'all') params.append('month', selectedMonth);
+      if (selectedType !== 'all') params.append('type', selectedType);
+      if (selectedStatus !== 'all') params.append('status', selectedStatus);
+      if (startDate) params.append('start_date', startDate);
+      if (endDate) params.append('end_date', endDate);
+      
+      const response = await fetch(`/api/history/?${params}`);
+      const data = await response.json();
+      
+      if (reset) {
+        allItems = data.items;
+        currentPage = 1;
+      } else {
+        allItems = [...allItems, ...data.items];
       }
-
-      card.style.display = visible ? "" : "none";
-      if (visible) visibleCount++;
-    });
-
-    // Show/hide month filter
-    monthFilterDiv.style.display = selectedYear !== "all" ? "flex" : "none";
-
-    // Show/hide "No items found" message
-    if (noItemsMsg) {
-      noItemsMsg.style.display = visibleCount === 0 ? "block" : "none";
+      
+      hasMore = data.has_more;
+      currentPage = data.page;
+      
+      renderItems();
+      
+    } catch (error) {
+      console.error('Error loading items:', error);
+    } finally {
+      clearTimeout(loadingTimeout);
+      isLoading = false;
+      loadingIndicator.style.display = 'none';
     }
   }
 
-  function sortCards() {
-    const container = document.getElementById("card-view");
-    const visibleCards = [...cards].filter(c => c.style.display !== "none");
-
-    visibleCards.sort((a, b) => {
-      const da = new Date(a.dataset.date);
-      const db = new Date(b.dataset.date);
-      return sortOrder === "asc" ? da - db : db - da;
+  function renderItems() {
+    cardView.innerHTML = '';
+    
+    allItems.forEach(item => {
+      const card = createCardElement(item);
+      cardView.appendChild(card);
     });
-
-    visibleCards.forEach(c => container.appendChild(c));
+    
+    // Show/hide month filter
+    monthFilterDiv.style.display = selectedYear !== "all" ? "flex" : "none";
+    
+    // Show/hide "No items found" message
+    if (noItemsMsg) {
+      noItemsMsg.style.display = allItems.length === 0 ? "block" : "none";
+    }
   }
 
-  function applyFilters() {
-    filterCards();
-    sortCards();
+  function createCardElement(item) {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.dataset.id = item.id;
+    card.dataset.mediaType = item.media_type;
+    card.dataset.title = item.title;
+    card.dataset.status = item.status;
+    card.dataset.coverUrl = item.cover_url;
+    card.dataset.bannerUrl = item.banner_url;
+    
+    const dateObj = new Date(item.date_added);
+    const timeAgo = getTimeAgo(dateObj);
+    const statusText = getStatusText(item.status, timeAgo);
+    
+    card.innerHTML = `
+      <a href="${item.url}" class="card-link">
+        <div class="card-image">
+          <img src="${item.cover_url}" alt="${item.title}" loading="lazy">
+        </div>
+        <div class="card-title-overlay">
+          <span class="card-title">${item.title}</span>
+          <div class="card-subtitle">
+            ${statusText}
+          </div>
+          <div class="card-date">
+            ${item.date_formatted}
+          </div>
+        </div>
+      </a>
+      <div class="status-overlay status-${item.status}"></div>
+      <button class="edit-card-btn">⋯</button>
+    `;
+    
+    return card;
   }
+
+  function getTimeAgo(date) {
+    const now = new Date();
+    const diffMs = now - date;
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+    const diffWeeks = Math.floor(diffDays / 7);
+    const diffMonths = Math.floor(diffDays / 30);
+    const diffYears = Math.floor(diffDays / 365);
+    
+    if (diffYears > 0) return `${diffYears} year${diffYears > 1 ? 's' : ''} ago`;
+    if (diffMonths > 0) return `${diffMonths} month${diffMonths > 1 ? 's' : ''} ago`;
+    if (diffWeeks > 0) return `${diffWeeks} week${diffWeeks > 1 ? 's' : ''} ago`;
+    if (diffDays > 0) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+    if (diffHours > 0) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    if (diffMinutes > 0) return `${diffMinutes} minute${diffMinutes > 1 ? 's' : ''} ago`;
+    return 'just now';
+  }
+
+  function getStatusText(status, timeAgo) {
+    if (status === 'on_hold') return `Paused ${timeAgo}`;
+    if (status === 'ongoing') return `Started ${timeAgo}`;
+    return `${status.charAt(0).toUpperCase() + status.slice(1)} ${timeAgo}`;
+  }
+
+  function resetAndLoad() {
+    allItems = [];
+    currentPage = 1;
+    hasMore = true;
+    loadItems(1, true);
+  }
+
+  // === SCROLL PAGINATION ===
+  function handleScroll() {
+    if (isLoading || !hasMore) return;
+    
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    const windowHeight = window.innerHeight;
+    const documentHeight = document.documentElement.scrollHeight;
+    
+    if (scrollTop + windowHeight >= documentHeight - 1000) {
+      loadItems(currentPage + 1);
+    }
+  }
+
+  window.addEventListener('scroll', handleScroll);
 
   // Search filter
+  let searchTimeout;
   searchInput.addEventListener("input", e => {
-    searchQuery = e.target.value;
-    applyFilters();
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+      searchQuery = e.target.value;
+      resetAndLoad();
+    }, 300);
   });
 
   // Year filter
@@ -95,7 +197,7 @@ document.addEventListener("DOMContentLoaded", () => {
     selectedYear = btn.dataset.year;
     selectedMonth = "all";
     monthBtns.forEach(b => b.classList.remove("active"));
-    applyFilters();
+    resetAndLoad();
   }));
 
   // Month filter
@@ -103,7 +205,7 @@ document.addEventListener("DOMContentLoaded", () => {
     monthBtns.forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
     selectedMonth = btn.dataset.month;
-    applyFilters();
+    resetAndLoad();
   }));
 
   // Type filter
@@ -111,7 +213,7 @@ document.addEventListener("DOMContentLoaded", () => {
     typeBtns.forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
     selectedType = btn.dataset.type;
-    applyFilters();
+    resetAndLoad();
   }));
 
   // Status filter
@@ -119,7 +221,7 @@ document.addEventListener("DOMContentLoaded", () => {
     statusBtns.forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
     selectedStatus = btn.dataset.status;
-    applyFilters();
+    resetAndLoad();
   }));
 
   // Sort buttons
@@ -127,14 +229,14 @@ document.addEventListener("DOMContentLoaded", () => {
     sortOrder = "asc";
     sortAscBtn.classList.add("active");
     sortDescBtn.classList.remove("active");
-    sortCards();
+    resetAndLoad();
   });
 
   sortDescBtn.addEventListener("click", () => {
     sortOrder = "desc";
     sortDescBtn.classList.add("active");
     sortAscBtn.classList.remove("active");
-    sortCards();
+    resetAndLoad();
   });
 
   // Custom year input
@@ -143,19 +245,19 @@ document.addEventListener("DOMContentLoaded", () => {
       selectedYear = customYearInput.value;
       selectedMonth = "all";
       monthBtns.forEach(b => b.classList.remove("active"));
-      applyFilters();
+      resetAndLoad();
     }
   });
 
   // Date range filter
   startDateInput.addEventListener("change", e => {
     startDate = e.target.value || null;
-    applyFilters();
+    resetAndLoad();
   });
 
   endDateInput.addEventListener("change", e => {
     endDate = e.target.value || null;
-    applyFilters();
+    resetAndLoad();
   });
 
   // Initial states
@@ -164,8 +266,68 @@ document.addEventListener("DOMContentLoaded", () => {
   statusBtns[0]?.classList.add("active");
   sortDescBtn?.classList.add("active");
 
-  // Initial run
-  applyFilters();
+  // === GLOBAL EDIT MODAL FUNCTION ===
+  window.openEditModal = function(element) {
+    const itemId = element.dataset.id;
+    const mediaType = element.dataset.mediaType;
+    const coverUrl = element.dataset.coverUrl;
+    const bannerUrl = element.dataset.bannerUrl;
+    const title = element.dataset.title;
+
+    const modal = document.getElementById('edit-modal');
+    const banner = modal.querySelector('.modal-banner');
+    const cover = modal.querySelector('.modal-cover img');
+    const titleElement = modal.querySelector('.modal-title');
+    const overlay = document.getElementById('edit-overlay');
+
+    if (titleElement && title) {
+      titleElement.textContent = title;
+    }
+
+    if (cover && coverUrl) {
+      cover.src = coverUrl;
+    }
+
+    if (banner && bannerUrl) {
+      banner.dataset.banner = bannerUrl;
+      banner.style.backgroundImage = `url("${bannerUrl}")`;
+    }
+
+    const form = document.getElementById("edit-form");
+    if (!form) return console.error("Edit form not found");
+
+    fetch(`/get-item/${itemId}/`)
+      .then(res => res.json())
+      .then(data => {
+        if (!data.success) return alert("Failed to load item");
+        
+        if (window.populateEditForm) {
+          window.populateEditForm(form, data.item);
+        }
+        modal.classList.remove("modal-hidden");
+        overlay.classList.remove("modal-hidden");
+      })
+      .catch(err => {
+        console.error("Fetch error:", err);
+        alert("Failed to load item");
+      });
+  };
+
+  // === EVENT DELEGATION FOR EDIT BUTTONS ===
+  document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('edit-card-btn')) {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const card = e.target.closest('.card');
+      if (card) {
+        window.openEditModal(card);
+      }
+    }
+  });
+
+  // Initial load
+  loadItems(1, true);
 });
 
 // Apply theme on page load

@@ -80,85 +80,292 @@ def get_season_navigation(seasons, current_season):
 
 @ensure_csrf_cookie
 def movies(request):
-
-    status_ordering = Case(
-        When(status='ongoing', then=Value(1)),
-        When(status='completed', then=Value(2)),
-        When(status='on_hold', then=Value(3)),
-        When(status='planned', then=Value(4)),
-        When(status='dropped', then=Value(5)),
-        default=Value(6),  # just in case
-        output_field=IntegerField(),
-    )
-    
-    rating_ordering = Case(
-        When(personal_rating=None, then=Value(0)),  # Null rating gets lowest priority
-        default=F('personal_rating'),  # Use actual rating for ordering
-        output_field=IntegerField(),
-    )
-    
-    movies = MediaItem.objects.filter(media_type="movie").annotate(
-        status_order=status_ordering,
-        rating_order=rating_ordering
-    ).order_by('status_order', '-rating_order', 'title')
-
     # Get current rating mode and theme from AppSettings
     AppSettings = apps.get_model('core', 'AppSettings')
     settings = AppSettings.objects.first()
     rating_mode = settings.rating_mode if settings else 'faces'
     theme_mode = settings.theme_mode if settings else 'dark'
 
+    # Get status counts for sidebar
+    status_counts = {
+        'all': MediaItem.objects.filter(media_type="movie").count(),
+        'ongoing': MediaItem.objects.filter(media_type="movie", status='ongoing').count(),
+        'completed': MediaItem.objects.filter(media_type="movie", status='completed').count(),
+        'on_hold': MediaItem.objects.filter(media_type="movie", status='on_hold').count(),
+        'planned': MediaItem.objects.filter(media_type="movie", status='planned').count(),
+        'dropped': MediaItem.objects.filter(media_type="movie", status='dropped').count(),
+    }
+
     return render(request, 'core/movies.html', {
-        'items': movies,
         'page_type': 'movie',
         'rating_mode': rating_mode,
         'theme_mode': theme_mode,
+        'status_counts': status_counts,
     })
+
+@require_GET
+def movies_api(request):
+    page = int(request.GET.get('page', 1))
+    status = request.GET.get('status', 'all')
+    search = request.GET.get('search', '').strip()
+    sort_by = request.GET.get('sort_by', 'rating')
+    sort_order = request.GET.get('sort_order', 'desc')
+    page_size = 50
+    
+    status_ordering = Case(
+        When(status='ongoing', then=Value(1)),
+        When(status='completed', then=Value(2)),
+        When(status='on_hold', then=Value(3)),
+        When(status='planned', then=Value(4)),
+        When(status='dropped', then=Value(5)),
+        default=Value(6),
+        output_field=IntegerField(),
+    )
+    
+    rating_ordering = Case(
+        When(personal_rating=None, then=Value(0)),
+        default=F('personal_rating'),
+        output_field=IntegerField(),
+    )
+    
+    queryset = MediaItem.objects.filter(media_type="movie")
+    
+    if status != 'all':
+        queryset = queryset.filter(status=status)
+    
+    if search:
+        queryset = queryset.filter(title__icontains=search)
+    
+    queryset = queryset.annotate(
+        status_order=status_ordering,
+        rating_order=rating_ordering
+    )
+    
+    # Apply sorting
+    order_fields = ['status_order']
+    if sort_by == 'title':
+        order_fields.append('title' if sort_order == 'asc' else '-title')
+    elif sort_by == 'rating':
+        order_fields.append('-rating_order' if sort_order == 'desc' else 'rating_order')
+        order_fields.append('title')  # Secondary sort by title
+    elif sort_by == 'date':
+        order_fields.append('-date_added' if sort_order == 'desc' else 'date_added')
+    
+    queryset = queryset.order_by(*order_fields)
+    
+    start = (page - 1) * page_size
+    end = start + page_size
+    items = queryset[start:end]
+    
+    has_more = queryset.count() > end
+    
+    items_data = []
+    for item in items:
+        items_data.append({
+            'id': item.id,
+            'title': item.title,
+            'media_type': item.media_type,
+            'status': item.status,
+            'personal_rating': item.personal_rating,
+            'cover_url': item.cover_url or '/static/core/img/placeholder.png',
+            'banner_url': item.banner_url or '/static/core/img/placeholder.png',
+            'notes': item.notes or '',
+            'source_id': item.source_id,
+            'get_status_display': item.get_status_display(),
+            'date_added': item.date_added.isoformat() if item.date_added else '',
+        })
+    
+    return JsonResponse({
+        'items': items_data,
+        'has_more': has_more,
+        'page': page
+    })
+
+@require_GET
+def movies_banners_api(request):
+    """Get all movie banners for the rotator"""
+    movies = MediaItem.objects.filter(media_type="movie").values('banner_url', 'notes')
+    banners = []
+    for movie in movies:
+        banner_url = movie['banner_url']
+        notes = movie['notes'] or ''
+        if banner_url and not 'placeholder' in banner_url:
+            banners.append({
+                'bannerUrl': banner_url,
+                'notes': notes if notes != 'None' else ''
+            })
+    return JsonResponse({'banners': banners})
 
 
 @ensure_csrf_cookie
 def tvshows(request):
-    status_ordering = Case(
-        When(status='ongoing', then=Value(1)),
-        When(status='completed', then=Value(2)),
-        When(status='on_hold', then=Value(3)),
-        When(status='planned', then=Value(4)),
-        When(status='dropped', then=Value(5)),
-        default=Value(6),
-        output_field=IntegerField(),
-    )
-    
-    rating_ordering = Case(
-        When(personal_rating=None, then=Value(0)),  # Null rating gets lowest priority
-        default=F('personal_rating'),  # Use actual rating for ordering
-        output_field=IntegerField(),
-    )
-    
-    tvshows = MediaItem.objects.filter(media_type="tv").annotate(
-        status_order=status_ordering,
-        rating_order=rating_ordering
-    ).order_by('status_order', '-rating_order', 'title')
-
     # Get current rating mode and theme from AppSettings
     AppSettings = apps.get_model('core', 'AppSettings')
     settings = AppSettings.objects.first()
     rating_mode = settings.rating_mode if settings else 'faces'
     theme_mode = settings.theme_mode if settings else 'dark'
-    
+
+    # Get status counts for sidebar
+    status_counts = {
+        'all': MediaItem.objects.filter(media_type="tv").count(),
+        'ongoing': MediaItem.objects.filter(media_type="tv", status='ongoing').count(),
+        'completed': MediaItem.objects.filter(media_type="tv", status='completed').count(),
+        'on_hold': MediaItem.objects.filter(media_type="tv", status='on_hold').count(),
+        'planned': MediaItem.objects.filter(media_type="tv", status='planned').count(),
+        'dropped': MediaItem.objects.filter(media_type="tv", status='dropped').count(),
+    }
+
     # Check if there are any seasons in the list
-    has_seasons = tvshows.filter(Q(source_id__contains='_s') | Q(title__contains='Season')).exists()
+    has_seasons = MediaItem.objects.filter(media_type="tv").filter(Q(source_id__contains='_s') | Q(title__contains='Season')).exists()
 
     return render(request, 'core/tvshows.html', {
-        'items': tvshows,
         'page_type': 'tv',
         'rating_mode': rating_mode,
         'has_seasons': has_seasons,
         'theme_mode': theme_mode,
+        'status_counts': status_counts,
     })
+
+@require_GET
+def tvshows_api(request):
+    page = int(request.GET.get('page', 1))
+    status = request.GET.get('status', 'all')
+    search = request.GET.get('search', '').strip()
+    type_filter = request.GET.get('type', 'both')
+    sort_by = request.GET.get('sort_by', 'rating')
+    sort_order = request.GET.get('sort_order', 'desc')
+    page_size = 50
+    
+    status_ordering = Case(
+        When(status='ongoing', then=Value(1)),
+        When(status='completed', then=Value(2)),
+        When(status='on_hold', then=Value(3)),
+        When(status='planned', then=Value(4)),
+        When(status='dropped', then=Value(5)),
+        default=Value(6),
+        output_field=IntegerField(),
+    )
+    
+    rating_ordering = Case(
+        When(personal_rating=None, then=Value(0)),
+        default=F('personal_rating'),
+        output_field=IntegerField(),
+    )
+    
+    queryset = MediaItem.objects.filter(media_type="tv")
+    
+    if status != 'all':
+        queryset = queryset.filter(status=status)
+    
+    if search:
+        queryset = queryset.filter(title__icontains=search)
+    
+    # Type filtering for TV shows vs seasons
+    if type_filter == 'shows':
+        queryset = queryset.exclude(source_id__contains='_s')
+    elif type_filter == 'seasons':
+        queryset = queryset.filter(source_id__contains='_s')
+    # 'both' shows everything
+    
+    queryset = queryset.annotate(
+        status_order=status_ordering,
+        rating_order=rating_ordering
+    )
+    
+    # Apply sorting
+    order_fields = ['status_order']
+    if sort_by == 'title':
+        order_fields.append('title' if sort_order == 'asc' else '-title')
+    elif sort_by == 'rating':
+        order_fields.append('-rating_order' if sort_order == 'desc' else 'rating_order')
+        order_fields.append('title')  # Secondary sort by title
+    elif sort_by == 'date':
+        order_fields.append('-date_added' if sort_order == 'desc' else 'date_added')
+    
+    queryset = queryset.order_by(*order_fields)
+    
+    start = (page - 1) * page_size
+    end = start + page_size
+    items = queryset[start:end]
+    
+    has_more = queryset.count() > end
+    
+    items_data = []
+    for item in items:
+        items_data.append({
+            'id': item.id,
+            'title': item.title,
+            'media_type': item.media_type,
+            'status': item.status,
+            'personal_rating': item.personal_rating,
+            'cover_url': item.cover_url or '/static/core/img/placeholder.png',
+            'banner_url': item.banner_url or '/static/core/img/placeholder.png',
+            'notes': item.notes or '',
+            'source_id': item.source_id,
+            'get_status_display': item.get_status_display(),
+            'progress_main': item.progress_main,
+            'total_main': item.total_main,
+            'progress_secondary': item.progress_secondary,
+            'total_secondary': item.total_secondary,
+            'date_added': item.date_added.isoformat() if item.date_added else '',
+        })
+    
+    return JsonResponse({
+        'items': items_data,
+        'has_more': has_more,
+        'page': page
+    })
+
+@require_GET
+def tvshows_banners_api(request):
+    """Get all TV show banners for the rotator"""
+    tvshows = MediaItem.objects.filter(media_type="tv").values('banner_url', 'notes')
+    banners = []
+    for tvshow in tvshows:
+        banner_url = tvshow['banner_url']
+        notes = tvshow['notes'] or ''
+        if banner_url and not 'placeholder' in banner_url:
+            banners.append({
+                'bannerUrl': banner_url,
+                'notes': notes if notes != 'None' else ''
+            })
+    return JsonResponse({'banners': banners})
 
 
 @ensure_csrf_cookie
 def anime(request):
+    # Get current rating mode and theme from AppSettings
+    AppSettings = apps.get_model('core', 'AppSettings')
+    settings = AppSettings.objects.first()
+    rating_mode = settings.rating_mode if settings else 'faces'
+    theme_mode = settings.theme_mode if settings else 'dark'
+
+    # Get status counts for sidebar
+    status_counts = {
+        'all': MediaItem.objects.filter(media_type="anime").count(),
+        'ongoing': MediaItem.objects.filter(media_type="anime", status='ongoing').count(),
+        'completed': MediaItem.objects.filter(media_type="anime", status='completed').count(),
+        'on_hold': MediaItem.objects.filter(media_type="anime", status='on_hold').count(),
+        'planned': MediaItem.objects.filter(media_type="anime", status='planned').count(),
+        'dropped': MediaItem.objects.filter(media_type="anime", status='dropped').count(),
+    }
+
+    return render(request, 'core/anime.html', {
+        'page_type': 'anime',
+        'rating_mode': rating_mode,
+        'theme_mode': theme_mode,
+        'status_counts': status_counts,
+    })
+
+@require_GET
+def anime_api(request):
+    page = int(request.GET.get('page', 1))
+    status = request.GET.get('status', 'all')
+    search = request.GET.get('search', '').strip()
+    sort_by = request.GET.get('sort_by', 'rating')
+    sort_order = request.GET.get('sort_order', 'desc')
+    page_size = 50
+    
     status_ordering = Case(
         When(status='ongoing', then=Value(1)),
         When(status='completed', then=Value(2)),
@@ -170,32 +377,116 @@ def anime(request):
     )
     
     rating_ordering = Case(
-        When(personal_rating=None, then=Value(0)),  # Null rating gets lowest priority
-        default=F('personal_rating'),  # Use actual rating for ordering
+        When(personal_rating=None, then=Value(0)),
+        default=F('personal_rating'),
         output_field=IntegerField(),
     )
     
-    anime = MediaItem.objects.filter(media_type="anime").annotate(
+    queryset = MediaItem.objects.filter(media_type="anime")
+    
+    if status != 'all':
+        queryset = queryset.filter(status=status)
+    
+    if search:
+        queryset = queryset.filter(title__icontains=search)
+    
+    queryset = queryset.annotate(
         status_order=status_ordering,
         rating_order=rating_ordering
-    ).order_by('status_order', '-rating_order', 'title')
-
-    # Get current rating mode and theme from AppSettings
-    AppSettings = apps.get_model('core', 'AppSettings')
-    settings = AppSettings.objects.first()
-    rating_mode = settings.rating_mode if settings else 'faces'
-    theme_mode = settings.theme_mode if settings else 'dark'
-
-    return render(request, 'core/anime.html', {
-        'items': anime,
-        'page_type': 'anime',
-        'rating_mode': rating_mode,
-        'theme_mode': theme_mode,
+    )
+    
+    # Apply sorting
+    order_fields = ['status_order']
+    if sort_by == 'title':
+        order_fields.append('title' if sort_order == 'asc' else '-title')
+    elif sort_by == 'rating':
+        order_fields.append('-rating_order' if sort_order == 'desc' else 'rating_order')
+        order_fields.append('title')  # Secondary sort by title
+    elif sort_by == 'date':
+        order_fields.append('-date_added' if sort_order == 'desc' else 'date_added')
+    
+    queryset = queryset.order_by(*order_fields)
+    
+    start = (page - 1) * page_size
+    end = start + page_size
+    items = queryset[start:end]
+    
+    has_more = queryset.count() > end
+    
+    items_data = []
+    for item in items:
+        items_data.append({
+            'id': item.id,
+            'title': item.title,
+            'media_type': item.media_type,
+            'status': item.status,
+            'personal_rating': item.personal_rating,
+            'cover_url': item.cover_url or '/static/core/img/placeholder.png',
+            'banner_url': item.banner_url or '/static/core/img/placeholder.png',
+            'notes': item.notes or '',
+            'source_id': item.source_id,
+            'get_status_display': item.get_status_display(),
+            'progress_main': item.progress_main,
+            'total_main': item.total_main,
+            'date_added': item.date_added.isoformat() if item.date_added else '',
+        })
+    
+    return JsonResponse({
+        'items': items_data,
+        'has_more': has_more,
+        'page': page
     })
+
+@require_GET
+def anime_banners_api(request):
+    """Get all anime banners for the rotator"""
+    anime = MediaItem.objects.filter(media_type="anime").values('banner_url', 'notes')
+    banners = []
+    for item in anime:
+        banner_url = item['banner_url']
+        notes = item['notes'] or ''
+        if banner_url and not 'placeholder' in banner_url:
+            banners.append({
+                'bannerUrl': banner_url,
+                'notes': notes if notes != 'None' else ''
+            })
+    return JsonResponse({'banners': banners})
 
 
 @ensure_csrf_cookie
 def games(request):
+    # Get current rating mode and theme from AppSettings
+    AppSettings = apps.get_model('core', 'AppSettings')
+    settings = AppSettings.objects.first()
+    rating_mode = settings.rating_mode if settings else 'faces'
+    theme_mode = settings.theme_mode if settings else 'dark'
+
+    # Get status counts for sidebar
+    status_counts = {
+        'all': MediaItem.objects.filter(media_type="game").count(),
+        'ongoing': MediaItem.objects.filter(media_type="game", status='ongoing').count(),
+        'completed': MediaItem.objects.filter(media_type="game", status='completed').count(),
+        'on_hold': MediaItem.objects.filter(media_type="game", status='on_hold').count(),
+        'planned': MediaItem.objects.filter(media_type="game", status='planned').count(),
+        'dropped': MediaItem.objects.filter(media_type="game", status='dropped').count(),
+    }
+
+    return render(request, 'core/games.html', {
+        'page_type': 'game',
+        'rating_mode': rating_mode,
+        'theme_mode': theme_mode,
+        'status_counts': status_counts,
+    })
+
+@require_GET
+def games_api(request):
+    page = int(request.GET.get('page', 1))
+    status = request.GET.get('status', 'all')
+    search = request.GET.get('search', '').strip()
+    sort_by = request.GET.get('sort_by', 'rating')
+    sort_order = request.GET.get('sort_order', 'desc')
+    page_size = 50
+    
     status_ordering = Case(
         When(status='ongoing', then=Value(1)),
         When(status='completed', then=Value(2)),
@@ -207,32 +498,118 @@ def games(request):
     )
     
     rating_ordering = Case(
-        When(personal_rating=None, then=Value(0)),  # Null rating gets lowest priority
-        default=F('personal_rating'),  # Use actual rating for ordering
+        When(personal_rating=None, then=Value(0)),
+        default=F('personal_rating'),
         output_field=IntegerField(),
     )
     
-    games = MediaItem.objects.filter(media_type="game").annotate(
+    queryset = MediaItem.objects.filter(media_type="game")
+    
+    if status != 'all':
+        queryset = queryset.filter(status=status)
+    
+    if search:
+        queryset = queryset.filter(title__icontains=search)
+    
+    queryset = queryset.annotate(
         status_order=status_ordering,
         rating_order=rating_ordering
-    ).order_by('status_order', '-rating_order', 'title')
-
-    # Get current rating mode and theme from AppSettings
-    AppSettings = apps.get_model('core', 'AppSettings')
-    settings = AppSettings.objects.first()
-    rating_mode = settings.rating_mode if settings else 'faces'
-    theme_mode = settings.theme_mode if settings else 'dark'
-
-    return render(request, 'core/games.html', {
-        'items': games,
-        'page_type': 'game',
-        'rating_mode': rating_mode,
-        'theme_mode': theme_mode,
+    )
+    
+    # Apply sorting
+    order_fields = ['status_order']
+    if sort_by == 'title':
+        order_fields.append('title' if sort_order == 'asc' else '-title')
+    elif sort_by == 'rating':
+        order_fields.append('-rating_order' if sort_order == 'desc' else 'rating_order')
+        order_fields.append('title')  # Secondary sort by title
+    elif sort_by == 'date':
+        order_fields.append('-date_added' if sort_order == 'desc' else 'date_added')
+    elif sort_by == 'hours':
+        order_fields.append('-progress_main' if sort_order == 'desc' else 'progress_main')
+    
+    queryset = queryset.order_by(*order_fields)
+    
+    start = (page - 1) * page_size
+    end = start + page_size
+    items = queryset[start:end]
+    
+    has_more = queryset.count() > end
+    
+    items_data = []
+    for item in items:
+        items_data.append({
+            'id': item.id,
+            'title': item.title,
+            'media_type': item.media_type,
+            'status': item.status,
+            'personal_rating': item.personal_rating,
+            'cover_url': item.cover_url or '/static/core/img/placeholder.png',
+            'banner_url': item.banner_url or '/static/core/img/placeholder.png',
+            'notes': item.notes or '',
+            'source_id': item.source_id,
+            'get_status_display': item.get_status_display(),
+            'progress_main': item.progress_main,
+            'total_main': item.total_main,
+            'date_added': item.date_added.isoformat() if item.date_added else '',
+        })
+    
+    return JsonResponse({
+        'items': items_data,
+        'has_more': has_more,
+        'page': page
     })
+
+@require_GET
+def games_banners_api(request):
+    """Get all game banners for the rotator"""
+    games = MediaItem.objects.filter(media_type="game").values('banner_url', 'notes')
+    banners = []
+    for game in games:
+        banner_url = game['banner_url']
+        notes = game['notes'] or ''
+        if banner_url and not 'placeholder' in banner_url:
+            banners.append({
+                'bannerUrl': banner_url,
+                'notes': notes if notes != 'None' else ''
+            })
+    return JsonResponse({'banners': banners})
 
 
 @ensure_csrf_cookie
 def manga(request):
+    # Get current rating mode and theme from AppSettings
+    AppSettings = apps.get_model('core', 'AppSettings')
+    settings = AppSettings.objects.first()
+    rating_mode = settings.rating_mode if settings else 'faces'
+    theme_mode = settings.theme_mode if settings else 'dark'
+
+    # Get status counts for sidebar
+    status_counts = {
+        'all': MediaItem.objects.filter(media_type="manga").count(),
+        'ongoing': MediaItem.objects.filter(media_type="manga", status='ongoing').count(),
+        'completed': MediaItem.objects.filter(media_type="manga", status='completed').count(),
+        'on_hold': MediaItem.objects.filter(media_type="manga", status='on_hold').count(),
+        'planned': MediaItem.objects.filter(media_type="manga", status='planned').count(),
+        'dropped': MediaItem.objects.filter(media_type="manga", status='dropped').count(),
+    }
+
+    return render(request, 'core/manga.html', {
+        'page_type': 'manga',
+        'rating_mode': rating_mode,
+        'theme_mode': theme_mode,
+        'status_counts': status_counts,
+    })
+
+@require_GET
+def manga_api(request):
+    page = int(request.GET.get('page', 1))
+    status = request.GET.get('status', 'all')
+    search = request.GET.get('search', '').strip()
+    sort_by = request.GET.get('sort_by', 'rating')
+    sort_order = request.GET.get('sort_order', 'desc')
+    page_size = 50
+    
     status_ordering = Case(
         When(status='ongoing', then=Value(1)),
         When(status='completed', then=Value(2)),
@@ -244,32 +621,118 @@ def manga(request):
     )
     
     rating_ordering = Case(
-        When(personal_rating=None, then=Value(0)),  # Null rating gets lowest priority
-        default=F('personal_rating'),  # Use actual rating for ordering
+        When(personal_rating=None, then=Value(0)),
+        default=F('personal_rating'),
         output_field=IntegerField(),
     )
     
-    manga = MediaItem.objects.filter(media_type="manga").annotate(
+    queryset = MediaItem.objects.filter(media_type="manga")
+    
+    if status != 'all':
+        queryset = queryset.filter(status=status)
+    
+    if search:
+        queryset = queryset.filter(title__icontains=search)
+    
+    queryset = queryset.annotate(
         status_order=status_ordering,
         rating_order=rating_ordering
-    ).order_by('status_order', '-rating_order', 'title')
-
-    # Get current rating mode and theme from AppSettings
-    AppSettings = apps.get_model('core', 'AppSettings')
-    settings = AppSettings.objects.first()
-    rating_mode = settings.rating_mode if settings else 'faces'
-    theme_mode = settings.theme_mode if settings else 'dark'
-
-    return render(request, 'core/manga.html', {
-        'items': manga,
-        'page_type': 'manga',
-        'rating_mode': rating_mode,
-        'theme_mode': theme_mode,
+    )
+    
+    # Apply sorting
+    order_fields = ['status_order']
+    if sort_by == 'title':
+        order_fields.append('title' if sort_order == 'asc' else '-title')
+    elif sort_by == 'rating':
+        order_fields.append('-rating_order' if sort_order == 'desc' else 'rating_order')
+        order_fields.append('title')  # Secondary sort by title
+    elif sort_by == 'date':
+        order_fields.append('-date_added' if sort_order == 'desc' else 'date_added')
+    
+    queryset = queryset.order_by(*order_fields)
+    
+    start = (page - 1) * page_size
+    end = start + page_size
+    items = queryset[start:end]
+    
+    has_more = queryset.count() > end
+    
+    items_data = []
+    for item in items:
+        items_data.append({
+            'id': item.id,
+            'title': item.title,
+            'media_type': item.media_type,
+            'status': item.status,
+            'personal_rating': item.personal_rating,
+            'cover_url': item.cover_url or '/static/core/img/placeholder.png',
+            'banner_url': item.banner_url or '/static/core/img/placeholder.png',
+            'notes': item.notes or '',
+            'source_id': item.source_id,
+            'get_status_display': item.get_status_display(),
+            'progress_main': item.progress_main,
+            'total_main': item.total_main,
+            'progress_secondary': item.progress_secondary,
+            'total_secondary': item.total_secondary,
+            'date_added': item.date_added.isoformat() if item.date_added else '',
+        })
+    
+    return JsonResponse({
+        'items': items_data,
+        'has_more': has_more,
+        'page': page
     })
+
+@require_GET
+def manga_banners_api(request):
+    """Get all manga banners for the rotator"""
+    manga = MediaItem.objects.filter(media_type="manga").values('banner_url', 'notes')
+    banners = []
+    for item in manga:
+        banner_url = item['banner_url']
+        notes = item['notes'] or ''
+        if banner_url and not 'placeholder' in banner_url:
+            banners.append({
+                'bannerUrl': banner_url,
+                'notes': notes if notes != 'None' else ''
+            })
+    return JsonResponse({'banners': banners})
 
 
 @ensure_csrf_cookie
 def books(request):
+    # Get current rating mode and theme from AppSettings
+    AppSettings = apps.get_model('core', 'AppSettings')
+    settings = AppSettings.objects.first()
+    rating_mode = settings.rating_mode if settings else 'faces'
+    theme_mode = settings.theme_mode if settings else 'dark'
+
+    # Get status counts for sidebar
+    status_counts = {
+        'all': MediaItem.objects.filter(media_type="book").count(),
+        'ongoing': MediaItem.objects.filter(media_type="book", status='ongoing').count(),
+        'completed': MediaItem.objects.filter(media_type="book", status='completed').count(),
+        'on_hold': MediaItem.objects.filter(media_type="book", status='on_hold').count(),
+        'planned': MediaItem.objects.filter(media_type="book", status='planned').count(),
+        'dropped': MediaItem.objects.filter(media_type="book", status='dropped').count(),
+    }
+
+    return render(request, 'core/books.html', {
+        'page_type': 'book',
+        'rating_mode': rating_mode,
+        'theme_mode': theme_mode,
+        'status_counts': status_counts,
+    })
+
+@require_GET
+def books_api(request):
+    page = int(request.GET.get('page', 1))
+    status = request.GET.get('status', 'all')
+    search = request.GET.get('search', '').strip()
+    sort_by = request.GET.get('sort_by', 'rating')
+    sort_order = request.GET.get('sort_order', 'desc')
+    page_size = 50
+    
     status_ordering = Case(
         When(status='ongoing', then=Value(1)),
         When(status='completed', then=Value(2)),
@@ -281,34 +744,85 @@ def books(request):
     )
     
     rating_ordering = Case(
-        When(personal_rating=None, then=Value(0)),  # Null rating gets lowest priority
-        default=F('personal_rating'),  # Use actual rating for ordering
+        When(personal_rating=None, then=Value(0)),
+        default=F('personal_rating'),
         output_field=IntegerField(),
     )
     
-    books = MediaItem.objects.filter(media_type="book").annotate(
+    queryset = MediaItem.objects.filter(media_type="book")
+    
+    if status != 'all':
+        queryset = queryset.filter(status=status)
+    
+    if search:
+        queryset = queryset.filter(title__icontains=search)
+    
+    queryset = queryset.annotate(
         status_order=status_ordering,
         rating_order=rating_ordering
-    ).order_by('status_order', '-rating_order', 'title')
-
-    # Get current rating mode and theme from AppSettings
-    AppSettings = apps.get_model('core', 'AppSettings')
-    settings = AppSettings.objects.first()
-    rating_mode = settings.rating_mode if settings else 'faces'
-    theme_mode = settings.theme_mode if settings else 'dark'
-
-    return render(request, 'core/books.html', {
-        'items': books,
-        'page_type': 'book',
-        'rating_mode': rating_mode,
-        'theme_mode': theme_mode,
+    )
+    
+    # Apply sorting
+    order_fields = ['status_order']
+    if sort_by == 'title':
+        order_fields.append('title' if sort_order == 'asc' else '-title')
+    elif sort_by == 'rating':
+        order_fields.append('-rating_order' if sort_order == 'desc' else 'rating_order')
+        order_fields.append('title')  # Secondary sort by title
+    elif sort_by == 'date':
+        order_fields.append('-date_added' if sort_order == 'desc' else 'date_added')
+    elif sort_by == 'pages':
+        order_fields.append('-progress_main' if sort_order == 'desc' else 'progress_main')
+    
+    queryset = queryset.order_by(*order_fields)
+    
+    start = (page - 1) * page_size
+    end = start + page_size
+    items = queryset[start:end]
+    
+    has_more = queryset.count() > end
+    
+    items_data = []
+    for item in items:
+        items_data.append({
+            'id': item.id,
+            'title': item.title,
+            'media_type': item.media_type,
+            'status': item.status,
+            'personal_rating': item.personal_rating,
+            'cover_url': item.cover_url or '/static/core/img/placeholder.png',
+            'banner_url': item.banner_url or '/static/core/img/placeholder.png',
+            'notes': item.notes or '',
+            'source_id': item.source_id,
+            'get_status_display': item.get_status_display(),
+            'progress_main': item.progress_main,
+            'total_main': item.total_main,
+            'date_added': item.date_added.isoformat() if item.date_added else '',
+        })
+    
+    return JsonResponse({
+        'items': items_data,
+        'has_more': has_more,
+        'page': page
     })
+
+@require_GET
+def books_banners_api(request):
+    """Get all book banners for the rotator"""
+    books = MediaItem.objects.filter(media_type="book").values('banner_url', 'notes')
+    banners = []
+    for book in books:
+        banner_url = book['banner_url']
+        notes = book['notes'] or ''
+        if banner_url and not 'placeholder' in banner_url:
+            banners.append({
+                'bannerUrl': banner_url,
+                'notes': notes if notes != 'None' else ''
+            })
+    return JsonResponse({'banners': banners})
 
 @ensure_csrf_cookie
 def history(request):
-    # Load all items
-    items = MediaItem.objects.all().order_by('-date_added')  # newest first
-
     # For sidebar: calculate latest 3 years dynamically
     current_year = timezone.now().year
     latest_years = [current_year - i for i in range(3)]  # e.g., 2025, 2024, 2023
@@ -319,9 +833,93 @@ def history(request):
     theme_mode = settings.theme_mode if settings else 'dark'
 
     return render(request, 'core/history.html', {
-        'items': items,
         'latest_years': latest_years,
         'theme_mode': theme_mode,
+    })
+
+@require_GET
+def history_api(request):
+    page = int(request.GET.get('page', 1))
+    search = request.GET.get('search', '').strip()
+    sort_order = request.GET.get('sort', 'desc')
+    year = request.GET.get('year', '')
+    month = request.GET.get('month', '')
+    media_type = request.GET.get('type', '')
+    status = request.GET.get('status', '')
+    start_date = request.GET.get('start_date', '')
+    end_date = request.GET.get('end_date', '')
+    page_size = 50
+    
+    queryset = MediaItem.objects.all()
+    
+    if search:
+        queryset = queryset.filter(title__icontains=search)
+    
+    if year:
+        queryset = queryset.filter(date_added__year=year)
+    
+    if month and year:
+        queryset = queryset.filter(date_added__month=month)
+    
+    if media_type:
+        queryset = queryset.filter(media_type=media_type)
+    
+    if status:
+        queryset = queryset.filter(status=status)
+    
+    if start_date:
+        queryset = queryset.filter(date_added__date__gte=start_date)
+    
+    if end_date:
+        queryset = queryset.filter(date_added__date__lte=end_date)
+    
+    # Sort by date_added
+    if sort_order == 'asc':
+        queryset = queryset.order_by('date_added')
+    else:
+        queryset = queryset.order_by('-date_added')
+    
+    start = (page - 1) * page_size
+    end = start + page_size
+    items = queryset[start:end]
+    
+    has_more = queryset.count() > end
+    
+    items_data = []
+    for item in items:
+        # Generate the detail URL
+        if item.source == "tmdb" and item.media_type in ["movie", "tv"]:
+            if "_s" in item.source_id:
+                show_id = item.source_id.split("_s")[0]
+                season_number = item.source_id.split("_s")[1]
+                url = f"/tmdb/season/{show_id}/{season_number}/"
+            else:
+                url = f"/tmdb/{item.media_type}/{item.source_id}/"
+        elif item.source == "mal" and item.media_type in ["anime", "manga"]:
+            url = f"/mal/{item.media_type}/{item.source_id}/"
+        elif item.source == "igdb" and item.media_type == "game":
+            url = f"/igdb/game/{item.source_id}/"
+        elif item.source == "openlib" and item.media_type == "book":
+            url = f"/openlib/book/{item.source_id}/"
+        else:
+            url = "#"
+        
+        items_data.append({
+            'id': item.id,
+            'title': item.title,
+            'media_type': item.media_type,
+            'status': item.status,
+            'cover_url': item.cover_url or '/static/core/img/placeholder.png',
+            'banner_url': item.banner_url or '/static/core/img/placeholder.png',
+            'date_added': item.date_added.isoformat(),
+            'date_formatted': item.date_added.strftime('%d %b %Y'),
+            'url': url,
+        })
+    
+    return JsonResponse({
+        'items': items_data,
+        'has_more': has_more,
+        'page': page
     })
 
 @ensure_csrf_cookie
@@ -600,7 +1198,7 @@ def update_theme(request):
     data = json.loads(request.body.decode("utf-8"))
     theme_mode = data.get("theme_mode")
     
-    if theme_mode not in ['light', 'dark', 'green']:
+    if theme_mode not in ['light', 'dark', 'brown', 'green']:
         return JsonResponse({"error": "Invalid theme mode"}, status=400)
     
     AppSettings = apps.get_model('core', 'AppSettings')
@@ -665,7 +1263,14 @@ def discover_api(request):
     
     try:
         if media_type in ['anime', 'manga']:
-            results = get_anilist_discover(media_type, page, query, sort, season, year, format_filter, status)
+            # Map "upcoming" to NOT_YET_RELEASED for AniList
+            if status == 'upcoming':
+                status = 'NOT_YET_RELEASED'
+            data = get_anilist_discover(media_type, page, query, sort, season, year, format_filter, status)
+            # Handle case where function returns [] instead of dict
+            if isinstance(data, list):
+                data = {"results": data, "hasMore": False}
+            return JsonResponse(data)
         elif media_type in ['movie', 'tv']:
             results = get_tmdb_discover(media_type, page, query, sort, year)
         elif media_type == 'game':

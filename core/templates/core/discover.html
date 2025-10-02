@@ -26,12 +26,14 @@
     <div id="tmdb-filters" class="filter-section">
       <h3>Sort</h3>
       <div class="sort-filter filter-group">
-        <button class="filter-btn sort-btn active" data-sort="popularity.desc">Popular</button>
-        <button class="filter-btn sort-btn" data-sort="release_date.desc">Latest</button>
+        <button class="filter-btn sort-btn active" data-sort="trending">Trending</button>
+        <button class="filter-btn sort-btn" data-sort="popularity.desc">Popular</button>
       </div>
       
-      <h3>Year</h3>
-      <input type="number" id="year-input" placeholder="Year" min="1900" max="2030">
+      <div class="filter-group" style="display:none;">
+        <h3>Year</h3>
+        <input type="number" id="tmdb-year-input" placeholder="Year" min="1900" max="2030">
+      </div>
     </div>
 
     <!-- Anime/Manga Filters -->
@@ -77,9 +79,6 @@
   <section class="list-content">
     <div id="loading" style="display:none;">Loading...</div>
     <div id="card-view" class="card-grid"></div>
-    <div id="load-more" style="display:none;">
-      <button id="load-more-btn">Load More</button>
-    </div>
   </section>
 </div>
 

@@ -18,6 +18,22 @@
 }
 
 [data-theme="light"] {
+  --bg-primary: #e7f0f8;
+  --bg-secondary: #b7e0f7;
+  --bg-tertiary: #b7e0f7;
+  --bg-quaternary: #b7e0f7;
+  --text-primary: #0b5f97;
+  --text-secondary: #0b5f97;
+  --border-color: #b7e0f7;
+  --hover-bg: #cfe8f7;
+  --overlay-bg: #e7f0f8;
+  --button-bg: #cfe8f7;
+  --special-color: #E846C4;
+  --special-color-hover: #a82a8d;
+  --border: #E846C4;
+}
+
+[data-theme="brown"] {
   --bg-primary: #271c19;
   --bg-secondary: #55423d;
   --bg-tertiary: #55423d;

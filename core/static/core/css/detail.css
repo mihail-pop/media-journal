@@ -8,13 +8,28 @@
   --text-secondary: #a8b5c4;
   --text-overview: #728aa1;
   --text-title: 	#9fadbd;
-  --border-color2: #2a3b4d;
+  --border-color: #2a3b4d;
   --hover-bg: #2a3441;
   --special-color: #00bfff;
   --special-color-hover: #57d5ff;
 }
 
 [data-theme="light"] {
+  --bg-primary: #e7f0f8;
+  --bg-secondary: #b7e0f7;
+  --bg-tertiary: #DCECF8;
+  --bg-quaternary: #ffffff;
+  --text-primary: #0b5f97;
+  --text-secondary: #0b5f97;
+  --text-overview: #0b5f97;
+  --text-title: #0b5f97;
+  --border-color: #DCECF8;
+  --hover-bg: #cfe8f7;
+  --special-color: #E846C4;
+  --special-color-hover: #a82a8d;
+}
+
+[data-theme="brown"] {
   --bg-primary: #271c19;
   --bg-secondary: #f8f8f8;
   --bg-tertiary: #55423d;
@@ -23,8 +38,8 @@
   --text-secondary: #e2c7b7;
   --text-overview: #e2c7b7;
   --text-title: #faeee7;
-  --border-color2: #8f6d67;
-  --hover-bg: #fffffe;
+  --border-color: #8f6d67;
+  --hover-bg: #745b54;
   --special-color: #df5c38;
   --special-color-hover: #dd866e;
 }
@@ -328,6 +343,10 @@ a:hover{
   font-size: 0.85rem;
   margin: 0;
   line-height: 1.2;
+}
+
+.season-card:hover .season-name {
+  color: var(--text-title); /* lock it to not be affected by a element hover */
 }
 
 .character-name, .episode-count, .air-date {
@@ -777,7 +796,7 @@ a:hover{
   left: 50%;
   transform: translateX(-50%);
   background: var(--bg-tertiary);
-  border: 1px solid var(--border-color2);
+  border: 1px solid var(--border-color);
   color: var(--text-secondary);
   padding: 0.3rem 0.8rem;
   cursor: pointer;
@@ -833,7 +852,7 @@ a:hover{
   padding: 7px 12px;
   background: var(--bg-tertiary);
   color: var(--text-overview);
-  border: 1px solid var(--border-color2);
+  border: 1px solid var(--border-color);
   border-radius: 4px;
   cursor: pointer;
   font-size: 13px;
@@ -842,7 +861,7 @@ a:hover{
 }
 
 .change-banner-btn:hover {
-  background: var(--text-overview);
+  background: var(--hover-bg);
   color: var(--text-title);
 }
 
@@ -853,7 +872,7 @@ a:hover{
   padding: 7px 12px;
   background: var(--bg-tertiary);
   color: var(--text-overview);
-  border: 1px solid var(--border-color2);
+  border: 1px solid var(--border-color);
   border-radius: 4px;
   cursor: pointer;
   font-size: 13px;
@@ -873,7 +892,7 @@ a:hover{
   padding: 7px 12px;
   background: var(--bg-tertiary);
   color: var(--text-overview);
-  border: 1px solid var(--border-color2);
+  border: 1px solid var(--border-color);
   border-radius: 4px;
   cursor: pointer;
   font-size: 13px;

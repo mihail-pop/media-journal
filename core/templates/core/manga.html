@@ -25,27 +25,63 @@
   <!-- Sidebar -->
   <aside class="sidebar">
     <input type="text" id="search-input" placeholder="Filter" autocomplete="off">
-    {% regroup items by status as status_groups %}
 <div class="filter-buttons-wrapper">
   <h3>Lists</h3>
   <div class="filter-buttons">
     <button class="filter-btn" data-filter="all">
       <span class="btn-text">All</span>
-      <span class="btn-count">{{ items|length }}</span>
+      <span class="btn-count">{{ status_counts.all }}</span>
     </button>
-    {% for group in status_groups %}
-    <button class="filter-btn" data-filter="{{ group.grouper }}">
-      <span class="btn-text">{{ group.grouper|underscore_to_space|title }}</span>
-      <span class="btn-count">{{ group.list|length }}</span>
+    {% if status_counts.ongoing > 0 %}
+    <button class="filter-btn" data-filter="ongoing">
+      <span class="btn-text">Ongoing</span>
+      <span class="btn-count">{{ status_counts.ongoing }}</span>
     </button>
-    {% endfor %}
+    {% endif %}
+    {% if status_counts.completed > 0 %}
+    <button class="filter-btn" data-filter="completed">
+      <span class="btn-text">Completed</span>
+      <span class="btn-count">{{ status_counts.completed }}</span>
+    </button>
+    {% endif %}
+    {% if status_counts.on_hold > 0 %}
+    <button class="filter-btn" data-filter="on_hold">
+      <span class="btn-text">On Hold</span>
+      <span class="btn-count">{{ status_counts.on_hold }}</span>
+    </button>
+    {% endif %}
+    {% if status_counts.planned > 0 %}
+    <button class="filter-btn" data-filter="planned">
+      <span class="btn-text">Planned</span>
+      <span class="btn-count">{{ status_counts.planned }}</span>
+    </button>
+    {% endif %}
+    {% if status_counts.dropped > 0 %}
+    <button class="filter-btn" data-filter="dropped">
+      <span class="btn-text">Dropped</span>
+      <span class="btn-count">{{ status_counts.dropped }}</span>
+    </button>
+    {% endif %}
   </div>
 </div>
 
-    <h3>List Toggle</h3>
+    <h3>Sort By</h3>
+    <div class="sort-buttons">
+      <button class="sort-btn" data-sort="title">Title</button>
+      <button class="sort-btn active" data-sort="rating">Rating ⮟</button>
+      <button class="sort-btn" data-sort="date">Date</button>
+    </div>
+
+    <h3>View</h3>
     <div class="view-toggle">
-      <button id="card-view-btn" class="toggle-btn">Card View</button>
-      <button id="list-view-btn" class="toggle-btn">List View</button>
+      <button class="toggle-btn dual-toggle">
+        <span id="card-view-btn" class="toggle-half active">
+          <span class="toggle-text">Card ⊞</span>
+        </span>
+        <span id="list-view-btn" class="toggle-half">
+          <span class="toggle-text">List ≡</span>
+        </span>
+      </button>
     </div>
 
 <div class="check-status-container" id="check-status-container">
@@ -61,183 +97,19 @@
 
   <!-- Content Area -->
   <section class="list-content">
-    {% if items %}
-    
     <!-- Card View -->
     <div id="card-view">
-      {% for group in status_groups %}
-      <div class="status-group" data-status="{{ group.grouper }}">
-        <h2 class="status-header">{{ group.grouper|underscore_to_space|title }}</h2>
-        <div class="card-grid">
-          {% for item in group.list %}
-          <div class="card"
-               data-id="{{ item.id }}"
-               data-media-type="{{ item.media_type }}"
-               data-status="{{ item.status }}"
-               data-personal-rating="{{ item.personal_rating|default:'0' }}"
-               data-title="{{ item.title|escape }}"
-               data-cover-url="{{ item.cover_url|default:'/static/core/img/placeholder.png' }}"
-               data-banner-url="{{ item.banner_url|default:'/static/core/img/placeholder.png' }}"
-               data-notes="{{ item.notes|default_if_none:''|escape }}"
-               data-source-id="{{ item.source_id }}">
-
-            <a href="{% url 'mal_detail' media_type=item.media_type mal_id=item.source_id %}" class="card-link">
-              <div class="card-image"><img src="{{ item.cover_url|default:'/static/core/img/placeholder.png' }}" alt="{{ item.title }}" loading="lazy"></div> <!-- Check if this is working, lazy loading -->
-              <div class="card-title-overlay">
-                <span class="card-title">{{ item.title }}</span>
-                <div class="card-meta-row">
-    {% if item.progress_main %}
-    <div class="card-progress">
-      {% if item.progress_main == item.total_main %}
-        {{ item.progress_main }}
-      {% else %}
-        {{ item.progress_main }}{% if item.total_main %}/{{ item.total_main }}{% endif %}
-      {% endif %}
-    </div>
-  {% endif %}
-{% if item.personal_rating %}
-  <span class="card-rating">
-    {% if rating_mode == 'faces' %}
-      {% with rounded=item.personal_rating|floatformat:0|to_int %}
-        {% if rounded <= 33 %}
-          <!-- Sad face -->
-          <svg aria-hidden="true" focusable="false" data-prefix="far" data-icon="frown" class="svg-inline--fa fa-frown fa-w-16 fa-lg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><path fill="currentColor" d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zm0 448c-110.3 0-200-89.7-200-200S137.7 56 248 56s200 89.7 200 200-89.7 200-200 200zm-80-216c17.7 0 32-14.3 32-32s-14.3-32-32-32-32 14.3-32 32 14.3 32 32 32zm160-64c-17.7 0-32 14.3-32 32s14.3 32 32 32 32-14.3 32-32-14.3-32-32-32zm-80 128c-40.2 0-78 17.7-103.8 48.6-8.5 10.2-7.1 25.3 3.1 33.8 10.2 8.4 25.3 7.1 33.8-3.1 16.6-19.9 41-31.4 66.9-31.4s50.3 11.4 66.9 31.4c8.1 9.7 23.1 11.9 33.8 3.1 10.2-8.5 11.5-23.6 3.1-33.8C326 321.7 288.2 304 248 304z"></path></svg>
-        {% elif rounded <= 66 %}
-          <!-- Neutral face -->
-          <svg aria-hidden="true" focusable="false" data-prefix="far" data-icon="meh" class="svg-inline--fa fa-meh fa-w-16 fa-lg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><path fill="currentColor" d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zm0 448c-110.3 0-200-89.7-200-200S137.7 56 248 56s200 89.7 200 200-89.7 200-200 200zm-80-216c17.7 0 32-14.3 32-32s-14.3-32-32-32-32 14.3-32 32 14.3 32 32 32zm160-64c-17.7 0-32 14.3-32 32s14.3 32 32 32 32-14.3 32-32-14.3-32-32-32zm8 144H160c-13.2 0-24 10.8-24 24s10.8 24 24 24h176c13.2 0 24-10.8 24-24s-10.8-24-24-24z"></path></svg>
-        {% else %}
-          <!-- Happy face -->
-          <svg aria-hidden="true" focusable="false" data-prefix="far" data-icon="smile" class="svg-inline--fa fa-smile fa-w-16 fa-lg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><path fill="currentColor" d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zm0 448c-110.3 0-200-89.7-200-200S137.7 56 248 56s200 89.7 200 200-89.7 200-200 200zm-80-216c17.7 0 32-14.3 32-32s-14.3-32-32-32-32 14.3-32 32 14.3 32 32 32zm160 0c17.7 0 32-14.3 32-32s-14.3-32-32-32-32 14.3-32 32 14.3 32 32 32zm4 72.6c-20.8 25-51.5 39.4-84 39.4s-63.2-14.3-84-39.4c-8.5-10.2-23.7-11.5-33.8-3.1-10.2 8.5-11.5 23.6-3.1 33.8 30 36 74.1 56.6 120.9 56.6s90.9-20.6 120.9-56.6c8.5-10.2 7.1-25.3-3.1-33.8-10.1-8.4-25.3-7.1-33.8 3.1z"></path></svg>
-        {% endif %}
-      {% endwith %}
-    {% elif rating_mode == 'stars_5' %}
-      {% with stars=item.personal_rating|divide:20|floatformat:0|to_int %}
-      <span class="star-rating">
-        {% for i in "12345" %}
-          {% if forloop.counter <= stars %}
-            <svg class="star-icon filled" viewBox="0 0 32 32" style="color:gold;"><path fill="currentColor" stroke="#000" stroke-width="1.2" d="M16 2.5l4.09 8.29 9.16 1.33-6.62 6.45 1.56 9.09L16 23.13l-8.19 4.32 1.56-9.09-6.62-6.45 9.16-1.33L16 2.5z"/></svg>
-          {% else %}
-            <svg class="star-icon empty" viewBox="0 0 32 32" style="color:#444;"><path fill="currentColor" stroke="#000" stroke-width="1.2" d="M16 2.5l4.09 8.29 9.16 1.33-6.62 6.45 1.56 9.09L16 23.13l-8.19 4.32 1.56-9.09-6.62-6.45 9.16-1.33L16 2.5z"/></svg>
-          {% endif %}
-        {% endfor %}
-      </span>
-      {% endwith %}
-    {% elif rating_mode == 'scale_10' %}
-      <span class="rating-number">{{ item.personal_rating|divide:10 }}</span>
-    {% elif rating_mode == 'scale_100' %}
-      <span class="rating-number">{{ item.personal_rating|floatformat:0 }}</span>
-    {% endif %}
-  </span>
-{% endif %}
-</div>
-              </div>
-            </a>
-            <button class="edit-card-btn">⋯</button>
-          </div>
-          {% endfor %}
-        </div>
-      </div>
-      {% endfor %}
+      <!-- Content will be loaded dynamically -->
     </div>
 
     <!-- List View -->
     <div id="list-view" class="list-table" style="display: none;">
-      {% for group in status_groups %}
-      <div class="status-group" data-status="{{ group.grouper }}">
-        <h2 class="status-header">{{ group.grouper|underscore_to_space|title }}</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>Title</th>
-              <th>Rating</th>
-              <th>Status</th>
-              <th>Chapters</th>
-              <th>Volumes</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for item in group.list %}
-            <tr class="list-row"
-                data-id="{{ item.id }}"
-                data-media-type="{{ item.media_type }}"
-                data-status="{{ item.status }}"
-                data-personal-rating="{{ item.personal_rating|default:'0' }}"
-                data-title="{{ item.title|escape }}"
-                data-cover-url="{{ item.cover_url|default:'/static/core/img/placeholder.png' }}"
-                data-banner-url="{{ item.banner_url|default:'/static/core/img/placeholder.png' }}">
-              
-              <td>
-                <a href="{% url 'mal_detail' media_type=item.media_type mal_id=item.source_id %}">
-                  {{ item.title }}
-                  <button class="edit-card-btn">⋯</button>
-                </a>
-              </td>
-              <td>
-{% if item.personal_rating %}
-  <span class="card-rating">
-    {% if rating_mode == 'faces' %}
-      {% with rounded=item.personal_rating|floatformat:0|to_int %}
-        {% if rounded <= 33 %}
-          <!-- Sad face -->
-          <svg aria-hidden="true" focusable="false" data-prefix="far" data-icon="frown" class="svg-inline--fa fa-frown fa-w-16 fa-lg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><path fill="currentColor" d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zm0 448c-110.3 0-200-89.7-200-200S137.7 56 248 56s200 89.7 200 200-89.7 200-200 200zm-80-216c17.7 0 32-14.3 32-32s-14.3-32-32-32-32 14.3-32 32 14.3 32 32 32zm160-64c-17.7 0-32 14.3-32 32s14.3 32 32 32 32-14.3 32-32-14.3-32-32-32zm-80 128c-40.2 0-78 17.7-103.8 48.6-8.5 10.2-7.1 25.3 3.1 33.8 10.2 8.4 25.3 7.1 33.8-3.1 16.6-19.9 41-31.4 66.9-31.4s50.3 11.4 66.9 31.4c8.1 9.7 23.1 11.9 33.8 3.1 10.2-8.5 11.5-23.6 3.1-33.8C326 321.7 288.2 304 248 304z"></path></svg>
-        {% elif rounded <= 66 %}
-          <!-- Neutral face -->
-          <svg aria-hidden="true" focusable="false" data-prefix="far" data-icon="meh" class="svg-inline--fa fa-meh fa-w-16 fa-lg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><path fill="currentColor" d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zm0 448c-110.3 0-200-89.7-200-200S137.7 56 248 56s200 89.7 200 200-89.7 200-200 200zm-80-216c17.7 0 32-14.3 32-32s-14.3-32-32-32-32 14.3-32 32 14.3 32 32 32zm160-64c-17.7 0-32 14.3-32 32s14.3 32 32 32 32-14.3 32-32-14.3-32-32-32zm8 144H160c-13.2 0-24 10.8-24 24s10.8 24 24 24h176c13.2 0 24-10.8 24-24s-10.8-24-24-24z"></path></svg>
-        {% else %}
-          <!-- Happy face -->
-          <svg aria-hidden="true" focusable="false" data-prefix="far" data-icon="smile" class="svg-inline--fa fa-smile fa-w-16 fa-lg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><path fill="currentColor" d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zm0 448c-110.3 0-200-89.7-200-200S137.7 56 248 56s200 89.7 200 200-89.7 200-200 200zm-80-216c17.7 0 32-14.3 32-32s-14.3-32-32-32-32 14.3-32 32 14.3 32 32 32zm160 0c17.7 0 32-14.3 32-32s-14.3-32-32-32-32 14.3-32 32 14.3 32 32 32zm4 72.6c-20.8 25-51.5 39.4-84 39.4s-63.2-14.3-84-39.4c-8.5-10.2-23.7-11.5-33.8-3.1-10.2 8.5-11.5 23.6-3.1 33.8 30 36 74.1 56.6 120.9 56.6s90.9-20.6 120.9-56.6c8.5-10.2 7.1-25.3-3.1-33.8-10.1-8.4-25.3-7.1-33.8 3.1z"></path></svg>
-        {% endif %}
-      {% endwith %}
-    {% elif rating_mode == 'stars_5' %}
-      {% with stars=item.personal_rating|divide:20|floatformat:0|to_int %}
-      <span class="star-rating">
-        {% for i in "12345" %}
-          {% if forloop.counter <= stars %}
-            <svg class="star-icon filled" viewBox="0 0 32 32" style="color:gold;"><path fill="currentColor" stroke="#000" stroke-width="1.2" d="M16 2.5l4.09 8.29 9.16 1.33-6.62 6.45 1.56 9.09L16 23.13l-8.19 4.32 1.56-9.09-6.62-6.45 9.16-1.33L16 2.5z"/></svg>
-          {% else %}
-            <svg class="star-icon empty" viewBox="0 0 32 32" style="color:#444;"><path fill="currentColor" stroke="#000" stroke-width="1.2" d="M16 2.5l4.09 8.29 9.16 1.33-6.62 6.45 1.56 9.09L16 23.13l-8.19 4.32 1.56-9.09-6.62-6.45 9.16-1.33L16 2.5z"/></svg>
-          {% endif %}
-        {% endfor %}
-      </span>
-      {% endwith %}
-    {% elif rating_mode == 'scale_10' %}
-      <span class="rating-number">{{ item.personal_rating|divide:10 }}</span>
-    {% elif rating_mode == 'scale_100' %}
-      <span class="rating-number">{{ item.personal_rating|floatformat:0 }}</span>
-    {% endif %}
-  </span>
-{% endif %}
-              </td>
-              <td>{{ item.get_status_display }}</td>
-<td style="text-align: center;">
-  {% if item.progress_main %}
-    {% if item.progress_main == item.total_main %}
-      {{ item.progress_main }}
-    {% else %}
-      {{ item.progress_main }}{% if item.total_main %} / {{ item.total_main }}{% endif %}
-    {% endif %}
-  {% endif %}
-</td>
-<td>
-  {% if item.progress_secondary %}
-    {% if item.progress_secondary == item.total_secondary %}
-      {{ item.progress_secondary }}
-    {% else %}
-      {{ item.progress_secondary }}{% if item.total_secondary %} / {{ item.total_secondary }}{% endif %}
-    {% endif %}
-  {% endif %}
-</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-      {% endfor %}
+      <!-- Content will be loaded dynamically -->
     </div>
 
-    {% else %}
-    <p>No items in your list yet.</p>
-    {% endif %}
+    <div id="loading-indicator" style="text-align: center; padding: 20px; display: none;">
+      Loading...
+    </div>
   </section>
 
   {% include 'core/partials/edit_modal.html' %}
@@ -247,6 +119,7 @@
 {{ block.super }}
 <script>
   document.body.setAttribute('data-theme', '{{ theme_mode }}');
+  document.body.setAttribute('data-rating-mode', '{{ rating_mode }}');
 </script>
 <script src="{% static 'core/js/edit_modal.js' %}?v={{ version }}"></script>
 <script src="{% static 'core/js/lists.js' %}?v={{ version }}"></script>

@@ -6,8 +6,6 @@
   --bg-quaternary: #32445b;
   --text-primary: #8596a5;
   --text-secondary: #a8b5c4;
-  --border-color: #32445b;
-  --hover-bg: #2a3441;
   --overlay-bg: #101820;
   --overview-border: #475a6d;
   --button-bg: #1f2a38;
@@ -16,14 +14,26 @@
 }
 
 [data-theme="light"] {
+  --bg-primary: #e7f0f8;
+  --bg-secondary: #f8f8f8;
+  --bg-tertiary: #b7e0f7;
+  --bg-quaternary: #97cdec;
+  --text-primary: #0b5f97;
+  --text-secondary: #0b5f97;
+  --overlay-bg: #e7f0f8;
+  --overview-border: #5fb3e4;
+  --button-bg: #cfe8f7;
+  --activity-high:#4b90b8;
+  --activity-low: #73b2d6;
+}
+
+[data-theme="brown"] {
   --bg-primary: #271c19;
   --bg-secondary: #f8f8f8;
   --bg-tertiary: #55423d;
   --bg-quaternary: #af7f76;
   --text-primary: #faeee7;
   --text-secondary: #faeee7;
-  --border-color: #fffffe;
-  --hover-bg: #fffffe;
   --overlay-bg: #271c19;
   --overview-border: #3b2b27;
   --button-bg: #55423d;
@@ -714,9 +724,8 @@ h2 {
   position: absolute;
   top: -0.4rem;
   right: 0.2rem;
-  background:  none;
+  background: none;
   color: white;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
   width: 10px;
   height: 10px;
   border-radius: 50%;

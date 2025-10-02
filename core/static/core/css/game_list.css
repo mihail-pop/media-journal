@@ -14,6 +14,20 @@
 }
 
 [data-theme="light"] {
+  --bg-primary: #e7f0f8;
+  --bg-secondary: #b7e0f7;
+  --bg-tertiary: #b7e0f7;
+  --bg-quaternary: #ffffff;
+  --text-primary: #0b5f97;
+  --text-secondary: #0b5f97;
+  --text-tertiary: #97cdec;
+  --text-light: #ffffff;
+  --border-color: #DCECF8;
+  --hover-bg: #cfe8f7;
+  --table-bg: #DCECF8;
+}
+
+[data-theme="brown"] {
   --bg-primary: #271c19;
   --bg-secondary: #f8f8f8;
   --bg-tertiary: #55423d;
@@ -182,15 +196,55 @@ html {
   color: var(--text-tertiary);
 }
 
-.filter-buttons,
+.filter-buttons{
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
 .view-toggle {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
+.dual-toggle {
+  display: flex;
+  gap: 0.5rem;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--bg-tertiary);
+  max-height: 1.9rem;
+}
+
+.toggle-half {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background-color 0.3s ease;
+}
+
+.toggle-half:hover {
+  background-color: var(--bg-quaternary);
+}
+
+.toggle-half.active {
+  background-color: var(--bg-tertiary);
+}
+
+.toggle-text {
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
 .filter-btn,
-.toggle-btn {
+.toggle-btn,
+.type-filter-btn,
+.sort-btn  {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -231,13 +285,29 @@ html {
 }
 
 .filter-btn:hover,
-.toggle-btn:hover {
+.type-filter-btn:hover,
+.sort-btn:hover  {
   background-color: var(--bg-quaternary);
 }
 
 .filter-btn.active,
-.toggle-btn.active {
+.toggle-btn.active,
+.type-filter-btn.active,
+.sort-btn.active  {
   background-color: var(--bg-tertiary);
+}
+
+.sort-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.sort-btn {
+  flex: 1;
+  justify-content: center;
+  font-size: 0.85rem;
+  white-space: nowrap;
 }
 
 /* --- Main List Content --- */
@@ -329,7 +399,7 @@ html {
 
 .card-progress {
   font-size: 0.75rem;
-  color: var(--text-primary);
+  color: grey;
 }
 
 
@@ -342,9 +412,18 @@ html {
   background: rgba(0, 0, 0, 0.6);
   color: white;
   border: none;
-  padding: 4px 8px;
+  padding: 8px 10px;
   cursor: pointer;
   border-radius: 4px;
+}
+
+.edit-card-btn::before {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  right: -10px;
+  bottom: -10px;
 }
 
 .card:hover .edit-card-btn {
@@ -489,7 +568,7 @@ html {
     transform-origin: top;
     max-width: 40rem;
     width: 64%;
-    padding-bottom: 7rem;
+    padding-bottom: 13rem;
     padding-right: 0rem;
   }
 

@@ -662,4 +662,7 @@ document.getElementById("edit-delete-btn")?.addEventListener("click", function (
     }
     return cookieValue;
   }
+
+  // Expose populateForm globally for use by other scripts
+  window.populateEditForm = populateForm;
 });

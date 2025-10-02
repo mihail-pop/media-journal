@@ -842,36 +842,34 @@ if (data.trailers?.length) {
   }
 }
 
-// Render recommendations if available
-if (data.recommendations?.length) {
-  const recSection = document.querySelector('.recommendations-section');
-  if (!recSection) {
-    const mainSection = document.querySelector('.main-colored-section .detail-container');
-    if (mainSection) {
-      const recHTML = `
-        <section class="recommendations-section">
-          <h2>Recommendations</h2>
-          <div class="recommendations-list">
-            ${data.recommendations.map(rec => `
-              <div class="recommendation">
-                <a href="/mal/${mediaType}/${rec.id}/" title="${rec.title}">
-                  <img src="${rec.poster_path}" 
-                       alt="${rec.title}" 
-                       data-placeholder="/static/core/img/placeholder.png" 
-                       onerror="this.onerror=null;this.src=this.dataset.placeholder;" />
-                  <p class="rec-title">${rec.title}</p>
-                </a>
+    // Render recommendations if available
+    if (data.recommendations?.length) {
+      const apiRecSection = document.querySelector('.recommendations-section:not(.double-recs)');
+      if (!apiRecSection) {
+        const mainSection = document.querySelector('.main-colored-section .detail-container');
+        if (mainSection) {
+          const recHTML = `
+            <section class="recommendations-section">
+              <h2>Recommendations</h2>
+              <div class="recommendations-list">
+                ${data.recommendations.map(rec => `
+                  <div class="recommendation">
+                    <a href="/mal/${mediaType}/${rec.id}/" title="${rec.title}">
+                      <img src="${rec.poster_path}" 
+                           alt="${rec.title}" 
+                           data-placeholder="/static/core/img/placeholder.png" 
+                           onerror="this.onerror=null;this.src=this.dataset.placeholder;" />
+                      <p class="rec-title">${rec.title}</p>
+                    </a>
+                  </div>
+                `).join('')}
               </div>
-            `).join('')}
-          </div>
-        </section>
-      `;
-      mainSection.insertAdjacentHTML('beforeend', recHTML);
-    }
-  }
-}
-
-    return safeHTML.join("\n");
+            </section>
+          `;
+          mainSection.insertAdjacentHTML('beforeend', recHTML);
+        }
+      }
+    }    return safeHTML.join("\n");
   }
 
   if (mediaType === "game") {

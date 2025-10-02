@@ -74,59 +74,14 @@
 
 
 <section class="list-content">
-  <p id="no-items-message" class="hidden-items">No items found.</p>
+  <p id="no-items-message" class="hidden-items" style="display: none;">No items found.</p>
   <!-- Explicit override so history always shows cards -->
   <div id="card-view" class="card-grid" style="display:grid;">
-    {% for item in items %}
-    <div class="card"
-         data-id="{{ item.id }}"
-         data-media-type="{{ item.media_type }}"
-         data-title="{{ item.title|escape }}"
-         data-date="{{ item.date_added|date:'Y-m-d' }}"
-         data-month="{{ item.date_added|date:'m' }}"
-         data-year="{{ item.date_added|date:'Y' }}"
-         data-status="{{ item.status }}"
-         data-cover-url="{{ item.cover_url|default:'/static/core/img/placeholder.png' }}"
-         data-banner-url="{{ item.banner_url|default:'/static/core/img/placeholder.png' }}">
-
-      {% if item.media_type == "movie" or item.media_type == "tv" %}
-        <a href="{% if '_s' in item.source_id %}/tmdb/season/{% with parts=item.source_id|split:'_s' %}{{ parts.0 }}/{{ parts.1 }}/{% endwith %}{% else %}{% url 'tmdb_detail' media_type=item.media_type tmdb_id=item.source_id %}{% endif %}" class="card-link">
-      {% elif item.media_type == "anime" or item.media_type == "manga" %}
-        <a href="{% url 'mal_detail' media_type=item.media_type mal_id=item.source_id %}" class="card-link">
-      {% elif item.media_type == "book" %}
-        <a href="{% url 'openlib_detail' work_id=item.source_id %}" class="card-link">
-      {% elif item.media_type == "game" %}
-        <a href="{% url 'igdb_detail' igdb_id=item.source_id %}" class="card-link">
-      {% else %}
-        <a href="#" class="card-link">
-      {% endif %}
-
-          <div class="card-image">
-            <img src="{{ item.cover_url|default:'/static/core/img/placeholder.png' }}" alt="{{ item.title }}" loading="lazy">
-          </div>
-          <div class="card-title-overlay">
-            <span class="card-title">{{ item.title }}</span>
-<div class="card-subtitle">
-  {% if item.status == "on_hold" %}
-    Paused {{ item.date_added|timesince_one_unit }}
-  {% elif item.status == "ongoing" %}
-    Started {{ item.date_added|timesince_one_unit }}
-  {% else %}
-    {{ item.status|capfirst }} {{ item.date_added|timesince_one_unit }}
-  {% endif %}
-</div>
-            <div class="card-date">
-              {{ item.date_added|date:"d M Y" }}
-            </div>
-          </div>
-        </a>
-
-        <!-- Status bar -->
-        <div class="status-overlay status-{{ item.status }}"></div>
-
-        <button class="edit-card-btn">⋯</button>
-    </div>
-    {% endfor %}
+    <!-- Content will be loaded dynamically -->
+  </div>
+  
+  <div id="loading-indicator" style="text-align: center; padding: 20px; display: none;">
+    Loading...
   </div>
 </section>
 </div>

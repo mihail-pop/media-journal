@@ -137,6 +137,7 @@ class AppSettings(models.Model):
         choices=[
             ('light', 'Light'),
             ('dark', 'Dark'),
+            ('brown', 'Brown'),
             ('green', 'Green'),
         ],
         default='dark'
