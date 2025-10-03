@@ -290,6 +290,10 @@ html {
   background-color: var(--bg-quaternary);
 }
 
+#check-status-btn:hover{
+  background-color: var(--bg-quaternary);
+}
+
 .filter-btn.active,
 .toggle-btn.active,
 .type-filter-btn.active,
