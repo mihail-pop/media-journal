@@ -2,6 +2,51 @@ document.addEventListener("DOMContentLoaded", function () {
   const modal = document.getElementById("edit-modal");
   const overlay = document.getElementById("edit-overlay");
 
+const statusLabelsMap = {
+  movie: {
+    ongoing: "Watching",
+    on_hold: "Paused",
+    completed: "Completed",
+    planned: "Planned",
+    dropped: "Dropped",
+  },
+  tvshows: {
+    ongoing: "Watching",
+    on_hold: "Paused",
+    completed: "Completed",
+    planned: "Planned",
+    dropped: "Dropped",
+  },
+  anime: {
+    ongoing: "Watching",
+    on_hold: "Paused",
+    completed: "Completed",
+    planned: "Planned",
+    dropped: "Dropped",
+  },
+  manga: {
+    ongoing: "Reading",
+    on_hold: "Paused",
+    completed: "Completed",
+    planned: "Planned",
+    dropped: "Dropped",
+  },
+  game: {
+    ongoing: "Playing",
+    on_hold: "Paused",
+    completed: "Completed",
+    planned: "Planned",
+    dropped: "Dropped",
+  },
+  book: {
+    ongoing: "Reading",
+    on_hold: "Paused",
+    completed: "Completed",
+    planned: "Planned",
+    dropped: "Dropped",
+  },
+};
+
   function showField(id) {
     const el = document.getElementById(id + "_group");
     if (el) el.style.display = "block";
@@ -141,15 +186,18 @@ if (repeatsGroup && repeatsInput && repeatsLabel) {
 }
 
 
-    const statusSelect = form.querySelector('select[name="status"]');
-    statusSelect.innerHTML = "";
-    item.item_status_choices.forEach(choice => {
-      const option = document.createElement("option");
-      option.value = choice[0];
-      option.textContent = choice[1];
-      if (choice[0] === item.status) option.selected = true;
-      statusSelect.appendChild(option);
-    });
+const statusSelect = form.querySelector('select[name="status"]');
+statusSelect.innerHTML = "";
+const mediaTypeKey = item.media_type === 'tv' ? 'tvshows' : item.media_type; // map tv -> tvshows
+
+item.item_status_choices.forEach(choice => {
+  const option = document.createElement("option");
+  option.value = choice[0];
+  // Use user-friendly label from statusLabelsMap if available
+  option.textContent = statusLabelsMap[mediaTypeKey]?.[choice[0]] || choice[1];
+  if (choice[0] === item.status) option.selected = true;
+  statusSelect.appendChild(option);
+});
 
     // --- RATING UI ---
     const ratingSelect = form.querySelector('select[name="personal_rating"]');
@@ -342,6 +390,7 @@ if (repeatsGroup && repeatsInput && repeatsLabel) {
     button.addEventListener("click", function (e) {
       e.preventDefault();
       const card = button.closest(".card");
+      if (!card) return;
       const itemId = card.dataset.id;
       const mediaType = card.dataset.mediaType;
       const coverUrl = card.dataset.coverUrl;

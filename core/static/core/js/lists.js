@@ -37,6 +37,51 @@ document.addEventListener("DOMContentLoaded", function () {
   let currentSort = localStorage.getItem(sortKey) || "rating";
   let currentSortOrder = localStorage.getItem(sortOrderKey) || "desc";
   
+const statusLabelsMap = {
+  movies: {
+    ongoing: "Watching",
+    on_hold: "Paused",
+    completed: "Completed",
+    planned: "Planned",
+    dropped: "Dropped",
+  },
+  tvshows: {
+    ongoing: "Watching",
+    on_hold: "Paused",
+    completed: "Completed",
+    planned: "Planned",
+    dropped: "Dropped",
+  },
+  anime: {
+    ongoing: "Watching",
+    on_hold: "Paused",
+    completed: "Completed",
+    planned: "Planned",
+    dropped: "Dropped",
+  },
+  manga: {
+    ongoing: "Reading",
+    on_hold: "Paused",
+    completed: "Completed",
+    planned: "Planned",
+    dropped: "Dropped",
+  },
+  games: {
+    ongoing: "Playing",
+    on_hold: "Paused",
+    completed: "Completed",
+    planned: "Planned",
+    dropped: "Dropped",
+  },
+  books: {
+    ongoing: "Reading",
+    on_hold: "Paused",
+    completed: "Completed",
+    planned: "Planned",
+    dropped: "Dropped",
+  },
+};
+
   const hasTypeButtons = document.querySelectorAll(".type-filter-btn").length > 0;
   if (!hasTypeButtons && currentType !== "both") {
     currentType = "both";
@@ -99,7 +144,6 @@ document.addEventListener("DOMContentLoaded", function () {
       currentPage = data.page;
       
       renderItems();
-      updateBannerPool();
       
     } catch (error) {
       console.error('Error loading items:', error);
@@ -135,7 +179,8 @@ document.addEventListener("DOMContentLoaded", function () {
       
       const header = document.createElement('h2');
       header.className = 'status-header';
-      header.textContent = status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+      const labels = statusLabelsMap[mediaType] || {};
+      header.textContent = labels[status] || status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
       statusGroup.appendChild(header);
       
       if (isCardView) {
@@ -428,37 +473,48 @@ document.addEventListener("DOMContentLoaded", function () {
     matchingBtn.classList.add("active");
   }
   
-  // === Set active sort button ===
-  function updateSortButtons() {
-    sortButtons.forEach(btn => {
-      const sortType = btn.dataset.sort;
-      if (sortType === currentSort) {
-        btn.classList.add('active');
-        const arrow = currentSortOrder === 'asc' ? ' ⮝' : ' ⮟';
-        btn.textContent = btn.textContent.split(' ')[0] + arrow;
-        
-        // Set hover tooltip
-        let tooltip = '';
-        if (sortType === 'title') {
-          tooltip = currentSortOrder === 'asc' ? 'A-Z' : 'Z-A';
-        } else if (sortType === 'rating') {
-          tooltip = currentSortOrder === 'asc' ? '1-9' : '9-1';
-        } else if (sortType === 'date') {
-          tooltip = currentSortOrder === 'asc' ? 'Old-New' : 'New-Old';
-        } else if (sortType === 'hours') {
-          tooltip = currentSortOrder === 'asc' ? 'Low-High' : 'High-Low';
-        } else if (sortType === 'pages') {
-          tooltip = currentSortOrder === 'asc' ? 'Low-High' : 'High-Low';
-        }
-        btn.title = tooltip;
-      } else {
-        btn.classList.remove('active');
-        btn.textContent = btn.textContent.split(' ')[0];
-        btn.removeAttribute('title');
+
+  
+// === Set active sort button ===
+function updateSortButtons() {
+  sortButtons.forEach(btn => {
+    const sortType = btn.dataset.sort;
+    if (sortType === currentSort) {
+      btn.classList.add('active');
+      
+      // Use responsive arrows
+      const arrow = getArrow(currentSortOrder === 'asc');
+      btn.textContent = btn.textContent.split(' ')[0] + arrow;
+      
+      // Set hover tooltip
+      let tooltip = '';
+      if (sortType === 'title') {
+        tooltip = currentSortOrder === 'asc' ? 'A-Z' : 'Z-A';
+      } else if (sortType === 'rating') {
+        tooltip = currentSortOrder === 'asc' ? '1-9' : '9-1';
+      } else if (sortType === 'date') {
+        tooltip = currentSortOrder === 'asc' ? 'Old-New' : 'New-Old';
+      } else if (sortType === 'hours') {
+        tooltip = currentSortOrder === 'asc' ? 'Low-High' : 'High-Low';
+      } else if (sortType === 'pages') {
+        tooltip = currentSortOrder === 'asc' ? 'Low-High' : 'High-Low';
       }
-    });
-  }
-  updateSortButtons();
+      btn.title = tooltip;
+    } else {
+      btn.classList.remove('active');
+      btn.textContent = btn.textContent.split(' ')[0];
+      btn.removeAttribute('title');
+    }
+  });
+}
+
+// Responsive arrow function
+function getArrow(isAscending) {
+  const isPortrait = window.matchMedia("(orientation: portrait)").matches;
+  return isAscending ? (isPortrait ? ' ▲' : ' ⮝') : (isPortrait ? ' ▼' : ' ⮟');
+}
+
+updateSortButtons();
   
   if (hasTypeButtons) {
     const matchingTypeBtn = document.querySelector(`.type-filter-btn[data-type="${currentType}"]`);
@@ -706,55 +762,57 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
 
-document.getElementById("check-status-btn").addEventListener("click", () => {
-  const mediaType = document.body.getAttribute("data-media-type");
-  let apiUrl = "";
+const checkStatusBtn = document.getElementById("check-status-btn");
 
-  switch (mediaType) {
-    case "movies":
-      apiUrl = "/api/check_planned_movie_statuses/";
-      break;
-    case "tvshows":
-      apiUrl = "/api/check_planned_tvseries_statuses/";
-      break;
-    case "anime":
-    case "manga":
-      apiUrl = `/api/check_planned_anime_manga_statuses/?media_type=${mediaType}`;
-      break;
-    default:
-      console.warn("Unknown media type for status check");
-      return;
-  }
+if (checkStatusBtn) {
+  checkStatusBtn.addEventListener("click", () => {
+    const mediaType = document.body.getAttribute("data-media-type");
+    let apiUrl = "";
 
-  fetch(apiUrl)
-    .then(response => response.json())
-    .then(statuses => {
-      for (const [sourceId, status] of Object.entries(statuses)) {
-        const card = document.querySelector(`.card[data-source-id="${sourceId}"]`);
-        if (card && !card.querySelector(".status-dot")) {
-          const dot = document.createElement("div");
-          dot.classList.add("status-dot");
+    switch (mediaType) {
+      case "movies":
+        apiUrl = "/api/check_planned_movie_statuses/";
+        break;
+      case "tvshows":
+        apiUrl = "/api/check_planned_tvseries_statuses/";
+        break;
+      case "anime":
+      case "manga":
+        apiUrl = `/api/check_planned_anime_manga_statuses/?media_type=${mediaType}`;
+        break;
+      default:
+        console.warn("Unknown media type for status check");
+        return;
+    }
 
-          if (mediaType === "movies") {
-            if (status === "Released") dot.style.backgroundColor = "green";
-            else if (status.includes("Production")) dot.style.backgroundColor = "red";
-            else dot.style.backgroundColor = "red";
+    fetch(apiUrl)
+      .then(response => response.json())
+      .then(statuses => {
+        for (const [sourceId, status] of Object.entries(statuses)) {
+          const card = document.querySelector(`.card[data-source-id="${sourceId}"]`);
+          if (card && !card.querySelector(".status-dot")) {
+            const dot = document.createElement("div");
+            dot.classList.add("status-dot");
 
-          } else if (mediaType === "tvshows") {
-            if (status === "Ended") dot.style.backgroundColor = "green";
-            else if (status === "Returning with upcoming episode") dot.style.backgroundColor = "orange";
-            else if (status === "In Production") dot.style.backgroundColor = "red";
-            else dot.style.backgroundColor = "red";
+            if (mediaType === "movies") {
+              if (status === "Released") dot.style.backgroundColor = "green";
+              else if (status.includes("Production")) dot.style.backgroundColor = "red";
+              else dot.style.backgroundColor = "red";
+            } else if (mediaType === "tvshows") {
+              if (status === "Ended") dot.style.backgroundColor = "green";
+              else if (status === "Returning with upcoming episode") dot.style.backgroundColor = "orange";
+              else if (status === "In Production") dot.style.backgroundColor = "red";
+              else dot.style.backgroundColor = "red";
+            } else if (mediaType === "anime" || mediaType === "manga") {
+              if (status === "Finished") dot.style.backgroundColor = "green";
+              else if (status === "Releasing") dot.style.backgroundColor = "orange";
+              else if (status === "Not yet released") dot.style.backgroundColor = "red";
+              else dot.style.backgroundColor = "gray";
+            }
 
-          } else if (mediaType === "anime" || mediaType === "manga") {
-            if (status === "Finished") dot.style.backgroundColor = "green";
-            else if (status === "Releasing") dot.style.backgroundColor = "orange";
-            else if (status === "Not yet released") dot.style.backgroundColor = "red";
-            else dot.style.backgroundColor = "gray"; // for Cancelled or unknown
+            card.appendChild(dot);
           }
-
-          card.appendChild(dot);
         }
-      }
-    });
-});
+      });
+  });
+}

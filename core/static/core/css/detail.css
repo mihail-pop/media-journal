@@ -17,7 +17,7 @@
 [data-theme="light"] {
   --bg-primary: #e7f0f8;
   --bg-secondary: #b7e0f7;
-  --bg-tertiary: #DCECF8;
+  --bg-tertiary: #b7e0f7;
   --bg-quaternary: #ffffff;
   --text-primary: #0b5f97;
   --text-secondary: #0b5f97;
@@ -31,7 +31,7 @@
 
 [data-theme="brown"] {
   --bg-primary: #271c19;
-  --bg-secondary: #f8f8f8;
+  --bg-secondary: #55423d;
   --bg-tertiary: #55423d;
   --bg-quaternary: #af7f76;
   --text-primary: #faeee7;
@@ -306,13 +306,18 @@ a:hover{
 
 /* --- SECTION LAYOUTS --- */
 .cast-section, .seasons-section, .recommendations-section, .screenshots-section, .episodes-section {
-  margin-bottom: 40px;
+  margin-top: 1rem;
+  margin-bottom: 2rem;
 }
 
 .cast-list, .seasons-list, .recommendations-list, .screenshots-list {
   display: flex;
   flex-wrap: wrap;
   gap: 15px;
+}
+
+.cast-list{
+  margin-top: 6px;
 }
 
 .cast-member, .season-card, .rec-card, .recommendation {
@@ -392,6 +397,7 @@ a:hover{
 
 #person-search-input {
   width: 100%;
+  margin-top: 0.2rem;
   max-width: 50px;
   padding: 0.4rem 0.8rem;
   border-radius: 6px;
@@ -421,22 +427,16 @@ a:hover{
   border-radius: 6px;
   font-weight: 600;
   color: white;
-  cursor: pointer;
+  cursor: default;
   transition: background-color 0.3s ease;
-}
-
-#person-search-btn:hover {
-  background-color: #0099cc;
 }
 
 /* Search results container */
 #person-search-results {
-  margin-top: 0.8rem;
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
   max-width: 100%;
-  margin-bottom: 1.2rem;
 }
 
 /* Each person card */
@@ -521,11 +521,9 @@ a:hover{
 
 .screenshot-rotator {
   position: relative;
-  max-width: 1100px;
-  margin-bottom: 10px;
-  /* Optional: center container */
   margin-left: auto;
   margin-right: auto;
+  padding: 1rem 1rem 1rem 1rem;
 }
 
 .screenshot-rotator img#screenshot-image {
@@ -533,6 +531,8 @@ a:hover{
   height: auto;
   display: block;
   margin: 0 auto;
+  max-height: 41rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
 }
 
 .rotator-btn {
@@ -565,48 +565,93 @@ a:hover{
 }
 
 .rotator-btn.left {
-  left: 10px;
+  left: 2rem;
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
 }
 
 .rotator-btn.right {
-  right: 10px;
+  right: 2rem;
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
 }
 
-.screenshots-list {
-  display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  max-width: 1100px; /* same width as main */
-  padding-bottom: 4px;
+.delete-screenshot-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 1.5rem;
+  color: rgb(243, 243, 243);
+  border: none;
+  border-radius: 50%;
+  font-size: 60px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s;
+  background:none;
+}
+
+.delete-screenshot-btn:hover{
+  color:white;
+}
+
+.screenshot-rotator:hover .delete-screenshot-btn {
+  opacity: 1;
+}
+
+.screenshots-background{
+  background: var(--bg-secondary);
+  max-width: 80rem;
+  border-radius: 6px;
   margin-left: auto;
   margin-right: auto;
 }
 
+.screenshots-list {
+  display: flex;
+  flex-wrap: wrap;           /* allow multiple rows */
+  gap: 8px;
+  max-height: calc((5.4rem * 2) + 1rem); /* 2 rows tall (adjust 150px to your thumbnail height) */
+  overflow-y: auto;          /* vertical scroll when exceeding 2 rows */
+  overflow-x: hidden;        /* disable horizontal scroll */
+  padding: 0 1rem 1rem 1rem;
+  margin-left: 0.4rem;
+  scrollbar-width: none; 
+  -ms-overflow-style: none;
+}
+
+.screenshots-list::-webkit-scrollbar {
+  display: none;
+}
+
 .screenshots-list img {
-  width: 120px;
+  max-width: 154px;
   height: auto;
   cursor: pointer;
   border-radius: 6px;
-  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
   opacity: 0.7;
   transition: opacity 0.3s ease, border 0.3s ease;
   flex-shrink: 0;
   border: 2px solid transparent;
+  max-height: 5.4rem;
 }
 
 .screenshots-list img:hover,
 .screenshots-list img.active-thumbnail {
   opacity: 1;
-  border-color: #2c7ae0; /* or your accent color */
+  border-color: var(--text-secondary); /* or your accent color */
+}
+
+.screenshots-header-buttons{
+  display: flex;
+  align-items: center;
+  gap: 1em;
 }
 
 .screenshots-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 1em; /* space between title and buttons */
   flex-wrap: wrap; /* if screen is narrow, forms wrap below */
   margin-bottom: 1em;
@@ -619,12 +664,18 @@ a:hover{
   color: var(--text-title);
 }
 
+.cast-header{
+  margin-bottom: 6px;
+}
+
 .cast-header h2{
   color: var(--text-title);
 }
 
 .recommendations-section h2{
   color: var(--text-title);
+  margin-top: 0px;
+  margin-bottom: 12px;
 }
 
 .seasons-section h2{
@@ -831,9 +882,9 @@ a:hover{
 }
 
 .inline-form button {
-  background-color: var(--bg-tertiary);
-  border: none;
-  color: var(--text-secondary);
+  background: none;
+  border: 1px solid var(--border-color);
+  color: var(--text-overview);
   padding: 0.4em 1em;
   font-size: 1rem;
   border-radius: 4px;
@@ -843,6 +894,7 @@ a:hover{
 
 .inline-form button:hover {
   background-color: var(--hover-bg);
+  color: var(--text-title);
 }
 
 .change-banner-btn {
@@ -933,8 +985,9 @@ a:hover{
   grid-template-columns: 1fr; /* single column by default */
 }
 
-#trailer-container h2 {
-  margin-top: 0;
+#trailer-container h2, .seasons-section h2 {
+  margin-top: 0.5rem;
+  margin-bottom: 0.7rem;
 }
 
 .trailer-grid iframe {

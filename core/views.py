@@ -23,6 +23,7 @@ from django.db import transaction
 from django.core.files.base import ContentFile
 from django.utils.timesince import timesince
 import datetime as dt
+import uuid
 import time
 import json
 import requests
@@ -3046,7 +3047,7 @@ def save_igdb_item(igdb_id):
 
     return JsonResponse({"success": True, "message": "Game added to list"})
 
-
+# Delete, Swap, Add actions
 @ensure_csrf_cookie
 def upload_game_screenshots(request):
     if request.method != "POST":
@@ -3061,61 +3062,76 @@ def upload_game_screenshots(request):
     except MediaItem.DoesNotExist:
         return JsonResponse({"success": False, "message": "Game not found."}, status=404)
 
+    action = request.headers.get("X-Action", "replace")  # default to replace
+
+    def generate_unique_filename(index, ext):
+        timestamp = int(time.time() * 1000)
+        random_suffix = uuid.uuid4().hex[:6]
+        return f"screenshots/igdb_{igdb_id}_{index}_{timestamp}_{random_suffix}{ext}"
+
+    # DELETE action
+    if action == "delete":
+        screenshot_url = request.POST.get("screenshot_url")
+        if not screenshot_url:
+            return JsonResponse({"success": False, "message": "Missing screenshot_url."}, status=400)
+
+        screenshots = media_item.screenshots or []
+        new_screenshots = [s for s in screenshots if s.get("url") != screenshot_url]
+
+        # Remove actual file from disk
+        filename = screenshot_url.replace("/media/", "")
+        file_path = os.path.join(settings.MEDIA_ROOT, filename)
+        if os.path.exists(file_path):
+            os.remove(file_path)
+
+        # Renumber remaining files with cache-busting
+        for i, s in enumerate(new_screenshots, start=1):
+            old_url = s["url"]
+            ext = os.path.splitext(old_url)[1]
+            new_filename = generate_unique_filename(i, ext)
+            old_path = os.path.join(settings.MEDIA_ROOT, old_url.replace("/media/", ""))
+            if os.path.exists(old_path):
+                os.rename(old_path, os.path.join(settings.MEDIA_ROOT, new_filename))
+            s["url"] = f"/media/{new_filename}"
+
+        media_item.screenshots = new_screenshots
+        media_item.save()
+        return JsonResponse({"success": True, "message": "Screenshot deleted.", "screenshots": new_screenshots})
+
+    # ADD / REPLACE actions
     files = request.FILES.getlist("screenshots[]")
     if not files:
         return JsonResponse({"success": False, "message": "No files uploaded."}, status=400)
 
-    action = request.headers.get("X-Action", "replace")  # default to replace
-
     if action == "replace":
-        # Delete existing screenshots
-        pattern_jpg = os.path.join(settings.MEDIA_ROOT, f"screenshots/igdb_{igdb_id}_*.jpg")
-        pattern_png = os.path.join(settings.MEDIA_ROOT, f"screenshots/igdb_{igdb_id}_*.png")
-
-        for path in glob.glob(pattern_jpg) + glob.glob(pattern_png):
+        # Remove old screenshots from disk
+        pattern = os.path.join(settings.MEDIA_ROOT, f"screenshots/igdb_{igdb_id}_*.*")
+        for path in glob.glob(pattern):
             os.remove(path)
-
-        # Start numbering from 1
         start_index = 1
-
-        # Clear old list
         old_screenshots = []
 
     elif action == "add":
-        # Adding screenshots: keep old list
         old_screenshots = media_item.screenshots or []
         start_index = len(old_screenshots) + 1
 
     else:
         return JsonResponse({"success": False, "message": "Invalid action."}, status=400)
 
-    # Save and rename new screenshots
-    new_screenshots = list(old_screenshots)  # copy existing if adding
-
+    new_screenshots = list(old_screenshots)
     for i, file in enumerate(files, start=start_index):
         ext = os.path.splitext(file.name)[1].lower()
         if ext not in [".jpg", ".jpeg", ".png"]:
-            continue  # Skip unsupported files
-
-        filename = f"screenshots/igdb_{igdb_id}_{i}{ext}"
+            continue
+        filename = generate_unique_filename(i, ext)
         default_storage.save(filename, file)
-
-
         url = f"/media/{filename}"
+        new_screenshots.append({"url": url, "is_full_url": False})
 
-        new_screenshots.append({
-            "url": url,
-            "is_full_url": False
-        })
-
-    # Update DB entry
     media_item.screenshots = new_screenshots
     media_item.save()
 
-    return JsonResponse({"success": True, "message": "Screenshots updated."})
-
-
-
+    return JsonResponse({"success": True, "message": "Screenshots updated.", "screenshots": new_screenshots})
 
 def check_if_in_list(source, source_id):
     return MediaItem.objects.filter(source=source, source_id=str(source_id)).exists() # useless?
@@ -3718,35 +3734,37 @@ def upload_banner(request):
     if ext not in [".jpg", ".jpeg", ".png", ".webp", ".gif"]:
         return JsonResponse({"error": "Unsupported file type."}, status=400)
 
-    # Build full file path: media/banners/source_id.ext
     banner_dir = os.path.join(settings.MEDIA_ROOT, "banners")
     os.makedirs(banner_dir, exist_ok=True)
 
-    # Base name (we may overwrite or replace extension)
-    base_name = f"{source}_{source_id}"
+    # Generate cache-busting filename
+    timestamp = int(time.time() * 1000)
+    random_suffix = uuid.uuid4().hex[:6]
+    base_name = f"{source}_{source_id}_{timestamp}_{random_suffix}"
     new_path = os.path.join(banner_dir, base_name + ext)
 
-    # Delete any existing file with same base name but different ext
+    # Remove any old banner files for this source/source_id
     for existing_ext in [".jpg", ".jpeg", ".png", ".webp", ".gif"]:
-        old_path = os.path.join(banner_dir, base_name + existing_ext)
-        if os.path.exists(old_path) and old_path != new_path:
+        old_path = os.path.join(banner_dir, f"{source}_{source_id}{existing_ext}")
+        if os.path.exists(old_path):
             os.remove(old_path)
 
-    # Save new file
+    # Save the new file
     with open(new_path, "wb+") as destination:
         for chunk in uploaded_file.chunks():
             destination.write(chunk)
 
     relative_url = f"/media/banners/{base_name}{ext}"
 
+    # Update MediaItem
     try:
         item = MediaItem.objects.get(source=source, source_id=source_id)
         item.banner_url = relative_url
         item.save(update_fields=["banner_url"])
     except MediaItem.DoesNotExist:
-        pass  # No item found yet — maybe it's added later
+        pass
 
-    return JsonResponse({"success": True, "url": f"/media/banners/{base_name}{ext}"})
+    return JsonResponse({"success": True, "url": relative_url})
 
 @ensure_csrf_cookie
 @require_POST
@@ -3765,20 +3783,26 @@ def upload_cover(request):
     poster_dir = os.path.join(settings.MEDIA_ROOT, "posters")
     os.makedirs(poster_dir, exist_ok=True)
 
-    base_name = f"{source}_{source_id}"
+    # Generate cache-busting filename
+    timestamp = int(time.time() * 1000)
+    random_suffix = uuid.uuid4().hex[:6]
+    base_name = f"{source}_{source_id}_{timestamp}_{random_suffix}"
     new_path = os.path.join(poster_dir, base_name + ext)
 
+    # Remove old cover files for this source/source_id
     for existing_ext in [".jpg", ".jpeg", ".png", ".webp", ".gif"]:
-        old_path = os.path.join(poster_dir, base_name + existing_ext)
-        if os.path.exists(old_path) and old_path != new_path:
+        old_path = os.path.join(poster_dir, f"{source}_{source_id}{existing_ext}")
+        if os.path.exists(old_path):
             os.remove(old_path)
 
+    # Save the new file
     with open(new_path, "wb+") as destination:
         for chunk in uploaded_file.chunks():
             destination.write(chunk)
 
     relative_url = f"/media/posters/{base_name}{ext}"
 
+    # Update MediaItem
     try:
         item = MediaItem.objects.get(source=source, source_id=source_id)
         item.cover_url = relative_url

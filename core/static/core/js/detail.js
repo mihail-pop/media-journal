@@ -56,22 +56,6 @@ function showNotification(message, type) {
   setTimeout(() => notification.remove(), duration);
 }
 
-function bustImageCache() {
-  const timestamp = new Date().getTime();
-  document.querySelectorAll('img').forEach(img => {
-    const src = img.src;
-    if (src && !src.includes('placeholder.png')) {
-      img.src = src.split('?')[0] + '?t=' + timestamp;
-    }
-  });
-  
-  const banner = document.querySelector('.banner-section');
-  if (banner && banner.dataset.banner) {
-    const url = banner.dataset.banner.split('?')[0] + '?t=' + timestamp;
-    banner.style.backgroundImage = `url("${url}")`;
-  }
-}
-
 function openBannerUpload(source, id) {
   const input = document.createElement("input");
   input.type = "file";
@@ -97,9 +81,8 @@ function openBannerUpload(source, id) {
       .then((res) => res.json())
       .then((data) => {
         if (data.success && data.url) {
-          bustImageCache();
           sessionStorage.setItem("refreshSuccess", "1");
-          setTimeout(() => window.location.reload(true));
+          window.location.reload(true);
         } else {
           alert(data.error || "Failed to upload banner.");
         }
@@ -136,9 +119,8 @@ function openCoverUpload(source, id) {
       .then((res) => res.json())
       .then((data) => {
         if (data.success && data.url) {
-          bustImageCache();
           sessionStorage.setItem("refreshSuccess", "1");
-          setTimeout(() => window.location.reload(true));
+          window.location.reload(true);
         } else {
           alert(data.error || "Failed to upload cover.");
         }
@@ -162,11 +144,9 @@ function updateScreenshot(index) {
     thumb.classList.toggle('active-thumbnail', i === index);
   });
 
-  setTimeout(() => {
-    currentIndex = index;
-    img.src = screenshotsData[currentIndex].url;
-    img.style.opacity = 1;
-  }, 200);
+  currentIndex = index;
+  img.src = screenshotsData[currentIndex].url;
+  img.style.opacity = 1;
 }
 
 function changeScreenshot(direction) {
@@ -186,6 +166,53 @@ function showArrows(container) {
 function hideArrows(container) {
   container.querySelector(".left").style.display = "none";
   container.querySelector(".right").style.display = "none";
+}
+
+let deleteConfirm = false;
+const deleteBtn = document.querySelector(".delete-screenshot-btn");
+
+if (deleteBtn) { // only attach if it exists
+  deleteBtn.addEventListener("click", function () {
+    if (!deleteConfirm) {
+      deleteBtn.textContent = "×";
+      deleteBtn.style.color = "#ff3b38ff";
+      deleteBtn.title = "Are you sure?";
+      deleteConfirm = true;
+
+      setTimeout(() => {
+        deleteConfirm = false;
+        deleteBtn.textContent = "×";
+        deleteBtn.style.backgroundColor = "";
+        deleteBtn.style.color = "";
+        deleteBtn.title = "";
+      }, 5000);
+    } else {
+      const img = document.getElementById("screenshot-image");
+      const screenshotUrl = img.src.replace(window.location.origin, "");
+      const IGDB_ID = document.querySelector('.screenshots-background').dataset.igdbId;
+
+      const formData = new FormData();
+      formData.append("igdb_id", IGDB_ID);
+      formData.append("screenshot_url", screenshotUrl);
+
+      fetch("/upload-game-screenshots/", {
+        method: "POST",
+        headers: {
+          "X-CSRFToken": getCookie("csrftoken"),
+          "X-Action": "delete",
+        },
+        body: formData,
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          window.location.reload();
+        } else {
+          alert(data.message);
+        }
+      });
+    }
+  });
 }
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -274,8 +301,43 @@ document.addEventListener("DOMContentLoaded", function () {
     banner.style.backgroundImage = `url("${url}")`;
   }
 
+
+  // Swap confirmation
+const swapBtn = document.getElementById("swap-btn");
+const uploadFileInput = document.getElementById("screenshot-file-input");
+
+let swapConfirm = false;
+
+swapBtn?.addEventListener("click", function () {
+  if (!swapConfirm) {
+    // First click → ask for confirmation
+    swapBtn.textContent = "Are you sure?";
+    swapBtn.style.backgroundColor = "#e53935"; // red
+    swapBtn.style.color = "white";
+    swapBtn.title = "Are you sure you want to delete all the existing screenshots and replace them with new ones?";
+    swapConfirm = true;
+
+    // Reset if user doesn't confirm after 5 seconds
+    setTimeout(() => {
+      swapConfirm = false;
+      swapBtn.textContent = "Swap";
+      swapBtn.style.backgroundColor = ""; // default
+      swapBtn.style.color = "";
+      swapBtn.title = "";
+    }, 5000);
+  } else {
+    // Second click → proceed
+    swapConfirm = false;
+    swapBtn.textContent = "Swap";
+    swapBtn.style.backgroundColor = "";
+    swapBtn.style.color = "";
+    swapBtn.title = "";
+
+    uploadFileInput.click(); // open file picker
+  }
+});
+
   // Screenshots Upload
-  const uploadFileInput = document.getElementById("screenshot-file-input");
   const uploadForm = document.getElementById("screenshot-upload-form");
   const addFileInput = document.getElementById("screenshot-add-file-input");
   const addForm = document.getElementById("screenshot-add-form");

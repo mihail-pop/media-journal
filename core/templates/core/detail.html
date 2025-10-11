@@ -3,6 +3,7 @@
 
 {% block head %}
   {{ block.super }}
+  <title>{{ title }} - Media Journal</title>
   <link rel="stylesheet" href="{% static 'core/css/detail.css' %}?v={{ version }}" />
   <link rel="stylesheet" href="{% static 'core/css/modal.css' %}?v={{ version }}" />
 {% endblock %}
@@ -161,10 +162,11 @@
   <h2>Screenshots</h2>
 {% if not recommendations %}
   <!-- Upload Form -->
+   <div class="screenshots-header-buttons">
   <form id="screenshot-upload-form" enctype="multipart/form-data" class="inline-form">
     <input type="hidden" name="igdb_id" value="{{ source_id }}">
     <input type="file" id="screenshot-file-input" name="screenshots[]" accept=".jpg,.jpeg,.png" multiple hidden>
-    <button type="button" onclick="document.getElementById('screenshot-file-input').click();">
+    <button type="button" id="swap-btn">
       Swap
     </button>
   </form>
@@ -177,13 +179,16 @@
     Add
   </button>
 </form>
+</div>
     {% endif %}
 </div>
 {% if screenshots %}
+  <div class="screenshots-background" data-igdb-id="{{ source_id }}">
   <div class="screenshot-rotator" onmouseenter="showArrows(this)" onmouseleave="hideArrows(this)">
     <img id="screenshot-image" src="{{ screenshots.0.url }}" alt="Screenshot" />
     <button class="rotator-btn left" onclick="changeScreenshot(-1)" style="display: none;">‹</button>
     <button class="rotator-btn right" onclick="changeScreenshot(1)" style="display: none;">›</button>
+    <button class="delete-screenshot-btn" onclick="deleteScreenshot('{{ shot.url }}')">×</button>
   </div>
 
   <div class="screenshots-list">
@@ -196,7 +201,7 @@
       />
     {% endfor %}
   </div>
-
+  </div>
   {{ screenshots|json_script:"screenshots-data" }}
 {% endif %}
 </section>

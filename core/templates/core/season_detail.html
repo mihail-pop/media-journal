@@ -3,6 +3,7 @@
 
 {% block head %}
   {{ block.super }}
+  <title>{{ title }} - Media Journal</title>
   <link rel="stylesheet" href="{% static 'core/css/detail.css' %}?v={{ version }}" />
   <link rel="stylesheet" href="{% static 'core/css/modal.css' %}?v={{ version }}" />
 {% endblock %}
