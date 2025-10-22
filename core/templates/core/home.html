@@ -5,6 +5,7 @@
 {% block head %}
 {{ block.super }}
 <title>Media Journal</title>
+<link rel="stylesheet" href="{% static 'core/css/rain.css' %}?v={{ version }}">
 <link rel="stylesheet" href="{% static 'core/css/home.css' %}?v={{ version }}">
 {% endblock %}
 
@@ -23,6 +24,11 @@
 
 <!-- Separator Bar -->
 <div class="separator-bar" style="display: flex; gap: 1rem; align-items: center; padding: 0 1rem;">
+<button id="bat-toggle" class="bat-toggle">
+  <svg viewBox="0 0 24 24">
+    <path d="M12 2c-1 2-2.5 3.5-4.5 4.5C5.5 7.5 4 9 4 11c0 1 0.5 2 1.5 2.5C6.5 14 8 14.5 10 14c1-0.5 2-1 2-2s-1-1.5-2-2c1 0 2 0.5 2 1.5s1 1.5 2 2c2 0.5 3.5 0 4.5-0.5C19.5 13 20 12 20 11c0-2-1.5-3.5-3.5-4.5C14.5 5.5 13 4 12 2z"/>
+  </svg>
+</button>
 <div id="board-wrapper" class="board-wrapper">
   <a href="/board/" class="board-button" aria-label="Board content">
     Community
@@ -325,5 +331,7 @@
 
 {% block script %}
 {{ block.super }}
+<script src="{% static 'core/js/rain.js' %}?v={{ version }}"></script>
+<script src="{% static 'core/js/halloween.js' %}?v={{ version }}"></script>
 <script src="{% static 'core/js/home.js' %}?v={{ version }}"></script>
 {% endblock %}

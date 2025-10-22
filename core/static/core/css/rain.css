@@ -1,0 +1,32 @@
+.bat-toggle {
+  display: none;
+  background: url('/static/core/icons/halloween/pumpkin.png') no-repeat center;
+  background-size: 32px 32px;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  width: 40px;
+  height: 40px;
+  transition: all 0.3s ease;
+}
+
+.bat-toggle img {
+  position: relative;
+  z-index: 1;
+  margin-top:0.4rem;
+}
+
+.bat-toggle svg {
+  width: 24px;
+  height: 24px;
+  fill: #666;
+  transition: fill 0.3s ease;
+}
+
+.bat-toggle:hover svg {
+  fill: #888;
+}
+
+.bat-toggle.active svg {
+  fill: #8B0000;
+}

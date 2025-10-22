@@ -243,23 +243,38 @@ document.addEventListener("DOMContentLoaded", function () {
     fetch(`${endpoint}?q=${encodeURIComponent(query)}`)
       .then((res) => res.json())
       .then((data) => {
-        resultsContainer.innerHTML = "";
         if (data.length === 0) {
           resultsContainer.innerHTML = "<p>No results found.</p>";
           return;
         }
 
-        data.forEach((person) => {
-          const card = document.createElement("div");
-          card.className = "person-card";
-          card.innerHTML = `
-            <img src="${person.image || "/static/core/img/placeholder.png"}" alt="${person.name}">
-            <p class="person-name">${person.name}</p>
-            <button class="favorite-btn" data-name="${person.name}" data-img="${person.image}" data-type="${
-            mediaType === "anime" || mediaType === "manga" ? "character" : "actor"
-          }">⭐</button>
-          `;
-          resultsContainer.appendChild(card);
+        // Check favorite status for each person
+        const personPromises = data.map(person => {
+          const type = mediaType === "anime" || mediaType === "manga" ? "character" : "actor";
+          return fetch(`/api/check_favorite_person/?name=${encodeURIComponent(person.name)}&type=${type}`)
+            .then(res => res.json())
+            .then(result => ({ ...person, isFavorited: result.is_favorited }))
+            .catch(() => ({ ...person, isFavorited: false }));
+        });
+
+        Promise.all(personPromises).then(personsWithStatus => {
+          const fragment = document.createDocumentFragment();
+          personsWithStatus.forEach((person) => {
+            const card = document.createElement("div");
+            card.className = "person-card";
+            const type = mediaType === "anime" || mediaType === "manga" ? "character" : "actor";
+            card.innerHTML = `
+              <img src="${person.image || "/static/core/img/placeholder.png"}" alt="${person.name}">
+              <p class="person-name">${person.name}</p>
+              <label class="favorite-checkbox person-favorite" data-name="${person.name}" data-img="${person.image}" data-type="${type}">
+                <input type="checkbox" ${person.isFavorited ? 'checked' : ''}>
+                <span class="heart"></span>
+              </label>
+            `;
+            fragment.appendChild(card);
+          });
+          resultsContainer.innerHTML = "";
+          resultsContainer.appendChild(fragment);
         });
       })
       .catch(() => {
@@ -272,12 +287,13 @@ document.addEventListener("DOMContentLoaded", function () {
     if (e.key === "Enter") performSearch();
   });
 
-  resultsContainer?.addEventListener("click", function (e) {
-    if (e.target.classList.contains("favorite-btn")) {
-      const btn = e.target;
-      const name = btn.dataset.name;
-      const image = btn.dataset.img;
-      const type = btn.dataset.type;
+  resultsContainer?.addEventListener("change", function (e) {
+    if (e.target.type === "checkbox" && e.target.closest(".person-favorite")) {
+      const checkbox = e.target;
+      const label = checkbox.closest(".person-favorite");
+      const name = label.dataset.name;
+      const image = label.dataset.img;
+      const type = label.dataset.type;
 
       fetch("/api/toggle_favorite_person/", {
         method: "POST",
@@ -289,7 +305,16 @@ document.addEventListener("DOMContentLoaded", function () {
       })
         .then((res) => res.json())
         .then((data) => {
-          btn.textContent = data.status === "added" ? "✅" : "⭐";
+          // The checkbox state is already updated by the browser
+          // We just need to handle any errors
+          if (!data.status) {
+            // Revert checkbox state on error
+            checkbox.checked = !checkbox.checked;
+          }
+        })
+        .catch(() => {
+          // Revert checkbox state on error
+          checkbox.checked = !checkbox.checked;
         });
     }
   });

@@ -188,7 +188,9 @@
     <img id="screenshot-image" src="{{ screenshots.0.url }}" alt="Screenshot" />
     <button class="rotator-btn left" onclick="changeScreenshot(-1)" style="display: none;">‹</button>
     <button class="rotator-btn right" onclick="changeScreenshot(1)" style="display: none;">›</button>
+    {% if not recommendations %}
     <button class="delete-screenshot-btn" onclick="deleteScreenshot('{{ shot.url }}')">×</button>
+    {% endif %}
   </div>
 
   <div class="screenshots-list">
@@ -219,7 +221,7 @@
 {% else %}
   <h2 style="margin: 0;">Cast</h2>  {# fallback #}
 {% endif %}
-    <input type="text" id="person-search-input" placeholder="Search for a character or actor..." autocomplete="off" style="flex-grow: 1;">
+    <input type="text" id="person-search-input" placeholder="Search.." autocomplete="off" style="flex-grow: 1;">
     <button id="person-search-btn" title="Search" aria-label="Search" class="search-icon-button"></button>
   </div>
 

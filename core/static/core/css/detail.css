@@ -20,9 +20,9 @@
   --bg-tertiary: #b7e0f7;
   --bg-quaternary: #ffffff;
   --text-primary: #0b5f97;
-  --text-secondary: #0b5f97;
+  --text-secondary: #09446b;
   --text-overview: #0b5f97;
-  --text-title: #0b5f97;
+  --text-title: #0b507e;
   --border-color: #DCECF8;
   --hover-bg: #cfe8f7;
   --special-color: #E846C4;
@@ -350,6 +350,10 @@ a:hover{
   line-height: 1.2;
 }
 
+.actor-name, .season-name{
+  font-weight: 500;
+}
+
 .season-card:hover .season-name {
   color: var(--text-title); /* lock it to not be affected by a element hover */
 }
@@ -398,7 +402,7 @@ a:hover{
 #person-search-input {
   width: 100%;
   margin-top: 0.2rem;
-  max-width: 50px;
+  max-width: 3.2rem;
   padding: 0.4rem 0.8rem;
   border-radius: 6px;
   border: none;
@@ -415,7 +419,7 @@ a:hover{
 
 #person-search-input:focus {
   outline: none;
-  max-width: 230px;
+  max-width: 7rem;
 }
 
 #person-search-btn {
@@ -435,7 +439,7 @@ a:hover{
 #person-search-results {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 15px;
   max-width: 100%;
 }
 
@@ -450,6 +454,9 @@ a:hover{
   color: var(--text-secondary);
   box-shadow: 0 1px 5px rgba(0,0,0,0.6);
   transition: transform 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 
@@ -460,6 +467,7 @@ a:hover{
   object-fit: cover;
   border-bottom: 1px solid var(--bg-primary);
   background-color: var(--hover-bg);
+  border-radius: 4px;
 }
 
 /* Person name */
@@ -471,51 +479,49 @@ a:hover{
   line-height: 1.1;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
-/* Favorite (star) button */
-.favorite-btn {
-  background: transparent;
-  border: none;
-  font-size: 1.2rem;
-  padding: 6px 0;
-  color: #bbb;
+/* Person favorite heart */
+.person-favorite {
   cursor: pointer;
-  transition: color 0.3s ease;
+  user-select: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 4px;
 }
 
-.favorite-btn:hover {
-  color: #00bfff;
-  transform: scale(1.3);
-}
-
-.favorite-btn:focus {
-  outline: none;
-  color: #0099cc;
-}
-
-/* Add tooltip text on hover */
-.favorite-btn::after {
-  content: "Favorite or unfavorite";
+.person-favorite input[type="checkbox"] {
   position: absolute;
-  top: 2rem;
-  left: 50%;
-  transform: translateX(-50%);
-  background: #222;
-  color: white;
-  padding: 2px 6px;
-  font-size: 0.75rem;
-  border-radius: 4px;
-  white-space: nowrap;
   opacity: 0;
+  width: 0;
+  height: 0;
   pointer-events: none;
-  transition: opacity 0.2s ease;
-  z-index: 10;
 }
 
-.favorite-btn:hover::after {
-  opacity: 1;
+.person-favorite .heart {
+  width: 32px;
+  height: 32px;
+  display: inline-block;
+  background: url('data:image/svg+xml;utf8,<svg fill="%23ffffff" stroke="%23ffffff" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 21C12 21 7 16.5 5 12.5C3 8.5 5 5 8.5 5C10.5 5 12 7 12 7C12 7 13.5 5 15.5 5C19 5 21 8.5 19 12.5C17 16.5 12 21 12 21Z"/></svg>') no-repeat center center;
+  background-size: contain;
+  transition: background 0.3s ease, transform 0.2s ease;
+}
+
+.person-favorite input[type="checkbox"]:checked + .heart {
+  background: url('data:image/svg+xml;utf8,<svg fill="%23e0245e" stroke="%23e0245e" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 21C12 21 7 16.5 5 12.5C3 8.5 5 5 8.5 5C10.5 5 12 7 12 7C12 7 13.5 5 15.5 5C19 5 21 8.5 19 12.5C17 16.5 12 21 12 21Z"/></svg>') no-repeat center center;
+  background-size: contain;
+}
+
+.person-favorite .heart:hover {
+  filter: drop-shadow(0 0 4px #fff) brightness(1.2);
+  transform: scale(1.1);
+  cursor: pointer;
+}
+
+.person-favorite input[type="checkbox"]:checked + .heart:hover {
+  filter: drop-shadow(0 0 6px #e0245e) brightness(1.1);
+  cursor: pointer;
 }
 
 

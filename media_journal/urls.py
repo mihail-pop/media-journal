@@ -58,6 +58,7 @@ urlpatterns = [
     path('notifications/dismiss/<int:item_id>/', views.dismiss_notification, name='dismiss_notification'),
     path('api/character_search/', views.character_search_view, name='character_search'),
     path('api/actor_search/', views.actor_search_view, name='actor_search'),
+    path('api/check_favorite_person/', views.check_favorite_person_view, name='check_favorite_person'),
     path('api/toggle_favorite_person/', views.toggle_favorite_person_view, name='toggle_favorite_person'),
     path("api/delete_favorite_person/<int:person_id>/", views.delete_favorite_person, name="delete_favorite_person"),
     path('api/favorite-persons/reorder/', views.update_favorite_person_order, name='favorite_person_reorder'),

@@ -173,6 +173,7 @@ def movies_api(request):
             'notes': item.notes or '',
             'source_id': item.source_id,
             'get_status_display': item.get_status_display(),
+            'repeats': item.repeats,
             'date_added': item.date_added.isoformat() if item.date_added else '',
         })
     
@@ -308,6 +309,7 @@ def tvshows_api(request):
             'total_main': item.total_main,
             'progress_secondary': item.progress_secondary,
             'total_secondary': item.total_secondary,
+            'repeats': item.repeats,
             'date_added': item.date_added.isoformat() if item.date_added else '',
         })
     
@@ -429,6 +431,7 @@ def anime_api(request):
             'get_status_display': item.get_status_display(),
             'progress_main': item.progress_main,
             'total_main': item.total_main,
+            'repeats': item.repeats,
             'date_added': item.date_added.isoformat() if item.date_added else '',
         })
     
@@ -552,6 +555,7 @@ def games_api(request):
             'get_status_display': item.get_status_display(),
             'progress_main': item.progress_main,
             'total_main': item.total_main,
+            'repeats': item.repeats,
             'date_added': item.date_added.isoformat() if item.date_added else '',
         })
     
@@ -675,6 +679,7 @@ def manga_api(request):
             'total_main': item.total_main,
             'progress_secondary': item.progress_secondary,
             'total_secondary': item.total_secondary,
+            'repeats': item.repeats,
             'date_added': item.date_added.isoformat() if item.date_added else '',
         })
     
@@ -798,6 +803,7 @@ def books_api(request):
             'get_status_display': item.get_status_display(),
             'progress_main': item.progress_main,
             'total_main': item.total_main,
+            'repeats': item.repeats,
             'date_added': item.date_added.isoformat() if item.date_added else '',
         })
     
@@ -3698,6 +3704,17 @@ def actor_search_view(request):
     query = request.GET.get('q', '')
     results = actor_search(query) if query else []
     return JsonResponse(results, safe=False)
+
+@ensure_csrf_cookie
+def check_favorite_person_view(request):
+    name = request.GET.get('name')
+    person_type = request.GET.get('type')
+    
+    if not name or not person_type:
+        return JsonResponse({'error': 'Missing parameters'}, status=400)
+    
+    is_favorited = FavoritePerson.objects.filter(name=name, type=person_type).exists()
+    return JsonResponse({'is_favorited': is_favorited})
 
 @ensure_csrf_cookie
 def toggle_favorite_person_view(request):
