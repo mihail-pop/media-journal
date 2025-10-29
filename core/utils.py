@@ -91,6 +91,7 @@ def fetch_anilist_data(mal_id, media_type):
           edges {
             role
             node {
+              id
               name {
                 full
               }
@@ -184,6 +185,7 @@ def fetch_anilist_data(mal_id, media_type):
             "character": edge.get("role", ""),
             "profile_path": character["image"]["medium"],
             "is_full_url": True,
+            "id": character.get("id"),
         })
 
     # Related Titles

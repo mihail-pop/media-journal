@@ -13,6 +13,104 @@ function getCookie(name) {
   return cookieValue;
 }
 
+function refreshItem(itemId) {
+  const refreshBtn = document.querySelector('.refresh-btn');
+  const originalText = refreshBtn.textContent;
+  refreshBtn.textContent = 'Refreshing...';
+  refreshBtn.disabled = true;
+  
+  fetch("/refresh-item/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": getCookie("csrftoken"),
+    },
+    body: JSON.stringify({ id: itemId }),
+  })
+    .then((res) => {
+      refreshBtn.textContent = originalText;
+      refreshBtn.disabled = false;
+      sessionStorage.setItem("refreshSuccess", "1");
+      setTimeout(() => window.location.reload(true));
+    });
+}
+
+function openBannerUpload(source, id) {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = ".jpg,.jpeg,.png,.webp,.gif";
+  input.style.display = "none";
+
+  input.onchange = () => {
+    const file = input.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("banner", file);
+    formData.append("source", source);
+    formData.append("id", id);
+
+    fetch("/upload-banner/", {
+      method: "POST",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+      },
+      body: formData,
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.url) {
+          sessionStorage.setItem("refreshSuccess", "1");
+          window.location.reload(true);
+        } else {
+          alert(data.error || "Failed to upload banner.");
+        }
+      });
+  };
+
+  document.body.appendChild(input);
+  input.click();
+  document.body.removeChild(input);
+}
+
+function openCoverUpload(source, id) {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = ".jpg,.jpeg,.png,.webp,.gif";
+  input.style.display = "none";
+
+  input.onchange = () => {
+    const file = input.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("cover", file);
+    formData.append("source", source);
+    formData.append("id", id);
+
+    fetch("/upload-cover/", {
+      method: "POST",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+      },
+      body: formData,
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.url) {
+          sessionStorage.setItem("refreshSuccess", "1");
+          window.location.reload(true);
+        } else {
+          alert(data.error || "Failed to upload cover.");
+        }
+      });
+  };
+
+  document.body.appendChild(input);
+  input.click();
+  document.body.removeChild(input);
+}
+
 function showNotification(message, type) {
   const notification = document.createElement("div");
   notification.textContent = message;
@@ -39,6 +137,23 @@ document.addEventListener("DOMContentLoaded", function() {
     showNotification("Action has been done successfully!", "success");
     sessionStorage.removeItem("refreshSuccess");
   }
+
+  // Check favorite status for all cast members
+  const castFavorites = document.querySelectorAll('.cast-favorite');
+  castFavorites.forEach(favorite => {
+    const name = favorite.dataset.name;
+    const type = favorite.dataset.type;
+    const checkbox = favorite.querySelector('input[type="checkbox"]');
+    
+    fetch(`/api/check_favorite_person/?name=${encodeURIComponent(name)}&type=${type}`)
+      .then(res => res.json())
+      .then(result => {
+        checkbox.checked = result.is_favorited;
+      })
+      .catch(() => {
+        checkbox.checked = false;
+      });
+  });
 
   // Banner background
   const banner = document.querySelector(".banner-section");
@@ -150,7 +265,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
   // Person search functionality
   const searchInput = document.getElementById("person-search-input");
-  const searchBtn = document.getElementById("person-search-btn");
+  const searchToggleBtn = document.getElementById("search-toggle-btn");
   const resultsContainer = document.getElementById("person-search-results");
 
   const mediaType = document.body.dataset.mediaType;
@@ -173,15 +288,34 @@ document.addEventListener("DOMContentLoaded", function() {
           return;
         }
 
-        data.forEach((person) => {
-          const card = document.createElement("div");
-          card.className = "person-card";
-          card.innerHTML = `
-            <img src="${person.image || "/static/core/img/placeholder.png"}" alt="${person.name}">
-            <p class="person-name">${person.name}</p>
-            <button class="favorite-btn" data-name="${person.name}" data-img="${person.image}" data-type="actor">⭐</button>
-          `;
-          resultsContainer.appendChild(card);
+        // Check favorite status for each person
+        const personPromises = data.map(person => {
+          return fetch(`/api/check_favorite_person/?name=${encodeURIComponent(person.name)}&type=actor`)
+            .then(res => res.json())
+            .then(result => ({ ...person, isFavorited: result.is_favorited }))
+            .catch(() => ({ ...person, isFavorited: false }));
+        });
+
+        Promise.all(personPromises).then(personsWithStatus => {
+          const fragment = document.createDocumentFragment();
+          personsWithStatus.forEach((person) => {
+            const card = document.createElement("div");
+            card.className = "person-card";
+            
+            card.innerHTML = `
+              ${person.id ? `<a href="/person/actor/${person.id}/" class="person-card-link">` : ''}
+                <img src="${person.image || "/static/core/img/placeholder.png"}" alt="${person.name}">
+                <p class="person-name">${person.name}</p>
+              ${person.id ? '</a>' : ''}
+              <label class="person-favorite" data-name="${person.name}" data-img="${person.image}" data-type="actor" data-id="${person.id || ''}">
+                <input type="checkbox" ${person.isFavorited ? 'checked' : ''}>
+                <span class="heart"></span>
+              </label>
+            `;
+            fragment.appendChild(card);
+          });
+          resultsContainer.innerHTML = "";
+          resultsContainer.appendChild(fragment);
         });
       })
       .catch(() => {
@@ -189,17 +323,40 @@ document.addEventListener("DOMContentLoaded", function() {
       });
   }
 
-  searchBtn?.addEventListener("click", performSearch);
+  searchToggleBtn?.addEventListener("click", function() {
+    searchInput.classList.remove("hidden");
+    searchInput.focus();
+    searchToggleBtn.style.display = "none";
+  });
+  
+  searchInput?.addEventListener("blur", function() {
+    if (!searchInput.value.trim()) {
+      searchInput.classList.add("hidden");
+      searchToggleBtn.style.display = "flex";
+      resultsContainer.innerHTML = "";
+    }
+  });
+  
   searchInput?.addEventListener("keyup", (e) => {
     if (e.key === "Enter") performSearch();
+    else if (e.key === "Escape") {
+      searchInput.blur();
+    }
   });
 
-  resultsContainer?.addEventListener("click", function (e) {
-    if (e.target.classList.contains("favorite-btn")) {
-      const btn = e.target;
-      const name = btn.dataset.name;
-      const image = btn.dataset.img;
-      const type = btn.dataset.type;
+  resultsContainer?.addEventListener("change", function (e) {
+    if (e.target.type === "checkbox" && e.target.closest(".person-favorite")) {
+      const checkbox = e.target;
+      const label = checkbox.closest(".person-favorite");
+      const name = label.dataset.name;
+      const image = label.dataset.img;
+      const type = label.dataset.type;
+      const personId = label.dataset.id;
+
+      const requestData = { name, image_url: image, type };
+      if (personId) {
+        requestData.person_id = personId;
+      }
 
       fetch("/api/toggle_favorite_person/", {
         method: "POST",
@@ -207,11 +364,51 @@ document.addEventListener("DOMContentLoaded", function() {
           "Content-Type": "application/json",
           "X-CSRFToken": getCookie("csrftoken"),
         },
-        body: JSON.stringify({ name, image_url: image, type }),
+        body: JSON.stringify(requestData),
       })
         .then((res) => res.json())
         .then((data) => {
-          btn.textContent = data.status === "added" ? "✅" : "⭐";
+          if (!data.status) {
+            checkbox.checked = !checkbox.checked;
+          }
+        })
+        .catch(() => {
+          checkbox.checked = !checkbox.checked;
+        });
+    }
+  });
+
+  // Handle cast member favorites
+  document.addEventListener("change", function (e) {
+    if (e.target.type === "checkbox" && e.target.closest(".cast-favorite")) {
+      const checkbox = e.target;
+      const label = checkbox.closest(".cast-favorite");
+      const name = label.dataset.name;
+      const image = label.dataset.img;
+      const type = label.dataset.type;
+      const personId = label.dataset.id;
+
+      const requestData = { name, image_url: image, type };
+      if (personId) {
+        requestData.person_id = personId;
+      }
+
+      fetch("/api/toggle_favorite_person/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": getCookie("csrftoken"),
+        },
+        body: JSON.stringify(requestData),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (!data.status) {
+            checkbox.checked = !checkbox.checked;
+          }
+        })
+        .catch(() => {
+          checkbox.checked = !checkbox.checked;
         });
     }
   });
@@ -241,6 +438,212 @@ document.addEventListener("DOMContentLoaded", function() {
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape' && imageModal.style.display === 'block') {
       closeModal();
+    }
+  });
+
+  // Load More Cast functionality
+  const loadMoreBtn = document.getElementById("load-more-cast");
+  if (loadMoreBtn) {
+    let isLoading = false;
+    let scrollLoadingEnabled = false;
+    let currentPage = parseInt(sessionStorage.getItem('castCurrentPage')) || 1;
+    
+    // Restore loaded cast members if returning from navigation
+    const savedCastData = sessionStorage.getItem('loadedCastData');
+    if (savedCastData && currentPage > 1) {
+      const castData = JSON.parse(savedCastData);
+      const castList = document.querySelector('.cast-list');
+      
+      castData.forEach(member => {
+        const castMember = document.createElement('div');
+        
+        if (member.id) {
+          castMember.innerHTML = `
+            <a href="/person/actor/${member.id}/" class="cast-member">
+              <img src="${member.profile_path || '/static/core/img/placeholder.png'}" 
+                   alt="${member.name}" 
+                   data-placeholder="/static/core/img/placeholder.png" 
+                   onerror="this.onerror=null;this.src=this.dataset.placeholder;" />
+              <p class="actor-name">${member.name}</p>
+              <p class="character-name">${member.character}</p>
+              <label class="cast-favorite" data-name="${member.name}" data-img="${member.profile_path || '/static/core/img/placeholder.png'}" data-type="actor" data-id="${member.id || ''}">
+                <input type="checkbox">
+                <span class="heart"></span>
+              </label>
+            </a>
+          `;
+        } else {
+          castMember.innerHTML = `
+            <div class="cast-member">
+              <img src="${member.profile_path || '/static/core/img/placeholder.png'}" 
+                   alt="${member.name}" 
+                   data-placeholder="/static/core/img/placeholder.png" 
+                   onerror="this.onerror=null;this.src=this.dataset.placeholder;" />
+              <p class="actor-name">${member.name}</p>
+              <p class="character-name">${member.character}</p>
+              <label class="cast-favorite" data-name="${member.name}" data-img="${member.profile_path || '/static/core/img/placeholder.png'}" data-type="actor" data-id="">
+                <input type="checkbox">
+                <span class="heart"></span>
+              </label>
+            </div>
+          `;
+        }
+        
+        const newCastMember = castMember.firstElementChild;
+        castList.appendChild(newCastMember);
+        
+        const favorite = newCastMember.querySelector('.cast-favorite');
+        if (favorite) {
+          const name = favorite.dataset.name;
+          const type = favorite.dataset.type;
+          const checkbox = favorite.querySelector('input[type="checkbox"]');
+          
+          fetch(`/api/check_favorite_person/?name=${encodeURIComponent(name)}&type=${type}`)
+            .then(res => res.json())
+            .then(result => {
+              checkbox.checked = result.is_favorited;
+            })
+            .catch(() => {
+              checkbox.checked = false;
+            });
+        }
+      });
+      
+      loadMoreBtn.style.display = 'none';
+      scrollLoadingEnabled = true;
+      
+      // Restore scroll position
+      setTimeout(() => {
+        const savedScrollY = sessionStorage.getItem('castScrollPosition');
+        if (savedScrollY) {
+          window.scrollTo(0, parseInt(savedScrollY));
+        }
+      }, 100);
+    }
+    
+    function loadCastMembers(page) {
+      if (isLoading) return;
+      
+      isLoading = true;
+      const source = loadMoreBtn.dataset.source;
+      const sourceId = loadMoreBtn.dataset.sourceId;
+      const mediaType = loadMoreBtn.dataset.mediaType;
+      
+      fetch(`/api/load-more-cast/?source=${source}&source_id=${sourceId}&media_type=${mediaType}&page=${page}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.cast && data.cast.length > 0) {
+            const castList = document.querySelector('.cast-list');
+            
+            // Save loaded cast data
+            const existingCastData = JSON.parse(sessionStorage.getItem('loadedCastData') || '[]');
+            const allCastData = [...existingCastData, ...data.cast];
+            sessionStorage.setItem('loadedCastData', JSON.stringify(allCastData));
+            
+            data.cast.forEach(member => {
+              const castMember = document.createElement('div');
+              
+              if (member.id) {
+                castMember.innerHTML = `
+                  <a href="/person/actor/${member.id}/" class="cast-member">
+                    <img src="${member.profile_path || '/static/core/img/placeholder.png'}" 
+                         alt="${member.name}" 
+                         data-placeholder="/static/core/img/placeholder.png" 
+                         onerror="this.onerror=null;this.src=this.dataset.placeholder;" />
+                    <p class="actor-name">${member.name}</p>
+                    <p class="character-name">${member.character}</p>
+                    <label class="cast-favorite" data-name="${member.name}" data-img="${member.profile_path || '/static/core/img/placeholder.png'}" data-type="actor" data-id="${member.id || ''}">
+                      <input type="checkbox">
+                      <span class="heart"></span>
+                    </label>
+                  </a>
+                `;
+              } else {
+                castMember.innerHTML = `
+                  <div class="cast-member">
+                    <img src="${member.profile_path || '/static/core/img/placeholder.png'}" 
+                         alt="${member.name}" 
+                         data-placeholder="/static/core/img/placeholder.png" 
+                         onerror="this.onerror=null;this.src=this.dataset.placeholder;" />
+                    <p class="actor-name">${member.name}</p>
+                    <p class="character-name">${member.character}</p>
+                    <label class="cast-favorite" data-name="${member.name}" data-img="${member.profile_path || '/static/core/img/placeholder.png'}" data-type="actor" data-id="">
+                      <input type="checkbox">
+                      <span class="heart"></span>
+                    </label>
+                  </div>
+                `;
+              }
+              
+              const newCastMember = castMember.firstElementChild;
+              castList.appendChild(newCastMember);
+              
+              // Check favorite status for the new cast member
+              const favorite = newCastMember.querySelector('.cast-favorite');
+              if (favorite) {
+                const name = favorite.dataset.name;
+                const type = favorite.dataset.type;
+                const checkbox = favorite.querySelector('input[type="checkbox"]');
+                
+                fetch(`/api/check_favorite_person/?name=${encodeURIComponent(name)}&type=${type}`)
+                  .then(res => res.json())
+                  .then(result => {
+                    checkbox.checked = result.is_favorited;
+                  })
+                  .catch(() => {
+                    checkbox.checked = false;
+                  });
+              }
+            });
+            
+            currentPage++;
+            sessionStorage.setItem('castCurrentPage', currentPage.toString());
+            
+            if (!data.has_more) {
+              scrollLoadingEnabled = false;
+            }
+          } else {
+            scrollLoadingEnabled = false;
+          }
+        })
+        .catch(error => {
+          console.error('Error loading more cast:', error);
+        })
+        .finally(() => {
+          isLoading = false;
+        });
+    }
+    
+    loadMoreBtn.addEventListener("click", function() {
+      loadCastMembers(currentPage);
+      loadMoreBtn.style.display = 'none';
+      scrollLoadingEnabled = true;
+    });
+    
+    // Save scroll position and cast data when navigating away
+    document.addEventListener('click', function(e) {
+      const link = e.target.closest('a[href*="/person/"]');
+      if (link) {
+        sessionStorage.setItem('castScrollPosition', window.scrollY.toString());
+      }
+    });
+    
+    // Scroll loading
+    window.addEventListener('scroll', function() {
+      if (!scrollLoadingEnabled || isLoading) return;
+      
+      if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 1000) {
+        loadCastMembers(currentPage);
+      }
+    });
+  }
+  
+  // Clear cast state when leaving the page (not to person pages)
+  window.addEventListener('beforeunload', function() {
+    if (!document.activeElement || !document.activeElement.href || !document.activeElement.href.includes('/person/')) {
+      sessionStorage.removeItem('loadedCastData');
+      sessionStorage.removeItem('castCurrentPage');
+      sessionStorage.removeItem('castScrollPosition');
     }
   });
 });

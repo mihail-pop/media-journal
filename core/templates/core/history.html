@@ -90,6 +90,7 @@
 {% endblock %}
 
 {% block script %}
+{{ block.super }}
 <script>
   document.body.setAttribute('data-theme', '{{ theme_mode }}');
 </script>

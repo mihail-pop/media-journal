@@ -97,6 +97,7 @@ class FavoritePerson(models.Model):
     image_url = models.URLField(blank=True, null=True)
     type = models.CharField(max_length=10, choices=PERSON_TYPE_CHOICES)
     position = models.PositiveIntegerField()
+    person_id = models.CharField(max_length=50, blank=True, null=True)  # ID from TMDB/AniList
 
     def __str__(self):
         return f"{self.name} ({self.type})"

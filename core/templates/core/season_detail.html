@@ -129,10 +129,32 @@
 
     {% if cast %}
     <section class="cast-section">
-      <div class="cast-header" style="display: flex; align-items: center; gap: 1rem;">
-        <h2 style="margin: 0;">Cast</h2>
-        <input type="text" id="person-search-input" placeholder="Search for a character or actor..." autocomplete="off" style="flex-grow: 1;">
-        <button id="person-search-btn" title="Search" aria-label="Search" class="search-icon-button"></button>
+      <div class="cast-header">
+        <h2>Cast</h2>
+        
+        <div class="cast-controls">
+          <div class="search-container">
+            <button id="search-toggle-btn" class="search-toggle">
+              <svg class="cast-search-icon" width="24" height="24" viewBox="0 0 512 512" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                <path d="M505 442.7L405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128
+                         C416 93.1 322.9 0 208 0S0 93.1 0 208s93.1 208 208 208c48.3 0 92.7-16.4 128-44v16.3
+                         c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9 0l28.3-28.3
+                         c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7 0-128-57.2-128-128
+                         0-70.7 57.2-128 128-128 70.7 0 128 57.2 128 128
+                         0 70.7-57.2 128-128 128z"></path>
+              </svg>
+            </button>
+            <input type="text" id="person-search-input" placeholder="Search.." autocomplete="off" class="search-input hidden">
+          </div>
+          
+          {% if cast|length >= 8 %}
+          <button id="load-more-cast" class="load-more-btn" 
+                  data-source="{{ source }}" 
+                  data-source-id="{{ source_id }}" 
+                  data-media-type="{{ media_type }}" 
+                  data-page="1">Load More</button>
+          {% endif %}
+        </div>
       </div>
 
       <!-- Search results above the cast list -->
@@ -140,16 +162,30 @@
 
       <div class="cast-list">
         {% for member in cast %}
-        <div class="cast-member">
+        {% if member.id %}
+          <a href="/person/actor/{{ member.id }}/" class="cast-member">
+        {% else %}
+          <div class="cast-member">
+        {% endif %}
           <img src="{% if member.is_full_url %}{{ member.profile_path }}{% else %}https://image.tmdb.org/t/p/w185{{ member.profile_path }}{% endif %}"
                alt="{{ member.name }}"
                data-placeholder="{% static 'core/img/placeholder.png' %}"
                onerror="this.onerror=null;this.src=this.dataset.placeholder;" />
           <p class="actor-name">{{ member.name }}</p>
           <p class="character-name">{{ member.character }}</p>
-        </div>
+          <label class="cast-favorite" data-name="{{ member.name }}" data-img="{% if member.is_full_url %}{{ member.profile_path }}{% else %}https://image.tmdb.org/t/p/w185{{ member.profile_path }}{% endif %}" data-type="actor" data-id="{{ member.id|default:'' }}">
+            <input type="checkbox">
+            <span class="heart"></span>
+          </label>
+        {% if member.id %}
+          </a>
+        {% else %}
+          </div>
+        {% endif %}
         {% endfor %}
       </div>
+      
+
     </section>
     {% endif %}
 
@@ -168,7 +204,6 @@
 
 {% block script %}
   {{ block.super }}
-  <script src="{% static 'core/js/detail.js' %}?v={{ version }}"></script>
   <script src="{% static 'core/js/edit_modal.js' %}?v={{ version }}"></script>
   <script src="{% static 'core/js/season_detail.js' %}?v={{ version }}"></script>
 {% endblock %}

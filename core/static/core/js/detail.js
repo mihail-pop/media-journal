@@ -132,7 +132,8 @@ function openCoverUpload(source, id) {
   document.body.removeChild(input);
 }
 
-const screenshotsData = JSON.parse(document.getElementById("screenshots-data").textContent);
+const screenshotsElement = document.getElementById("screenshots-data");
+const screenshotsData = screenshotsElement ? JSON.parse(screenshotsElement.textContent) : [];
 let currentIndex = 0;
 
 function updateScreenshot(index) {
@@ -222,11 +223,50 @@ document.addEventListener("DOMContentLoaded", function () {
     sessionStorage.removeItem("refreshSuccess");
   }
 
-  const searchInput = document.getElementById("person-search-input");
-  const searchBtn = document.getElementById("person-search-btn");
-  const resultsContainer = document.getElementById("person-search-results");
+  // Check favorite status for all cast members
+  const castFavorites = document.querySelectorAll('.cast-favorite');
+  castFavorites.forEach(favorite => {
+    const name = favorite.dataset.name;
+    const type = favorite.dataset.type;
+    const checkbox = favorite.querySelector('input[type="checkbox"]');
+    
+    fetch(`/api/check_favorite_person/?name=${encodeURIComponent(name)}&type=${type}`)
+      .then(res => res.json())
+      .then(result => {
+        checkbox.checked = result.is_favorited;
+      })
+      .catch(() => {
+        checkbox.checked = false;
+      });
+  });
 
+  // Auto-refresh if cast exists but first member has no ID
   const mediaType = document.body.dataset.mediaType;
+  const castMembers = document.querySelectorAll('.cast-member');
+  
+  if ((mediaType === 'anime' || mediaType === 'manga' || mediaType === 'movie' || mediaType === 'tv') && 
+      castMembers.length > 0) {
+    const firstMember = castMembers[0];
+    const isClickable = firstMember.tagName === 'A';
+    
+    if (!isClickable) {
+      showNotification("Automatically refreshing item to fetch actors/characters IDs", "warning");
+      // Get the item_id from the refresh button or edit button
+      const refreshBtn = document.querySelector('.refresh-btn');
+      const editBtn = document.querySelector('#edit-button');
+      const itemId = refreshBtn ? refreshBtn.getAttribute('onclick').match(/'([^']+)'/)[1] : 
+                    editBtn ? editBtn.dataset.id : null;
+      
+      if (itemId) {
+        refreshItem(itemId);
+        return;
+      }
+    }
+  }
+
+  const searchInput = document.getElementById("person-search-input");
+  const searchToggleBtn = document.getElementById("search-toggle-btn");
+  const resultsContainer = document.getElementById("person-search-results");
 
   function performSearch() {
     const query = searchInput.value.trim();
@@ -263,10 +303,16 @@ document.addEventListener("DOMContentLoaded", function () {
             const card = document.createElement("div");
             card.className = "person-card";
             const type = mediaType === "anime" || mediaType === "manga" ? "character" : "actor";
+            const personLink = person.id ? 
+              (type === 'character' ? `/person/character/${person.id}/` : `/person/actor/${person.id}/`) : 
+              '#';
+            
             card.innerHTML = `
-              <img src="${person.image || "/static/core/img/placeholder.png"}" alt="${person.name}">
-              <p class="person-name">${person.name}</p>
-              <label class="favorite-checkbox person-favorite" data-name="${person.name}" data-img="${person.image}" data-type="${type}">
+              ${person.id ? `<a href="${personLink}" class="person-card-link">` : ''}
+                <img src="${person.image || "/static/core/img/placeholder.png"}" alt="${person.name}">
+                <p class="person-name">${person.name}</p>
+              ${person.id ? '</a>' : ''}
+              <label class="person-favorite" data-name="${person.name}" data-img="${person.image}" data-type="${type}" data-id="${person.id || ''}">
                 <input type="checkbox" ${person.isFavorited ? 'checked' : ''}>
                 <span class="heart"></span>
               </label>
@@ -282,9 +328,25 @@ document.addEventListener("DOMContentLoaded", function () {
       });
   }
 
-  searchBtn?.addEventListener("click", performSearch);
+  searchToggleBtn?.addEventListener("click", function() {
+    searchInput.classList.remove("hidden");
+    searchInput.focus();
+    searchToggleBtn.style.display = "none";
+  });
+  
+  searchInput?.addEventListener("blur", function() {
+    if (!searchInput.value.trim()) {
+      searchInput.classList.add("hidden");
+      searchToggleBtn.style.display = "flex";
+      resultsContainer.innerHTML = "";
+    }
+  });
+  
   searchInput?.addEventListener("keyup", (e) => {
     if (e.key === "Enter") performSearch();
+    else if (e.key === "Escape") {
+      searchInput.blur();
+    }
   });
 
   resultsContainer?.addEventListener("change", function (e) {
@@ -294,6 +356,12 @@ document.addEventListener("DOMContentLoaded", function () {
       const name = label.dataset.name;
       const image = label.dataset.img;
       const type = label.dataset.type;
+      const personId = label.dataset.id;
+
+      const requestData = { name, image_url: image, type };
+      if (personId) {
+        requestData.person_id = personId;
+      }
 
       fetch("/api/toggle_favorite_person/", {
         method: "POST",
@@ -301,7 +369,7 @@ document.addEventListener("DOMContentLoaded", function () {
           "Content-Type": "application/json",
           "X-CSRFToken": getCookie("csrftoken"),
         },
-        body: JSON.stringify({ name, image_url: image, type }),
+        body: JSON.stringify(requestData),
       })
         .then((res) => res.json())
         .then((data) => {
@@ -314,6 +382,41 @@ document.addEventListener("DOMContentLoaded", function () {
         })
         .catch(() => {
           // Revert checkbox state on error
+          checkbox.checked = !checkbox.checked;
+        });
+    }
+  });
+
+  // Handle cast member favorites
+  document.addEventListener("change", function (e) {
+    if (e.target.type === "checkbox" && e.target.closest(".cast-favorite")) {
+      const checkbox = e.target;
+      const label = checkbox.closest(".cast-favorite");
+      const name = label.dataset.name;
+      const image = label.dataset.img;
+      const type = label.dataset.type;
+      const personId = label.dataset.id;
+
+      const requestData = { name, image_url: image, type };
+      if (personId) {
+        requestData.person_id = personId;
+      }
+
+      fetch("/api/toggle_favorite_person/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": getCookie("csrftoken"),
+        },
+        body: JSON.stringify(requestData),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (!data.status) {
+            checkbox.checked = !checkbox.checked;
+          }
+        })
+        .catch(() => {
           checkbox.checked = !checkbox.checked;
         });
     }
@@ -492,6 +595,249 @@ swapBtn?.addEventListener("click", function () {
         });
     });
   }
+
+  // Load More Cast functionality
+  const loadMoreBtn = document.getElementById("load-more-cast");
+  if (loadMoreBtn) {
+    let isLoading = false;
+    let scrollLoadingEnabled = false;
+    let currentPage = parseInt(sessionStorage.getItem('castCurrentPage')) || 1;
+    
+    // Restore loaded cast members if returning from navigation
+    const savedCastData = sessionStorage.getItem('loadedCastData');
+    if (savedCastData && currentPage > 1) {
+      const castData = JSON.parse(savedCastData);
+      const castList = document.querySelector('.cast-list');
+      const mediaType = document.body.dataset.mediaType;
+      
+      castData.forEach(member => {
+        const castMember = document.createElement('div');
+        const type = (mediaType === 'anime' || mediaType === 'manga') ? 'character' : 'actor';
+        
+        if (member.id && (mediaType === 'tv' || mediaType === 'movie')) {
+          castMember.innerHTML = `
+            <a href="/person/actor/${member.id}/" class="cast-member">
+              <img src="${member.profile_path || '/static/core/img/placeholder.png'}" 
+                   alt="${member.name}" 
+                   data-placeholder="/static/core/img/placeholder.png" 
+                   onerror="this.onerror=null;this.src=this.dataset.placeholder;" />
+              <p class="actor-name">${member.name}</p>
+              <p class="character-name">${member.character}</p>
+              <label class="cast-favorite" data-name="${member.name}" data-img="${member.profile_path || '/static/core/img/placeholder.png'}" data-type="${type}" data-id="${member.id || ''}">
+                <input type="checkbox">
+                <span class="heart"></span>
+              </label>
+            </a>
+          `;
+        } else if (member.id && (mediaType === 'anime' || mediaType === 'manga')) {
+          castMember.innerHTML = `
+            <a href="/person/character/${member.id}/" class="cast-member">
+              <img src="${member.profile_path || '/static/core/img/placeholder.png'}" 
+                   alt="${member.name}" 
+                   data-placeholder="/static/core/img/placeholder.png" 
+                   onerror="this.onerror=null;this.src=this.dataset.placeholder;" />
+              <p class="actor-name">${member.name}</p>
+              <label class="cast-favorite" data-name="${member.name}" data-img="${member.profile_path || '/static/core/img/placeholder.png'}" data-type="${type}" data-id="${member.id || ''}">
+                <input type="checkbox">
+                <span class="heart"></span>
+              </label>
+            </a>
+          `;
+        } else {
+          const nameHtml = (mediaType === 'anime' || mediaType === 'manga') ? 
+            `<p class="actor-name">${member.name}</p>` : 
+            `<p class="actor-name">${member.name}</p><p class="character-name">${member.character}</p>`;
+          castMember.innerHTML = `
+            <div class="cast-member">
+              <img src="${member.profile_path || '/static/core/img/placeholder.png'}" 
+                   alt="${member.name}" 
+                   data-placeholder="/static/core/img/placeholder.png" 
+                   onerror="this.onerror=null;this.src=this.dataset.placeholder;" />
+              ${nameHtml}
+              <label class="cast-favorite" data-name="${member.name}" data-img="${member.profile_path || '/static/core/img/placeholder.png'}" data-type="${type}" data-id="">
+                <input type="checkbox">
+                <span class="heart"></span>
+              </label>
+            </div>
+          `;
+        }
+        
+        const newCastMember = castMember.firstElementChild;
+        castList.appendChild(newCastMember);
+        
+        const favorite = newCastMember.querySelector('.cast-favorite');
+        if (favorite) {
+          const name = favorite.dataset.name;
+          const type = favorite.dataset.type;
+          const checkbox = favorite.querySelector('input[type="checkbox"]');
+          
+          fetch(`/api/check_favorite_person/?name=${encodeURIComponent(name)}&type=${type}`)
+            .then(res => res.json())
+            .then(result => {
+              checkbox.checked = result.is_favorited;
+            })
+            .catch(() => {
+              checkbox.checked = false;
+            });
+        }
+      });
+      
+      loadMoreBtn.style.display = 'none';
+      scrollLoadingEnabled = true;
+      
+      // Restore scroll position
+      setTimeout(() => {
+        const savedScrollY = sessionStorage.getItem('castScrollPosition');
+        if (savedScrollY) {
+          window.scrollTo(0, parseInt(savedScrollY));
+        }
+      }, 100);
+    }
+    
+    function loadCastMembers(page) {
+      if (isLoading) return;
+      
+      isLoading = true;
+      const source = loadMoreBtn.dataset.source;
+      const sourceId = loadMoreBtn.dataset.sourceId;
+      const mediaType = loadMoreBtn.dataset.mediaType;
+      
+      fetch(`/api/load-more-cast/?source=${source}&source_id=${sourceId}&media_type=${mediaType}&page=${page}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.cast && data.cast.length > 0) {
+            const castList = document.querySelector('.cast-list');
+            
+            // Save loaded cast data
+            const existingCastData = JSON.parse(sessionStorage.getItem('loadedCastData') || '[]');
+            const allCastData = [...existingCastData, ...data.cast];
+            sessionStorage.setItem('loadedCastData', JSON.stringify(allCastData));
+            
+            data.cast.forEach(member => {
+              const castMember = document.createElement('div');
+              const type = (mediaType === 'anime' || mediaType === 'manga') ? 'character' : 'actor';
+              
+              if (member.id && (mediaType === 'tv' || mediaType === 'movie')) {
+                castMember.innerHTML = `
+                  <a href="/person/actor/${member.id}/" class="cast-member">
+                    <img src="${member.profile_path || '/static/core/img/placeholder.png'}" 
+                         alt="${member.name}" 
+                         data-placeholder="/static/core/img/placeholder.png" 
+                         onerror="this.onerror=null;this.src=this.dataset.placeholder;" />
+                    <p class="actor-name">${member.name}</p>
+                    <p class="character-name">${member.character}</p>
+                    <label class="cast-favorite" data-name="${member.name}" data-img="${member.profile_path || '/static/core/img/placeholder.png'}" data-type="${type}" data-id="${member.id || ''}">
+                      <input type="checkbox">
+                      <span class="heart"></span>
+                    </label>
+                  </a>
+                `;
+              } else if (member.id && (mediaType === 'anime' || mediaType === 'manga')) {
+                castMember.innerHTML = `
+                  <a href="/person/character/${member.id}/" class="cast-member">
+                    <img src="${member.profile_path || '/static/core/img/placeholder.png'}" 
+                         alt="${member.name}" 
+                         data-placeholder="/static/core/img/placeholder.png" 
+                         onerror="this.onerror=null;this.src=this.dataset.placeholder;" />
+                    <p class="actor-name">${member.name}</p>
+                    <label class="cast-favorite" data-name="${member.name}" data-img="${member.profile_path || '/static/core/img/placeholder.png'}" data-type="${type}" data-id="${member.id || ''}">
+                      <input type="checkbox">
+                      <span class="heart"></span>
+                    </label>
+                  </a>
+                `;
+              } else {
+                const nameHtml = (mediaType === 'anime' || mediaType === 'manga') ? 
+                  `<p class="actor-name">${member.name}</p>` : 
+                  `<p class="actor-name">${member.name}</p><p class="character-name">${member.character}</p>`;
+                castMember.innerHTML = `
+                  <div class="cast-member">
+                    <img src="${member.profile_path || '/static/core/img/placeholder.png'}" 
+                         alt="${member.name}" 
+                         data-placeholder="/static/core/img/placeholder.png" 
+                         onerror="this.onerror=null;this.src=this.dataset.placeholder;" />
+                    ${nameHtml}
+                    <label class="cast-favorite" data-name="${member.name}" data-img="${member.profile_path || '/static/core/img/placeholder.png'}" data-type="${type}" data-id="">
+                      <input type="checkbox">
+                      <span class="heart"></span>
+                    </label>
+                  </div>
+                `;
+              }
+              
+              const newCastMember = castMember.firstElementChild;
+              castList.appendChild(newCastMember);
+              
+              // Check favorite status for the new cast member
+              const favorite = newCastMember.querySelector('.cast-favorite');
+              if (favorite) {
+                const name = favorite.dataset.name;
+                const type = favorite.dataset.type;
+                const checkbox = favorite.querySelector('input[type="checkbox"]');
+                
+                fetch(`/api/check_favorite_person/?name=${encodeURIComponent(name)}&type=${type}`)
+                  .then(res => res.json())
+                  .then(result => {
+                    checkbox.checked = result.is_favorited;
+                  })
+                  .catch(() => {
+                    checkbox.checked = false;
+                  });
+              }
+            });
+            
+            currentPage++;
+            sessionStorage.setItem('castCurrentPage', currentPage.toString());
+            
+            if (!data.has_more) {
+              scrollLoadingEnabled = false;
+              loadMoreBtn.style.display = 'none';
+            }
+          } else {
+            scrollLoadingEnabled = false;
+            loadMoreBtn.style.display = 'none';
+          }
+        })
+        .catch(error => {
+          console.error('Error loading more cast:', error);
+        })
+        .finally(() => {
+          isLoading = false;
+        });
+    }
+    
+    loadMoreBtn.addEventListener("click", function() {
+      loadCastMembers(currentPage);
+      loadMoreBtn.style.display = 'none';
+      scrollLoadingEnabled = true;
+    });
+    
+    // Save scroll position and cast data when navigating away
+    document.addEventListener('click', function(e) {
+      const link = e.target.closest('a[href*="/person/"]');
+      if (link) {
+        sessionStorage.setItem('castScrollPosition', window.scrollY.toString());
+      }
+    });
+    
+    // Scroll loading
+    window.addEventListener('scroll', function() {
+      if (!scrollLoadingEnabled || isLoading) return;
+      
+      if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 1000) {
+        loadCastMembers(currentPage);
+      }
+    });
+  }
+  
+  // Clear cast state when leaving the page (not to person pages)
+  window.addEventListener('beforeunload', function() {
+    if (!document.activeElement || !document.activeElement.href || !document.activeElement.href.includes('/person/')) {
+      sessionStorage.removeItem('loadedCastData');
+      sessionStorage.removeItem('castCurrentPage');
+      sessionStorage.removeItem('castScrollPosition');
+    }
+  });
 });
 
 document.getElementById("more-info-btn").addEventListener("click", async function() {
@@ -615,6 +961,7 @@ if (data.trailers?.length) {
               src="https://www.youtube.com/embed/${trailer.youtube_id}"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowfullscreen
+              referrerpolicy="strict-origin-when-cross-origin"
             ></iframe>`;
   }).join("");
 
@@ -740,6 +1087,7 @@ if (data.trailers?.length) {
               src="https://www.youtube.com/embed/${trailer.youtube_id}"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowfullscreen
+              referrerpolicy="strict-origin-when-cross-origin"
             ></iframe>`;
   }).join("");
 
@@ -917,6 +1265,7 @@ if (data.trailers?.length) {
               src="https://www.youtube.com/embed/${trailer.youtube_id}"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowfullscreen
+              referrerpolicy="strict-origin-when-cross-origin"
             ></iframe>`;
   }).join("");
 
@@ -993,6 +1342,7 @@ if (data.trailers?.length) {
               src="https://www.youtube.com/embed/${trailer.youtube_id}"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowfullscreen
+              referrerpolicy="strict-origin-when-cross-origin"
             ></iframe>`;
   }).join("");
 

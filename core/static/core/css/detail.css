@@ -331,10 +331,22 @@ a:hover{
   box-shadow: 0 1px 5px rgba(0,0,0,0.6);
   transition: transform 0.2s ease;
   display: block;
+  position: relative;
 }
 
 .rec-card:hover, .recommendation:hover, .season-card:hover {
   transform: scale(1.05);
+}
+
+.cast-member[href]:hover {
+  transform: scale(1.05);
+}
+
+.cast-member[href]:hover .actor-name{
+  color: var(--text-title);
+}
+.cast-member[href]:hover .character-name {
+  color: var(--text-overview);
 }
 
 .cast-member img, .season-card img, .rec-card img, .recommendation img {
@@ -401,7 +413,6 @@ a:hover{
 
 #person-search-input {
   width: 100%;
-  margin-top: 0.2rem;
   max-width: 3.2rem;
   padding: 0.4rem 0.8rem;
   border-radius: 6px;
@@ -457,6 +468,11 @@ a:hover{
   display: flex;
   flex-direction: column;
   align-items: center;
+  position: relative;
+}
+
+.person-card:hover {
+  transform: scale(1.05);
 }
 
 
@@ -483,12 +499,18 @@ a:hover{
 
 /* Person favorite heart */
 .person-favorite {
+  position: absolute;
+  top: 8px;
+  right: 8px;
   cursor: pointer;
   user-select: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  margin-top: 4px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 5;
+}
+
+.person-card:hover .person-favorite {
+  opacity: 1;
 }
 
 .person-favorite input[type="checkbox"] {
@@ -500,12 +522,21 @@ a:hover{
 }
 
 .person-favorite .heart {
-  width: 32px;
-  height: 32px;
+  width: 35px;
+  height: 35px;
   display: inline-block;
   background: url('data:image/svg+xml;utf8,<svg fill="%23ffffff" stroke="%23ffffff" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 21C12 21 7 16.5 5 12.5C3 8.5 5 5 8.5 5C10.5 5 12 7 12 7C12 7 13.5 5 15.5 5C19 5 21 8.5 19 12.5C17 16.5 12 21 12 21Z"/></svg>') no-repeat center center;
   background-size: contain;
   transition: background 0.3s ease, transform 0.2s ease;
+  filter: drop-shadow(0 0 2px rgba(0,0,0,0.8));
+}
+
+.person-favorite input[type="checkbox"]:checked + .heart {
+  opacity: 1;
+}
+
+.person-card:hover .person-favorite input[type="checkbox"]:checked + .heart {
+  opacity: 1;
 }
 
 .person-favorite input[type="checkbox"]:checked + .heart {
@@ -522,6 +553,65 @@ a:hover{
 .person-favorite input[type="checkbox"]:checked + .heart:hover {
   filter: drop-shadow(0 0 6px #e0245e) brightness(1.1);
   cursor: pointer;
+}
+
+/* Cast member favorite heart */
+.cast-favorite {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  cursor: pointer;
+  user-select: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 5;
+}
+
+.cast-member:hover .cast-favorite {
+  opacity: 1;
+}
+
+.cast-favorite input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.cast-favorite .heart {
+  width: 35px;
+  height: 35px;
+  display: inline-block;
+  background: url('data:image/svg+xml;utf8,<svg fill="%23ffffff" stroke="%23ffffff" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 21C12 21 7 16.5 5 12.5C3 8.5 5 5 8.5 5C10.5 5 12 7 12 7C12 7 13.5 5 15.5 5C19 5 21 8.5 19 12.5C17 16.5 12 21 12 21Z"/></svg>') no-repeat center center;
+  background-size: contain;
+  transition: background 0.3s ease, transform 0.2s ease;
+  filter: drop-shadow(0 0 2px rgba(0,0,0,0.8));
+}
+
+.cast-favorite input[type="checkbox"]:checked + .heart {
+  background: url('data:image/svg+xml;utf8,<svg fill="%23e0245e" stroke="%23e0245e" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 21C12 21 7 16.5 5 12.5C3 8.5 5 5 8.5 5C10.5 5 12 7 12 7C12 7 13.5 5 15.5 5C19 5 21 8.5 19 12.5C17 16.5 12 21 12 21Z"/></svg>') no-repeat center center;
+  background-size: contain;
+  opacity: 1;
+}
+
+.cast-favorite .heart:hover {
+  filter: drop-shadow(0 0 4px #fff) brightness(1.2);
+  transform: scale(1.1);
+  cursor: pointer;
+}
+
+.cast-favorite input[type="checkbox"]:checked + .heart:hover {
+  filter: drop-shadow(0 0 6px #e0245e) brightness(1.1);
+  cursor: pointer;
+}
+
+.cast-favorite input[type="checkbox"]:checked + .heart {
+  opacity: 1;
+}
+
+.cast-member:hover .cast-favorite input[type="checkbox"]:checked + .heart {
+  opacity: 1;
 }
 
 
@@ -670,12 +760,77 @@ a:hover{
   color: var(--text-title);
 }
 
-.cast-header{
+.cast-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 6px;
 }
 
-.cast-header h2{
+.cast-header h2 {
   color: var(--text-title);
+  margin: 0;
+}
+
+.cast-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.load-more-btn {
+  background: none;
+  border: 1px solid var(--border-color);
+  color: var(--text-overview);
+  padding: 0.4em 1em;
+  font-size: 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.load-more-btn:hover {
+  background-color: var(--hover-bg);
+  color: var(--text-title);
+}
+
+.search-container {
+  position: relative;
+}
+
+.search-toggle {
+  background: none;
+  border: none;
+  color: var(--text-overview);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.search-toggle:hover {
+  color: var(--text-title);
+}
+
+.search-input {
+  width: 200px;
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-size: 1rem;
+}
+
+.search-input.hidden {
+  display: none;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--special-color);
 }
 
 .recommendations-section h2{

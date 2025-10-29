@@ -1,0 +1,24 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block head %}
+  {{ block.super }}
+  <title>{{ person_name }} - Media Journal</title>
+{% endblock %}
+
+{% block content %}
+<script>
+  document.body.dataset.theme = '{{ theme_mode }}';
+</script>
+
+<div class="main-colored-section">
+  <div class="detail-container">
+    <div class="person-detail-content">
+      <h1>{{ person_name }}</h1>
+      <p>Person Type: {{ person_type|title }}</p>
+      <p>ID: {{ person_id }}</p>
+      <p>This is a placeholder for actor and character details page (added in the 1.9.0 release). In the 1.10.0 release I will fully implement it. Sorry if it's an eyesore in the meantime :P</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

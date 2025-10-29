@@ -250,12 +250,21 @@
       <h2> <span class="favorites-header" onclick="openFavoritesOverlay('characters')">Characters</span></h2>
       <div class="card-grid">
         {% for person in favorite_characters|slice:":25" %}
-        <div class="card">
-          <div class="card-image"><img src="{{ person.image_url|default:'/static/core/img/placeholder.png' }}" alt="{{ person.name }}"></div>
-          <div class="hover-title-overlay">
-            <span class="hover-title-text">{{ person.name }}</span>
+        {% if person.person_id %}
+          <a href="/person/character/{{ person.person_id }}/" class="card">
+            <div class="card-image"><img src="{{ person.image_url|default:'/static/core/img/placeholder.png' }}" alt="{{ person.name }}"></div>
+            <div class="hover-title-overlay">
+              <span class="hover-title-text">{{ person.name }}</span>
+            </div>
+          </a>
+        {% else %}
+          <div class="card">
+            <div class="card-image"><img src="{{ person.image_url|default:'/static/core/img/placeholder.png' }}" alt="{{ person.name }}"></div>
+            <div class="hover-title-overlay">
+              <span class="hover-title-text">{{ person.name }}</span>
+            </div>
           </div>
-        </div>
+        {% endif %}
         {% endfor %}
       </div>
     </div>
@@ -266,12 +275,21 @@
       <h2><span class="favorites-header" onclick="openFavoritesOverlay('actors')">Actors</span></h2>
       <div class="card-grid">
         {% for person in favorite_actors|slice:":25" %}
-        <div class="card">
-          <div class="card-image"><img src="{{ person.image_url|default:'/static/core/img/placeholder.png' }}" alt="{{ person.name }}"></div>
-          <div class="hover-title-overlay">
-            <span class="hover-title-text">{{ person.name }}</span>
+        {% if person.person_id %}
+          <a href="/person/actor/{{ person.person_id }}/" class="card">
+            <div class="card-image"><img src="{{ person.image_url|default:'/static/core/img/placeholder.png' }}" alt="{{ person.name }}"></div>
+            <div class="hover-title-overlay">
+              <span class="hover-title-text">{{ person.name }}</span>
+            </div>
+          </a>
+        {% else %}
+          <div class="card">
+            <div class="card-image"><img src="{{ person.image_url|default:'/static/core/img/placeholder.png' }}" alt="{{ person.name }}"></div>
+            <div class="hover-title-overlay">
+              <span class="hover-title-text">{{ person.name }}</span>
+            </div>
           </div>
-        </div>
+        {% endif %}
         {% endfor %}
       </div>
     </div>
@@ -288,10 +306,19 @@
     <div class="card-grid" id="characters-card-grid">
       {% for person in favorite_characters %}
       <div class="card" data-id="{{ person.id }}">
-        <div class="card-image"><img src="{{ person.image_url|default:'/static/core/img/placeholder.png' }}" alt="{{ person.name }}"></div>
-        <div class="hover-title-overlay">
-          <span class="hover-title-text">{{ person.name }}</span>
-        </div>
+        {% if person.person_id %}
+          <a href="/person/character/{{ person.person_id }}/" class="card-link">
+            <div class="card-image"><img src="{{ person.image_url|default:'/static/core/img/placeholder.png' }}" alt="{{ person.name }}"></div>
+            <div class="hover-title-overlay">
+              <span class="hover-title-text">{{ person.name }}</span>
+            </div>
+          </a>
+        {% else %}
+          <div class="card-image"><img src="{{ person.image_url|default:'/static/core/img/placeholder.png' }}" alt="{{ person.name }}"></div>
+          <div class="hover-title-overlay">
+            <span class="hover-title-text">{{ person.name }}</span>
+          </div>
+        {% endif %}
         <div class="reorder-buttons">
           <button class="move-up-btn" title="Move Left" aria-label="Move Left">⬅️</button>
           <button class="move-down-btn" title="Move Right" aria-label="Move Right">➡️</button>
@@ -311,10 +338,19 @@
     <div class="card-grid" id="actors-card-grid">
       {% for person in favorite_actors %}
       <div class="card" data-id="{{ person.id }}">
-        <div class="card-image"><img src="{{ person.image_url|default:'/static/core/img/placeholder.png' }}" alt="{{ person.name }}"></div>
-        <div class="hover-title-overlay">
-          <span class="hover-title-text">{{ person.name }}</span>
-        </div>
+        {% if person.person_id %}
+          <a href="/person/actor/{{ person.person_id }}/" class="card-link">
+            <div class="card-image"><img src="{{ person.image_url|default:'/static/core/img/placeholder.png' }}" alt="{{ person.name }}"></div>
+            <div class="hover-title-overlay">
+              <span class="hover-title-text">{{ person.name }}</span>
+            </div>
+          </a>
+        {% else %}
+          <div class="card-image"><img src="{{ person.image_url|default:'/static/core/img/placeholder.png' }}" alt="{{ person.name }}"></div>
+          <div class="hover-title-overlay">
+            <span class="hover-title-text">{{ person.name }}</span>
+          </div>
+        {% endif %}
         <div class="reorder-buttons">
           <button class="move-up-btn" title="Move Left" aria-label="Move Left">⬅️</button>
           <button class="move-down-btn" title="Move Right" aria-label="Move Right">➡️</button>

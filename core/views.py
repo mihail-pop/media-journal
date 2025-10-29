@@ -1633,6 +1633,7 @@ def tmdb_detail(request, media_type, tmdb_id):
                 "character": member.get("character"),
                 "profile_path": profile,
                 "is_full_url": is_full_url,
+                "id": member.get("id"),
             })
 
         seasons = item.seasons if media_type == "tv" else None
@@ -1706,7 +1707,10 @@ def tmdb_detail(request, media_type, tmdb_id):
         return JsonResponse({"error": "TMDB API key not found."}, status=500)
 
     url = f"https://api.themoviedb.org/3/{media_type}/{tmdb_id}"
-    params = {"api_key": api_key, "append_to_response": "credits,recommendations"}
+    if media_type == "tv":
+        params = {"api_key": api_key, "append_to_response": "aggregate_credits,recommendations"}
+    else:
+        params = {"api_key": api_key, "append_to_response": "credits,recommendations"}
     response = requests.get(url, params=params)
 
     if response.status_code != 200:
@@ -1722,13 +1726,24 @@ def tmdb_detail(request, media_type, tmdb_id):
 
     # Cast (use TMDB URLs)
     cast_data = []
-    for i, actor in enumerate(data.get("credits", {}).get("cast", [])[:8]):
+    if media_type == "tv":
+        cast_list = data.get("aggregate_credits", {}).get("cast", [])[:8]
+    else:
+        cast_list = data.get("credits", {}).get("cast", [])[:8]
+    
+    for i, actor in enumerate(cast_list):
+        if media_type == "tv":
+            character_name = actor.get("roles", [{}])[0].get("character") if actor.get("roles") else ""
+        else:
+            character_name = actor.get("character")
+        
         profile_url = f"https://image.tmdb.org/t/p/w185{actor.get('profile_path')}" if actor.get("profile_path") else ""
         cast_data.append({
             "name": actor.get("name"),
-            "character": actor.get("character"),
+            "character": character_name,
             "profile_path": profile_url,
             "is_full_url": True,  # Because it's a complete URL
+            "id": actor.get("id"),
         })
 
     # Seasons
@@ -1788,7 +1803,10 @@ def save_tmdb_item(media_type, tmdb_id):
     try:
         api_key = APIKey.objects.get(name="tmdb").key_1
         url = f"https://api.themoviedb.org/3/{media_type}/{tmdb_id}"
-        params = {"api_key": api_key, "append_to_response": "credits"}
+        if media_type == "tv":
+            params = {"api_key": api_key, "append_to_response": "aggregate_credits"}
+        else:
+            params = {"api_key": api_key, "append_to_response": "credits"}
         response = requests.get(url, params=params)
 
         if response.status_code != 200:
@@ -1804,13 +1822,30 @@ def save_tmdb_item(media_type, tmdb_id):
 
         # Cast
         cast_data = []
-        for i, actor in enumerate(data.get("credits", {}).get("cast", [])[:8]):
+        if media_type == "tv":
+            cast_list = data.get("aggregate_credits", {}).get("cast", [])[:8]
+        else:
+            cast_list = data.get("credits", {}).get("cast", [])[:8]
+        
+        for actor in cast_list:
+            if media_type == "tv":
+                character_name = actor.get("roles", [{}])[0].get("character") if actor.get("roles") else ""
+            else:
+                character_name = actor.get("character")
+            
+            actor_id = actor.get("id", "unknown")
             profile_url = f"https://image.tmdb.org/t/p/w185{actor.get('profile_path')}" if actor.get("profile_path") else ""
-            local_profile = download_image(profile_url, f"cast/tmdb_{tmdb_id}_{i}.jpg") if profile_url else ""
+            local_profile = ""
+            if profile_url:
+                # Use actor ID instead of index to prevent mismatches
+                filename = f"cast/tmdb_{tmdb_id}_{actor_id}.jpg"
+                local_profile = download_image(profile_url, filename)
+            
             cast_data.append({
                 "name": actor.get("name"),
-                "character": actor.get("character"),
+                "character": character_name,
                 "profile_path": local_profile,
+                "id": actor_id,
             })
 
         # Seasons (only for TV shows)
@@ -1876,6 +1911,7 @@ def tmdb_season_detail(request, tmdb_id, season_number):
                 "character": member.get("character"),
                 "profile_path": profile,
                 "is_full_url": is_full_url,
+                "id": member.get("id"),
             })
         
         # Format release date from DB
@@ -1945,7 +1981,7 @@ def tmdb_season_detail(request, tmdb_id, season_number):
     
     # Get season details
     season_url = f"https://api.themoviedb.org/3/tv/{tmdb_id}/season/{season_number}"
-    season_params = {"api_key": api_key, "append_to_response": "credits"}
+    season_params = {"api_key": api_key, "append_to_response": "aggregate_credits"}
     season_response = requests.get(season_url, params=season_params)
     
     if season_response.status_code != 200:
@@ -1965,13 +2001,15 @@ def tmdb_season_detail(request, tmdb_id, season_number):
     
     # Cast data
     cast_data = []
-    for actor in season_data.get("credits", {}).get("cast", [])[:8]:
+    for actor in season_data.get("aggregate_credits", {}).get("cast", [])[:8]:
+        character_name = actor.get("roles", [{}])[0].get("character") if actor.get("roles") else ""
         profile_url = f"https://image.tmdb.org/t/p/w185{actor.get('profile_path')}" if actor.get('profile_path') else ""
         cast_data.append({
             "name": actor.get("name"),
-            "character": actor.get("character"),
+            "character": character_name,
             "profile_path": profile_url,
             "is_full_url": True,
+            "id": actor.get("id"),
         })
     
     # Episodes data
@@ -2044,7 +2082,7 @@ def save_tmdb_season(tmdb_id, season_number):
         
         # Get season details
         season_url = f"https://api.themoviedb.org/3/tv/{tmdb_id}/season/{season_number}"
-        season_params = {"api_key": api_key, "append_to_response": "credits"}
+        season_params = {"api_key": api_key, "append_to_response": "aggregate_credits"}
         season_response = requests.get(season_url, params=season_params)
         
         if season_response.status_code != 200:
@@ -2068,13 +2106,21 @@ def save_tmdb_season(tmdb_id, season_number):
         
         # Cast data
         cast_data = []
-        for i, actor in enumerate(season_data.get("credits", {}).get("cast", [])[:8]):
+        for actor in season_data.get("aggregate_credits", {}).get("cast", [])[:8]:
+            character_name = actor.get("roles", [{}])[0].get("character") if actor.get("roles") else ""
+            actor_id = actor.get("id", "unknown")
             profile_url = f"https://image.tmdb.org/t/p/w185{actor.get('profile_path')}" if actor.get('profile_path') else ""
-            local_profile = download_image(profile_url, f"cast/tmdb_{season_source_id}_{i}.jpg") if profile_url else ""
+            local_profile = ""
+            if profile_url:
+                # Use actor ID instead of index to prevent mismatches
+                filename = f"cast/tmdb_{season_source_id}_{actor_id}.jpg"
+                local_profile = download_image(profile_url, filename)
+            
             cast_data.append({
                 "name": actor.get("name"),
-                "character": actor.get("character"),
+                "character": character_name,
                 "profile_path": local_profile,
+                "id": actor_id,
             })
         
         # Episodes data
@@ -2176,6 +2222,7 @@ def mal_detail(request, media_type, mal_id):
                 "character": member.get("character"),
                 "profile_path": profile,
                 "is_full_url": is_full_url,
+                "id": member.get("id"),
             })
 
         for related in item.related_titles or []:
@@ -2266,13 +2313,20 @@ def save_mal_item(media_type, mal_id):
         ) if anilist_data["banner_url"] else ""
 
         cast = []
-        for i, member in enumerate(anilist_data["cast"][:8]):
+        for member in anilist_data["cast"][:8]:
             profile_url = member.get("profile_path")
-            local_path = download_image(profile_url, f"cast/mal_{mal_id}_{i}.jpg") if profile_url else ""
+            character_id = member.get("id", "unknown")
+            local_path = ""
+            if profile_url:
+                # Use character ID instead of index to prevent mismatches
+                filename = f"cast/mal_{mal_id}_{character_id}.jpg"
+                local_path = download_image(profile_url, filename)
+            
             cast.append({
                 "name": member["name"],
                 "character": member["character"],
                 "profile_path": local_path,
+                "id": character_id,
             })
 
         related_titles = []
@@ -3639,7 +3693,7 @@ def actor_search(query):
         return []
     
 
-def save_favorite_actor_character(name, image_url, type):
+def save_favorite_actor_character(name, image_url, type, person_id=None):
     existing_count = FavoritePerson.objects.filter(type=type).count()
     position = existing_count + 1
 
@@ -3656,7 +3710,8 @@ def save_favorite_actor_character(name, image_url, type):
         name=name,
         image_url=final_image_url,
         type=type,
-        position=position
+        position=position,
+        person_id=person_id
     )
     return person
 
@@ -3725,6 +3780,7 @@ def toggle_favorite_person_view(request):
     name = data.get('name')
     image_url = data.get('image_url')
     person_type = data.get('type')
+    person_id = data.get('person_id')  # New parameter for ID
 
     # Check if already favorited
     existing = FavoritePerson.objects.filter(name=name, type=person_type).first()
@@ -3733,7 +3789,7 @@ def toggle_favorite_person_view(request):
         delete_favorite_person_and_reorder(existing.id)
         return JsonResponse({'status': 'removed'})
     else:
-        save_favorite_actor_character(name, image_url, person_type)
+        save_favorite_actor_character(name, image_url, person_type, person_id)
         return JsonResponse({'status': 'added'})
     
 
@@ -3856,6 +3912,7 @@ def refresh_item(request):
             'repeats': item.repeats,
             'notes': item.notes,
             'screenshots': item.screenshots,
+            'favorite_position': item.favorite_position,
         }
 
         # Backup screenshot files
@@ -4166,4 +4223,147 @@ def version_info_api(request):
     return JsonResponse({
         "current_version": current_version,
         "latest_version": latest_version
+    })
+
+@ensure_csrf_cookie
+@require_GET
+def load_more_cast(request):
+    source = request.GET.get('source')
+    source_id = request.GET.get('source_id')
+    media_type = request.GET.get('media_type')
+    page = int(request.GET.get('page', 1))
+    
+    if not all([source, source_id, media_type]):
+        return JsonResponse({'error': 'Missing parameters'}, status=400)
+    
+    try:
+        if source == 'tmdb':
+            api_key = APIKey.objects.get(name="tmdb").key_1
+            if media_type == 'tv':
+                url = f"https://api.themoviedb.org/3/tv/{source_id}/aggregate_credits"
+            else:
+                url = f"https://api.themoviedb.org/3/movie/{source_id}/credits"
+            
+            response = requests.get(url, params={'api_key': api_key})
+            if response.status_code != 200:
+                return JsonResponse({'error': 'Failed to fetch cast'}, status=500)
+            
+            data = response.json()
+            all_cast = data.get('cast', [])
+            
+            # Paginate: page 1 = next 24 after first 8, page 2+ = 32 each
+            if page == 1:
+                start_idx = 8
+                end_idx = 32
+            else:
+                start_idx = 32 + (page - 2) * 32
+                end_idx = start_idx + 32
+            cast_page = all_cast[start_idx:end_idx]
+            
+            cast_data = []
+            for actor in cast_page:
+                if media_type == 'tv':
+                    character_name = actor.get("roles", [{}])[0].get("character") if actor.get("roles") else ""
+                else:
+                    character_name = actor.get("character")
+                
+                profile_url = f"https://image.tmdb.org/t/p/w185{actor.get('profile_path')}" if actor.get('profile_path') else ""
+                cast_data.append({
+                    'name': actor.get('name'),
+                    'character': character_name,
+                    'profile_path': profile_url,
+                    'id': actor.get('id'),
+                    'is_full_url': True
+                })
+            
+            has_more = end_idx < len(all_cast)
+            
+        elif source == 'mal':
+            # For anime/manga, use AniList API
+            query = '''
+            query ($id: Int, $type: MediaType, $page: Int) {
+              Media(idMal: $id, type: $type) {
+                characters(page: $page, perPage: 25) {
+                  pageInfo {
+                    hasNextPage
+                  }
+                  nodes {
+                    id
+                    name {
+                      full
+                    }
+                    image {
+                      large
+                    }
+                  }
+                }
+              }
+            }
+            '''
+            
+            # For AniList: page 1 gets remaining 17 from first page, page 2+ gets full pages
+            if page == 1:
+                anilist_page = 1
+                per_page = 25
+            else:
+                anilist_page = page
+                per_page = 25
+            
+            variables = {
+                'id': int(source_id),
+                'type': media_type.upper(),
+                'page': anilist_page
+            }
+            
+            response = requests.post(
+                'https://graphql.anilist.co',
+                json={'query': query, 'variables': variables},
+                headers={'Content-Type': 'application/json'}
+            )
+            
+            if response.status_code != 200:
+                return JsonResponse({'error': 'Failed to fetch characters'}, status=500)
+            
+            data = response.json()
+            characters_data = data.get('data', {}).get('Media', {}).get('characters', {})
+            characters = characters_data.get('nodes', [])
+            has_more = characters_data.get('pageInfo', {}).get('hasNextPage', False)
+            
+            cast_data = []
+            # For page 1, skip first 8 characters (already shown)
+            start_idx = 8 if page == 1 else 0
+            for char in characters[start_idx:]:
+                cast_data.append({
+                    'name': char.get('name', {}).get('full', ''),
+                    'character': 'Character',
+                    'profile_path': char.get('image', {}).get('large', ''),
+                    'id': char.get('id'),
+                    'is_full_url': True
+                })
+        
+        else:
+            return JsonResponse({'error': 'Unsupported source'}, status=400)
+        
+        return JsonResponse({
+            'cast': cast_data,
+            'has_more': has_more,
+            'page': page
+        })
+        
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+@ensure_csrf_cookie
+@require_GET
+def person_detail(request, person_type, person_id):
+    # Get theme mode
+    AppSettings = apps.get_model('core', 'AppSettings')
+    settings = AppSettings.objects.first()
+    theme_mode = settings.theme_mode if settings else 'dark'
+    
+    return render(request, "core/person_detail.html", {
+        "person_type": person_type,
+        "person_id": person_id,
+        "person_name": f"{person_type.title()} #{person_id}",
+        "theme_mode": theme_mode,
     })
