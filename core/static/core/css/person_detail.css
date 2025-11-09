@@ -1,0 +1,299 @@
+@import url('detail.css');
+
+.favorite-refresh-wrapper {
+  margin-top: 0.6rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  opacity: 0;
+}
+
+.favorite-refresh-wrapper.loaded {
+  opacity: 1;
+  transition: opacity 0.2s ease;
+}
+
+.refresh-person-btn {
+  background: none;
+  border: none;
+  color: var(--text-overview);
+  cursor: pointer;
+  padding: 0.5rem;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.3s ease, transform 0.2s ease;
+}
+
+.refresh-person-btn:hover {
+  color: var(--text-primary);
+  transform: rotate(180deg);
+}
+
+.refresh-person-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.upload-person-btn {
+  background: none;
+  border: none;
+  color: var(--text-overview);
+  cursor: pointer;
+  padding: 0.5rem;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.3s ease;
+}
+
+.upload-person-btn:hover {
+  color: var(--text-primary);
+}
+
+/* Person-specific styles */
+
+/* Overview with read more functionality */
+.overview-container {
+  position: relative;
+  max-width: 1000px;
+}
+
+.overview {
+  font-size: 0.9rem;
+  line-height: 1.4;
+  margin-top: 0;
+  color: var(--text-overview);
+  max-height: 8.8rem;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  position: relative;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+}
+
+.overview.expanded {
+  max-height: none;
+  display: block;
+  -webkit-line-clamp: unset;
+  -webkit-box-orient: unset;
+}
+
+.overview-container.clicked .overview {
+  max-height: none;
+  display: block;
+  -webkit-line-clamp: unset;
+  -webkit-box-orient: unset;
+}
+
+.overview-container.clicked .read-more-btn {
+  display: none !important;
+}
+
+.overview:hover {
+  color: var(--text-secondary);
+}
+
+.read-more-btn {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(to top, var(--bg-tertiary) 60%, transparent);
+  border: none;
+  color: var(--text-primary);
+  padding: 1rem 2rem 0.5rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  display: none;
+}
+
+.overview-container:hover .read-more-btn {
+  opacity: 1;
+  pointer-events: auto;
+}
+.media-card {
+  background: var(--bg-tertiary);
+  border-radius: 6px;
+  padding: 8px;
+  width: 120px;
+  text-align: center;
+  box-shadow: 0 1px 5px rgba(0,0,0,0.6);
+  transition: transform 0.2s ease;
+}
+
+.media-card:hover {
+  transform: scale(1.05);
+}
+
+.media-card[style*="cursor: pointer"]:hover {
+  transform: scale(1.08);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.8);
+}
+
+.media-image-wrapper {
+  position: relative;
+  width: 120px;
+  height: 180px;
+  margin-bottom: 6px;
+}
+
+.media-image-wrapper img {
+  width: 100%;
+  height: 100%;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.voice-actors-list .media-card {
+  position: relative;
+}
+
+.voice-actors-list .media-image-wrapper {
+  position: relative;
+  width: 120px;
+  height: 180px;
+  margin-bottom: 6px;
+}
+
+.voice-actors-list .media-image-wrapper img {
+  width: 100%;
+  height: 100%;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.voice-actors-list .media-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(14, 15, 15, .8);
+  padding: 6px 4px 4px;
+  border-radius: 0 0 4px 4px;
+}
+
+.voice-actors-list .overlay-type {
+  font-size: 0.65rem;
+  margin: 0;
+  color: #fff;
+  font-weight: 400;
+}
+
+.media-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(14, 15, 15, .8);
+  padding: 8px 4px 4px;
+  border-radius: 0 0 4px 4px;
+}
+
+.overlay-type {
+  font-size: 0.7rem;
+  margin: 0 0 2px 0;
+  color: #fff;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.overlay-date {
+  font-size: 0.65rem;
+  margin: 0;
+  color: rgba(255,255,255,0.8);
+  font-weight: 400;
+}
+
+.media-title {
+  font-size: 0.85rem;
+  margin: 0 0 4px 0;
+  line-height: 1.2;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.media-character {
+  font-size: 0.75rem;
+  margin: 0;
+  color: var(--text-overview);
+  font-weight: 400;
+  font-style: italic;
+}
+
+.related-media-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-top: 6px;
+}
+
+.voice-actors-section {
+  margin-top: 1rem;
+  margin-bottom: 2rem;
+}
+
+.voice-actors-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-top: 6px;
+}
+
+.voice-actor-card {
+  background: var(--bg-tertiary);
+  border-radius: 6px;
+  padding: 12px;
+  min-width: 150px;
+  text-align: center;
+  box-shadow: 0 1px 5px rgba(0,0,0,0.6);
+}
+
+.va-image {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin: 0 auto 8px auto;
+  display: block;
+}
+
+.va-name {
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin: 0 0 4px 0;
+  color: var(--text-title);
+}
+
+.va-language {
+  font-size: 0.8rem;
+  margin: 0;
+  color: var(--text-overview);
+}
+
+.voice-actors-section h2,
+.related-media-section h2 {
+  color: var(--text-title);
+  margin-top: 0.5rem;
+  margin-bottom: 0.7rem;
+}
+
+/* Spoiler styling */
+.spoiler {
+  background-color: var(--text-overview);
+  color: var(--text-overview);
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+.spoiler:hover,
+.spoiler.revealed {
+  color: var(--text-primary);
+  background-color: transparent;
+}

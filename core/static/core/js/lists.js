@@ -693,6 +693,19 @@ updateSortButtons();
       });
   };
 
+  // === SCROLL POSITION RESTORATION ===
+  const scrollKey = `scrollPos_${mediaType}`;
+  const pageKey = `scrollPage_${mediaType}`;
+  
+  // Detect if this is a back/forward navigation
+  const isBackForwardNav = performance.getEntriesByType('navigation')[0]?.type === 'back_forward';
+  
+  // Save scroll position before leaving
+  window.addEventListener('beforeunload', () => {
+    sessionStorage.setItem(scrollKey, window.scrollY);
+    sessionStorage.setItem(pageKey, currentPage);
+  });
+  
   // === EVENT DELEGATION FOR EDIT BUTTONS ===
   document.addEventListener('click', function(e) {
     if (e.target.classList.contains('edit-card-btn')) {
@@ -705,9 +718,43 @@ updateSortButtons();
       }
     }
   });
+  
+  // Restore scroll position after loading
+  const savedPage = parseInt(sessionStorage.getItem(pageKey)) || 1;
+  const savedScroll = parseInt(sessionStorage.getItem(scrollKey)) || 0;
+  
 
-  // === INITIALIZE ===
-  loadItems(1, true);
+  
+  if (isBackForwardNav && savedPage > 1) {
+    // Reserve scrollbar space and hide it
+    document.documentElement.style.overflowY = 'scroll';
+    document.documentElement.style.visibility = 'hidden';
+    
+    // Hide content while loading
+    cardView.style.opacity = '0';
+    listView.style.opacity = '0';
+    
+    // Load all pages up to saved page
+    async function loadUpToPage() {
+      for (let i = 1; i <= savedPage; i++) {
+        await loadItems(i, i === 1);
+      }
+      // Restore scroll position and show content
+      window.scrollTo(0, savedScroll);
+      document.documentElement.style.visibility = 'visible';
+      cardView.style.opacity = '1';
+      listView.style.opacity = '1';
+    }
+    loadUpToPage();
+  } else {
+    if (!isBackForwardNav) {
+      // Clear saved position on fresh navigation
+      sessionStorage.removeItem(scrollKey);
+      sessionStorage.removeItem(pageKey);
+    }
+    loadItems(1, true);
+  }
+  
   updateStatusContainer();
   loadAllBanners();
   updateSortButtons();

@@ -367,7 +367,10 @@
 
 {% block script %}
 {{ block.super }}
-<script src="{% static 'core/js/rain.js' %}?v={{ version }}"></script>
-<script src="{% static 'core/js/halloween.js' %}?v={{ version }}"></script>
+
+<!-- <script src="{% static 'core/js/rain.js' %}?v={{ version }}"></script> -->
+<!-- <script src="{% static 'core/js/halloween.js' %}?v={{ version }}"></script> -->
+
 <script src="{% static 'core/js/home.js' %}?v={{ version }}"></script>
+
 {% endblock %}

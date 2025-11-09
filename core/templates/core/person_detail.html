@@ -4,6 +4,7 @@
 {% block head %}
   {{ block.super }}
   <title>{{ person_name }} - Media Journal</title>
+  <link rel="stylesheet" href="{% static 'core/css/person_detail.css' %}?v={{ version }}" />
 {% endblock %}
 
 {% block content %}
@@ -11,14 +12,125 @@
   document.body.dataset.theme = '{{ theme_mode }}';
 </script>
 
-<div class="main-colored-section">
-  <div class="detail-container">
-    <div class="person-detail-content">
-      <h1>{{ person_name }}</h1>
-      <p>Person Type: {{ person_type|title }}</p>
-      <p>ID: {{ person_id }}</p>
-      <p>This is a placeholder for actor and character details page (added in the 1.9.0 release). In the 1.10.0 release I will fully implement it. Sorry if it's an eyesore in the meantime :P</p>
+<!-- Banner section -->
+<div class="banner-section no-banner">
+  <div class="banner-overlay"></div>
+</div>
+
+<!-- Top colored section -->
+<div class="top-colored-section">
+  <div class="detail-container top-content">
+    <div class="left-column">
+      <img class="poster" src="{% if person_data.image %}{{ person_data.image }}{% else %}{% static 'core/img/placeholder.png' %}{% endif %}" alt="{{ person_name }}" />
+      
+      <!-- Favorite heart and refresh -->
+      <div class="favorite-refresh-wrapper">
+        <form id="favorite-form" data-person-name="{{ person_name }}" data-person-type="{{ person_type }}" data-person-id="{{ person_data.id }}" data-person-image="{{ person_data.image }}">
+          <label class="favorite-checkbox">
+            <input type="checkbox" name="favorite">
+            <span class="heart"></span>
+          </label>
+        </form>
+        <button id="refresh-person-btn" class="refresh-person-btn" title="Refresh data">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+          </svg>
+        </button>
+        <button id="upload-person-image-btn" class="upload-person-btn" title="Upload image">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="right-column">
+      <div class="text-info">
+        <h1>{{ person_name }}</h1>
+        {% if person_type == 'character' and person_data.age %}
+        <p class="release-date" style="margin-bottom: 5px;"><strong>Age:</strong> {{ person_data.age }}</p>
+        {% endif %}
+        <div class="overview-container" style="margin-top: 0 !important;">
+          <p class="overview">{% if person_data.biography %}{{ person_data.biography }}{% elif person_data.description %}{{ person_data.description|safe }}{% else %}No information available{% endif %}</p>
+          <button class="read-more-btn">Read More</button>
+        </div>
+        {% if person_type == 'actor' %}
+        <p class="release-date">
+          {% if person_data.birthday %}Born: {{ person_data.birthday }}{% endif %}
+          {% if person_data.deathday %} • Died: {{ person_data.deathday }}{% endif %}
+        </p>
+        {% endif %}
+      </div>
     </div>
   </div>
 </div>
+
+<!-- Main content section -->
+<div class="main-colored-section">
+  <div class="detail-container">
+    
+    <!-- Related Media section -->
+    {% if person_data.related_media or person_data.media_appearances %}
+    <section class="related-media-section">
+      <h2>{% if person_type == 'actor' %}Played In{% else %}Appears In{% endif %}</h2>
+      <div class="related-media-list">
+        {% if person_data.related_media %}
+          {% for media in person_data.related_media %}
+          <div class="media-card" {% if media.url and media.url != '#' %}style="cursor: pointer;" onclick="window.location.href='{{ media.url }}'"{% endif %}>
+            <div class="media-image-wrapper">
+              <img src="{% if media.poster_path %}{{ media.poster_path }}{% elif media.image %}{{ media.image }}{% else %}{% static 'core/img/placeholder.png' %}{% endif %}" alt="{{ media.title }}" onerror="this.src='{% static 'core/img/placeholder.png' %}'" />
+              <div class="media-overlay">
+                {% if media.type_display %}<p class="overlay-type">{{ media.type_display }}</p>{% endif %}
+                {% if media.formatted_date %}<p class="overlay-date">{{ media.formatted_date }}</p>{% endif %}
+              </div>
+            </div>
+            <p class="media-title">{{ media.title }}</p>
+            {% if media.character %}<p class="media-character">{{ media.character }}</p>{% endif %}
+          </div>
+          {% endfor %}
+        {% elif person_data.media_appearances %}
+          {% for media in person_data.media_appearances %}
+          <div class="media-card" {% if media.url and media.url != '#' %}style="cursor: pointer;" onclick="window.location.href='{{ media.url }}'"{% endif %}>
+            <div class="media-image-wrapper">
+              <img src="{% if media.poster_path %}{{ media.poster_path }}{% elif media.image %}{{ media.image }}{% else %}{% static 'core/img/placeholder.png' %}{% endif %}" alt="{{ media.title }}" onerror="this.src='{% static 'core/img/placeholder.png' %}'" />
+              <div class="media-overlay">
+                {% if media.type_display %}<p class="overlay-type">{{ media.type_display }}</p>{% endif %}
+                {% if media.formatted_date %}<p class="overlay-date">{{ media.formatted_date }}</p>{% endif %}
+              </div>
+            </div>
+            <p class="media-title">{{ media.title }}</p>
+          </div>
+          {% endfor %}
+        {% endif %}
+      </div>
+    </section>
+    {% endif %}
+
+    <!-- Voice Actors section (for characters) -->
+    {% if person_type == 'character' and person_data.voice_actors %}
+    <section class="voice-actors-section">
+      <h2>Voice Actors</h2>
+      <div class="voice-actors-list">
+        {% for va in person_data.voice_actors %}
+        <div class="media-card">
+          <div class="media-image-wrapper">
+            <img src="{% if va.image %}{{ va.image }}{% else %}{% static 'core/img/placeholder.png' %}{% endif %}" alt="{{ va.name }}" onerror="this.src='{% static 'core/img/placeholder.png' %}'" />
+            <div class="media-overlay">
+              <p class="overlay-type">{{ va.language }}</p>
+            </div>
+          </div>
+          <p class="media-title">{{ va.name }}</p>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}
+
+{% block script %}
+  {{ block.super }}
+  <script src="{% static 'core/js/person_detail.js' %}?v={{ version }}"></script>
 {% endblock %}

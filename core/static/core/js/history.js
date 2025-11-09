@@ -22,14 +22,16 @@ document.addEventListener("DOMContentLoaded", () => {
   let hasMore = true;
   let allItems = [];
 
-  let selectedYear = "all";
-  let selectedMonth = "all";
-  let selectedType = "all";
-  let selectedStatus = "all";
-  let searchQuery = "";
-  let sortOrder = "desc"; // newest first
-  let startDate = null;
-  let endDate = null;
+  const isBackForwardNav = performance.getEntriesByType('navigation')[0]?.type === 'back_forward';
+  
+  let selectedYear = isBackForwardNav ? (sessionStorage.getItem('history_year') || "all") : "all";
+  let selectedMonth = isBackForwardNav ? (sessionStorage.getItem('history_month') || "all") : "all";
+  let selectedType = isBackForwardNav ? (sessionStorage.getItem('history_type') || "all") : "all";
+  let selectedStatus = isBackForwardNav ? (sessionStorage.getItem('history_status') || "all") : "all";
+  let searchQuery = isBackForwardNav ? (sessionStorage.getItem('history_search') || "") : "";
+  let sortOrder = isBackForwardNav ? (sessionStorage.getItem('history_sort') || "desc") : "desc";
+  let startDate = isBackForwardNav ? (sessionStorage.getItem('history_startDate') || null) : null;
+  let endDate = isBackForwardNav ? (sessionStorage.getItem('history_endDate') || null) : null;
 
   // === API FUNCTIONS ===
   async function loadItems(page = 1, reset = false) {
@@ -186,6 +188,7 @@ document.addEventListener("DOMContentLoaded", () => {
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(() => {
       searchQuery = e.target.value;
+      sessionStorage.setItem('history_search', searchQuery);
       resetAndLoad();
     }, 300);
   });
@@ -197,6 +200,8 @@ document.addEventListener("DOMContentLoaded", () => {
     selectedYear = btn.dataset.year;
     selectedMonth = "all";
     monthBtns.forEach(b => b.classList.remove("active"));
+    sessionStorage.setItem('history_year', selectedYear);
+    sessionStorage.setItem('history_month', selectedMonth);
     resetAndLoad();
   }));
 
@@ -205,6 +210,7 @@ document.addEventListener("DOMContentLoaded", () => {
     monthBtns.forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
     selectedMonth = btn.dataset.month;
+    sessionStorage.setItem('history_month', selectedMonth);
     resetAndLoad();
   }));
 
@@ -213,6 +219,7 @@ document.addEventListener("DOMContentLoaded", () => {
     typeBtns.forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
     selectedType = btn.dataset.type;
+    sessionStorage.setItem('history_type', selectedType);
     resetAndLoad();
   }));
 
@@ -221,6 +228,7 @@ document.addEventListener("DOMContentLoaded", () => {
     statusBtns.forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
     selectedStatus = btn.dataset.status;
+    sessionStorage.setItem('history_status', selectedStatus);
     resetAndLoad();
   }));
 
@@ -229,6 +237,7 @@ document.addEventListener("DOMContentLoaded", () => {
     sortOrder = "asc";
     sortAscBtn.classList.add("active");
     sortDescBtn.classList.remove("active");
+    sessionStorage.setItem('history_sort', sortOrder);
     resetAndLoad();
   });
 
@@ -236,6 +245,7 @@ document.addEventListener("DOMContentLoaded", () => {
     sortOrder = "desc";
     sortDescBtn.classList.add("active");
     sortAscBtn.classList.remove("active");
+    sessionStorage.setItem('history_sort', sortOrder);
     resetAndLoad();
   });
 
@@ -245,6 +255,8 @@ document.addEventListener("DOMContentLoaded", () => {
       selectedYear = customYearInput.value;
       selectedMonth = "all";
       monthBtns.forEach(b => b.classList.remove("active"));
+      sessionStorage.setItem('history_year', selectedYear);
+      sessionStorage.setItem('history_month', selectedMonth);
       resetAndLoad();
     }
   });
@@ -252,19 +264,69 @@ document.addEventListener("DOMContentLoaded", () => {
   // Date range filter
   startDateInput.addEventListener("change", e => {
     startDate = e.target.value || null;
+    sessionStorage.setItem('history_startDate', startDate || '');
     resetAndLoad();
   });
 
   endDateInput.addEventListener("change", e => {
     endDate = e.target.value || null;
+    sessionStorage.setItem('history_endDate', endDate || '');
     resetAndLoad();
   });
 
-  // Initial states
-  yearBtns[0]?.classList.add("active");
-  typeBtns[0]?.classList.add("active");
-  statusBtns[0]?.classList.add("active");
-  sortDescBtn?.classList.add("active");
+  // Initial states - restore from session or defaults
+  if (isBackForwardNav) {
+    searchInput.value = searchQuery;
+    if (startDate) startDateInput.value = startDate;
+    if (endDate) endDateInput.value = endDate;
+    
+    const yearBtn = yearBtns.find(b => b.dataset.year === selectedYear);
+    if (yearBtn) {
+      yearBtns.forEach(b => b.classList.remove("active"));
+      yearBtn.classList.add("active");
+    }
+    
+    const monthBtn = monthBtns.find(b => b.dataset.month === selectedMonth);
+    if (monthBtn) {
+      monthBtns.forEach(b => b.classList.remove("active"));
+      monthBtn.classList.add("active");
+    }
+    
+    const typeBtn = typeBtns.find(b => b.dataset.type === selectedType);
+    if (typeBtn) {
+      typeBtns.forEach(b => b.classList.remove("active"));
+      typeBtn.classList.add("active");
+    }
+    
+    const statusBtn = statusBtns.find(b => b.dataset.status === selectedStatus);
+    if (statusBtn) {
+      statusBtns.forEach(b => b.classList.remove("active"));
+      statusBtn.classList.add("active");
+    }
+    
+    if (sortOrder === 'asc') {
+      sortAscBtn?.classList.add("active");
+      sortDescBtn?.classList.remove("active");
+    } else {
+      sortDescBtn?.classList.add("active");
+      sortAscBtn?.classList.remove("active");
+    }
+  } else {
+    yearBtns[0]?.classList.add("active");
+    typeBtns[0]?.classList.add("active");
+    statusBtns[0]?.classList.add("active");
+    sortDescBtn?.classList.add("active");
+    
+    // Clear saved filters on fresh navigation
+    sessionStorage.removeItem('history_year');
+    sessionStorage.removeItem('history_month');
+    sessionStorage.removeItem('history_type');
+    sessionStorage.removeItem('history_status');
+    sessionStorage.removeItem('history_search');
+    sessionStorage.removeItem('history_sort');
+    sessionStorage.removeItem('history_startDate');
+    sessionStorage.removeItem('history_endDate');
+  }
 
   // === GLOBAL EDIT MODAL FUNCTION ===
   window.openEditModal = function(element) {
@@ -326,8 +388,39 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Initial load
-  loadItems(1, true);
+  // === SCROLL POSITION RESTORATION ===
+  const scrollKey = 'scrollPos_history';
+  const pageKey = 'scrollPage_history';
+  
+  window.addEventListener('beforeunload', () => {
+    sessionStorage.setItem(scrollKey, window.scrollY);
+    sessionStorage.setItem(pageKey, currentPage);
+  });
+  
+  const savedPage = parseInt(sessionStorage.getItem(pageKey)) || 1;
+  const savedScroll = parseInt(sessionStorage.getItem(scrollKey)) || 0;
+  
+  if (isBackForwardNav && savedPage > 1) {
+    document.documentElement.style.overflowY = 'scroll';
+    document.documentElement.style.visibility = 'hidden';
+    cardView.style.opacity = '0';
+    
+    async function loadUpToPage() {
+      for (let i = 1; i <= savedPage; i++) {
+        await loadItems(i, i === 1);
+      }
+      window.scrollTo(0, savedScroll);
+      document.documentElement.style.visibility = 'visible';
+      cardView.style.opacity = '1';
+    }
+    loadUpToPage();
+  } else {
+    if (!isBackForwardNav) {
+      sessionStorage.removeItem(scrollKey);
+      sessionStorage.removeItem(pageKey);
+    }
+    loadItems(1, true);
+  }
 });
 
 // Apply theme on page load

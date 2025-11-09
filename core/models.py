@@ -98,6 +98,18 @@ class FavoritePerson(models.Model):
     type = models.CharField(max_length=10, choices=PERSON_TYPE_CHOICES)
     position = models.PositiveIntegerField()
     person_id = models.CharField(max_length=50, blank=True, null=True)  # ID from TMDB/AniList
+    
+    # Actor-specific fields (TMDB)
+    birthday = models.CharField(max_length=20, blank=True, null=True)
+    deathday = models.CharField(max_length=20, blank=True, null=True)
+    biography = models.TextField(blank=True, null=True)
+    related_media = models.JSONField(blank=True, null=True)  # Movies/TV shows they appeared in
+    
+    # Character-specific fields (AniList)
+    description = models.TextField(blank=True, null=True)
+    age = models.CharField(max_length=50, blank=True, null=True)
+    media_appearances = models.JSONField(blank=True, null=True)  # Anime/manga they appear in
+    voice_actors = models.JSONField(blank=True, null=True)  # Voice actors for this character
 
     def __str__(self):
         return f"{self.name} ({self.type})"
