@@ -1,0 +1,124 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block head %}
+{{ block.super }}
+<title>Music - Media Journal</title>
+<link rel="stylesheet" href="{% static 'core/css/lists.css' %}?v={{ version }}">
+<link rel="stylesheet" href="{% static 'core/css/modal.css' %}?v={{ version }}">
+{% endblock %}
+
+{% block content %}
+<body data-media-type="music"></body>
+<!-- Top Banner Rotator -->
+<div class="banner-rotator">
+  <img id="rotating-banner" src="{% static 'core/img/placeholder.png' %}" alt="Banner">
+  <div class="banner-overlay">
+    <div class="banner-quote"></div>
+  </div>
+</div>
+
+<div class="separator-bar" style="display: flex; gap: 1rem; align-items: center; padding: 0 1rem; padding-left: 25rem;">
+<label class="music-player-btn">
+  <input type="checkbox" id="music-player-toggle" data-mode="all">
+  <svg class="music-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img">
+    <path fill="currentColor" d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+  </svg>
+</label>
+</div>
+
+<!-- Main Section: Sidebar + List Area -->
+<div class="list-page-container">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <input type="text" id="search-input" placeholder="Filter" autocomplete="off">
+<div class="filter-buttons-wrapper">
+  <h3>Lists</h3>
+  <div class="filter-buttons">
+    <button class="filter-btn" data-filter="all">
+      <span class="btn-text">All</span>
+      <span class="btn-count">{{ status_counts.all }}</span>
+    </button>
+    {% if status_counts.ongoing > 0 %}
+    <button class="filter-btn" data-filter="ongoing">
+      <span class="btn-text">Listening</span>
+      <span class="btn-count">{{ status_counts.ongoing }}</span>
+    </button>
+    {% endif %}
+    {% if status_counts.completed > 0 %}
+    <button class="filter-btn" data-filter="completed">
+      <span class="btn-text">Completed</span>
+      <span class="btn-count">{{ status_counts.completed }}</span>
+    </button>
+    {% endif %}
+    {% if status_counts.on_hold > 0 %}
+    <button class="filter-btn" data-filter="on_hold">
+      <span class="btn-text">Paused</span>
+      <span class="btn-count">{{ status_counts.on_hold }}</span>
+    </button>
+    {% endif %}
+    {% if status_counts.planned > 0 %}
+    <button class="filter-btn" data-filter="planned">
+      <span class="btn-text">Planned</span>
+      <span class="btn-count">{{ status_counts.planned }}</span>
+    </button>
+    {% endif %}
+    {% if status_counts.dropped > 0 %}
+    <button class="filter-btn" data-filter="dropped">
+      <span class="btn-text">Dropped</span>
+      <span class="btn-count">{{ status_counts.dropped }}</span>
+    </button>
+    {% endif %}
+  </div>
+</div>
+
+    <h3>Sort By</h3>
+    <div class="sort-buttons">
+      <button class="sort-btn" data-sort="title">Title</button>
+      <button class="sort-btn active" data-sort="rating">Rating</button>
+      <button class="sort-btn" data-sort="date">Date</button>
+    </div>
+
+    <h3>View</h3>
+    <div class="view-toggle">
+      <button class="toggle-btn dual-toggle">
+        <span id="card-view-btn" class="toggle-half active">
+          <span class="toggle-text">Card ⊞</span>
+        </span>
+        <span id="list-view-btn" class="toggle-half">
+          <span class="toggle-text">List ≡</span>
+        </span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Content Area -->
+  <section class="list-content">
+    <!-- Card View -->
+    <div id="card-view">
+      <!-- Content will be loaded dynamically -->
+    </div>
+
+    <!-- List View -->
+    <div id="list-view" class="list-table" style="display: none;">
+      <!-- Content will be loaded dynamically -->
+    </div>
+
+    <div id="loading-indicator" style="text-align: center; padding: 20px; display: none;">
+      Loading...
+    </div>
+  </section>
+
+  {% include 'core/partials/edit_modal.html' %}
+{% endblock %}
+
+{% block script %}
+{{ block.super }}
+<script>
+  document.body.setAttribute('data-theme', '{{ theme_mode }}');
+  document.body.setAttribute('data-rating-mode', '{{ rating_mode }}');
+</script>
+<script src="{% static 'core/js/edit_modal.js' %}?v={{ version }}"></script>
+<script src="{% static 'core/js/lists.js' %}?v={{ version }}"></script>
+{% endblock %}

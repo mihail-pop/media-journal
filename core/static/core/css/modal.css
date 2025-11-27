@@ -231,6 +231,25 @@
   overflow:hidden;
 }
 
+/* Special case for music */
+.modal-cover[data-media-type="music"] {
+  width: 140px;       /* container stays same */
+  height: 140px;      /* square for music */
+  overflow: hidden;
+  top: 90px;       /* Adjust to overlap banner and body */
+  left: 15px;
+}
+
+.modal-cover[data-media-type="music"] img {
+  width: 200px;       /* zoom in by increasing image width */
+  height: 140px;      /* match container height */
+  object-fit: cover;
+  object-position: center;  /* adjust to shift left/right */
+  position: relative;
+  left: -1.9rem;        /* shift image left to center the zoomed portion */
+  display: block;
+}
+
 .modal-title-block {
   position: absolute;
   top: 160px;              /* Align with cover */

@@ -260,10 +260,6 @@ html {
   width: 100%;
 }
 
-.btn-text {
-  /* left side - default alignment */
-}
-
 .btn-count {
   opacity: 0;
   transition: opacity 0.3s ease;
@@ -327,7 +323,7 @@ html {
   gap: 0.9rem;
 }
 
-/* Individual Card */
+/* Default card (all media types) */
 .card {
   border-radius: 3px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
@@ -342,10 +338,46 @@ html {
 }
 
 .card-image {
-  overflow:hidden;
+  overflow: hidden;
   border-radius: 3px;
   position: relative;
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* ensures image covers container */
+  object-position: center top; /* default crop */
 }
+
+/* Card Image */
+.card img {
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  display: block;
+  overflow: hidden;
+  border-radius: 3px;
+}
+
+.card[data-media-type="music"] {
+  width: 150px;
+  height: 150px;
+}
+
+.card[data-media-type="music"] .card-image {
+  width: 270px;
+  height: 100%;
+  left: -60px;
+}
+
+/* Override global .card img rule */
+.card[data-media-type="music"] .card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+
 
 .repeat-indicator {
   position: absolute;
@@ -382,15 +414,7 @@ html {
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.8));
 }
 
-/* Card Image */
-.card img {
-  width: 100%;
-  height: auto;
-  object-fit: cover;
-  display: block;
-  overflow: hidden;
-  border-radius: 3px;
-}
+
 
 /* Title & Rating Overlay */
 .card-title-overlay {
@@ -749,4 +773,106 @@ html {
   .filter-buttons-wrapper:has(.type-filter-btn[data-type="both"]) ~ h3 + .view-toggle {
     margin-bottom: 7rem;
   }
+}
+
+/* Music Player Button */
+.music-player-btn {
+  background: none;
+  border: 1px solid var(--text-primary);
+  color: var(--text-primary);
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+  user-select: none;
+}
+
+.music-player-btn input[type="checkbox"] {
+  margin: 0;
+  cursor: pointer;
+}
+
+.music-player-btn input[type="checkbox"]:checked ~ span {
+  color: var(--activity-high);
+}
+
+.music-player-btn:has(input:checked) {
+  border-color: var(--activity-high);
+  background: rgba(171, 186, 205, 0.1);
+}
+
+.music-player-btn:hover {
+  border-color: var(--activity-high);
+  color: var(--activity-high);
+}
+
+.music-player-btn {
+  background: none !important;
+  border: none !important;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 6px !important;
+  user-select: none;
+}
+
+.music-player-btn input[type="checkbox"] {
+  display: none;
+}
+
+.music-player-btn .music-icon {
+  fill: var(--text-primary);
+  transition: fill 0.3s ease;
+}
+
+.music-player-btn:has(input:checked) .music-icon {
+  fill: var(--activity-high);
+}
+
+.music-player-btn:hover .music-icon {
+  fill: var(--activity-high);
+}
+
+label.music-player-btn {
+  background: none !important;
+  border: none !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  padding: 6px !important;
+  user-select: none !important;
+}
+
+label.music-player-btn input[type="checkbox"] {
+  display: none !important;
+}
+
+label.music-player-btn .music-icon {
+  fill: var(--text-primary) !important;
+  transition: fill 0.3s ease !important;
+}
+
+label.music-player-btn:has(input:checked) .music-icon {
+  fill: var(--activity-high) !important;
+}
+
+label.music-player-btn:hover .music-icon {
+  fill: var(--activity-high) !important;
+}
+
+.music-player-container {
+  position: fixed !important;
+  bottom: 20px !important;
+  left: 20px !important;
+  z-index: 9999 !important;
+  line-height: 0 !important;
+}
+
+.music-player-container iframe {
+  display: block !important;
+  border: none !important;
 }

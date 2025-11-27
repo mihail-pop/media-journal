@@ -340,8 +340,8 @@ body, html {
     margin-bottom: 18px;
     box-shadow: 0 2px 6px rgba(0,0,0,0.10);
     transition: background 0.2s;
-    max-width: 40rem;
-    min-width: 35rem;
+    max-width: 50rem;
+    min-width: 45rem;
   }
   .board-post:last-child {
     margin-bottom: 0;
@@ -375,6 +375,7 @@ body, html {
     background-color: var(--bg-tertiary);
     font-style: italic;
     width: 300px;
+    max-width: 45rem;
   }
 
   #post-preview a {
@@ -434,7 +435,7 @@ body, html {
     padding: 16px 18px 12px 18px;
     color: var(--text-secondary);
     box-shadow: 0 2px 8px rgba(0,0,0,0.10);
-    max-width: 36rem;
+    max-width: 45;
   }
   .comment {
     margin-bottom: 12px;
@@ -476,35 +477,46 @@ body, html {
     font-size: 1.08em;
     color: var(--text-secondary);
   }
-  .comment-box {
+  .comment-tabs {
     display: flex;
-    gap: 10px;
-    margin-top: 14px;
-    background: var(--bg-tertiary);
-    border-radius: 7px;
-    padding: 12px 14px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
   }
-  .comment-username-input {
-    background: var(--overlay-bg);
-    color: #e91e63;
-    border: 1px solid var(--border-color);
+  .comment-tab-btn {
+    padding: 6px 12px;
+    background: var(--button-bg);
+    color: var(--text-primary);
+    border: none;
     border-radius: 4px;
-    padding: 6px 10px;
-    font-size: 1rem;
-    font-weight: 500;
-    margin-right: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background 0.2s;
+  }
+  .comment-tab-btn:hover {
+    background: var(--bg-quaternary);
+  }
+  .comment-tab-btn.active {
+    background: var(--border);
+    color: #fff;
+  }
+  .comment-tab-content {
+    display: none;
+  }
+  .comment-tab-content.active {
+    display: block;
   }
   .comment-input {
+    width: 100%;
+    min-height: 80px;
+    padding: 12px;
     background: var(--overlay-bg);
     color: var(--text-secondary);
     border: 1px solid var(--border-color);
     border-radius: 4px;
-    padding: 6px 10px;
     font-size: 1rem;
-    flex: 1 1 auto;
-    margin-right: 4px;
+    resize: vertical;
+    box-sizing: border-box;
+    margin-bottom: 8px;
   }
   .send-comment-btn {
     background: var(--border);
@@ -528,6 +540,202 @@ body, html {
     margin: 2rem 0;
   }
 
+  /* New Post Box */
+  .new-post-box {
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.10);
+  }
+
+  #username-field {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 12px;
+    background: var(--overlay-bg);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 1rem;
+    box-sizing: border-box;
+  }
+
+  .post-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .tab-btn {
+    padding: 8px 16px;
+    background: var(--button-bg);
+    color: var(--text-primary);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background 0.2s;
+  }
+
+  .tab-btn:hover {
+    background: var(--bg-quaternary);
+  }
+
+  .tab-btn.active {
+    background: var(--border);
+    color: #fff;
+  }
+
+  .tab-content {
+    display: none;
+  }
+
+  .tab-content.active {
+    display: block;
+  }
+
+  #post-text {
+    width: 100%;
+    min-height: 120px;
+    padding: 12px;
+    background: var(--overlay-bg);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 1rem;
+    resize: vertical;
+    box-sizing: border-box;
+    font-family: inherit;
+  }
+
+  #post-text:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--border);
+  }
+
+  .post-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  #insert-media-btn, #send-post-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: background 0.2s;
+  }
+
+  #insert-media-btn {
+    background: var(--button-bg);
+    color: var(--text-primary);
+  }
+
+  #insert-media-btn:hover {
+    background: var(--bg-quaternary);
+  }
+
+  #send-post-btn {
+    background: var(--border);
+    color: #fff;
+  }
+
+  #send-post-btn:hover {
+    background: var(--special-color-hover);
+  }
+
+  #send-post-btn:disabled {
+    background: #444;
+    color: #888;
+    cursor: not-allowed;
+  }
+
+  #media-type-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .media-type-btn {
+    padding: 8px 16px;
+    background: var(--button-bg);
+    color: var(--text-primary);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    transition: background 0.2s;
+  }
+
+  .media-type-btn:hover {
+    background: var(--bg-quaternary);
+    color: var(--text-secondary);
+  }
+
+  #media-search-box {
+    margin-top: 12px;
+  }
+
+  #media-search-input {
+    width: 100%;
+    padding: 10px;
+    background: var(--overlay-bg);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 1rem;
+    box-sizing: border-box;
+  }
+
+  #media-search-results {
+    margin-top: 8px;
+    max-height: 200px;
+    overflow-y: auto;
+    background: var(--overlay-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+  }
+
+  .search-result-item {
+    padding: 10px;
+    border-bottom: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .search-result-item:hover {
+    background: var(--bg-quaternary);
+  }
+
+  .search-result-item:last-child {
+    border-bottom: none;
+  }
+
+  #post-preview {
+    width: 100%;
+    min-height: 120px;
+    padding: 12px;
+    background: var(--overlay-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    color: var(--text-secondary);
+    box-sizing: border-box;
+  }
+
+  #post-preview a {
+    color: var(--special-color);
+    text-decoration: none;
+  }
+
+  #post-preview a:hover {
+    color: var(--special-color-hover);
+  }
+
   @media (orientation: portrait) {
   body {
     padding-top: 15rem;
@@ -538,6 +746,9 @@ body, html {
     transform-origin: top;
   }
 
+  .new-post-box {
+    max-width: 20rem;
+  }
 
   .board-post{
     min-width: 0;

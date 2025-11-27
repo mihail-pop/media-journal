@@ -369,6 +369,35 @@ html {
   border-radius: 3px;
 }
 
+/* Music cards - zoom to fit center portion while maintaining 150x210 ratio */
+.card[data-media-type="music"] {
+  width: 150px;
+  height: 210px;
+  overflow: hidden;
+  border-radius: 3px;
+}
+
+.card[data-media-type="music"] .card-image {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 3px;
+}
+
+.card[data-media-type="music"] .card-image img {
+  width: 179.8%; /* Same scale factor as before (152/85 = 1.788) */
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+  transform: translateX(-22.3%); /* Adjust this to center the crop */
+  transform-origin: center;
+  border-radius: 3px;
+}
+
+.card[data-media-type="music"] .card-title-overlay {
+  background: rgba(14,15,15);
+}
+
 /* Title & Rating Overlay */
 .card-title-overlay {
   background: rgba(14,15,15, .8);

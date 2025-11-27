@@ -1,149 +1,143 @@
 document.addEventListener('DOMContentLoaded', () => {
-
   const root = document.getElementById('board-root');
   const FIREBASE_URL = root.dataset.firebaseUrl.replace(/\/$/, '');
   const MEDIA_ITEMS = JSON.parse(document.getElementById('media-items-json').textContent);
 
-  // Modal elements
-  const makePostBtn = document.getElementById('make-post-btn');
-  const modalOverlay = document.getElementById('modal-overlay');
-  const postModal = document.getElementById('post-modal');
-  const closeModalBtn = document.getElementById('close-modal-btn');
-
-  // Form elements inside modal
-  const mediaTypeSelect = document.getElementById('media-type-select');
-  const searchContainer = document.getElementById('search-container');
-  const mediaSearchInput = document.getElementById('media-search');
-  const searchResults = document.getElementById('search-results');
+  const usernameField = document.getElementById('username-field');
+  const postText = document.getElementById('post-text');
+  const insertMediaBtn = document.getElementById('insert-media-btn');
   const sendPostBtn = document.getElementById('send-post-btn');
-  const usernameContainer = document.getElementById('username-container');
-  const usernameInput = document.getElementById('username-input');
-  const postPreviewContainer = document.getElementById('post-preview');
+  const mediaTypeButtons = document.getElementById('media-type-buttons');
+  const mediaSearchBox = document.getElementById('media-search-box');
+  const mediaSearchInput = document.getElementById('media-search-input');
+  const mediaSearchResults = document.getElementById('media-search-results');
   const postsContainer = document.getElementById('posts-container');
+  const writeTab = document.getElementById('write-tab');
+  const previewTab = document.getElementById('preview-tab');
+  const postPreview = document.getElementById('post-preview');
 
-  let selectedMedia = null;
+  // Save username function
+  const saveUsername = async () => {
+    const username = usernameField.value.trim();
+    try {
+      const response = await fetch('/settings/save_username/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({ username })
+      });
+      const data = await response.json();
+      if (data.success) {
+        console.log('Username saved:', username);
+      }
+    } catch (err) {
+      console.error('Failed to save username:', err);
+    }
+  };
 
-  function filterMediaByType(mediaType) {
-    if (!mediaType) return [];
-    return MEDIA_ITEMS.filter(item => item.media_type === mediaType);
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
   }
 
-  function renderSearchResults(results) {
-    searchResults.innerHTML = '';
-    if (results.length === 0) {
-      searchResults.textContent = 'No results found.';
-      return;
-    }
-    results.forEach(item => {
-      const div = document.createElement('div');
-      div.className = 'search-result-item';
-      div.textContent = item.title;
-      div.dataset.itemId = item.id;
-      div.dataset.mediaType = item.media_type;
-      div.dataset.source = item.source;
-      div.dataset.sourceId = item.source_id;
-      div.style.cursor = 'pointer';
-      div.addEventListener('click', () => {
-        selectMediaItem(item);
-      });
-      searchResults.appendChild(div);
+  // Save username on blur and Enter key
+  if (usernameField) {
+    usernameField.addEventListener('blur', saveUsername);
+    usernameField.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        saveUsername();
+        usernameField.blur();
+      }
     });
   }
 
-  function buildMessage(user, mediaItem) {
-    const status = mediaItem.status || 'planned';
-    const mediaType = mediaItem.media_type;
-    const title = mediaItem.title;
-    
-    let url;
-    if (mediaItem.source_id.includes('_s')) {
-      const parts = mediaItem.source_id.split('_s');
-      const baseId = parts[0];
-      const seasonNum = parts[1];
-      url = `http://${window.location.hostname}:8000/tmdb/season/${baseId}/${seasonNum}/`;
-    } else {
-      url = `http://${window.location.hostname}:8000/${mediaItem.source}/${mediaType}/${mediaItem.source_id}/`;
-    }
+  let selectedMediaType = null;
 
-    let actionText = '';
-    switch (status) {
-      case 'planned':
-        if (["tv", "movie", "anime"].includes(mediaType)) {
-          actionText = 'plans to watch';
-        } else if (mediaType === 'game') {
-          actionText = 'plans to play';
-        } else if (["manga", "book"].includes(mediaType)) {
-          actionText = 'plans to read';
-        } else {
-          actionText = 'plans to experience';
-        }
-        break;
-      case 'ongoing':
-        if (["tv", "movie", "anime"].includes(mediaType)) {
-          actionText = 'is watching';
-        } else if (mediaType === 'game') {
-          actionText = 'is  playing';
-        } else if (["manga", "book"].includes(mediaType)) {
-          actionText = 'is reading';
-        } else {
-          actionText = 'is experiencing';
-        }
-        break;
-      case 'completed':
-        if (["tv", "movie", "anime"].includes(mediaType)) {
-          actionText = 'watched';
-        } else if (mediaType === 'game') {
-          actionText = 'completed';
-        } else if (["manga", "book"].includes(mediaType)) {
-          actionText = 'read';
-        } else {
-          actionText = 'finished';
-        }
-        break;
-      case 'dropped':
-        actionText = 'dropped';
-        break;
-      case 'on_hold':
-        actionText = 'put on hold';
-        break;
-      default:
-        actionText = 'is interacting with';
-    }
-
-    return `${user} ${actionText} <a href="${url}" target="_blank">${title}</a>`;
-  }
-
-  function selectMediaItem(item) {
-    selectedMedia = item;
-    mediaSearchInput.value = item.title;
-    searchResults.innerHTML = '';
-    sendPostBtn.disabled = false;
-
-    // Show username input box
-    usernameContainer.style.display = 'block';
-
-    // Set preview with default username or existing username input
-    const username = usernameInput.value.trim() || 'Anonymous';
-    postPreviewContainer.innerHTML = buildMessage(username, item);
-  }
-
-  async function sendPost(postData) {
-    try {
-      const response = await fetch(`${FIREBASE_URL}/posts.json`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(postData)
-      });
-      if (!response.ok) {
-        throw new Error('Failed to send post');
+  // Tab switching
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      btn.classList.add('active');
+      if (btn.dataset.tab === 'write') {
+        writeTab.classList.add('active');
+      } else {
+        previewTab.classList.add('active');
+        updatePreview();
       }
-      return await response.json();
-    } catch (err) {
-      console.error(err);
-      alert('Error sending post');
+    });
+  });
+
+  // Insert Media button
+  insertMediaBtn.addEventListener('click', () => {
+    if (mediaTypeButtons.style.display === 'none') {
+      mediaTypeButtons.style.display = 'flex';
+      mediaSearchBox.style.display = 'none';
+    } else {
+      mediaTypeButtons.style.display = 'none';
     }
+  });
+
+  // Media type selection
+  document.querySelectorAll('.media-type-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      selectedMediaType = btn.dataset.type;
+      mediaSearchBox.style.display = 'block';
+      mediaSearchInput.focus();
+      mediaSearchInput.value = '';
+      mediaSearchResults.innerHTML = '';
+    });
+  });
+
+  // Media search
+  mediaSearchInput.addEventListener('input', () => {
+    const query = mediaSearchInput.value.trim().toLowerCase();
+    if (!query) {
+      mediaSearchResults.innerHTML = '';
+      return;
+    }
+    const filtered = MEDIA_ITEMS.filter(item => 
+      item.media_type === selectedMediaType && item.title.toLowerCase().includes(query)
+    ).slice(0, 10);
+    
+    mediaSearchResults.innerHTML = '';
+    filtered.forEach(item => {
+      const div = document.createElement('div');
+      div.className = 'search-result-item';
+      div.textContent = item.title;
+      div.style.cursor = 'pointer';
+      div.addEventListener('click', () => {
+        insertMediaTag(item);
+        mediaSearchBox.style.display = 'none';
+        mediaTypeButtons.style.display = 'none';
+        mediaSearchInput.value = '';
+        mediaSearchResults.innerHTML = '';
+      });
+      mediaSearchResults.appendChild(div);
+    });
+  });
+
+  function insertMediaTag(item) {
+    const tag = `[MEDIA:${item.media_type}:${item.source}:${item.source_id}:${item.title.replace(/:/g, '&#58;')}:${item.status}]`;
+    const cursorPos = postText.selectionStart;
+    const textBefore = postText.value.substring(0, cursorPos);
+    const textAfter = postText.value.substring(cursorPos);
+    postText.value = textBefore + tag + textAfter;
+    postText.focus();
+    postText.selectionStart = postText.selectionEnd = cursorPos + tag.length;
   }
 
   function processYouTubeLinks(text) {
@@ -151,9 +145,69 @@ document.addEventListener('DOMContentLoaded', () => {
     return text.replace(youtubeRegex, (match, www, urlType, videoId, params) => {
       const timeMatch = params.match(/[&?]t=(\d+)/);
       const startTime = timeMatch ? `?start=${timeMatch[1]}` : '';
-      return `<br><iframe width=100% height=300rem src="https://www.youtube.com/embed/${videoId}${startTime}" frameborder="0" allowfullscreen></iframe>`;
+      return `<br><iframe width=100% height=450px src="https://www.youtube.com/embed/${videoId}${startTime}" frameborder="0" allowfullscreen referrerpolicy="origin-when-cross-origin"></iframe>`;
     });
   }
+
+  function parsePostText(text) {
+    if (!text) return '';
+    const mediaRegex = /\[MEDIA:([^:]+):([^:]+):([^:]+):(.+?):([^:]+)\]/g;
+    let html = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    
+    html = html.replace(mediaRegex, (match, mediaType, source, sourceId, title, status) => {
+      const decodedTitle = title.replace(/&#58;/g, ':');
+      let url;
+      if (sourceId.includes('_s')) {
+        const parts = sourceId.split('_s');
+        url = `http://${window.location.hostname}:8000/tmdb/season/${parts[0]}/${parts[1]}/`;
+      } else {
+        url = `http://${window.location.hostname}:8000/${source}/${mediaType}/${sourceId}/`;
+      }
+      return `<a href="${url}" target="_blank">${decodedTitle}</a>`;
+    });
+    
+    html = processYouTubeLinks(html);
+    return html.replace(/\n/g, '<br>');
+  }
+
+  function updatePreview() {
+    postPreview.innerHTML = parsePostText(postText.value) || '<em>Nothing to preview</em>';
+  }
+
+  // Send post
+  sendPostBtn.addEventListener('click', async () => {
+    const text = postText.value.trim();
+    if (!text) return;
+
+    const username = usernameField.value.trim() || 'Anonymous';
+    const timestamp = Math.floor(Date.now() / 1000);
+
+    const postData = {
+      user: username,
+      text: text,
+      timestamp: timestamp,
+      likes: 0,
+      commentCount: 0
+    };
+
+    sendPostBtn.disabled = true;
+    try {
+      await fetch(`${FIREBASE_URL}/posts.json`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(postData)
+      });
+      
+      postText.value = '';
+      mediaTypeButtons.style.display = 'none';
+      mediaSearchBox.style.display = 'none';
+      loadPosts();
+    } catch (err) {
+      console.error(err);
+      alert('Error sending post');
+    }
+    sendPostBtn.disabled = false;
+  });
 
   function timeAgo(ts) {
     const now = Date.now() / 1000;
@@ -176,17 +230,33 @@ document.addEventListener('DOMContentLoaded', () => {
     div.className = 'board-post';
     div.dataset.postId = postId;
 
-    const message = buildMessage(post.user || 'Anonymous', post.item);
-    div.innerHTML = `<p>${message}</p><small>${timeAgo(post.timestamp)}</small>`;
+    // Support old post format
+    let message;
+    if (post.text) {
+      message = parsePostText(post.text);
+    } else if (post.item) {
+      // Old format: convert to link
+      const item = post.item;
+      let url;
+      if (item.source_id && item.source_id.includes('_s')) {
+        const parts = item.source_id.split('_s');
+        url = `http://${window.location.hostname}:8000/tmdb/season/${parts[0]}/${parts[1]}/`;
+      } else {
+        url = `http://${window.location.hostname}:8000/${item.source}/${item.mediatype}/${item.source_id}/`;
+      }
+      message = `${post.action} <a href="${url}" target="_blank">${item.title}</a>`;
+    } else {
+      message = '';
+    }
+    div.innerHTML = `<p><strong>${post.user || 'Anonymous'}</strong><br><br>${message}</p><small>${timeAgo(post.timestamp || 0)}</small>`;
 
-    // --- Likes UI ---
+    // Likes UI
     const likesRow = document.createElement('div');
     likesRow.className = 'likes-row';
     likesRow.style.display = 'flex';
     likesRow.style.alignItems = 'center';
     likesRow.style.gap = '16px';
 
-    // Heart icon
     const heart = document.createElement('span');
     heart.className = 'like-heart';
     heart.innerHTML = '❤';
@@ -194,7 +264,7 @@ document.addEventListener('DOMContentLoaded', () => {
     heart.style.color = '#e25555';
     heart.style.fontSize = '1.6em';
     heart.style.userSelect = 'none';
-    // Likes count
+
     const likesCount = document.createElement('span');
     likesCount.className = 'likes-count';
     if (post.likes && post.likes > 0) {
@@ -205,21 +275,17 @@ document.addEventListener('DOMContentLoaded', () => {
       likesCount.style.display = 'none';
     }
 
-    // LocalStorage like check
     const likedKey = `liked_${postId}`;
     let liked = localStorage.getItem(likedKey) === '1';
-    if (liked) heart.style.opacity = '1';
-    else heart.style.opacity = '0.5';
+    heart.style.opacity = liked ? '1' : '0.5';
 
     heart.addEventListener('click', async () => {
-      if (localStorage.getItem(likedKey) === '1') return; // already liked
-      // Optimistically update UI
+      if (localStorage.getItem(likedKey) === '1') return;
       let newLikes = (post.likes || 0) + 1;
       likesCount.textContent = newLikes;
       likesCount.style.display = '';
       heart.style.opacity = '1';
       localStorage.setItem(likedKey, '1');
-      // Patch likes in Firebase
       await fetch(`${FIREBASE_URL}/posts/${postId}/likes.json`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -230,94 +296,222 @@ document.addEventListener('DOMContentLoaded', () => {
     likesRow.appendChild(heart);
     likesRow.appendChild(likesCount);
 
-    // --- Comments UI ---
+    // Comments UI
     const commentIcon = document.createElement('span');
     commentIcon.className = 'comment-icon';
     commentIcon.innerHTML = '💭';
     commentIcon.style.cursor = 'pointer';
     commentIcon.style.fontSize = '1.5em';
     commentIcon.style.userSelect = 'none';
-// Comments count
-const commentsCount = document.createElement('span');
-commentsCount.className = 'comments-count';
 
-// Use post.commentCount instead of post.comments
-const commentNum = post.commentCount || 0;
-
-if (commentNum > 0) {
-  commentsCount.textContent = commentNum;
-  commentsCount.style.display = '';
-} else {
-  commentsCount.textContent = '';
-  commentsCount.style.display = 'none';
-}
+    const commentsCount = document.createElement('span');
+    commentsCount.className = 'comments-count';
+    const commentNum = post.commentCount || 0;
+    if (commentNum > 0) {
+      commentsCount.textContent = commentNum;
+      commentsCount.style.display = '';
+    } else {
+      commentsCount.textContent = '';
+      commentsCount.style.display = 'none';
+    }
 
     likesRow.appendChild(commentIcon);
     likesRow.appendChild(commentsCount);
     div.appendChild(likesRow);
-// --- Comments Section ---
-let commentsSection = null;
-let commentsVisible = false;
 
-commentIcon.addEventListener('click', async () => {
-  if (commentsVisible) {
-    if (commentsSection) commentsSection.remove();
-    commentsVisible = false;
-    return;
-  }
+    let commentsSection = null;
+    let commentsVisible = false;
 
-  commentsVisible = true;
-  commentsSection = document.createElement('div');
-  commentsSection.className = 'comments-section';
+    commentIcon.addEventListener('click', async () => {
+      if (commentsVisible) {
+        if (commentsSection) commentsSection.remove();
+        commentsVisible = false;
+        return;
+      }
 
-  commentsSection.innerHTML = '';
+      commentsVisible = true;
+      commentsSection = document.createElement('div');
+      commentsSection.className = 'comments-section';
 
-  // Fetch only comments for this post
-  const res = await fetch(`${FIREBASE_URL}/comments/${postId}.json`);
-  const postCommentsObj = await res.json() || {};
-  const postComments = Object.values(postCommentsObj);
+      const res = await fetch(`${FIREBASE_URL}/comments/${postId}.json`);
+      const postCommentsObj = await res.json() || {};
+      const postComments = Object.values(postCommentsObj);
 
-  if (postComments.length > 0) {
-    postComments.forEach(comment => {
-      const commentDiv = document.createElement('div');
-      commentDiv.className = 'comment';
-      const processedText = processYouTubeLinks(comment.text);
-      commentDiv.innerHTML = `<b>${comment.username || 'Anonymous'}</b> ${processedText} <small>${timeAgo(comment.timestamp)}</small>`;
-      commentsSection.appendChild(commentDiv);
-    });
-  } else {
-    commentsSection.innerHTML = '<div class="comment">No comments yet.</div>';
-  }
+      if (postComments.length > 0) {
+        postComments.forEach(comment => {
+          const commentDiv = document.createElement('div');
+          commentDiv.className = 'comment';
+          const processedText = parsePostText(comment.text);
+          commentDiv.innerHTML = `<div><b>${comment.username || 'Anonymous'}</b><br>${processedText}</div><small>${timeAgo(comment.timestamp)}</small>`;
+          commentsSection.appendChild(commentDiv);
+        });
+      } else {
+        commentsSection.innerHTML = '<div class="comment">No comments yet.</div>';
+      }
 
-  commentIcon.parentNode.insertBefore(commentsSection, commentIcon.nextSibling);
+      commentIcon.parentNode.insertBefore(commentsSection, commentIcon.nextSibling);
 
-      // Add comment box
-      const commentBox = document.createElement('div');
-      commentBox.className = 'comment-box';
+      // Comment tabs
+      const commentTabs = document.createElement('div');
+      commentTabs.className = 'comment-tabs';
+      commentTabs.innerHTML = `
+        <button class="comment-tab-btn active" data-tab="write">Write</button>
+        <button class="comment-tab-btn" data-tab="preview">Preview</button>
+      `;
 
+      // Comment write tab
+      const commentWriteTab = document.createElement('div');
+      commentWriteTab.className = 'comment-tab-content';
+      commentWriteTab.style.display = 'block';
 
-      // Username input (above comment box, small)
-      const commentUsername = document.createElement('input');
-      commentUsername.type = 'text';
-      commentUsername.placeholder = '(Optional) Username';
-      commentUsername.className = 'comment-username-input';
+      const commentInsertBtn = document.createElement('button');
+      commentInsertBtn.textContent = 'Insert Media';
+      commentInsertBtn.style.padding = '6px 12px';
+      commentInsertBtn.style.background = 'var(--button-bg)';
+      commentInsertBtn.style.color = 'var(--text-primary)';
+      commentInsertBtn.style.border = 'none';
+      commentInsertBtn.style.borderRadius = '4px';
+      commentInsertBtn.style.cursor = 'pointer';
+      commentInsertBtn.style.fontSize = '0.9rem';
+      commentInsertBtn.style.marginBottom = '8px';
+      commentInsertBtn.type = 'button';
 
-      // Comment input (expandable textarea)
       const commentInput = document.createElement('textarea');
       commentInput.placeholder = 'Write a comment...';
       commentInput.className = 'comment-input';
 
-      // Emoji button
+      const commentMediaButtons = document.createElement('div');
+      commentMediaButtons.style.display = 'none';
+      commentMediaButtons.style.flexWrap = 'wrap';
+      commentMediaButtons.style.gap = '8px';
+      commentMediaButtons.style.marginTop = '8px';
+
+      const commentMediaSearch = document.createElement('div');
+      commentMediaSearch.style.display = 'none';
+      commentMediaSearch.style.marginTop = '8px';
+
+      const commentSearchInput = document.createElement('input');
+      commentSearchInput.type = 'text';
+      commentSearchInput.placeholder = 'Search...';
+      commentSearchInput.style.width = '100%';
+      commentSearchInput.style.padding = '8px';
+      commentSearchInput.style.background = 'var(--overlay-bg)';
+      commentSearchInput.style.color = 'var(--text-secondary)';
+      commentSearchInput.style.border = '1px solid var(--border-color)';
+      commentSearchInput.style.borderRadius = '4px';
+
+      const commentSearchResults = document.createElement('div');
+      commentSearchResults.style.marginTop = '8px';
+      commentSearchResults.style.maxHeight = '150px';
+      commentSearchResults.style.overflowY = 'auto';
+      commentSearchResults.style.background = 'var(--overlay-bg)';
+      commentSearchResults.style.border = '1px solid var(--border-color)';
+      commentSearchResults.style.borderRadius = '4px';
+
+      commentMediaSearch.appendChild(commentSearchInput);
+      commentMediaSearch.appendChild(commentSearchResults);
+
+      let commentSelectedType = null;
+
+      commentInsertBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (commentMediaButtons.style.display === 'none') {
+          commentMediaButtons.style.display = 'flex';
+          commentMediaSearch.style.display = 'none';
+        } else {
+          commentMediaButtons.style.display = 'none';
+        }
+      });
+
+      document.querySelectorAll('.media-type-btn').forEach(btn => {
+        const cloneBtn = btn.cloneNode(true);
+        cloneBtn.addEventListener('click', () => {
+          commentSelectedType = cloneBtn.dataset.type;
+          commentMediaSearch.style.display = 'block';
+          commentSearchInput.focus();
+          commentSearchInput.value = '';
+          commentSearchResults.innerHTML = '';
+        });
+        commentMediaButtons.appendChild(cloneBtn);
+      });
+
+      commentSearchInput.addEventListener('input', () => {
+        const query = commentSearchInput.value.trim().toLowerCase();
+        if (!query) {
+          commentSearchResults.innerHTML = '';
+          return;
+        }
+        const filtered = MEDIA_ITEMS.filter(item => 
+          item.media_type === commentSelectedType && item.title.toLowerCase().includes(query)
+        ).slice(0, 10);
+        
+        commentSearchResults.innerHTML = '';
+        filtered.forEach(item => {
+          const div = document.createElement('div');
+          div.style.padding = '8px';
+          div.style.cursor = 'pointer';
+          div.style.borderBottom = '1px solid var(--border-color)';
+          div.textContent = item.title;
+          div.addEventListener('click', () => {
+            const tag = `[MEDIA:${item.media_type}:${item.source}:${item.source_id}:${item.title}:${item.status}]`;
+            const cursorPos = commentInput.selectionStart;
+            const textBefore = commentInput.value.substring(0, cursorPos);
+            const textAfter = commentInput.value.substring(cursorPos);
+            commentInput.value = textBefore + tag + textAfter;
+            commentInput.focus();
+            commentInput.selectionStart = commentInput.selectionEnd = cursorPos + tag.length;
+            commentMediaSearch.style.display = 'none';
+            commentMediaButtons.style.display = 'none';
+            commentSearchInput.value = '';
+            commentSearchResults.innerHTML = '';
+          });
+          div.addEventListener('mouseenter', () => {
+            div.style.background = 'var(--bg-quaternary)';
+          });
+          div.addEventListener('mouseleave', () => {
+            div.style.background = '';
+          });
+          commentSearchResults.appendChild(div);
+        });
+      });
+
+      // Comment preview tab
+      const commentPreviewTab = document.createElement('div');
+      commentPreviewTab.className = 'comment-tab-content';
+      commentPreviewTab.style.display = 'none';
+      commentPreviewTab.style.minHeight = '80px';
+      commentPreviewTab.style.padding = '12px';
+      commentPreviewTab.style.background = 'var(--overlay-bg)';
+      commentPreviewTab.style.border = '1px solid var(--border-color)';
+      commentPreviewTab.style.borderRadius = '4px';
+      commentPreviewTab.innerHTML = '<em>Nothing to preview</em>';
+
+      // Tab switching
+      commentTabs.querySelectorAll('.comment-tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          commentTabs.querySelectorAll('.comment-tab-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          if (btn.dataset.tab === 'write') {
+            commentWriteTab.style.display = 'block';
+            commentPreviewTab.style.display = 'none';
+          } else {
+            commentWriteTab.style.display = 'none';
+            commentPreviewTab.style.display = 'block';
+            commentPreviewTab.innerHTML = parsePostText(commentInput.value) || '<em>Nothing to preview</em>';
+          }
+        });
+      });
+
+      commentsSection.appendChild(commentTabs);
+
       const emojiBtn = document.createElement('button');
       emojiBtn.type = 'button';
       emojiBtn.className = 'emoji-btn';
       emojiBtn.textContent = '😊';
 
-      // Emoji picker
       const emojiPicker = document.createElement('div');
       emojiPicker.className = 'emoji-picker';
 
-      // Simple emoji list
       const emojis = ['😀','😁','😂','🤣','😃','😄','😅','😆','😉','😊','😍','😘','😜','🤔','😎','😢','😭','😡','👍','👎','🙏','🔥','🎉','💯','🥳','😇','🤩','😏','😬','😴','🤗','😱','🥺','😤','😈','💖','💔','💙','⭐','🌟','✨','⚡','🍶','🍺','🍻','🥂','🍷','🧂'];
       emojis.forEach(e => {
         const emojiSpan = document.createElement('span');
@@ -339,88 +533,84 @@ commentIcon.addEventListener('click', async () => {
         }
       });
 
-      // Send button
       const sendBtn = document.createElement('button');
       sendBtn.textContent = 'Send';
       sendBtn.className = 'send-comment-btn';
 
-sendBtn.addEventListener('click', async () => {
-  const username = commentUsername.value.trim() || 'Anonymous';
-  const text = commentInput.value.trim();
-  if (!text) return;
+      sendBtn.addEventListener('click', async () => {
+        const username = usernameField.value.trim() || 'Anonymous';
+        const text = commentInput.value.trim();
+        if (!text) return;
 
-  sendBtn.disabled = true;
+        sendBtn.disabled = true;
 
-  const commentData = {
-    username,
-    text,
-    timestamp: Math.floor(Date.now() / 1000)
-  };
+        const commentData = {
+          username,
+          text,
+          timestamp: Math.floor(Date.now() / 1000)
+        };
 
-  // POST to Firebase under /comments/{postId}/ so it generates a unique ID automatically
-  const response = await fetch(`${FIREBASE_URL}/comments/${postId}.json`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(commentData)
-  });
+        await fetch(`${FIREBASE_URL}/comments/${postId}.json`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(commentData)
+        });
 
-  const result = await response.json(); // contains the generated key: { "name": "-NAbC123..." }
+        const commentDiv = document.createElement('div');
+        commentDiv.className = 'comment';
+        const processedText = parsePostText(text);
+        commentDiv.innerHTML = `<div><b>${username}</b><br>${processedText}</div><small>${timeAgo(commentData.timestamp)}</small>`;
+        
+        const noCommentsMsg = Array.from(commentsSection.querySelectorAll('.comment')).find(
+          el => el.textContent === 'No comments yet.'
+        );
+        if (noCommentsMsg) noCommentsMsg.remove();
+        
+        commentsSection.insertBefore(commentDiv, commentTabs);
 
-  // Update UI
-  const commentDiv = document.createElement('div');
-  commentDiv.className = 'comment';
-  const processedText = processYouTubeLinks(text);
-  commentDiv.innerHTML = `<b>${username}</b> ${processedText} <small>${timeAgo(commentData.timestamp)}</small>`;
-  // Remove "No comments yet." if present
-  const noCommentsMsg = Array.from(commentsSection.querySelectorAll('.comment')).find(
-    el => el.textContent === 'No comments yet.'
-  );
-  if (noCommentsMsg) {
-    noCommentsMsg.remove();
-  }
-  commentsSection.insertBefore(commentDiv, commentUsername);
+        const actualComments = Array.from(commentsSection.querySelectorAll('.comment')).filter(
+          el => el.textContent !== 'No comments yet.'
+        );
+        const newCount = actualComments.length;
+        await fetch(`${FIREBASE_URL}/posts/${postId}/commentCount.json`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newCount)
+        });
 
-  // Recalculate comment count from DOM, excluding placeholders
-  const actualComments = Array.from(commentsSection.querySelectorAll('.comment')).filter(
-    el => el.textContent !== 'No comments yet.'
-  );
-  const newCount = actualComments.length;
-  await fetch(`${FIREBASE_URL}/posts/${postId}/commentCount.json`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(newCount)
-  });
+        commentInput.value = '';
+        sendBtn.disabled = false;
 
-  commentInput.value = '';
-  sendBtn.disabled = false;
+        commentsCount.textContent = newCount;
+        commentsCount.style.display = '';
+      });
 
-  // Update local counter
-  commentsCount.textContent = newCount;
-  commentsCount.style.display = '';
-  commentNum = newCount;
-});
-
-      // Structure: username input above, then comment box row (textarea, emoji, send)
       const commentBoxWrapper = document.createElement('div');
       commentBoxWrapper.style.display = 'flex';
       commentBoxWrapper.style.flexDirection = 'row';
       commentBoxWrapper.style.alignItems = 'flex-end';
       commentBoxWrapper.style.gap = '10px';
-commentBoxWrapper.appendChild(commentInput);
+      commentBoxWrapper.appendChild(commentInput);
 
-// Emoji wrapper for positioning
-const emojiWrapper = document.createElement('div');
-emojiWrapper.style.position = 'relative';
-emojiWrapper.style.display = 'inline-block';
-emojiWrapper.appendChild(emojiBtn);
-emojiWrapper.appendChild(emojiPicker);
+      const emojiWrapper = document.createElement('div');
+      emojiWrapper.style.position = 'relative';
+      emojiWrapper.style.display = 'inline-block';
+      emojiWrapper.appendChild(emojiBtn);
+      emojiWrapper.appendChild(emojiPicker);
 
-commentBoxWrapper.appendChild(emojiWrapper);
-commentBoxWrapper.appendChild(sendBtn);
+      commentBoxWrapper.appendChild(emojiWrapper);
+      commentBoxWrapper.appendChild(sendBtn);
 
-      // Add username input above comment box
-      commentsSection.appendChild(commentUsername);
-      commentsSection.appendChild(commentBoxWrapper);
+      commentWriteTab.appendChild(commentInsertBtn);
+      commentWriteTab.appendChild(commentMediaButtons);
+      commentWriteTab.appendChild(commentMediaSearch);
+      commentWriteTab.appendChild(commentInput);
+      commentWriteTab.appendChild(commentBoxWrapper);
+
+      const tabsContainer = document.createElement('div');
+      tabsContainer.appendChild(commentWriteTab);
+      tabsContainer.appendChild(commentPreviewTab);
+      commentsSection.appendChild(tabsContainer);
       div.appendChild(commentsSection);
     });
 
@@ -428,6 +618,7 @@ commentBoxWrapper.appendChild(sendBtn);
   }
 
   async function loadPosts() {
+    if (!postsContainer) return;
     postsContainer.innerHTML = '<p>Loading posts...</p>';
     try {
       const response = await fetch(`${FIREBASE_URL}/posts.json?orderBy="timestamp"&limitToLast=25`);
@@ -438,135 +629,18 @@ commentBoxWrapper.appendChild(sendBtn);
         postsContainer.innerHTML = '<p>No posts yet.</p>';
         return;
       }
-      // Use Object.entries to get postId
       const posts = Object.entries(data).sort((a, b) => b[1].timestamp - a[1].timestamp);
       posts.forEach(([postId, post]) => {
-        const postDiv = renderPost(post, postId);
-        postsContainer.appendChild(postDiv);
+        if (post) {
+          const postDiv = renderPost(post, postId);
+          postsContainer.appendChild(postDiv);
+        }
       });
     } catch (err) {
-      console.error(err);
+      console.error('Error loading posts:', err);
       postsContainer.innerHTML = '<p>Error loading posts.</p>';
     }
   }
-
-
-  sendPostBtn.addEventListener('click', async () => {
-    if (!selectedMedia) return;
-    let userName = usernameInput.value.trim();
-    if (!userName) userName = 'Anonymous';
-
-    const timestamp = Math.floor(Date.now() / 1000);
-
-    const postData = {
-      user: userName,
-      action: selectedMedia.status,
-      item: selectedMedia,
-      timestamp: timestamp,
-      likes: 0,
-      comments: {}
-    };
-
-    sendPostBtn.disabled = true;
-    await sendPost(postData);
-    sendPostBtn.disabled = false;
-
-    // Reset inputs and UI
-    mediaSearchInput.value = '';
-    searchResults.innerHTML = '';
-    selectedMedia = null;
-    sendPostBtn.disabled = true;
-    usernameInput.value = '';
-    usernameContainer.style.display = 'none';
-    postPreviewContainer.innerHTML = '';
-
-    // Hide modal and overlay
-    postModal.style.display = 'none';
-    modalOverlay.style.display = 'none';
-
-    loadPosts();
-  });
-
-
-  mediaTypeSelect.addEventListener('change', () => {
-    const mediaType = mediaTypeSelect.value;
-    selectedMedia = null;
-    sendPostBtn.disabled = true;
-
-    usernameContainer.style.display = 'none';
-    usernameInput.value = '';
-
-    if (!mediaType) {
-      searchContainer.style.display = 'none';
-      mediaSearchInput.value = '';
-      searchResults.innerHTML = '';
-      postPreviewContainer.innerHTML = '';
-      return;
-    }
-
-    searchContainer.style.display = 'block';
-    mediaSearchInput.value = '';
-    searchResults.innerHTML = '';
-    postPreviewContainer.innerHTML = '';
-  });
-
-
-  mediaSearchInput.addEventListener('input', () => {
-    const query = mediaSearchInput.value.trim().toLowerCase();
-    if (!query) {
-      searchResults.innerHTML = '';
-      sendPostBtn.disabled = true;
-      selectedMedia = null;
-      usernameContainer.style.display = 'none';
-      usernameInput.value = '';
-      postPreviewContainer.innerHTML = '';
-      return;
-    }
-    const mediaType = mediaTypeSelect.value;
-    const candidates = filterMediaByType(mediaType);
-    const filtered = candidates.filter(item =>
-      item.title.toLowerCase().includes(query)
-    ).slice(0, 10);
-    renderSearchResults(filtered);
-    postPreviewContainer.innerHTML = '';
-    usernameContainer.style.display = 'none';
-    usernameInput.value = '';
-  });
-
-
-  // Update preview in real-time as user types username
-  usernameInput.addEventListener('input', () => {
-    if (!selectedMedia) return;
-    const username = usernameInput.value.trim() || 'Username';
-    postPreviewContainer.innerHTML = buildMessage(username, selectedMedia);
-  });
-
-  // Modal open/close logic
-  makePostBtn.addEventListener('click', () => {
-    postModal.style.display = 'flex';
-    modalOverlay.style.display = 'block';
-    // Reset modal form
-    mediaTypeSelect.value = '';
-    searchContainer.style.display = 'none';
-    mediaSearchInput.value = '';
-    searchResults.innerHTML = '';
-    usernameContainer.style.display = 'none';
-    usernameInput.value = '';
-    postPreviewContainer.innerHTML = '';
-    sendPostBtn.disabled = true;
-    selectedMedia = null;
-  });
-
-  closeModalBtn.addEventListener('click', () => {
-    postModal.style.display = 'none';
-    modalOverlay.style.display = 'none';
-  });
-
-  // Close modal when clicking overlay
-  modalOverlay.addEventListener('click', () => {
-    postModal.style.display = 'none';
-    modalOverlay.style.display = 'none';
-  });
 
   loadPosts();
 });

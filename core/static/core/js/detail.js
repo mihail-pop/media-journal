@@ -838,6 +838,133 @@ swapBtn?.addEventListener("click", function () {
       sessionStorage.removeItem('castScrollPosition');
     }
   });
+
+  // Music section controls
+  const musicAutoplayToggle = document.getElementById('music-autoplay-toggle');
+  const musicHideToggle = document.getElementById('music-hide-toggle');
+  const musicAddBtn = document.getElementById('music-add-btn');
+  const musicAddForm = document.getElementById('music-add-form');
+  const musicSaveBtn = document.getElementById('music-save-btn');
+  const musicCancelBtn = document.getElementById('music-cancel-btn');
+  const musicVideosContainer = document.getElementById('music-videos-container');
+
+  // Load saved preferences
+  if (musicAutoplayToggle) {
+    const autoplayEnabled = localStorage.getItem('musicAutoplay') === 'true';
+    musicAutoplayToggle.checked = autoplayEnabled;
+    updateAutoplay(autoplayEnabled);
+
+    musicAutoplayToggle.addEventListener('change', function() {
+      const enabled = this.checked;
+      localStorage.setItem('musicAutoplay', enabled);
+      updateAutoplay(enabled);
+    });
+  }
+
+  if (musicHideToggle) {
+    const hideEnabled = localStorage.getItem('musicHide') === 'true';
+    musicHideToggle.checked = hideEnabled;
+    if (hideEnabled && musicVideosContainer) {
+      musicVideosContainer.style.display = 'none';
+    }
+
+    musicHideToggle.addEventListener('change', function() {
+      const enabled = this.checked;
+      localStorage.setItem('musicHide', enabled);
+      if (musicVideosContainer) {
+        musicVideosContainer.style.display = enabled ? 'none' : '';
+      }
+    });
+  }
+
+  function updateAutoplay(enabled) {
+    if (!musicVideosContainer) return;
+    const iframes = musicVideosContainer.querySelectorAll('iframe');
+    iframes.forEach((iframe, index) => {
+      const src = iframe.src;
+      if (index === 0) {
+        if (enabled && !src.includes('autoplay=1')) {
+          iframe.src = src + (src.includes('?') ? '&' : '?') + 'autoplay=1';
+        } else if (!enabled && src.includes('autoplay=1')) {
+          iframe.src = src.replace(/[?&]autoplay=1/, '');
+        }
+      }
+    });
+  }
+
+  // Add video functionality
+  if (musicAddBtn) {
+    musicAddBtn.addEventListener('click', function() {
+      musicAddForm.style.display = 'flex';
+      document.getElementById('music-youtube-url').focus();
+    });
+  }
+
+  if (musicCancelBtn) {
+    musicCancelBtn.addEventListener('click', function() {
+      musicAddForm.style.display = 'none';
+      document.getElementById('music-youtube-url').value = '';
+    });
+  }
+
+  if (musicSaveBtn) {
+    musicSaveBtn.addEventListener('click', function() {
+      const url = document.getElementById('music-youtube-url').value.trim();
+      if (!url) return;
+
+      const sourceId = document.body.dataset.itemId;
+      
+      fetch('/api/add-music-video/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken'),
+        },
+        body: JSON.stringify({ source_id: sourceId, url: url }),
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          sessionStorage.setItem('refreshSuccess', '1');
+          location.reload();
+        } else {
+          alert(data.error || 'Failed to add video');
+        }
+      })
+      .catch(() => alert('Error adding video'));
+    });
+  }
+
+  // Delete video functionality
+  if (musicVideosContainer) {
+    musicVideosContainer.addEventListener('click', function(e) {
+      if (e.target.classList.contains('music-delete-btn')) {
+        const position = parseInt(e.target.dataset.position);
+        const sourceId = document.body.dataset.itemId;
+
+        if (confirm('Delete this video?')) {
+          fetch('/api/delete-music-video/', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': getCookie('csrftoken'),
+            },
+            body: JSON.stringify({ source_id: sourceId, position: position }),
+          })
+          .then(res => res.json())
+          .then(data => {
+            if (data.success) {
+              sessionStorage.setItem('refreshSuccess', '1');
+              location.reload();
+            } else {
+              alert(data.error || 'Failed to delete video');
+            }
+          })
+          .catch(() => alert('Error deleting video'));
+        }
+      }
+    });
+  }
 });
 
 document.getElementById("more-info-btn").addEventListener("click", async function() {
@@ -850,7 +977,17 @@ document.getElementById("more-info-btn").addEventListener("click", async functio
   btn.textContent = "Loading...";
 
   try {
-    const response = await fetch(`/api/get-extra-info/?media_type=${mediaType}&item_id=${itemId}`);
+    let url = `/api/get-extra-info/?media_type=${mediaType}&item_id=${itemId}`;
+    
+    // For music, add artist_id and album_id if available
+    if (mediaType === 'music') {
+      const artistId = document.body.dataset.artistId || '';
+      const albumId = document.body.dataset.albumId || '';
+      if (artistId) url += `&artist_id=${artistId}`;
+      if (albumId) url += `&album_id=${albumId}`;
+    }
+    
+    const response = await fetch(url);
     if (!response.ok) throw new Error("Network response was not ok");
 
     const data = await response.json();
@@ -1420,6 +1557,33 @@ if (data.recommendations?.length) {
     }
   }
 }
+
+    return safeHTML.join("\n");
+  }
+
+  if (mediaType === "music") {
+    if (data.album_tracks?.length) {
+      safeHTML.push(`<br><p><span class="label">Album tracks:</span></p>`);
+      const trackItems = data.album_tracks.map(track => {
+        const linkHTML = track.id
+          ? `<a href="/musicbrainz/music/${track.id}/" target="_blank" rel="noopener noreferrer">${track.title}</a>`
+          : track.title;
+        return `<span class="relation-item">${linkHTML}</span>`;
+      }).join(", ");
+      safeHTML.push(`<span class="relation-list">${trackItems}</span><br><br>`);
+    }
+
+    if (data.artist_singles?.length) {
+      safeHTML.push(`<p><span class="label">Artist singles:</span></p>`);
+      const singleItems = data.artist_singles.map(single => {
+        const date = single.date ? ` (${single.date.split('-')[0]})` : "";
+        const linkHTML = single.id
+          ? `<a href="/musicbrainz/music/${single.id}/" target="_blank" rel="noopener noreferrer">${single.title}${date}</a>`
+          : `${single.title}${date}`;
+        return `<span class="relation-item">${linkHTML}</span>`;
+      }).join(", ");
+      safeHTML.push(`<span class="relation-list">${singleItems}</span>`);
+    }
 
     return safeHTML.join("\n");
   }

@@ -27,6 +27,7 @@ class MediaItem(models.Model):
         ("manga", "Manga"),
         ("game", "Game"),
         ("book", "Book"),
+        ("music", "Music"),
     ]
 
     STATUS_CHOICES = [
@@ -46,13 +47,13 @@ class MediaItem(models.Model):
     banner_url = models.URLField(blank=True, null=True)              # New: wide image (e.g. backdrop, screenshot)
 
     release_date = models.CharField(max_length=20, blank=True, null=True)  # Stored as string to unify format
-    overview = models.TextField(blank=True, null=True)               # New: description/synopsis
+    overview = models.TextField(blank=True, null=True)               # Description/synopsis
 
-    cast = models.JSONField(blank=True, null=True)        # Unified for all media types
+    cast = models.JSONField(blank=True, null=True)        # Extra data for Music
     seasons = models.JSONField(blank=True, null=True)     # Only for TV series
     episodes = models.JSONField(blank=True, null=True)    # Episode details for seasons
     related_titles = models.JSONField(blank=True, null=True)  # Prequels/Sequels for anime/manga
-    screenshots = models.JSONField(blank=True, null=True)
+    screenshots = models.JSONField(blank=True, null=True) # Youtube Links + Position for Music
 
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="planned")
     
@@ -123,6 +124,7 @@ class NavItem(models.Model):
         ("games", "Games"),
         ("manga", "Manga"),
         ("books", "Books"),
+        ("music", "Music"),
     ]
 
     name = models.CharField(max_length=20, choices=CATEGORY_CHOICES, unique=True)

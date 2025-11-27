@@ -17,6 +17,9 @@
     {% block content %}{% endblock %}
   </main>
 
+  <!-- Music Player Container (appears on all pages) -->
+  <div id="music-player-container" class="music-player-container"></div>
+
 <!-- Search overlay container -->
 <div id="search-overlay" class="hidden">
   <div id="search-results-panel" tabindex="0">
@@ -34,6 +37,8 @@
           {% with page_type|lower as page %}
             {% if page == "tv" %}
               <input type="text" id="overlay-search-input" placeholder="Search for a TV show.." autocomplete="off">
+            {% elif page == "music" %}
+              <input type="text" id="overlay-search-input" placeholder="Search for a song.. (Song - Artist)" autocomplete="off">
             {% else %}
               {% with page|first as first_letter %}
                 {% if first_letter in "aeiou" %}
@@ -65,6 +70,7 @@
 
 
 {% block script %}
+  <script src="{% static 'core/js/music.js' %}?v={{ version }}"></script>
   <script src="{% static 'core/js/base.js' %}?v={{ version }}"></script>
 
 <!-- <link rel="stylesheet" href="{% static 'core/js/rain.css' %}?v={{ version }}"> -->

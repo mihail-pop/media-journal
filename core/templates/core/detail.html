@@ -9,10 +9,15 @@
 {% endblock %}
 
 {% block content %}
+<body data-media-type="{{ media_type }}"></body>
 <script>
   document.body.dataset.theme = '{{ theme_mode }}';
   document.body.dataset.mediaType = '{{ media_type }}';
   document.body.dataset.itemId = '{{ source_id }}';
+  {% if media_type == 'music' %}
+  document.body.dataset.artistId = '{{ artist_id|default:"" }}';
+  document.body.dataset.albumId = '{{ album_id|default:"" }}';
+  {% endif %}
 </script>
 
 {% with banner=banner_url|default_if_none:'' %}
@@ -20,7 +25,7 @@
        {% if banner %}data-banner="{{ banner_url}}"{% endif %}>
     <div class="banner-overlay"></div>
   </div>
-{% if not recommendations %}
+{% if in_my_list %}
 <button onclick="openCoverUpload('{{ source }}', '{{ source_id }}')" class="change-cover-btn">
   Change Cover
 </button>
@@ -71,7 +76,7 @@
   <div class="text-info">
     <h1>{{ title }}</h1>
     <div class="overview-container">
-      <p class="overview">{{ overview|safe }}</p>
+      <p class="overview">{{ overview|safe|linebreaksbr }}</p>
       <button class="read-more-btn">Read More</button>
     </div>
     <p class="release-date">{{ release_date }}</p>
@@ -155,6 +160,51 @@
     {% endif %}
 
 {{ screenshots|json_script:"screenshots-data" }}
+
+{% if media_type == 'music' %}
+<section class="trailer-section music-section">
+  <div class="music-header">
+    <h2>Music</h2>
+    <div class="music-controls">
+      <label class="music-control-btn">
+        <input type="checkbox" id="music-autoplay-toggle">
+        <span>Autoplay</span>
+      </label>
+      <label class="music-control-btn">
+        <input type="checkbox" id="music-hide-toggle">
+        <span>Hide</span>
+      </label>
+      {% if in_my_list %}
+      <button id="music-add-btn" class="music-control-btn">Add</button>
+      {% endif %}
+    </div>
+  </div>
+  <div id="music-add-form" class="music-add-form" style="display:none;">
+    <input type="text" id="music-youtube-url" placeholder="Enter YouTube URL">
+    <button id="music-save-btn">Save</button>
+    <button id="music-cancel-btn">Cancel</button>
+  </div>
+  <div id="music-videos-container" class="trailer-grid">
+    {% if youtube_links %}
+    {% for link in youtube_links %}
+      {% if 'youtube.com/watch?v=' in link.url %}
+        <div class="music-video-wrapper" data-position="{{ link.position }}">
+          <iframe
+            src="https://www.youtube.com/embed/{{ link.url|slice:'32:' }}"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen
+            referrerpolicy="origin-when-cross-origin"
+          ></iframe>
+          {% if in_my_list %}
+          <button class="music-delete-btn" data-position="{{ link.position }}">×</button>
+          {% endif %}
+        </div>
+      {% endif %}
+    {% endfor %}
+    {% endif %}
+  </div>
+</section>
+{% endif %}
 
 {% if media_type == 'game' %}
 <section class="screenshots-section">

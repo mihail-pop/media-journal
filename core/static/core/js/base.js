@@ -46,6 +46,7 @@ document.addEventListener("DOMContentLoaded", () => {
     manga: "/api/mal_search/",
     game: "/api/igdb_search/",
     book: "/api/openlib_search/",
+    music: "/api/musicbrainz_search/",
   };
 
   async function doSearch(query) {
@@ -61,7 +62,7 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const params = new URLSearchParams();
       params.append("q", query);
-      if (["anime", "manga", "movie", "tv", "book"].includes(pageType)) {
+      if (["anime", "manga", "movie", "tv", "book", "music"].includes(pageType)) {
         params.append("type", pageType);
       }
 
@@ -90,6 +91,7 @@ document.addEventListener("DOMContentLoaded", () => {
     pageType === "anime" || pageType === "manga" ? "mal" :
     pageType === "game" ? "igdb" :
     pageType === "book" ? "openlib" :
+    pageType === "music" ? "musicbrainz" :
     "tmdb";
 
         return `

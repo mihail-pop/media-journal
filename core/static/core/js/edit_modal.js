@@ -124,6 +124,11 @@ function updateTotalDisplays(item) {
     form.dataset.mediaType = item.media_type;
     form.dataset.itemId = item.id;
     form.dataset.ratingMode = item.rating_mode;
+    
+    const coverContainer = document.querySelector('.modal-cover');
+    if (coverContainer) {
+      coverContainer.dataset.mediaType = item.media_type;
+    }
     const totalMainInput = form.querySelector('input[name="total_main"]');
 if (totalMainInput) totalMainInput.value = item.total_main ?? "";
 
@@ -400,6 +405,7 @@ item.item_status_choices.forEach(choice => {
       const modal = document.getElementById('edit-modal');
       const banner = modal.querySelector('.modal-banner');
       const cover = modal.querySelector('.modal-cover img');
+      const coverContainer = modal.querySelector('.modal-cover');
       const title = card.dataset.title;
 
 const titleElement = modal.querySelector('.modal-title');
@@ -411,6 +417,9 @@ if (titleElement && title) {
           // Set cover image
     if (cover && coverUrl) {
       cover.src = coverUrl;
+    }
+    if (coverContainer && mediaType) {
+      coverContainer.dataset.mediaType = mediaType;
     }
 
     // Set banner background via data attribute + CSS
@@ -449,6 +458,7 @@ document.querySelectorAll("#list-view .edit-card-btn").forEach(button => {
     const modal = document.getElementById('edit-modal');
     const banner = modal.querySelector('.modal-banner');
     const cover = modal.querySelector('.modal-cover img');
+    const coverContainer = modal.querySelector('.modal-cover');
     const titleElement = modal.querySelector('.modal-title');
 
     if (titleElement && title) {
@@ -457,6 +467,9 @@ document.querySelectorAll("#list-view .edit-card-btn").forEach(button => {
 
     if (cover && coverUrl) {
       cover.src = coverUrl;
+    }
+    if (coverContainer && mediaType) {
+      coverContainer.dataset.mediaType = mediaType;
     }
 
     if (banner && bannerUrl) {

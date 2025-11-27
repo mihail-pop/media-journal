@@ -1192,3 +1192,88 @@ def get_igdb_discover(page, query='', sort='popularity', genre='', platform='', 
         return results
     except Exception:
         return []
+
+def get_music_extra_info(recording_id, artist_id=None, album_id=None):
+    from .models import MediaItem
+    import time
+    import requests
+
+    print(f"[MUSIC] Starting for recording_id: {recording_id}, artist_id: {artist_id}, album_id: {album_id}")
+
+    cast_data = {}
+    try:
+        item = MediaItem.objects.get(source="musicbrainz", source_id=recording_id)
+        cast_data = item.cast or {}
+        if not artist_id:
+            artist_id = cast_data.get("artists", [{}])[0].get("id", "") if cast_data.get("artists") else ""
+        if not album_id:
+            album_id = cast_data.get("album", {}).get("id", "") if cast_data.get("album") else ""
+        print(f"[MUSIC] From DB - artist_id: {artist_id}, album_id: {album_id}")
+    except MediaItem.DoesNotExist:
+        print(f"[MUSIC] Item not in DB, using passed IDs")
+
+    headers = {"User-Agent": "MediaJournal/1.0 (https://github.com/mihail-pop/media-journal)"}
+    album_tracks = []
+    artist_singles = []
+
+    # Fetch album tracks
+    if album_id:
+        time.sleep(1)
+        album_url = f"https://musicbrainz.org/ws/2/release/{album_id}"
+        album_params = {"inc": "recordings", "fmt": "json"}
+        try:
+            album_response = requests.get(album_url, params=album_params, headers=headers, timeout=10)
+            print(f"[MUSIC] Album status: {album_response.status_code}")
+            if album_response.status_code == 200:
+                album_data = album_response.json()
+                for medium in album_data.get("media", []):
+                    for track in medium.get("tracks", []):
+                        recording = track.get("recording", {})
+                        rec_id = recording.get("id", "")
+                        if rec_id and rec_id != recording_id:
+                            album_tracks.append({"title": recording.get("title", ""), "id": rec_id})
+                print(f"[MUSIC] Album tracks: {len(album_tracks)}")
+        except Exception as e:
+            print(f"[MUSIC] Album error: {e}")
+
+    # Fetch artist singles via release-groups (no IDs)
+    if artist_id:
+        time.sleep(1)
+        rg_url = f"https://musicbrainz.org/ws/2/release-group"
+        rg_params = {"artist": artist_id, "type": "single", "fmt": "json", "limit": 100, "offset": 0}
+
+        try:
+            while True:
+                rg_response = requests.get(rg_url, params=rg_params, headers=headers, timeout=10)
+                if rg_response.status_code != 200:
+                    print(f"[MUSIC] Release-group request failed: {rg_response.status_code}")
+                    break
+
+                rg_data = rg_response.json()
+                rgs = rg_data.get("release-groups", [])
+                print(f"[MUSIC] Retrieved {len(rgs)} release-groups at offset {rg_params['offset']}")
+
+                for rg in rgs:
+                    secondary_types = rg.get("secondary-types", [])
+                    if secondary_types:
+                        continue  # skip live, remix, compilation, EP
+
+                    title = rg.get("title", "")
+                    earliest_date = rg.get("first-release-date", "")
+                    if title:
+                        artist_singles.append({"title": title, "date": earliest_date})
+
+                if len(rgs) < 100:
+                    break
+                rg_params["offset"] += 100
+
+            # Sort by date descending (newest → oldest)
+            artist_singles.sort(key=lambda x: x["date"] or "0000-00-00", reverse=True)
+            print(f"[MUSIC] Total singles after sort: {len(artist_singles)}")
+        except Exception as e:
+            print(f"[MUSIC] Singles error: {e}")
+
+    print(f"[MUSIC] Returning tracks={len(album_tracks)}, singles={len(artist_singles)}")
+    return {"album_tracks": album_tracks, "artist_singles": artist_singles}
+
+

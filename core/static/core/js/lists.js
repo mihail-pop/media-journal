@@ -80,6 +80,13 @@ const statusLabelsMap = {
     planned: "Planned",
     dropped: "Dropped",
   },
+  music: {
+    ongoing: "Listening",
+    on_hold: "Paused",
+    completed: "Completed",
+    planned: "Planned",
+    dropped: "Dropped",
+  },
 };
 
   const hasTypeButtons = document.querySelectorAll(".type-filter-btn").length > 0;
@@ -333,7 +340,7 @@ const statusLabelsMap = {
     `;
     
     // Add date column for all media types except books which also get date
-    if (mediaType === 'movies' || mediaType === 'tvshows' || mediaType === 'anime' || mediaType === 'manga' || mediaType === 'games' || mediaType === 'books') {
+    if (mediaType === 'movies' || mediaType === 'tvshows' || mediaType === 'anime' || mediaType === 'manga' || mediaType === 'games' || mediaType === 'books' || mediaType === 'music') {
       const dateFormatted = new Date(item.date_added || Date.now()).toLocaleDateString('en-GB', {
         day: '2-digit',
         month: 'short',
@@ -450,6 +457,8 @@ const statusLabelsMap = {
       return `/igdb/game/${item.source_id}/`;
     } else if (item.media_type === 'book') {
       return `/openlib/book/${item.source_id}/`;
+    } else if (item.media_type === 'music') {
+      return `/musicbrainz/music/${item.source_id}/`;
     } else {
       return `/tmdb/${item.media_type}/${item.source_id}/`;
     }

@@ -239,6 +239,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupReorderButtons('manga-card-grid');
   setupReorderButtons('games-card-grid');
   setupReorderButtons('books-card-grid');
+  setupReorderButtons('music-card-grid');
 });
 
 

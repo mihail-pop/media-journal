@@ -145,6 +145,13 @@ a:hover{
   background: #ccc;
 }
 
+body[data-media-type="music"] .poster {
+  width: 210px;
+  height: 210px;
+  object-fit: cover;
+  object-position: 49.7% top;
+}
+
 .top-content {
   display: flex;
   gap: 2rem;
@@ -1157,6 +1164,115 @@ a:hover{
   border-radius: 8px;
   border: none;
   margin-bottom: 1rem;
+}
+
+/* Music section controls */
+.music-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.music-section h2 {
+  color: var(--text-title);
+  margin: 0;
+}
+
+.music-controls {
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
+}
+
+.music-control-btn {
+  background: none;
+  border: 1px solid var(--border-color);
+  color: var(--text-overview);
+  padding: 0.4em 1em;
+  font-size: 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.music-control-btn:hover {
+  background-color: var(--hover-bg);
+  color: var(--text-title);
+}
+
+.music-control-btn input[type="checkbox"] {
+  margin: 0;
+  cursor: pointer;
+}
+
+.music-add-form {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  align-items: center;
+}
+
+.music-add-form input {
+  flex: 1;
+  padding: 0.5rem;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-size: 1rem;
+}
+
+.music-add-form button {
+  background: none;
+  border: 1px solid var(--border-color);
+  color: var(--text-overview);
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.music-add-form button:hover {
+  background-color: var(--hover-bg);
+  color: var(--text-title);
+}
+
+.music-video-wrapper {
+  position: relative;
+}
+
+.music-delete-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  font-size: 24px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.music-video-wrapper:hover .music-delete-btn {
+  opacity: 1;
+}
+
+.music-delete-btn:hover {
+  background: rgba(255, 0, 0, 0.8);
 }
 
 .relation-list {

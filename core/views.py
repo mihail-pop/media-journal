@@ -1,5 +1,5 @@
 from django.apps import apps
-from core.utils import download_image, fetch_anilist_data, get_igdb_token, get_anime_extra_info, get_game_extra_info, get_manga_extra_info, get_movie_extra_info, get_tv_extra_info, rating_to_display, display_to_rating, get_anilist_discover, get_tmdb_discover, get_igdb_discover
+from core.utils import download_image, fetch_anilist_data, get_igdb_token, get_anime_extra_info, get_game_extra_info, get_manga_extra_info, get_movie_extra_info, get_tv_extra_info, get_music_extra_info, rating_to_display, display_to_rating, get_anilist_discover, get_tmdb_discover, get_igdb_discover
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_POST
 from django.db.models import Case, When, IntegerField, Value, F, Q
@@ -706,6 +706,125 @@ def manga_banners_api(request):
 
 
 @ensure_csrf_cookie
+def music(request):
+    # Get current rating mode and theme from AppSettings
+    AppSettings = apps.get_model('core', 'AppSettings')
+    settings = AppSettings.objects.first()
+    rating_mode = settings.rating_mode if settings else 'faces'
+    theme_mode = settings.theme_mode if settings else 'dark'
+
+    # Get status counts for sidebar
+    status_counts = {
+        'all': MediaItem.objects.filter(media_type="music").count(),
+        'ongoing': MediaItem.objects.filter(media_type="music", status='ongoing').count(),
+        'completed': MediaItem.objects.filter(media_type="music", status='completed').count(),
+        'on_hold': MediaItem.objects.filter(media_type="music", status='on_hold').count(),
+        'planned': MediaItem.objects.filter(media_type="music", status='planned').count(),
+        'dropped': MediaItem.objects.filter(media_type="music", status='dropped').count(),
+    }
+
+    return render(request, 'core/music.html', {
+        'page_type': 'music',
+        'rating_mode': rating_mode,
+        'theme_mode': theme_mode,
+        'status_counts': status_counts,
+    })
+
+@require_GET
+def music_api(request):
+    page = int(request.GET.get('page', 1))
+    status = request.GET.get('status', 'all')
+    search = request.GET.get('search', '').strip()
+    sort_by = request.GET.get('sort_by', 'rating')
+    sort_order = request.GET.get('sort_order', 'desc')
+    page_size = 50
+    
+    status_ordering = Case(
+        When(status='ongoing', then=Value(1)),
+        When(status='completed', then=Value(2)),
+        When(status='on_hold', then=Value(3)),
+        When(status='planned', then=Value(4)),
+        When(status='dropped', then=Value(5)),
+        default=Value(6),
+        output_field=IntegerField(),
+    )
+    
+    rating_ordering = Case(
+        When(personal_rating=None, then=Value(0)),
+        default=F('personal_rating'),
+        output_field=IntegerField(),
+    )
+    
+    queryset = MediaItem.objects.filter(media_type="music")
+    
+    if status != 'all':
+        queryset = queryset.filter(status=status)
+    
+    if search:
+        queryset = queryset.filter(title__icontains=search)
+    
+    queryset = queryset.annotate(
+        status_order=status_ordering,
+        rating_order=rating_ordering
+    )
+    
+    # Apply sorting
+    order_fields = ['status_order']
+    if sort_by == 'title':
+        order_fields.append('title' if sort_order == 'asc' else '-title')
+    elif sort_by == 'rating':
+        order_fields.append('-rating_order' if sort_order == 'desc' else 'rating_order')
+        order_fields.append('title')  # Secondary sort by title
+    elif sort_by == 'date':
+        order_fields.append('-date_added' if sort_order == 'desc' else 'date_added')
+    
+    queryset = queryset.order_by(*order_fields)
+    
+    start = (page - 1) * page_size
+    end = start + page_size
+    items = queryset[start:end]
+    
+    has_more = queryset.count() > end
+    
+    items_data = []
+    for item in items:
+        items_data.append({
+            'id': item.id,
+            'title': item.title,
+            'media_type': item.media_type,
+            'status': item.status,
+            'personal_rating': item.personal_rating,
+            'cover_url': item.cover_url or '/static/core/img/placeholder.png',
+            'banner_url': item.banner_url or '/static/core/img/placeholder.png',
+            'notes': item.notes or '',
+            'source_id': item.source_id,
+            'get_status_display': item.get_status_display(),
+            'repeats': item.repeats,
+            'date_added': item.date_added.isoformat() if item.date_added else '',
+        })
+    
+    return JsonResponse({
+        'items': items_data,
+        'has_more': has_more,
+        'page': page
+    })
+
+@require_GET
+def music_banners_api(request):
+    """Get all music banners for the rotator"""
+    music = MediaItem.objects.filter(media_type="music").values('banner_url', 'notes')
+    banners = []
+    for item in music:
+        banner_url = item['banner_url']
+        notes = item['notes'] or ''
+        if banner_url and not 'placeholder' in banner_url:
+            banners.append({
+                'bannerUrl': banner_url,
+                'notes': notes if notes != 'None' else ''
+            })
+    return JsonResponse({'banners': banners})
+
+@ensure_csrf_cookie
 def books(request):
     # Get current rating mode and theme from AppSettings
     AppSettings = apps.get_model('core', 'AppSettings')
@@ -908,6 +1027,8 @@ def history_api(request):
             url = f"/igdb/game/{item.source_id}/"
         elif item.source == "openlib" and item.media_type == "book":
             url = f"/openlib/book/{item.source_id}/"
+        elif item.source == "musicbrainz" and item.media_type == "music":
+            url = f"/musicbrainz/music/{item.source_id}/"
         else:
             url = "#"
         
@@ -942,6 +1063,7 @@ def home(request):
         "Manga": favorites.filter(media_type="manga"),
         "Games": favorites.filter(media_type="game"),
         "Books": favorites.filter(media_type="book"),
+        "Music": favorites.filter(media_type="music"),
     }
 
     all_items = MediaItem.objects.all()
@@ -1085,6 +1207,8 @@ def home(request):
             url = reverse("igdb_detail", args=[item.source_id])
         elif item.source == "openlib" and item.media_type == "book":
             url = reverse("openlib_detail", args=[item.source_id])
+        elif item.source == "musicbrainz" and item.media_type == "music":
+            url = reverse("musicbrainz_detail", args=[item.source_id])
         else:
             url = "#"
         
@@ -1106,6 +1230,7 @@ def home(request):
 
     return render(request, "core/home.html", {
         "favorite_sections": favorite_sections.items(),
+        "favorite_sections_dict": favorite_sections,
         "favorite_characters": favorite_characters,
         "favorite_actors": favorite_actors,
         "stats": stats,
@@ -1218,6 +1343,21 @@ def update_theme(request):
     
     return JsonResponse({"success": True})
 
+@require_POST
+def save_username(request):
+    data = json.loads(request.body.decode("utf-8"))
+    username = data.get("username", "").strip()
+    
+    AppSettings = apps.get_model('core', 'AppSettings')
+    settings = AppSettings.objects.first()
+    if not settings:
+        settings = AppSettings.objects.create()
+    
+    settings.username = username
+    settings.save()
+    
+    return JsonResponse({"success": True})
+
 
 @ensure_csrf_cookie
 @require_POST
@@ -1315,6 +1455,7 @@ def board(request):
         "items": list(items),
         "media_types": media_types,
         "theme_mode": theme_mode,
+        "username": settings.username if settings and settings.username else '',
     })
 
 @ensure_csrf_cookie
@@ -1460,6 +1601,633 @@ def mal_search(request):
 #         })
 
 #     return JsonResponse({"results": results})
+
+
+# music search
+@ensure_csrf_cookie
+@require_GET
+def musicbrainz_search(request):
+    query = request.GET.get("q", "").strip()
+
+    if not query:
+        return JsonResponse({"error": "Query parameter 'q' is required."}, status=400)
+
+    try:
+        url = "https://musicbrainz.org/ws/2/recording"
+        params = {
+            "query": query,
+            "limit": 20,
+            "fmt": "json"
+        }
+        headers = {
+            "User-Agent": "MediaJournal/1.0 (https://github.com/mihail-pop/media-journal)"
+        }
+
+        response = requests.get(url, params=params, headers=headers, timeout=10)
+        if response.status_code != 200:
+            return JsonResponse({"error": "Failed to fetch from MusicBrainz."}, status=500)
+
+        data = response.json()
+        entries = []
+
+        # Process each recording
+        for recording in data.get("recordings", []):
+            title = recording.get("title", "Untitled")
+            artists_list = [a.get("name", "") for a in recording.get("artist-credit", [])]
+            recording_id = recording.get("id")
+
+            for r in recording.get("releases", []):
+                rg = r.get("release-group", {})
+                primary_type = rg.get("primary-type", "").lower()
+                secondary_types = [s.lower() for s in rg.get("secondary-types", [])]
+
+                if not r.get("date"):
+                    continue
+
+                year = r.get("date")[:4] if len(r.get("date")) >= 4 else ""
+
+                entries.append({
+                    "id": recording_id,
+                    "title": title,
+                    "artists": artists_list,
+                    "release_title": r.get("title", ""),
+                    "release_type": primary_type,
+                    "secondary_types": secondary_types,
+                    "year": year,
+                })
+
+        # Group by song title + artists
+        grouped = {}
+        for e in entries:
+            key = (e["title"].lower(), tuple([a.lower() for a in e["artists"]]))
+            grouped.setdefault(key, []).append(e)
+
+        # Filter: keep all albums, only show singles if no album
+        filtered = []
+        for recs in grouped.values():
+            albums = [
+                r for r in recs
+                if r["release_type"] == "album" and not any(st in ["live","remix","compilation","ep"] for st in r["secondary_types"])
+            ]
+            if albums:
+                filtered.append(albums[0])  # keep only the first album per title+artist
+            else:
+                filtered.append(recs[0])  # keep only the first single if no album
+
+        # Format results
+        results = []
+        for r in filtered:
+            display_title = r["title"]
+            if r["artists"]:
+                display_title += f" by {', '.join(r['artists'])}"
+            if r["year"]:
+                display_title += f" | {r['year']}"
+            results.append({
+                "id": r["id"],
+                "title": display_title,
+                "poster_path": None,
+            })
+
+        return JsonResponse({"results": results})
+
+    except Exception as e:
+        logger.error(f"MusicBrainz search error: {str(e)}")
+        return JsonResponse({"error": f"Search failed: {str(e)}"}, status=500)
+
+
+
+# Music Details
+@ensure_csrf_cookie
+@require_GET
+def musicbrainz_detail(request, recording_id):
+    item = None
+    try:
+        item = MediaItem.objects.get(source="musicbrainz", source_id=recording_id)
+        
+        # Get YouTube links from screenshots field
+        youtube_links = item.screenshots or []
+        
+        # Format release date
+        formatted_release_date = ""
+        if item.release_date:
+            try:
+                parsed_date = datetime.datetime.strptime(item.release_date, "%Y-%m-%d")
+                formatted_release_date = parsed_date.strftime("%d %B %Y")
+            except ValueError:
+                formatted_release_date = item.release_date
+        
+        AppSettings = apps.get_model('core', 'AppSettings')
+        settings = AppSettings.objects.first()
+        theme_mode = settings.theme_mode if settings else 'dark'
+        
+        # Extract artist and album IDs from cast field
+        cast_data = item.cast or {}
+        artist_id = cast_data.get("artists", [{}])[0].get("id", "") if cast_data.get("artists") else ""
+        album_id = cast_data.get("album", {}).get("id", "") if cast_data.get("album") else ""
+        
+        return render(request, "core/detail.html", {
+            "item": item,
+            "item_id": item.id,
+            "source": "musicbrainz",
+            "source_id": recording_id,
+            "in_my_list": True,
+            "media_type": "music",
+            "title": item.title,
+            "overview": item.overview,
+            "banner_url": item.banner_url,
+            "poster_url": item.cover_url,
+            "release_date": formatted_release_date,
+            "cast": [],
+            "recommendations": [],
+            "seasons": None,
+            "youtube_links": youtube_links,
+            "page_type": "music",
+            "theme_mode": theme_mode,
+            "artist_id": artist_id,
+            "album_id": album_id,
+        })
+    except MediaItem.DoesNotExist:
+        pass
+    
+    # Fetch from MusicBrainz API
+    headers = {"User-Agent": "MediaJournal/1.0 (https://github.com/mihail-pop/media-journal)"}
+    
+    # Get recording details
+    time.sleep(1)  # MusicBrainz rate limit
+    recording_url = f"https://musicbrainz.org/ws/2/recording/{recording_id}"
+    recording_params = {"inc": "artists+releases+release-groups+isrcs+tags", "fmt": "json"}
+    
+    try:
+        recording_response = requests.get(recording_url, params=recording_params, headers=headers, timeout=10)
+    except requests.exceptions.RequestException as e:
+        logger.error(f"MusicBrainz API error: {str(e)}")
+        return JsonResponse({"error": "Failed to connect to MusicBrainz API."}, status=500)
+    
+    if recording_response.status_code != 200:
+        return JsonResponse({"error": "Failed to fetch recording details."}, status=500)
+    
+    recording_data = recording_response.json()
+    
+    # Get title and artist
+    title = recording_data.get("title", "Untitled")
+    artist_credits = recording_data.get("artist-credit", [])
+    artists = ", ".join([a.get("name", "") for a in artist_credits])
+    artist_label = "Artist" if len(artist_credits) == 1 else "Artists"
+    
+    # Get first release by date
+    first_release = ""
+    releases = recording_data.get("releases", [])
+    if releases:
+        sorted_releases = sorted([r for r in releases if r.get("date")], key=lambda x: x.get("date", ""))
+        if sorted_releases:
+            release = sorted_releases[0]
+            release_title = release.get("title", "")
+            release_type = release.get("release-group", {}).get("primary-type", "")
+            first_release = f"{release_title} ({release_type})" if release_type else release_title
+    
+    # Get genres from tags
+    genres = [tag.get("name", "") for tag in recording_data.get("tags", [])[:5]]
+    
+    # Build overview
+    overview_parts = []
+    if artists:
+        overview_parts.append(f"{artist_label}: {artists}")
+    if first_release:
+        overview_parts.append(f"First released as: {first_release}")
+    if genres:
+        overview_parts.append(f"Genres: {', '.join(genres)}")
+    overview = "\n".join(overview_parts)
+    
+    # Get ISRC for YouTube search
+    isrcs = recording_data.get("isrcs", [])
+    isrc = isrcs[0] if isrcs else None
+    
+    # Search YouTube
+    youtube_link = None
+    poster_url = None
+    banner_url = None
+    if isrc:
+        search_query = isrc
+    else:
+        search_query = f"{artists} {title}"
+    
+    # Simple YouTube search via scraping (no API key needed)
+    try:
+        import urllib.parse
+        import unicodedata
+        
+        def normalize_text(text):
+            # Remove accents and convert to lowercase
+            text = ''.join(c for c in unicodedata.normalize('NFD', text) if unicodedata.category(c) != 'Mn').lower()
+            # Keep only letters, numbers and spaces
+            text = ''.join(c for c in text if c.isalnum() or c.isspace())
+            # Normalize all whitespace to single spaces
+            return ' '.join(text.split())
+        
+        yt_search_url = f"https://www.youtube.com/results?search_query={urllib.parse.quote(search_query)}"
+
+        yt_headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        }
+        yt_response = requests.get(yt_search_url, headers=yt_headers, timeout=10)
+
+        if yt_response.status_code == 200:
+            import re
+            # Find video entries with their view counts nearby
+            video_ids = re.findall(r'"videoId":"([^"]+)"', yt_response.text)
+            
+            # Get unique videos
+            videos = []
+            seen = set()
+            for vid in video_ids:
+                if vid not in seen and len(videos) < 10:
+                    videos.append(vid)
+                    seen.add(vid)
+            
+
+            
+            # Match videos by title
+            best_video = None
+            title_normalized = normalize_text(title)
+
+            
+            video_titles = []
+            for video_id in videos:
+                video_pos = yt_response.text.find(f'"videoId":"{video_id}"')
+                if video_pos == -1:
+                    continue
+                search_window = yt_response.text[video_pos:video_pos + 2000]
+                title_pattern = r'"title":{"runs":\[{"text":"([^"]+)"}'
+                title_match = re.search(title_pattern, search_window)
+                
+                if title_match:
+                    video_title = title_match.group(1)
+                    video_title_normalized = normalize_text(video_title)
+                    video_titles.append((video_id, video_title, video_title_normalized))
+
+                    
+                    if title_normalized in video_title_normalized or video_title_normalized in title_normalized:
+                        best_video = video_id
+                        break
+            
+            # Fallback: try matching by artist names
+            if not best_video and artists:
+                artist_list = [normalize_text(a.strip()) for a in artists.split(',')]
+                for artist_name in artist_list:
+                    for video_id, video_title, video_title_normalized in video_titles:
+                        if artist_name in video_title_normalized:
+                            best_video = video_id
+                            break
+                    if best_video:
+                        break
+
+            if not best_video and isrc:
+                # Retry search by title + artist
+                search_query = f"{artists} {title}"
+                yt_search_url = f"https://www.youtube.com/results?search_query={urllib.parse.quote(search_query)}"
+                yt_response = requests.get(yt_search_url, headers=yt_headers, timeout=10)
+    
+                video_ids = re.findall(r'"videoId":"([^"]+)"', yt_response.text)
+                videos = []
+                seen = set()
+                for vid in video_ids:
+                    if vid not in seen and len(videos) < 10:
+                        videos.append(vid)
+                        seen.add(vid)
+
+                video_titles = []
+                for video_id in videos:
+                    video_pos = yt_response.text.find(f'"videoId":"{video_id}"')
+                    if video_pos == -1:
+                        continue
+                    search_window = yt_response.text[video_pos:video_pos + 2000]
+                    title_pattern = r'"title":{"runs":\[{"text":"([^"]+)"}'
+                    title_match = re.search(title_pattern, search_window)
+                    if title_match:
+                        video_title = title_match.group(1)
+                        video_title_normalized = normalize_text(video_title)
+                        video_titles.append((video_id, video_title, video_title_normalized))
+                        if normalize_text(title) in video_title_normalized or video_title_normalized in normalize_text(title):
+                            best_video = video_id
+                            break
+
+                # fallback by artist again
+                if not best_video and artists:
+                    artist_list = [normalize_text(a.strip()) for a in artists.split(',')]
+                    for artist_name in artist_list:
+                        for video_id, video_title, video_title_normalized in video_titles:
+                            if artist_name in video_title_normalized:
+                                best_video = video_id
+                                break
+                        if best_video:
+                            break
+            
+            if best_video:
+                youtube_link = f"https://www.youtube.com/watch?v={best_video}"
+                # Try maxresdefault first, fallback to hqdefault if not available
+                max_res_url = f"https://img.youtube.com/vi/{best_video}/maxresdefault.jpg"
+                try:
+                    img_check = requests.head(max_res_url, timeout=3)
+                    if img_check.status_code == 200 and int(img_check.headers.get('content-length', 0)) > 5000:
+                        poster_url = max_res_url
+                    else:
+                        poster_url = f"https://img.youtube.com/vi/{best_video}/hqdefault.jpg"
+                except:
+                    poster_url = f"https://img.youtube.com/vi/{best_video}/hqdefault.jpg"
+                banner_url = poster_url
+            else:
+                print(f"No title match found, skipping YouTube link")
+    except Exception as e:
+        print(f"YouTube search error: {str(e)}")
+        pass
+    
+    # Get release date
+    release_date = ""
+    releases = recording_data.get("releases", [])
+    if releases:
+        first_release = releases[0]
+        release_date = first_release.get("date", "")
+    
+    # Format release date
+    formatted_release_date = ""
+    if release_date:
+        try:
+            if len(release_date) >= 10:
+                parsed_date = datetime.datetime.strptime(release_date[:10], "%Y-%m-%d")
+                formatted_release_date = parsed_date.strftime("%d %B %Y")
+            elif len(release_date) >= 4:
+                formatted_release_date = release_date[:4]
+        except ValueError:
+            formatted_release_date = release_date
+    
+    AppSettings = apps.get_model('core', 'AppSettings')
+    settings = AppSettings.objects.first()
+    theme_mode = settings.theme_mode if settings else 'dark'
+    
+    # Extract artist and album IDs
+    artist_id = artist_credits[0].get("artist", {}).get("id", "") if artist_credits else ""
+    first_release_id = releases[0].get("id", "") if releases else ""
+    
+    return render(request, "core/detail.html", {
+        "item": None,
+        "item_id": None,
+        "source": "musicbrainz",
+        "source_id": recording_id,
+        "in_my_list": False,
+        "media_type": "music",
+        "title": title,
+        "overview": overview,
+        "banner_url": banner_url or "",
+        "poster_url": poster_url or "",
+        "release_date": formatted_release_date,
+        "cast": [],
+        "recommendations": [],
+        "seasons": None,
+        "youtube_links": [{"url": youtube_link, "position": 1}] if youtube_link else [],
+        "page_type": "music",
+        "theme_mode": theme_mode,
+        "artist_id": artist_id,
+        "album_id": first_release_id,
+    })
+
+
+def save_musicbrainz_item(recording_id):
+    headers = {"User-Agent": "MediaJournal/1.0 (https://github.com/mihail-pop/media-journal)"}
+    
+    # Get recording details
+    time.sleep(1)  # MusicBrainz rate limit
+    recording_url = f"https://musicbrainz.org/ws/2/recording/{recording_id}"
+    recording_params = {"inc": "artists+releases+release-groups+isrcs+tags", "fmt": "json"}
+    
+    try:
+        recording_response = requests.get(recording_url, params=recording_params, headers=headers, timeout=10)
+    except requests.exceptions.RequestException as e:
+        raise Exception(f"Failed to connect to MusicBrainz API: {str(e)}")
+    
+    if recording_response.status_code != 200:
+        raise Exception("Failed to fetch recording details.")
+    
+    recording_data = recording_response.json()
+    
+    # Get title and artist
+    title = recording_data.get("title", "Untitled")
+    artist_credits = recording_data.get("artist-credit", [])
+    artists = ", ".join([a.get("name", "") for a in artist_credits])
+    artist_label = "Artist" if len(artist_credits) == 1 else "Artists"
+    
+    # Get first release by date and ISRC
+    first_release = ""
+    first_release_id = ""
+    first_release_type = ""
+    releases = recording_data.get("releases", [])
+    if releases:
+        sorted_releases = sorted([r for r in releases if r.get("date")], key=lambda x: x.get("date", ""))
+        if sorted_releases:
+            release = sorted_releases[0]
+            first_release = release.get("title", "")
+            first_release_id = release.get("id", "")
+            first_release_type = release.get("release-group", {}).get("primary-type", "")
+    
+    isrcs = recording_data.get("isrcs", [])
+    isrc = isrcs[0] if isrcs else ""
+    
+    # Get genres from tags
+    genres = [tag.get("name", "") for tag in recording_data.get("tags", [])[:5]]
+    
+    # Build overview
+    overview_parts = []
+    if artists:
+        overview_parts.append(f"{artist_label}: {artists}")
+    if first_release:
+        release_display = f"{first_release} ({first_release_type})" if first_release_type else first_release
+        overview_parts.append(f"First released as: {release_display}")
+    if genres:
+        overview_parts.append(f"Genres: {', '.join(genres)}")
+    overview = "\n".join(overview_parts)
+    
+    # Store data in cast field
+    cast_data = {
+        "artists": [{"name": a.get("name", ""), "id": a.get("artist", {}).get("id", "")} for a in artist_credits],
+        "genres": genres,
+        "album": {"title": first_release, "id": first_release_id, "type": first_release_type} if first_release else None,
+        "isrc": isrc
+    }
+    
+    # Search YouTube
+    youtube_links = []
+    local_poster = ""
+    if isrc:
+        search_query = isrc
+    else:
+        search_query = f"{artists} {title}"
+    
+    # Simple YouTube search via scraping
+    try:
+        import urllib.parse
+        import unicodedata
+        
+        def normalize_text(text):
+            # Remove accents and convert to lowercase
+            text = ''.join(c for c in unicodedata.normalize('NFD', text) if unicodedata.category(c) != 'Mn').lower()
+            # Keep only letters, numbers and spaces
+            text = ''.join(c for c in text if c.isalnum() or c.isspace())
+            # Normalize all whitespace to single spaces
+            return ' '.join(text.split())
+        
+        yt_search_url = f"https://www.youtube.com/results?search_query={urllib.parse.quote(search_query)}"
+
+        yt_headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        }
+        yt_response = requests.get(yt_search_url, headers=yt_headers, timeout=10)
+
+        if yt_response.status_code == 200:
+            import re
+            # Find video entries
+            video_ids = re.findall(r'"videoId":"([^"]+)"', yt_response.text)
+            
+            # Get unique videos
+            videos = []
+            seen = set()
+            for vid in video_ids:
+                if vid not in seen and len(videos) < 10:
+                    videos.append(vid)
+                    seen.add(vid)
+            
+            # Match videos by title
+            best_video = None
+            title_normalized = normalize_text(title)
+            
+            video_titles = []
+            for video_id in videos:
+                video_pos = yt_response.text.find(f'"videoId":"{video_id}"')
+                if video_pos == -1:
+                    continue
+                search_window = yt_response.text[video_pos:video_pos + 2000]
+                title_pattern = r'"title":{"runs":\[{"text":"([^"]+)"}'
+                title_match = re.search(title_pattern, search_window)
+                
+                if title_match:
+                    video_title = title_match.group(1)
+                    video_title_normalized = normalize_text(video_title)
+                    video_titles.append((video_id, video_title, video_title_normalized))
+                    
+                    if title_normalized in video_title_normalized or video_title_normalized in title_normalized:
+                        best_video = video_id
+                        break
+            
+            # Fallback: try matching by artist names
+            if not best_video and artists:
+                artist_list = [normalize_text(a.strip()) for a in artists.split(',')]
+
+                for artist_name in artist_list:
+                    for video_id, video_title, video_title_normalized in video_titles:
+                        if artist_name in video_title_normalized:
+                            best_video = video_id
+                            break
+                    if best_video:
+                        break
+            
+            if not best_video and isrc:
+                # Retry search by title + artist
+                search_query = f"{artists} {title}"
+                yt_search_url = f"https://www.youtube.com/results?search_query={urllib.parse.quote(search_query)}"
+                yt_response = requests.get(yt_search_url, headers=yt_headers, timeout=10)
+    
+                video_ids = re.findall(r'"videoId":"([^"]+)"', yt_response.text)
+                videos = []
+                seen = set()
+                for vid in video_ids:
+                    if vid not in seen and len(videos) < 10:
+                        videos.append(vid)
+                        seen.add(vid)
+
+                video_titles = []
+                for video_id in videos:
+                    video_pos = yt_response.text.find(f'"videoId":"{video_id}"')
+                    if video_pos == -1:
+                        continue
+                    search_window = yt_response.text[video_pos:video_pos + 2000]
+                    title_pattern = r'"title":{"runs":\[{"text":"([^"]+)"}'
+                    title_match = re.search(title_pattern, search_window)
+                    if title_match:
+                        video_title = title_match.group(1)
+                        video_title_normalized = normalize_text(video_title)
+                        video_titles.append((video_id, video_title, video_title_normalized))
+                        if normalize_text(title) in video_title_normalized or video_title_normalized in normalize_text(title):
+                            best_video = video_id
+                            break
+
+                # fallback by artist again
+                if not best_video and artists:
+                    artist_list = [normalize_text(a.strip()) for a in artists.split(',')]
+                    for artist_name in artist_list:
+                        for video_id, video_title, video_title_normalized in video_titles:
+                            if artist_name in video_title_normalized:
+                                best_video = video_id
+                                break
+                        if best_video:
+                            break
+            
+            if best_video:
+                youtube_links.append({"url": f"https://www.youtube.com/watch?v={best_video}", "position": 1})
+                # Try maxresdefault first, fallback to hqdefault if not available
+                max_res_url = f"https://img.youtube.com/vi/{best_video}/maxresdefault.jpg"
+                try:
+                    img_check = requests.head(max_res_url, timeout=3)
+                    if img_check.status_code == 200 and int(img_check.headers.get('content-length', 0)) > 5000:
+                        thumbnail_url = max_res_url
+                    else:
+                        thumbnail_url = f"https://img.youtube.com/vi/{best_video}/hqdefault.jpg"
+                except:
+                    thumbnail_url = f"https://img.youtube.com/vi/{best_video}/hqdefault.jpg"
+                local_poster = download_image(thumbnail_url, f"posters/musicbrainz_{recording_id}.jpg")
+                local_banner = download_image(thumbnail_url, f"banners/musicbrainz_{recording_id}.jpg")
+            else:
+                print(f"[SAVE] No match found, saving without YouTube link")
+    except Exception as e:
+        print(f"[SAVE] YouTube search error: {str(e)}")
+        pass
+    
+    # Get release date
+    release_date = None
+    releases = recording_data.get("releases", [])
+    if releases:
+        first_release = releases[0]
+        release_date_str = first_release.get("date", "")
+        
+        # Format release date
+        if release_date_str:
+            try:
+                if len(release_date_str) >= 10:
+                    parsed_date = datetime.datetime.strptime(release_date_str[:10], "%Y-%m-%d")
+                    release_date = parsed_date.strftime("%Y-%m-%d")
+                elif len(release_date_str) >= 4:
+                    release_date = f"{release_date_str[:4]}-01-01"
+            except ValueError:
+                pass
+    
+    # Save to database
+    MediaItem.objects.create(
+        title=title,
+        media_type="music",
+        source="musicbrainz",
+        source_id=recording_id,
+        cover_url=local_poster,
+        banner_url=local_banner if 'local_banner' in locals() else "",
+        overview=overview,
+        release_date=release_date,
+        cast=cast_data,
+        seasons=None,
+        related_titles=[],
+        screenshots=youtube_links,
+    )
+    
+    return JsonResponse({"success": True, "message": "Song added to list"})
 
 
 # books search
@@ -3254,6 +4022,9 @@ def add_to_list(request):
     
     if source == "openlib":
         return save_openlib_item(source_id)
+    
+    if source == "musicbrainz":
+        return save_musicbrainz_item(source_id)
 
     return JsonResponse({"error": "Unsupported source"}, status=400)
 
@@ -3303,7 +4074,6 @@ def edit_item(request, item_id):
                         item.date_added = dt.datetime.now()
             elif status_changed:
                 item.date_added = dt.datetime.now()
-                print(f"Status changed (no user date): Setting date_added to {item.date_added}")
 
             # Update progress fields if present (manual input)
             if "progress_main" in data and data["progress_main"] not in [None, ""]:
@@ -3386,10 +4156,12 @@ def delete_item(request, item_id):
         if item.banner_url and item.banner_url.startswith("/media/"):
             paths_to_check.append(os.path.join(media_root, item.banner_url.replace("/media/", "")))
 
-        for i, member in enumerate(item.cast or []):
-            p = member.get("profile_path", "")
-            if p.startswith("/media/"):
-                paths_to_check.append(os.path.join(media_root, p.replace("/media/", "")))
+        # Skip cast processing for music (different structure)
+        if item.media_type != 'music':
+            for i, member in enumerate(item.cast or []):
+                p = member.get("profile_path", "")
+                if p.startswith("/media/"):
+                    paths_to_check.append(os.path.join(media_root, p.replace("/media/", "")))
 
         for related in item.related_titles or []:
             p = related.get("poster_path", "")
@@ -4505,6 +5277,8 @@ def refresh_item(request):
             save_igdb_item(source_id)
         elif source == "openlib":
             save_openlib_item(source_id)
+        elif source == "musicbrainz":
+            save_musicbrainz_item(source_id)
         else:
             return JsonResponse({"error": "Unsupported source."}, status=400)
 
@@ -4562,10 +5336,11 @@ def get_extra_info(request):
     if not media_type or not item_id:
         return JsonResponse({"error": "Missing parameters"}, status=400)
 
-    try:
-        item_id = int(item_id)
-    except ValueError:
-        return JsonResponse({"error": "Invalid item_id"}, status=400)
+    if media_type != "music":
+        try:
+            item_id = int(item_id)
+        except ValueError:
+            return JsonResponse({"error": "Invalid item_id"}, status=400)
 
     if media_type == "movie":
         data = get_movie_extra_info(item_id)
@@ -4577,6 +5352,10 @@ def get_extra_info(request):
         data = get_manga_extra_info(item_id)
     elif media_type == "game":
         data = get_game_extra_info(item_id)
+    elif media_type == "music":
+        artist_id = request.GET.get("artist_id", "")
+        album_id = request.GET.get("album_id", "")
+        data = get_music_extra_info(item_id, artist_id, album_id)
     else:
         data = {}
 
@@ -4948,3 +5727,105 @@ def load_more_cast(request):
         
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+
+
+@require_POST
+def add_music_video(request):
+    try:
+        data = json.loads(request.body)
+        source_id = data.get('source_id')
+        url = data.get('url')
+        
+        if not source_id or not url:
+            return JsonResponse({'success': False, 'error': 'Missing data'})
+        
+        # Validate YouTube URL
+        if 'youtube.com/watch?v=' not in url and 'youtu.be/' not in url:
+            return JsonResponse({'success': False, 'error': 'Invalid YouTube URL'})
+        
+        # Normalize URL to standard format
+        if 'youtu.be/' in url:
+            video_id = url.split('youtu.be/')[1].split('?')[0]
+            url = f'https://www.youtube.com/watch?v={video_id}'
+        
+        item = MediaItem.objects.get(source_id=source_id, media_type='music')
+        
+        # Get current screenshots/youtube_links
+        screenshots = item.screenshots or []
+        
+        # Find next position
+        max_position = 0
+        if screenshots:
+            max_position = max([link.get('position', 0) for link in screenshots])
+        
+        new_position = max_position + 1
+        
+        # Add new video
+        screenshots.append({'url': url, 'position': new_position})
+        
+        item.screenshots = screenshots
+        item.save()
+        
+        return JsonResponse({'success': True})
+    except MediaItem.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Item not found'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+@require_POST
+def delete_music_video(request):
+    try:
+        data = json.loads(request.body)
+        source_id = data.get('source_id')
+        position = data.get('position')
+        
+        if not source_id or position is None:
+            return JsonResponse({'success': False, 'error': 'Missing data'})
+        
+        item = MediaItem.objects.get(source_id=source_id, media_type='music')
+        
+        # Get current screenshots/youtube_links
+        screenshots = item.screenshots or []
+        
+        # Remove the video at the specified position
+        screenshots = [link for link in screenshots if link.get('position') != position]
+        
+        # Reorder positions
+        screenshots.sort(key=lambda x: x.get('position', 0))
+        for i, link in enumerate(screenshots, start=1):
+            link['position'] = i
+        
+        item.screenshots = screenshots
+        item.save()
+        
+        return JsonResponse({'success': True})
+    except MediaItem.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Item not found'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
+@require_GET
+def favorite_music_videos(request):
+    try:
+        # Get all favorited music items
+        mode = request.GET.get('mode', 'favorites')
+        if mode == 'all':
+            music_items = MediaItem.objects.filter(media_type='music')
+        else:
+            music_items = MediaItem.objects.filter(media_type='music', favorite=True)
+        
+        videos = []
+        for item in music_items:
+            if item.screenshots:
+                for link in item.screenshots:
+                    if link.get('position') != 1:
+                        continue
+                    url = link.get('url', '')
+                    if 'youtube.com/watch?v=' in url:
+                        video_id = url.split('watch?v=')[1].split('&')[0]
+                        videos.append(video_id)
+        
+        return JsonResponse({'videos': videos})
+    except Exception as e:
+        return JsonResponse({'videos': [], 'error': str(e)})
