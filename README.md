@@ -65,7 +65,7 @@ The application can be configured using environment variables.
 
    Right-click inside your folder → Select **Open in Terminal**.
 
-3. Clone the repository:
+3. Clone the repository ([download GIT](https://git-scm.com/install/windows)):
     ```sh
     git clone https://github.com/mihail-pop/media-journal
     ```
