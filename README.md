@@ -5,16 +5,16 @@ This is the self-hosted media tracker app I always wanted to have. From now on I
 
 ## Features
 
-- Separate lists for movies, tv shows, games, anime, manga, and books.
+- Separate lists for movies, tv shows, games, anime, manga, books and music.
 - Track progress, ratings, status, and notes.
 - Home page shows stats, recent activity and favorites (including actors and characters).
 - Multiple rating systems (3 faces, 5 stars, 1-10, 1-100).
-- Import/export your data for backup or transfer (no CSV imports from other sites).
+- You can play your saved songs through a YouTube music player while navigating the site.
 - Automated check for sequels and new seasons (tv shows, anime, manga).
 - Get status for planned movies, tv shows, anime, manga.
 
 ## Demo - [Youtube Demo](https://youtu.be/85DY-WM6cI4?si=u7q5AAbQnWaxTuQN)
-| <img src="https://github.com/user-attachments/assets/bb3275ec-116c-4edc-b663-f5bc807db3eb" width="500" /> | <img src="https://github.com/user-attachments/assets/40c7600f-86ce-492d-8c4a-d720553f0436" width="500" /> |
+| <img src="https://github.com/user-attachments/assets/59ff70c5-46ce-4b69-a5ad-70e811b33f0b" width="500" /> | <img src="https://github.com/user-attachments/assets/40c7600f-86ce-492d-8c4a-d720553f0436" width="500" /> |
 | :-----------------------------------------: | :-----------------------------------------: |
 |                 Home                    |               Movies                   |
 
@@ -61,11 +61,15 @@ The application can be configured using environment variables.
    During installation check the option:
    *“Add Python to PATH”*.
 
-2. Download the project:
-   Click the green **Code** button → **Download ZIP** → Extract it to your desired location. (Or you can use git clone)
+2. Open a terminal inside the folder where you want the app installed:
 
-3. Open a terminal inside the project folder:
-   Right-click inside `...\media-journal-main\media-journal-main` → Select **Open in Terminal**.
+   Right-click inside your folder → Select **Open in Terminal**.
+
+3. Clone the repository:
+    ```sh
+    git clone https://github.com/mihail-pop/media-journal
+    ```
+    Then open a terminal in the newly created folder.
 
 4. Install the dependencies:
    ```sh
@@ -94,3 +98,4 @@ The application can be configured using environment variables.
   python manage.py runserver <IPv4_address>:8000
   ```
    You can find your IPv4 address by running `ipconfig` in the terminal.
+- Some YouTube videos (especially music) may show “Video unavailable, watch on YouTube” if you use a numeric URL (e.g., `http://127.0.0.1:8000`). Videos work on `http://localhost:8000` or a custom URL (e.g., `http://myapp.mediajournal:8000`). To use a custom URL across devices, you need local DNS, which many routers don’t support. Mine doesn't, so I set a URL on my laptop (where the app runs) and listen to music there; my other devices still access it using the numeric URL. A middle ground.
