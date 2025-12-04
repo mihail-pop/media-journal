@@ -13,7 +13,7 @@ This is the self-hosted media tracker app I always wanted to have. From now on I
 - Automated check for sequels and new seasons (tv shows, anime, manga).
 - Get status for planned movies, tv shows, anime, manga.
 
-## Demo - [Youtube Demo](https://youtu.be/85DY-WM6cI4?si=u7q5AAbQnWaxTuQN)
+## Demo - [Youtube Demo](https://youtu.be/JXOvpvdVZpY?si=LIvj2CKixBAZ0Pp)
 | <img src="https://github.com/user-attachments/assets/59ff70c5-46ce-4b69-a5ad-70e811b33f0b" width="500" /> | <img src="https://github.com/user-attachments/assets/40c7600f-86ce-492d-8c4a-d720553f0436" width="500" /> |
 | :-----------------------------------------: | :-----------------------------------------: |
 |                 Home                    |               Movies                   |
@@ -54,7 +54,7 @@ The application can be configured using environment variables.
     - CSRF_TRUSTED_ORIGINS=https://your-domain.com,https://another-domain.com
   ```
 
-## Setup for Windows - [Youtube Tutorial](https://youtu.be/AGMv3L0hziY)
+## Setup for Windows - [Youtube Tutorial](https://youtu.be/Kopjki76ZxM?si=iQCA4Pbh_YYu9Q7y)
 
 1. Download [Python 3.13.0](https://www.python.org/downloads/release/python-3130/).
 
@@ -98,4 +98,4 @@ The application can be configured using environment variables.
   python manage.py runserver <IPv4_address>:8000
   ```
    You can find your IPv4 address by running `ipconfig` in the terminal.
-- Some YouTube videos (especially music) may show “Video unavailable, watch on YouTube” if you use a numeric URL (e.g., `http://127.0.0.1:8000`). Videos work on `http://localhost:8000` or a custom URL (e.g., `http://myapp.mediajournal:8000`). To use a custom URL across devices, you need local DNS, which many routers don’t support. Mine doesn't, so I set a URL on my laptop (where the app runs) and listen to music there; my other devices still access it using the numeric URL. A middle ground.
+- Some YouTube videos (especially music) may show “Video unavailable, watch on YouTube” if you use a numeric URL (e.g., `http://127.0.0.1:8000`). Those videos work on `http://localhost:8000` or a custom URL (e.g., `http://myapp.mediajournal:8000`). To use a custom URL across devices, you need local DNS, which many routers don’t support. Mine doesn't, so I set a URL on my laptop (where the app runs) and listen to music there; my other devices still access it using the numeric URL. A middle ground.
