@@ -315,7 +315,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Delay showing loading indicator
     const loadingTimeout = setTimeout(() => {
       loadingDiv.style.display = 'block';
-    }, 500);
+    }, 3000);
     
     if (reset) {
       currentPage = 1;

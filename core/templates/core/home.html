@@ -97,13 +97,9 @@
     <!-- Colored category blocks -->
     <div class="stats-blocks">
       {% for block in stats_blocks %}
-        <div class="stats-block">
-          <div class="stats-block-label" style="background-color: {{ block.color }};">
-            {{ block.label }}
-          </div>
-          <div class="stats-block-count">
-            {{ block.count }}
-          </div>
+        <div class="stats-block {% if block.visible %}visible{% endif %}" data-label="{{ block.label }}" style="--block-color: {{ block.color }};">
+          <div class="stats-block-count">{{ block.count }}</div>
+          <div class="stats-block-label">{{ block.label }}</div>
         </div>
       {% endfor %}
     </div>
@@ -111,7 +107,7 @@
     <!-- Color bar -->
     <div class="stats-bar">
       {% for block in stats_blocks %}
-        <div class="stats-bar-segment" style="width: {{ block.percentage }}%; background-color: {{ block.color }};"></div>
+        <div class="stats-bar-segment" data-label="{{ block.label }}" data-percentage="{{ block.percentage }}%" style="width: {{ block.percentage }}%; background-color: {{ block.color }};"></div>
       {% endfor %}
     </div>
 
@@ -119,9 +115,9 @@
     {% if extra_stats %}
       <div class="extra-stats">
         {% for label, value in extra_stats.items %}
-          <div class="extra-stat-row">
-            <span class="extra-stat-label">{{ label }}</span>
+          <div class="extra-stat-row" data-stat-type="{{ label }}">
             <span class="extra-stat-value">{{ value }}</span>
+            <span class="extra-stat-label">{{ label }}</span>
           </div>
         {% endfor %}
       </div>
@@ -385,5 +381,6 @@
 <!-- <script src="{% static 'core/js/halloween.js' %}?v={{ version }}"></script> -->
 
 <script src="{% static 'core/js/home.js' %}?v={{ version }}"></script>
+<script src="{% static 'core/js/stats.js' %}?v={{ version }}"></script>
 
 {% endblock %}

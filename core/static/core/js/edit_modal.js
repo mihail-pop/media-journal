@@ -45,6 +45,13 @@ const statusLabelsMap = {
     planned: "Planned",
     dropped: "Dropped",
   },
+  music: {
+    ongoing: "Listening",
+    on_hold: "Paused",
+    completed: "Completed",
+    planned: "Planned",
+    dropped: "Dropped",
+  },
 };
 
   function showField(id) {

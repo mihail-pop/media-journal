@@ -1171,7 +1171,8 @@ body[data-media-type="music"] .poster {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
+  margin-bottom: 0.8rem;
+  margin-top: 1rem;
   flex-wrap: wrap;
   gap: 1rem;
 }
@@ -1244,35 +1245,40 @@ body[data-media-type="music"] .poster {
 }
 
 .music-video-wrapper {
-  position: relative;
+  display: flex;
+  gap: 0.5rem;
 }
 
+.music-video-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.music-cover-btn,
+.music-up-btn,
+.music-down-btn,
 .music-delete-btn {
-  position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  background: rgba(0, 0, 0, 0.7);
-  color: white;
-  border: none;
-  border-radius: 50%;
-  width: 30px;
-  height: 30px;
-  font-size: 24px;
+  background: var(--bg-tertiary);
+  color: var(--text-overview);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  width: 35px;
+  height: 35px;
+  font-size: 16px;
   cursor: pointer;
-  opacity: 0;
-  transition: opacity 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 10;
+  transition: all 0.2s ease;
 }
 
-.music-video-wrapper:hover .music-delete-btn {
-  opacity: 1;
-}
-
+.music-cover-btn:hover,
+.music-up-btn:hover,
+.music-down-btn:hover,
 .music-delete-btn:hover {
-  background: rgba(255, 0, 0, 0.8);
+  background: var(--hover-bg);
+  color: var(--text-title);
 }
 
 .relation-list {
@@ -1335,6 +1341,27 @@ body[data-media-type="music"] .poster {
 
 .nav-btn:hover {
   color: var(--text-secondary);
+}
+
+#music-player-container {
+  position: fixed !important;
+  bottom: 20px !important;
+  left: 20px !important;
+  z-index: 9999 !important;
+  line-height: 0 !important;
+}
+
+.music-player-container {
+  position: fixed !important;
+  bottom: 20px !important;
+  left: 20px !important;
+  z-index: 9999 !important;
+  line-height: 0 !important;
+}
+
+.music-player-container iframe {
+  display: block !important;
+  border: none !important;
 }
 
 @media (orientation: portrait) {

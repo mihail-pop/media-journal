@@ -17,6 +17,25 @@ document.addEventListener('DOMContentLoaded', () => {
   const postPreview = document.getElementById('post-preview');
 
   // Save username function
+  function showNotification(message) {
+    const notification = document.createElement('div');
+    notification.textContent = message;
+    notification.style.cssText = `
+      position: fixed;
+      top: 4rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #4CAF50;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 6px;
+      z-index: 9999;
+      font-weight: 500;
+    `;
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 2000);
+  }
+
   const saveUsername = async () => {
     const username = usernameField.value.trim();
     try {
@@ -30,7 +49,8 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       const data = await response.json();
       if (data.success) {
-        console.log('Username saved:', username);
+        showNotification('Your username has been saved');
+        usernameField.classList.add('saved');
       }
     } catch (err) {
       console.error('Failed to save username:', err);
@@ -54,6 +74,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Save username on blur and Enter key
   if (usernameField) {
+    usernameField.addEventListener('focus', () => {
+      usernameField.classList.remove('saved');
+    });
     usernameField.addEventListener('blur', saveUsername);
     usernameField.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
@@ -65,6 +88,43 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   let selectedMediaType = null;
+
+  // Post emoji picker
+  const postEmojiBtn = document.getElementById('post-emoji-btn');
+  const postEmojiPicker = document.getElementById('post-emoji-picker');
+  const emojis = ['😀','😁','😂','🤣','😃','😄','😅','😆','😉','😊','😍','😘','😜','🤔','😎','😢','😭','😡','👍','👎','🙏','🔥','🎉','💯','🥳','😇','🤩','😏','😬','😴','🤗','😱','🥺','😤','😈','💖','💔','💙','⭐','🌟','✨','⚡','🍶','🍺','🍻','🥂','🍷','🧂'];
+  emojis.forEach(e => {
+    const emojiSpan = document.createElement('span');
+    emojiSpan.textContent = e;
+    emojiSpan.addEventListener('click', () => {
+      postText.value += e;
+      postEmojiPicker.style.display = 'none';
+      postText.focus();
+    });
+    postEmojiPicker.appendChild(emojiSpan);
+  });
+  postEmojiBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isHidden = postEmojiPicker.style.display === 'none' || postEmojiPicker.style.display === '';
+    postEmojiPicker.style.display = isHidden ? 'block' : 'none';
+  });
+  document.addEventListener('click', (e) => {
+    if (!postEmojiPicker.contains(e.target) && e.target !== postEmojiBtn) {
+      postEmojiPicker.style.display = 'none';
+    }
+  });
+
+  // Post link button
+  const postLinkBtn = document.getElementById('post-link-btn');
+  postLinkBtn.addEventListener('click', () => {
+    const link = `[text](url)`;
+    const cursorPos = postText.selectionStart;
+    const textBefore = postText.value.substring(0, cursorPos);
+    const textAfter = postText.value.substring(cursorPos);
+    postText.value = textBefore + link + textAfter;
+    postText.focus();
+    postText.selectionStart = postText.selectionEnd = cursorPos + link.length;
+  });
 
   // Tab switching
   document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -83,11 +143,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Insert Media button
   insertMediaBtn.addEventListener('click', () => {
-    if (mediaTypeButtons.style.display === 'none') {
+    if (mediaTypeButtons.style.display === 'none' && mediaSearchBox.style.display === 'none') {
       mediaTypeButtons.style.display = 'flex';
-      mediaSearchBox.style.display = 'none';
     } else {
       mediaTypeButtons.style.display = 'none';
+      mediaSearchBox.style.display = 'none';
     }
   });
 
@@ -95,6 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.media-type-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       selectedMediaType = btn.dataset.type;
+      mediaTypeButtons.style.display = 'none';
       mediaSearchBox.style.display = 'block';
       mediaSearchInput.focus();
       mediaSearchInput.value = '';
@@ -166,6 +227,12 @@ document.addEventListener('DOMContentLoaded', () => {
       return `<a href="${url}" target="_blank">${decodedTitle}</a>`;
     });
     
+    // Parse markdown links [text](url)
+    const linkRegex = /\[([^\]]+)\]\(([^\)]+)\)/g;
+    html = html.replace(linkRegex, (match, text, url) => {
+      return `<a href="${url}" target="_blank">${text}</a>`;
+    });
+    
     html = processYouTubeLinks(html);
     return html.replace(/\n/g, '<br>');
   }
@@ -221,8 +288,16 @@ document.addEventListener('DOMContentLoaded', () => {
       const hr = Math.floor(diff / 3600);
       return `${hr} hour${hr !== 1 ? 's' : ''} ago`;
     }
-    const days = Math.floor(diff / 86400);
-    return `${days} day${days !== 1 ? 's' : ''} ago`;
+    if (diff < 2592000) {
+      const days = Math.floor(diff / 86400);
+      return `${days} day${days !== 1 ? 's' : ''} ago`;
+    }
+    if (diff < 31536000) {
+      const months = Math.floor(diff / 2592000);
+      return `${months} month${months !== 1 ? 's' : ''} ago`;
+    }
+    const years = Math.floor(diff / 31536000);
+    return `${years} year${years !== 1 ? 's' : ''} ago`;
   }
 
   function renderPost(post, postId) {
@@ -248,7 +323,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       message = '';
     }
-    div.innerHTML = `<p><strong>${post.user || 'Anonymous'}</strong><br><br>${message}</p><small>${timeAgo(post.timestamp || 0)}</small>`;
+    div.innerHTML = `<p><strong>${post.user || 'Anonymous'}</strong><span class="post-time">${timeAgo(post.timestamp || 0)}</span><br><br>${message}</p>`;
 
     // Likes UI
     const likesRow = document.createElement('div');
@@ -342,7 +417,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const commentDiv = document.createElement('div');
           commentDiv.className = 'comment';
           const processedText = parsePostText(comment.text);
-          commentDiv.innerHTML = `<div><b>${comment.username || 'Anonymous'}</b><br>${processedText}</div><small>${timeAgo(comment.timestamp)}</small>`;
+          commentDiv.innerHTML = `<div><b>${comment.username || 'Anonymous'}</b><span class="post-time">${timeAgo(comment.timestamp)}</span><br>${processedText}</div>`;
           commentsSection.appendChild(commentDiv);
         });
       } else {
@@ -351,14 +426,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
       commentIcon.parentNode.insertBefore(commentsSection, commentIcon.nextSibling);
 
-      // Comment tabs
-      const commentTabs = document.createElement('div');
-      commentTabs.className = 'comment-tabs';
-      commentTabs.innerHTML = `
-        <button class="comment-tab-btn active" data-tab="write">Write</button>
-        <button class="comment-tab-btn" data-tab="preview">Preview</button>
-      `;
-
       // Comment write tab
       const commentWriteTab = document.createElement('div');
       commentWriteTab.className = 'comment-tab-content';
@@ -366,27 +433,54 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const commentInsertBtn = document.createElement('button');
       commentInsertBtn.textContent = 'Insert Media';
-      commentInsertBtn.style.padding = '6px 12px';
-      commentInsertBtn.style.background = 'var(--button-bg)';
-      commentInsertBtn.style.color = 'var(--text-primary)';
-      commentInsertBtn.style.border = 'none';
-      commentInsertBtn.style.borderRadius = '4px';
-      commentInsertBtn.style.cursor = 'pointer';
-      commentInsertBtn.style.fontSize = '0.9rem';
-      commentInsertBtn.style.marginBottom = '8px';
       commentInsertBtn.type = 'button';
 
       const commentInput = document.createElement('textarea');
       commentInput.placeholder = 'Write a comment...';
       commentInput.className = 'comment-input';
 
+      // Comment tabs
+      const commentTabs = document.createElement('div');
+      commentTabs.className = 'comment-tabs';
+      
+      const commentTabsLeft = document.createElement('div');
+      commentTabsLeft.className = 'comment-tabs-left';
+      commentTabsLeft.innerHTML = `
+        <button class="comment-tab-btn active" data-tab="write">Write</button>
+        <button class="comment-tab-btn" data-tab="preview">Preview</button>
+      `;
+      
+      const commentTabsRight = document.createElement('div');
+      commentTabsRight.className = 'comment-tabs-right';
+      
+      const commentLinkBtn = document.createElement('button');
+      commentLinkBtn.textContent = 'Link';
+      commentLinkBtn.className = 'link-btn';
+      commentLinkBtn.addEventListener('click', () => {
+        const link = `[text](url)`;
+        const cursorPos = commentInput.selectionStart;
+        const textBefore = commentInput.value.substring(0, cursorPos);
+        const textAfter = commentInput.value.substring(cursorPos);
+        commentInput.value = textBefore + link + textAfter;
+        commentInput.focus();
+        commentInput.selectionStart = commentInput.selectionEnd = cursorPos + link.length;
+      });
+      
+      commentTabsRight.appendChild(commentLinkBtn);
+      commentTabsRight.appendChild(commentInsertBtn);
+      
+      commentTabs.appendChild(commentTabsLeft);
+      commentTabs.appendChild(commentTabsRight);
+
       const commentMediaButtons = document.createElement('div');
+      commentMediaButtons.className = 'comment-media-buttons';
       commentMediaButtons.style.display = 'none';
       commentMediaButtons.style.flexWrap = 'wrap';
       commentMediaButtons.style.gap = '8px';
       commentMediaButtons.style.marginTop = '8px';
 
       const commentMediaSearch = document.createElement('div');
+      commentMediaSearch.className = 'comment-media-search';
       commentMediaSearch.style.display = 'none';
       commentMediaSearch.style.marginTop = '8px';
 
@@ -415,11 +509,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
       commentInsertBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        if (commentMediaButtons.style.display === 'none') {
+        if (commentMediaButtons.style.display === 'none' && commentMediaSearch.style.display === 'none') {
           commentMediaButtons.style.display = 'flex';
-          commentMediaSearch.style.display = 'none';
         } else {
           commentMediaButtons.style.display = 'none';
+          commentMediaSearch.style.display = 'none';
         }
       });
 
@@ -427,6 +521,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const cloneBtn = btn.cloneNode(true);
         cloneBtn.addEventListener('click', () => {
           commentSelectedType = cloneBtn.dataset.type;
+          commentMediaButtons.style.display = 'none';
           commentMediaSearch.style.display = 'block';
           commentSearchInput.focus();
           commentSearchInput.value = '';
@@ -502,8 +597,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
       });
 
-      commentsSection.appendChild(commentTabs);
-
       const emojiBtn = document.createElement('button');
       emojiBtn.type = 'button';
       emojiBtn.className = 'emoji-btn';
@@ -525,7 +618,8 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       emojiBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        emojiPicker.style.display = emojiPicker.style.display === 'none' ? 'block' : 'none';
+        const isHidden = emojiPicker.style.display === 'none' || emojiPicker.style.display === '';
+        emojiPicker.style.display = isHidden ? 'block' : 'none';
       });
       document.addEventListener('click', (e) => {
         if (!emojiPicker.contains(e.target) && e.target !== emojiBtn) {
@@ -559,7 +653,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const commentDiv = document.createElement('div');
         commentDiv.className = 'comment';
         const processedText = parsePostText(text);
-        commentDiv.innerHTML = `<div><b>${username}</b><br>${processedText}</div><small>${timeAgo(commentData.timestamp)}</small>`;
+        commentDiv.innerHTML = `<div><b>${username}</b><span class="post-time">${timeAgo(commentData.timestamp)}</span><br>${processedText}</div>`;
         
         const noCommentsMsg = Array.from(commentsSection.querySelectorAll('.comment')).find(
           el => el.textContent === 'No comments yet.'
@@ -589,8 +683,8 @@ document.addEventListener('DOMContentLoaded', () => {
       commentBoxWrapper.style.display = 'flex';
       commentBoxWrapper.style.flexDirection = 'row';
       commentBoxWrapper.style.alignItems = 'flex-end';
+      commentBoxWrapper.style.justifyContent = 'flex-end';
       commentBoxWrapper.style.gap = '10px';
-      commentBoxWrapper.appendChild(commentInput);
 
       const emojiWrapper = document.createElement('div');
       emojiWrapper.style.position = 'relative';
@@ -601,16 +695,17 @@ document.addEventListener('DOMContentLoaded', () => {
       commentBoxWrapper.appendChild(emojiWrapper);
       commentBoxWrapper.appendChild(sendBtn);
 
-      commentWriteTab.appendChild(commentInsertBtn);
-      commentWriteTab.appendChild(commentMediaButtons);
-      commentWriteTab.appendChild(commentMediaSearch);
+      const commentMediaContainer = document.createElement('div');
+      commentMediaContainer.appendChild(commentMediaButtons);
+      commentMediaContainer.appendChild(commentMediaSearch);
+
       commentWriteTab.appendChild(commentInput);
       commentWriteTab.appendChild(commentBoxWrapper);
 
-      const tabsContainer = document.createElement('div');
-      tabsContainer.appendChild(commentWriteTab);
-      tabsContainer.appendChild(commentPreviewTab);
-      commentsSection.appendChild(tabsContainer);
+      commentsSection.appendChild(commentTabs);
+      commentsSection.appendChild(commentMediaContainer);
+      commentsSection.appendChild(commentWriteTab);
+      commentsSection.appendChild(commentPreviewTab);
       div.appendChild(commentsSection);
     });
 
@@ -619,26 +714,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function loadPosts() {
     if (!postsContainer) return;
-    postsContainer.innerHTML = '<p>Loading posts...</p>';
+    const loadingTimeout = setTimeout(() => {
+      postsContainer.innerHTML = '<p class="empty-message">Loading posts...</p>';
+    }, 2000);
     try {
       const response = await fetch(`${FIREBASE_URL}/posts.json?orderBy="timestamp"&limitToLast=25`);
       if (!response.ok) throw new Error('Failed to load posts');
       const data = await response.json();
+      clearTimeout(loadingTimeout);
       postsContainer.innerHTML = '';
       if (!data) {
-        postsContainer.innerHTML = '<p>No posts yet.</p>';
-        return;
+        postsContainer.innerHTML = '<p class="empty-message">No posts yet.</p>';
+      } else {
+        const posts = Object.entries(data).sort((a, b) => b[1].timestamp - a[1].timestamp);
+        posts.forEach(([postId, post]) => {
+          if (post) {
+            const postDiv = renderPost(post, postId);
+            postsContainer.appendChild(postDiv);
+          }
+        });
       }
-      const posts = Object.entries(data).sort((a, b) => b[1].timestamp - a[1].timestamp);
-      posts.forEach(([postId, post]) => {
-        if (post) {
-          const postDiv = renderPost(post, postId);
-          postsContainer.appendChild(postDiv);
-        }
-      });
+      root.classList.add('loaded');
     } catch (err) {
+      clearTimeout(loadingTimeout);
       console.error('Error loading posts:', err);
-      postsContainer.innerHTML = '<p>Error loading posts.</p>';
+      postsContainer.innerHTML = '<p class="empty-message">Error loading posts.</p>';
+      root.classList.add('loaded');
     }
   }
 

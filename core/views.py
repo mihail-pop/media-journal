@@ -1074,17 +1074,19 @@ def home(request):
         "Games": all_items.filter(media_type="game").count(),
         "Books": all_items.filter(media_type="book").count(),
         "Manga": all_items.filter(media_type="manga").count(),
+        "Music": all_items.filter(media_type="music").count(),
     }
 
     total_entries = sum(media_counts.values())
 
     media_colors = {
         "Movies": "#F4B400",     # Yellow
-        "TV Shows": "#DB4437",   # Red
-        "Anime": "#4285F4",      # Blue
-        "Games": "#0F9D58",      # Green
-        "Books": "#F06292",
-        "Manga": "#A142F4",      # Purple
+        "TV Shows": "#E53935",   # Red
+        "Anime": "#42A5F5",      # Blue
+        "Games": "#66BB6A",      # Green
+        "Books": "#EC407A",      # Pink
+        "Manga": "#AB47BC",      # Purple
+        "Music": "#FF7043",      # Orange
     }
 
     stats_blocks = []
@@ -1096,6 +1098,11 @@ def home(request):
                 "color": media_colors[label],
                 "percentage": round((count / total_entries) * 100, 2) if total_entries else 0,
             })
+    
+    # Sort by count and mark top 5 as visible
+    stats_blocks.sort(key=lambda x: x['count'], reverse=True)
+    for i, block in enumerate(stats_blocks):
+        block['visible'] = i < 5
 
     stats = dict(media_counts)
     stats["Total Entries"] = total_entries
@@ -3730,25 +3737,24 @@ def igdb_detail(request, igdb_id):
     screenshots = []
     for ss in game.get("screenshots", []):
         if ss and "url" in ss:
-            url = "https:" + ss["url"].replace("t_thumb", "t_screenshot_huge")
+            url = "https:" + ss["url"].replace("t_thumb", "t_1080p")
             screenshots.append({
                 "url": url,
                 "is_full_url": True
             })
     
-    # I tried artworks but overall ingame screenshots look better as banners
-    # if "artworks" in game and game["artworks"]:
-    #     first_artwork = game["artworks"][0]
-    #     if first_artwork and "url" in first_artwork:
-    #        banner_url = "https:" + first_artwork["url"].replace("t_thumb", "t_screenshot_huge")
+    banner_url = None
 
-    # Fallback to screenshot if no artwork is present
-    # if not banner_url and screenshots:
-    #     banner_url = screenshots[0]["url"]
-    #     screenshots = screenshots[1:] if len(screenshots) > 1 else []
+    if "artworks" in game and game["artworks"]:
+        first_artwork = game["artworks"][0]
+        if first_artwork and "url" in first_artwork:
+            banner_url = "https:" + first_artwork["url"].replace("t_thumb", "t_1080p")
 
-    banner_url = screenshots[0]["url"] if screenshots else None
-    screenshots = screenshots[1:] if len(screenshots) > 1 else []
+    #Fallback to screenshot if no artwork is present
+    if not banner_url and screenshots:
+        banner_url = "https:" + screenshots[0]["url"].replace("t_thumb", "t_1080p")
+        screenshots = screenshots[1:] if len(screenshots) > 1 else []
+
 
     # Format release date from IGDB (timestamp -> %Y-%m-%d -> %d %B %Y)
     release_date = ""
@@ -3824,7 +3830,7 @@ def save_igdb_item(igdb_id):
     fields 
       id, name, summary, storyline, 
       cover.url, genres.name, platforms.name, 
-      first_release_date, screenshots.url;
+      first_release_date, screenshots.url, artworks.url;
     where id = {igdb_id};
     '''
 
@@ -3851,22 +3857,40 @@ def save_igdb_item(igdb_id):
     if local_poster.startswith("media/"):
         local_poster = local_poster[len("media/"):]
 
-    # Banner = first screenshot
+    # Get artworks and screenshots
+    artworks = game.get("artworks", [])
     screenshots = game.get("screenshots", [])
+
     banner_url = None
-    if screenshots:
-        banner_url_raw = screenshots[0].get("url")
-        if banner_url_raw:
-            banner_url = "https:" + banner_url_raw.replace("t_thumb", "t_screenshot_huge")
+
+    # 1. Try artwork banner first
+    if artworks:
+        first_art = artworks[0]
+        if first_art and "url" in first_art:
+            banner_url = "https:" + first_art["url"].replace("t_thumb", "t_4k")
+
+    # 2. Fallback: banner from first screenshot
+    used_screenshot_for_banner = False
+    if not banner_url and screenshots:
+        banner_raw = screenshots[0].get("url")
+        if banner_raw:
+            banner_url = "https:" + banner_raw.replace("t_thumb", "t_1080p")
+            used_screenshot_for_banner = True
+
+    # Save banner  
     local_banner = download_image(banner_url, f"banners/igdb_{igdb_id}.jpg") if banner_url else ""
     if local_banner.startswith("media/"):
         local_banner = local_banner[len("media/"):]
 
-    # Save screenshots locally (skip first, it's banner)
+    # 3. Save screenshots
     local_screenshots = []
-    for i, ss in enumerate(screenshots[1:], start=1):
+
+    # If screenshot was used as banner → skip the first screenshot
+    start_index = 1 if used_screenshot_for_banner else 0
+
+    for i, ss in enumerate(screenshots[start_index:], start=start_index):
         if ss and "url" in ss:
-            url = "https:" + ss["url"].replace("t_thumb", "t_screenshot_huge")
+            url = "https:" + ss["url"].replace("t_thumb", "t_1080p")
             local_path = download_image(url, f"screenshots/igdb_{igdb_id}_{i}.jpg")
             if local_path.startswith("media/"):
                 local_path = local_path[len("media/"):]
@@ -5092,6 +5116,23 @@ def actor_search_view(request):
     return JsonResponse(results, safe=False)
 
 @ensure_csrf_cookie
+@require_POST
+def toggle_music_favorite(request):
+    try:
+        data = json.loads(request.body)
+        item_id = data.get('item_id')
+        favorite = data.get('favorite')
+        
+        item = MediaItem.objects.get(id=item_id)
+        item.favorite = favorite
+        item.save()
+        
+        return JsonResponse({'success': True})
+    except MediaItem.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Item not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
 def check_favorite_person_view(request):
     name = request.GET.get('name')
     person_type = request.GET.get('type')
@@ -5810,8 +5851,15 @@ def favorite_music_videos(request):
     try:
         # Get all favorited music items
         mode = request.GET.get('mode', 'favorites')
+        status = request.GET.get('status', 'all')
+        
         if mode == 'all':
             music_items = MediaItem.objects.filter(media_type='music')
+        elif mode == 'status':
+            if status == 'all':
+                music_items = MediaItem.objects.filter(media_type='music')
+            else:
+                music_items = MediaItem.objects.filter(media_type='music', status=status)
         else:
             music_items = MediaItem.objects.filter(media_type='music', favorite=True)
         
@@ -5824,8 +5872,87 @@ def favorite_music_videos(request):
                     url = link.get('url', '')
                     if 'youtube.com/watch?v=' in url:
                         video_id = url.split('watch?v=')[1].split('&')[0]
-                        videos.append(video_id)
+                        videos.append({
+                            'video_id': video_id,
+                            'item_id': item.id,
+                            'is_favorite': item.favorite
+                        })
         
         return JsonResponse({'videos': videos})
     except Exception as e:
         return JsonResponse({'videos': [], 'error': str(e)})
+
+
+@ensure_csrf_cookie
+@require_POST
+def reorder_music_videos(request):
+    try:
+        data = json.loads(request.body)
+        source_id = data.get('source_id')
+        new_order = data.get('order')  # List of positions in new order
+        
+        item = MediaItem.objects.get(source='musicbrainz', source_id=source_id)
+        youtube_links = item.screenshots or []
+        
+        # Reorder based on new_order list
+        reordered = []
+        for new_pos, old_pos in enumerate(new_order, start=1):
+            for link in youtube_links:
+                if link.get('position') == old_pos:
+                    link['position'] = new_pos
+                    reordered.append(link)
+                    break
+        
+        item.screenshots = reordered
+        item.save()
+        
+        return JsonResponse({'success': True})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+@ensure_csrf_cookie
+@require_POST
+def set_video_as_cover(request):
+    try:
+        data = json.loads(request.body)
+        source_id = data.get('source_id')
+        position = data.get('position')
+        
+        item = MediaItem.objects.get(source='musicbrainz', source_id=source_id)
+        youtube_links = item.screenshots or []
+        
+        # Find video at position
+        video_url = None
+        for link in youtube_links:
+            if link.get('position') == position:
+                video_url = link.get('url')
+                break
+        
+        if not video_url or 'youtube.com/watch?v=' not in video_url:
+            return JsonResponse({'error': 'Video not found'}, status=404)
+        
+        # Extract video ID and get thumbnail
+        video_id = video_url.split('v=')[1].split('&')[0]
+        max_res_url = f"https://img.youtube.com/vi/{video_id}/maxresdefault.jpg"
+        
+        try:
+            img_check = requests.head(max_res_url, timeout=3)
+            if img_check.status_code == 200 and int(img_check.headers.get('content-length', 0)) > 5000:
+                thumbnail_url = max_res_url
+            else:
+                thumbnail_url = f"https://img.youtube.com/vi/{video_id}/hqdefault.jpg"
+        except:
+            thumbnail_url = f"https://img.youtube.com/vi/{video_id}/hqdefault.jpg"
+        
+        # Download and save
+        cache_bust = int(time.time() * 1000)
+        local_poster = download_image(thumbnail_url, f"posters/musicbrainz_{source_id}_{cache_bust}.jpg")
+        local_banner = download_image(thumbnail_url, f"banners/musicbrainz_{source_id}_{cache_bust}.jpg")
+        
+        item.cover_url = local_poster
+        item.banner_url = local_banner
+        item.save()
+        
+        return JsonResponse({'success': True})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)

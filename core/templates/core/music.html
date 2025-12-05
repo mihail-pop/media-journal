@@ -19,14 +19,8 @@
   </div>
 </div>
 
-<div class="separator-bar" style="display: flex; gap: 1rem; align-items: center; padding: 0 1rem; padding-left: 25rem;">
-<label class="music-player-btn">
-  <input type="checkbox" id="music-player-toggle" data-mode="all">
-  <svg class="music-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img">
-    <path fill="currentColor" d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
-  </svg>
-</label>
-</div>
+<!-- Separator Bar -->
+<div class="separator-bar"></div>
 
 <!-- Main Section: Sidebar + List Area -->
 <div class="list-page-container">
@@ -34,7 +28,15 @@
   <aside class="sidebar">
     <input type="text" id="search-input" placeholder="Filter" autocomplete="off">
 <div class="filter-buttons-wrapper">
-  <h3>Lists</h3>
+  <div style="display: flex; align-items: center; justify-content: space-between;">
+    <h3>Lists</h3>
+    <label class="music-player-btn">
+      <input type="checkbox" id="music-player-toggle" data-mode="status">
+      <svg class="music-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img">
+        <path fill="currentColor" d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+      </svg>
+    </label>
+  </div>
   <div class="filter-buttons">
     <button class="filter-btn" data-filter="all">
       <span class="btn-text">All</span>

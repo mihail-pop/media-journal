@@ -935,6 +935,103 @@ swapBtn?.addEventListener("click", function () {
     });
   }
 
+  // Reorder and set cover functionality
+  if (musicVideosContainer) {
+    musicVideosContainer.addEventListener('click', function(e) {
+      const sourceId = document.body.dataset.itemId;
+      
+      // Set as cover
+      if (e.target.classList.contains('music-cover-btn')) {
+        const position = parseInt(e.target.dataset.position);
+        
+        fetch('/api/set-video-as-cover/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken'),
+          },
+          body: JSON.stringify({ source_id: sourceId, position: position }),
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            sessionStorage.setItem('refreshSuccess', '1');
+            location.reload();
+          } else {
+            alert(data.error || 'Failed to set cover');
+          }
+        })
+        .catch(() => alert('Error setting cover'));
+      }
+      
+      // Move up
+      if (e.target.classList.contains('music-up-btn')) {
+        const position = parseInt(e.target.dataset.position);
+        if (position <= 1) return;
+        
+        const wrappers = Array.from(musicVideosContainer.querySelectorAll('.music-video-wrapper'));
+        const currentOrder = wrappers.map(w => parseInt(w.dataset.position));
+        
+        // Swap positions
+        const currentIdx = currentOrder.indexOf(position);
+        const prevPos = currentOrder[currentIdx - 1];
+        currentOrder[currentIdx] = prevPos;
+        currentOrder[currentIdx - 1] = position;
+        
+        fetch('/api/reorder-music-videos/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken'),
+          },
+          body: JSON.stringify({ source_id: sourceId, order: currentOrder }),
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            location.reload();
+          } else {
+            alert(data.error || 'Failed to reorder');
+          }
+        })
+        .catch(() => alert('Error reordering'));
+      }
+      
+      // Move down
+      if (e.target.classList.contains('music-down-btn')) {
+        const position = parseInt(e.target.dataset.position);
+        const wrappers = Array.from(musicVideosContainer.querySelectorAll('.music-video-wrapper'));
+        if (position >= wrappers.length) return;
+        
+        const currentOrder = wrappers.map(w => parseInt(w.dataset.position));
+        
+        // Swap positions
+        const currentIdx = currentOrder.indexOf(position);
+        const nextPos = currentOrder[currentIdx + 1];
+        currentOrder[currentIdx] = nextPos;
+        currentOrder[currentIdx + 1] = position;
+        
+        fetch('/api/reorder-music-videos/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken'),
+          },
+          body: JSON.stringify({ source_id: sourceId, order: currentOrder }),
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            location.reload();
+          } else {
+            alert(data.error || 'Failed to reorder');
+          }
+        })
+        .catch(() => alert('Error reordering'));
+      }
+    });
+  }
+  
   // Delete video functionality
   if (musicVideosContainer) {
     musicVideosContainer.addEventListener('click', function(e) {

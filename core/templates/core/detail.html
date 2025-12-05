@@ -196,7 +196,12 @@
             referrerpolicy="origin-when-cross-origin"
           ></iframe>
           {% if in_my_list %}
-          <button class="music-delete-btn" data-position="{{ link.position }}">×</button>
+          <div class="music-video-controls">
+            <button class="music-delete-btn" data-position="{{ link.position }}">✕</button>
+            <button class="music-cover-btn" data-position="{{ link.position }}" title="Set as Cover">🖼️</button>
+            <button class="music-up-btn" data-position="{{ link.position }}" title="Move Up">▲</button>
+            <button class="music-down-btn" data-position="{{ link.position }}" title="Move Down">▼</button>
+          </div>
           {% endif %}
         </div>
       {% endif %}

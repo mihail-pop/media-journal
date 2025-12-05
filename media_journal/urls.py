@@ -87,4 +87,7 @@ urlpatterns = [
     path('api/add-music-video/', views.add_music_video, name='add_music_video'),
     path('api/delete-music-video/', views.delete_music_video, name='delete_music_video'),
     path('api/favorite-music-videos/', views.favorite_music_videos, name='favorite_music_videos'),
+    path('api/toggle-music-favorite/', views.toggle_music_favorite, name='toggle_music_favorite'),
+    path('api/reorder-music-videos/', views.reorder_music_videos, name='reorder_music_videos'),
+    path('api/set-video-as-cover/', views.set_video_as_cover, name='set_video_as_cover'),
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

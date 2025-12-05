@@ -19,24 +19,24 @@
   <section class="list-content">
     <div id="board-root" data-firebase-url="{{ firebase_url }}">
       <div class="board-feed">
-        <h2 class="section-title" style="margin-bottom: 1.5rem; font-size:1.5rem; font-weight:700;">Activity</h2>
+        <div class="board-header">
+          <h2 class="section-title" style="font-size:1.5rem; font-weight:700;">Activity</h2>
+          <div class="username-container">
+            <input type="text" id="username-field" placeholder="Username (optional)" value="{% if username %}{{ username }}{% endif %}">
+          </div>
+        </div>
         
         <!-- New Post Box -->
         <div class="new-post-box">
-          <input type="text" id="username-field" placeholder="Username (optional)" value="{% if username %}{{ username }}{% endif %}">
           <div class="post-tabs">
-            <button class="tab-btn active" data-tab="write">Write</button>
-            <button class="tab-btn" data-tab="preview">Preview</button>
-          </div>
-          <div class="tab-content active" id="write-tab">
-            <textarea id="post-text" placeholder="Anything interesting?"></textarea>
-            <div class="post-actions">
-              <button id="insert-media-btn">Insert Media</button>
-              <button id="send-post-btn">Post</button>
+            <div class="post-tabs-left">
+              <button class="tab-btn active" data-tab="write">Write</button>
+              <button class="tab-btn" data-tab="preview">Preview</button>
             </div>
-          </div>
-          <div class="tab-content" id="preview-tab">
-            <div id="post-preview"></div>
+            <div class="post-tabs-right">
+              <button id="post-link-btn" class="link-btn">Link</button>
+              <button id="insert-media-btn">Insert Media</button>
+            </div>
           </div>
           
           <!-- Media Type Buttons (hidden by default) -->
@@ -51,10 +51,22 @@
             <input type="text" id="media-search-input" placeholder="Search...">
             <div id="media-search-results"></div>
           </div>
+          
+          <div class="tab-content active" id="write-tab">
+            <textarea id="post-text" placeholder="Anything interesting?"></textarea>
+            
+            <div class="post-actions">
+              <button id="post-emoji-btn" class="emoji-btn">😊</button>
+              <div id="post-emoji-picker" class="emoji-picker"></div>
+              <button id="send-post-btn">Post</button>
+            </div>
+          </div>
+          <div class="tab-content" id="preview-tab">
+            <div id="post-preview"></div>
+          </div>
         </div>
 
         <div id="posts-container">
-          <p class="empty-message">Loading posts...</p>
         </div>
       </div>
     </div>

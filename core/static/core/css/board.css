@@ -154,12 +154,14 @@ body, html {
   .emoji-btn {
     background: none;
     border: none;
-    font-size: 1.3em;
+    font-size: 1.5em;
     cursor: pointer;
-    margin-right: 2px;
     position: relative;
     transition: color 0.2s;
     color: var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
   .emoji-btn:hover {
     color: #e91e63;
@@ -175,12 +177,17 @@ body, html {
     display: none;
     z-index: 10;
     box-shadow: 0 2px 8px rgba(0,0,0,0.10);
-    min-width: 30rem;
-    max-width: 30rem;
+    width: 27.5rem;
     max-height: 180px;
     overflow-y: auto;
     font-size: 1.2em;
     color: var(--text-secondary);
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .emoji-picker::-webkit-scrollbar {
+    display: none;
   }
   .emoji-picker span {
     cursor: pointer;
@@ -233,6 +240,12 @@ body, html {
     flex-direction: column;
     align-items: center;
     gap: 0;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  
+  #board-root.loaded {
+    opacity: 1;
   }
 
   #media-type-select, #media-search, #username-input {
@@ -351,10 +364,10 @@ body, html {
     font-size: 1.08rem;
     color: var(--text-secondary);
   }
-  .board-post small {
+  .post-time {
     color: var(--text-primary);
-    font-size: 0.95rem;
-    float:left;
+    font-size: 0.85rem;
+    float: right;
   }
   .board-post a {
     color: var(--special-color);
@@ -375,7 +388,6 @@ body, html {
     background-color: var(--bg-tertiary);
     font-style: italic;
     width: 300px;
-    max-width: 45rem;
   }
 
   #post-preview a {
@@ -477,22 +489,18 @@ body, html {
     font-size: 1.08em;
     color: var(--text-secondary);
   }
-  .comment-tabs {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 12px;
-  }
-  .comment-tab-btn {
-    padding: 6px 12px;
+
+  .comment-tab-btn, .comment-tabs-right button {
+    padding: 8px 16px;
     background: var(--button-bg);
     color: var(--text-primary);
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    font-size: 0.9rem;
+    font-size: 1rem;
     transition: background 0.2s;
   }
-  .comment-tab-btn:hover {
+  .comment-tab-btn:hover, .comment-tabs-right button:hover {
     background: var(--bg-quaternary);
   }
   .comment-tab-btn.active {
@@ -501,6 +509,22 @@ body, html {
   }
   .comment-tab-content {
     display: none;
+  }
+  .comment-tabs {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .comment-tabs-left {
+    display: flex;
+    gap: 8px;
+  }
+  .comment-tabs-right {
+    display: flex;
+    gap: 8px;
+    margin-left: auto;
   }
   .comment-tab-content.active {
     display: block;
@@ -516,6 +540,15 @@ body, html {
     font-size: 1rem;
     resize: vertical;
     box-sizing: border-box;
+    margin-bottom: 8px;
+  }
+  
+  .comment-media-buttons {
+    margin-bottom: 8px;
+  }
+  
+  .comment-media-search {
+    max-width: 400px;
     margin-bottom: 8px;
   }
   .send-comment-btn {
@@ -540,6 +573,39 @@ body, html {
     margin: 2rem 0;
   }
 
+  .board-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .username-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .username-container label {
+    color: var(--text-primary);
+    font-size: 0.95rem;
+  }
+
+  #username-field {
+    padding: 8px 12px;
+    background: var(--overlay-bg);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 0.95rem;
+    width: 8.7rem;
+    transition: background 0.2s;
+    text-align: center;
+  }
+
+  #username-field.saved {
+    background: var(--bg-tertiary);
+  }
+
   /* New Post Box */
   .new-post-box {
     background: var(--bg-tertiary);
@@ -549,22 +615,34 @@ body, html {
     box-shadow: 0 2px 6px rgba(0,0,0,0.10);
   }
 
-  #username-field {
-    width: 100%;
-    padding: 10px;
-    margin-bottom: 12px;
-    background: var(--overlay-bg);
-    color: var(--text-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    font-size: 1rem;
-    box-sizing: border-box;
-  }
-
   .post-tabs {
     display: flex;
+    justify-content: space-between;
+    align-items: center;
     gap: 8px;
     margin-bottom: 12px;
+  }
+  .post-tabs-left {
+    display: flex;
+    gap: 8px;
+  }
+  .post-tabs-right {
+    display: flex;
+    gap: 8px;
+    margin-left: auto;
+  }
+  .link-btn {
+    padding: 8px 16px;
+    background: var(--button-bg);
+    color: var(--text-primary);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background 0.2s;
+  }
+  .link-btn:hover {
+    background: var(--bg-quaternary);
   }
 
   .tab-btn {
@@ -616,11 +694,30 @@ body, html {
 
   .post-actions {
     display: flex;
+    justify-content: flex-end;
+    align-items: center;
     gap: 8px;
     margin-top: 12px;
+    position: relative;
   }
 
-  #insert-media-btn, #send-post-btn {
+  #insert-media-btn {
+    padding: 8px 16px;
+    background: var(--button-bg);
+    color: var(--text-primary);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background 0.2s;
+    margin-left: auto;
+  }
+
+  #insert-media-btn:hover {
+    background: var(--bg-quaternary);
+  }
+
+  #send-post-btn {
     padding: 10px 20px;
     border: none;
     border-radius: 4px;
@@ -628,15 +725,6 @@ body, html {
     font-size: 1rem;
     font-weight: 600;
     transition: background 0.2s;
-  }
-
-  #insert-media-btn {
-    background: var(--button-bg);
-    color: var(--text-primary);
-  }
-
-  #insert-media-btn:hover {
-    background: var(--bg-quaternary);
   }
 
   #send-post-btn {
@@ -658,7 +746,7 @@ body, html {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    margin-top: 12px;
+    margin-bottom: 12px;
   }
 
   .media-type-btn {
@@ -678,7 +766,8 @@ body, html {
   }
 
   #media-search-box {
-    margin-top: 12px;
+    margin-bottom: 12px;
+    max-width: 400px;
   }
 
   #media-search-input {
@@ -735,6 +824,27 @@ body, html {
   #post-preview a:hover {
     color: var(--special-color-hover);
   }
+
+#music-player-container {
+  position: fixed !important;
+  bottom: 20px !important;
+  left: 20px !important;
+  z-index: 9999 !important;
+  line-height: 0 !important;
+}
+
+.music-player-container {
+  position: fixed !important;
+  bottom: 20px !important;
+  left: 20px !important;
+  z-index: 9999 !important;
+  line-height: 0 !important;
+}
+
+.music-player-container iframe {
+  display: block !important;
+  border: none !important;
+}
 
   @media (orientation: portrait) {
   body {
