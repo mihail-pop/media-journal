@@ -701,6 +701,43 @@ body[data-media-type="music"] .poster {
   opacity: 1;
 }
 
+.autoplay-screenshot-btn {
+  position: absolute;
+  top: 4.5rem;
+  right: 1.5rem;
+  width: 50px;
+  height: 50px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.screenshot-rotator:hover .autoplay-screenshot-btn {
+  opacity: 1;
+}
+
+.autoplay-screenshot-btn svg {
+  width: 40px;
+  height: 40px;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+  transition: transform 0.2s, filter 0.2s;
+}
+
+.autoplay-screenshot-btn:hover svg {
+  transform: scale(1.2);
+}
+
+.autoplay-screenshot-btn.active svg {
+  fill: #4CAF50;
+  transform: scale(1.2);
+  filter: drop-shadow(0 2px 6px rgba(76, 175, 80, 0.8));
+}
+
 .screenshots-background{
   background: var(--bg-secondary);
   max-width: 80rem;
@@ -718,16 +755,33 @@ body[data-media-type="music"] .poster {
   overflow-x: hidden;        /* disable horizontal scroll */
   padding: 0 1rem 1rem 1rem;
   margin-left: 0.4rem;
-  scrollbar-width: none; 
-  -ms-overflow-style: none;
+  scrollbar-color: var(--text-overview) var(--bg-secondary);
+  contain: layout style paint;
+  will-change: scroll-position;
 }
 
 .screenshots-list::-webkit-scrollbar {
-  display: none;
+  width: 10px;
 }
 
+.screenshots-list::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+  border-radius: 5px;
+}
+
+.screenshots-list::-webkit-scrollbar-thumb {
+  background: var(--text-overview);
+  border-radius: 5px;
+  transition: background 0.2s ease;
+}
+
+.screenshots-list::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+
 .screenshots-list img {
-  max-width: 154px;
+  max-width: 152px;
   height: auto;
   cursor: pointer;
   border-radius: 6px;
@@ -737,6 +791,7 @@ body[data-media-type="music"] .poster {
   flex-shrink: 0;
   border: 2px solid transparent;
   max-height: 5.4rem;
+  content-visibility: auto;
 }
 
 .screenshots-list img:hover,
@@ -1065,62 +1120,68 @@ body[data-media-type="music"] .poster {
   color: var(--text-title);
 }
 
-.change-banner-btn {
-  position: absolute;
-  top: 22rem;
-  right: 1rem;
-  padding: 7px 12px;
-  background: var(--bg-tertiary);
+
+
+.settings-cogwheel-btn {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  background: none;
   color: var(--text-overview);
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
+  border: none;
   cursor: pointer;
-  font-size: 13px;
-  z-index: 10;
   transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.change-banner-btn:hover {
-  background: var(--hover-bg);
+.settings-cogwheel-btn:hover {
   color: var(--text-title);
+  transform: rotate(90deg);
 }
 
-.change-cover-btn {
+.edit-favorite-wrapper {
+  position: relative;
+}
+
+.settings-dropdown {
   position: absolute;
-  top: 24rem;
-  right: 1rem;
-  padding: 7px 12px;
+  top: 3rem;
+  right: 0;
   background: var(--bg-tertiary);
-  color: var(--text-overview);
   border: 1px solid var(--border-color);
-  border-radius: 4px;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 11;
+  display: none;
+  min-width: 200px;
+}
+
+.dropdown-item {
+  display: block;
+  width: 100%;
+  padding: 10px 16px;
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  text-align: left;
   cursor: pointer;
-  font-size: 13px;
-  z-index: 10;
-  transition: all 0.2s ease;
+  font-size: 14px;
+  transition: background 0.2s ease;
+  border-bottom: 1px solid var(--border-color);
 }
 
-.change-cover-btn:hover {
-  background: var(--hover-bg);
-  color: var(--text-title);
+.dropdown-item:last-child {
+  border-bottom: none;
+  border-radius: 0 0 6px 6px;
 }
 
-.refresh-btn {
-  position: absolute;
-  top: 26rem;
-  right: 1rem;
-  padding: 7px 12px;
-  background: var(--bg-tertiary);
-  color: var(--text-overview);
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 13px;
-  z-index: 10;
-  transition: all 0.2s ease;
+.dropdown-item:first-child {
+  border-radius: 6px 6px 0 0;
 }
 
-.refresh-btn:hover {
+.dropdown-item:hover {
   background: var(--hover-bg);
   color: var(--text-title);
 }
@@ -1365,23 +1426,19 @@ body[data-media-type="music"] .poster {
 }
 
 @media (orientation: portrait) {
-  .change-banner-btn{
-    top: 50rem;
-    left: 4rem;
-    right: auto;
-    transform: scale(2);
+  .settings-cogwheel-btn{
+    width: 60px;
+    height: 60px;
   }
-  .change-cover-btn{
-    top: 55rem;
-    left: 3.5rem;
-    right: auto;
-    transform: scale(2);
+  
+  .settings-dropdown {
+    top: 4rem;
+    min-width: 250px;
   }
-  .refresh-btn{
-    top: 60rem;
-    left: 3rem;
-    right: auto;
-    transform: scale(2);
+  
+  .dropdown-item {
+    padding: 16px 20px;
+    font-size: 18px;
   }
 
   .left-column{
@@ -1438,6 +1495,11 @@ body[data-media-type="music"] .poster {
 
   .modal-actions-top{
     right: 1rem !important;
+  }
+
+  .poster{
+    width:24rem;
+    max-height: 100rem;
   }
 
 }

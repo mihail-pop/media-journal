@@ -212,9 +212,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function parsePostText(text) {
     if (!text) return '';
-    const mediaRegex = /\[MEDIA:([^:]+):([^:]+):([^:]+):(.+?):([^:]+)\]/g;
     let html = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
     
+    // Parse media tags first (match everything except ] in title to avoid capturing markdown links)
+    const mediaRegex = /\[MEDIA:([^:]+):([^:]+):([^:]+):([^\]]+?):([^:\]]+)\]/g;
     html = html.replace(mediaRegex, (match, mediaType, source, sourceId, title, status) => {
       const decodedTitle = title.replace(/&#58;/g, ':');
       let url;

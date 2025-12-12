@@ -13,11 +13,11 @@ function getCookie(name) {
   return cookieValue;
 }
 
-function refreshItem(itemId) {
-  const refreshBtn = document.querySelector('.refresh-btn');
-  const originalText = refreshBtn.textContent;
-  refreshBtn.textContent = 'Refreshing...';
-  refreshBtn.disabled = true;
+function refreshItem(itemId, refreshType = 'all') {
+  const dropdown = document.getElementById('settingsDropdown');
+  if (dropdown) dropdown.style.display = 'none';
+  
+  showNotification('Refreshing...', 'warning');
   
   fetch("/refresh-item/", {
     method: "POST",
@@ -25,15 +25,27 @@ function refreshItem(itemId) {
       "Content-Type": "application/json",
       "X-CSRFToken": getCookie("csrftoken"),
     },
-    body: JSON.stringify({ id: itemId }),
+    body: JSON.stringify({ id: itemId, refresh_type: refreshType }),
   })
     .then((res) => {
-      refreshBtn.textContent = originalText;
-      refreshBtn.disabled = false;
       sessionStorage.setItem("refreshSuccess", "1");
       setTimeout(() => window.location.reload(true));
     });
 }
+
+function toggleSettingsDropdown(event) {
+  event.stopPropagation();
+  const dropdown = document.getElementById('settingsDropdown');
+  dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+}
+
+document.addEventListener('click', function(e) {
+  const dropdown = document.getElementById('settingsDropdown');
+  const cogwheel = document.querySelector('.settings-cogwheel-btn');
+  if (dropdown && !dropdown.contains(e.target) && !cogwheel.contains(e.target)) {
+    dropdown.style.display = 'none';
+  }
+})
 
 function showNotification(message, type) {
   const notification = document.createElement("div");
@@ -54,6 +66,7 @@ function showNotification(message, type) {
   document.body.appendChild(notification);
   const duration = type === "warning" ? 20000 : 2000;
   setTimeout(() => notification.remove(), duration);
+  return notification; // Return notification element for updates
 }
 
 function openBannerUpload(source, id) {
@@ -70,6 +83,8 @@ function openBannerUpload(source, id) {
     formData.append("banner", file);
     formData.append("source", source);
     formData.append("id", id);
+    const mediaType = document.body.dataset.mediaType;
+    if (mediaType) formData.append("media_type", mediaType);
 
     fetch("/upload-banner/", {
       method: "POST",
@@ -108,6 +123,8 @@ function openCoverUpload(source, id) {
     formData.append("cover", file);
     formData.append("source", source);
     formData.append("id", id);
+    const mediaType = document.body.dataset.mediaType;
+    if (mediaType) formData.append("media_type", mediaType);
 
     fetch("/upload-cover/", {
       method: "POST",
@@ -135,8 +152,11 @@ function openCoverUpload(source, id) {
 const screenshotsElement = document.getElementById("screenshots-data");
 const screenshotsData = screenshotsElement ? JSON.parse(screenshotsElement.textContent) : [];
 let currentIndex = 0;
+let autoplayInterval = null;
 
 function updateScreenshot(index) {
+  if (index < 0 || index >= screenshotsData.length) return;
+  
   const img = document.getElementById("screenshot-image");
   img.style.opacity = 0;
 
@@ -148,6 +168,12 @@ function updateScreenshot(index) {
   currentIndex = index;
   img.src = screenshotsData[currentIndex].url;
   img.style.opacity = 1;
+  
+  // Center the active thumbnail
+  const activeThumbnail = document.querySelector('.thumbnail.active-thumbnail');
+  if (activeThumbnail) {
+    activeThumbnail.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  }
 }
 
 function changeScreenshot(direction) {
@@ -156,7 +182,9 @@ function changeScreenshot(direction) {
 }
 
 function setScreenshot(index) {
-  updateScreenshot(index);
+  if (index >= 0 && index < screenshotsData.length) {
+    updateScreenshot(index);
+  }
 }
 
 function showArrows(container) {
@@ -171,6 +199,23 @@ function hideArrows(container) {
 
 let deleteConfirm = false;
 const deleteBtn = document.querySelector(".delete-screenshot-btn");
+
+// Autoplay functionality
+const autoplayBtn = document.getElementById("autoplay-screenshot-btn");
+if (autoplayBtn) {
+  autoplayBtn.addEventListener("click", function() {
+    if (autoplayInterval) {
+      clearInterval(autoplayInterval);
+      autoplayInterval = null;
+      autoplayBtn.classList.remove("active");
+    } else {
+      autoplayBtn.classList.add("active");
+      autoplayInterval = setInterval(() => {
+        changeScreenshot(1);
+      }, 2000);
+    }
+  });
+}
 
 if (deleteBtn) { // only attach if it exists
   deleteBtn.addEventListener("click", function () {
@@ -192,6 +237,8 @@ if (deleteBtn) { // only attach if it exists
       const screenshotUrl = img.src.replace(window.location.origin, "");
       const IGDB_ID = document.querySelector('.screenshots-background').dataset.igdbId;
 
+      const nextIndex = currentIndex < screenshotsData.length - 1 ? currentIndex : Math.max(0, currentIndex - 1);
+      
       const formData = new FormData();
       formData.append("igdb_id", IGDB_ID);
       formData.append("screenshot_url", screenshotUrl);
@@ -207,11 +254,33 @@ if (deleteBtn) { // only attach if it exists
       .then(r => r.json())
       .then(data => {
         if (data.success) {
-          window.location.reload();
+          // Remove from array and DOM
+          screenshotsData.splice(currentIndex, 1);
+          const thumbnails = document.querySelectorAll('.thumbnail');
+          thumbnails[currentIndex].remove();
+          
+          // Re-attach click handlers to remaining thumbnails
+          document.querySelectorAll('.thumbnail').forEach((thumb, i) => {
+            thumb.onclick = () => setScreenshot(i);
+          });
+          
+          // Update to next screenshot
+          if (screenshotsData.length > 0) {
+            const newIndex = Math.min(nextIndex, screenshotsData.length - 1);
+            updateScreenshot(newIndex);
+            showNotification("Screenshot deleted successfully!", "success");
+          } else {
+            window.location.reload();
+          }
         } else {
           alert(data.message);
         }
       });
+      
+      deleteConfirm = false;
+      deleteBtn.textContent = "×";
+      deleteBtn.style.color = "";
+      deleteBtn.title = "";
     }
   });
 }
@@ -470,56 +539,106 @@ swapBtn?.addEventListener("click", function () {
   const addFileInput = document.getElementById("screenshot-add-file-input");
   const addForm = document.getElementById("screenshot-add-form");
 
-  uploadFileInput?.addEventListener("change", function () {
-    const files = uploadFileInput.files;
+  uploadFileInput?.addEventListener("change", async function () {
+    const files = Array.from(uploadFileInput.files);
     if (!files.length) return;
 
-    const formData = new FormData();
-    formData.append("igdb_id", uploadForm.querySelector('input[name="igdb_id"]').value);
-    for (let i = 0; i < files.length; i++) {
-      formData.append("screenshots[]", files[i]);
+    const igdbId = uploadForm.querySelector('input[name="igdb_id"]').value;
+    const BATCH_SIZE = 20; // Upload 20 files at a time
+    
+    // Show progress notification
+    const totalFiles = files.length;
+    let uploadedFiles = 0;
+    const notification = showNotification(`Uploading 0/${totalFiles} screenshots...`, "warning");
+    
+    try {
+      // Upload in batches
+      for (let i = 0; i < files.length; i += BATCH_SIZE) {
+        const batch = files.slice(i, i + BATCH_SIZE);
+        const formData = new FormData();
+        formData.append("igdb_id", igdbId);
+        
+        for (const file of batch) {
+          formData.append("screenshots[]", file);
+        }
+        
+        const action = i === 0 ? "replace" : "add"; // First batch replaces, rest add
+        
+        const response = await fetch("/upload-game-screenshots/", {
+          method: "POST",
+          headers: {
+            "X-CSRFToken": getCookie("csrftoken"),
+            "X-Action": action,
+          },
+          body: formData,
+        });
+        
+        const data = await response.json();
+        if (!data.success) {
+          throw new Error(data.message || "Upload failed");
+        }
+        
+        uploadedFiles += batch.length;
+        notification.textContent = `Uploading ${uploadedFiles}/${totalFiles} screenshots...`;
+      }
+      
+      notification.remove();
+      sessionStorage.setItem("refreshSuccess", "1");
+      location.reload();
+    } catch (error) {
+      notification.remove();
+      alert("Failed to upload screenshots: " + error.message);
     }
-
-    fetch("/upload-game-screenshots/", {
-      method: "POST",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "X-Action": "replace",
-      },
-      body: formData,
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) location.reload();
-        else alert("Failed to upload screenshots: " + data.message);
-      })
-      .catch(() => alert("An error occurred while uploading screenshots."));
   });
 
-  addFileInput?.addEventListener("change", function () {
-    const files = addFileInput.files;
+  addFileInput?.addEventListener("change", async function () {
+    const files = Array.from(addFileInput.files);
     if (!files.length) return;
 
-    const formData = new FormData();
-    formData.append("igdb_id", addForm.querySelector('input[name="igdb_id"]').value);
-    for (let i = 0; i < files.length; i++) {
-      formData.append("screenshots[]", files[i]);
+    const igdbId = addForm.querySelector('input[name="igdb_id"]').value;
+    const BATCH_SIZE = 20; // Upload 20 files at a time
+    
+    // Show progress notification
+    const totalFiles = files.length;
+    let uploadedFiles = 0;
+    const notification = showNotification(`Adding 0/${totalFiles} screenshots...`, "warning");
+    
+    try {
+      // Upload in batches
+      for (let i = 0; i < files.length; i += BATCH_SIZE) {
+        const batch = files.slice(i, i + BATCH_SIZE);
+        const formData = new FormData();
+        formData.append("igdb_id", igdbId);
+        
+        for (const file of batch) {
+          formData.append("screenshots[]", file);
+        }
+        
+        const response = await fetch("/upload-game-screenshots/", {
+          method: "POST",
+          headers: {
+            "X-CSRFToken": getCookie("csrftoken"),
+            "X-Action": "add",
+          },
+          body: formData,
+        });
+        
+        const data = await response.json();
+        if (!data.success) {
+          throw new Error(data.message || "Upload failed");
+        }
+        
+        uploadedFiles += batch.length;
+        notification.textContent = `Adding ${uploadedFiles}/${totalFiles} screenshots...`;
+      }
+      
+      notification.remove();
+      sessionStorage.setItem("refreshSuccess", "1");
+      location.reload();
+    } catch (error) {
+      notification.remove();
+      alert("Failed to add screenshots: " + error.message);
     }
-
-    fetch("/upload-game-screenshots/", {
-      method: "POST",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "X-Action": "add",
-      },
-      body: formData,
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) location.reload();
-        else alert("Failed to add screenshots: " + data.message);
-      })
-      .catch(() => alert("An error occurred while adding screenshots."));
   });
 
   // Add to list

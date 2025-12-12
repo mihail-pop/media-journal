@@ -139,3 +139,9 @@ STATICFILES_DIRS = [
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# File Upload Settings
+# Increase limits to handle multiple screenshot uploads
+DATA_UPLOAD_MAX_MEMORY_SIZE = 104857600  # 100MB (default is 2.5MB)
+FILE_UPLOAD_MAX_MEMORY_SIZE = 104857600  # 100MB
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000  # Increase field limit for multiple files

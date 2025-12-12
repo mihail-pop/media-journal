@@ -2192,8 +2192,9 @@ def save_musicbrainz_item(recording_id):
                         thumbnail_url = f"https://img.youtube.com/vi/{best_video}/hqdefault.jpg"
                 except:
                     thumbnail_url = f"https://img.youtube.com/vi/{best_video}/hqdefault.jpg"
-                local_poster = download_image(thumbnail_url, f"posters/musicbrainz_{recording_id}.jpg")
-                local_banner = download_image(thumbnail_url, f"banners/musicbrainz_{recording_id}.jpg")
+                cache_bust = int(time.time() * 1000)
+                local_poster = download_image(thumbnail_url, f"posters/musicbrainz_{recording_id}_{cache_bust}.jpg")
+                local_banner = download_image(thumbnail_url, f"banners/musicbrainz_{recording_id}_{cache_bust}.jpg")
             else:
                 print(f"[SAVE] No match found, saving without YouTube link")
     except Exception as e:
@@ -2416,7 +2417,7 @@ def tmdb_detail(request, media_type, tmdb_id):
 
     item = None
     try:
-        item = MediaItem.objects.get(source="tmdb", source_id=tmdb_id)
+        item = MediaItem.objects.get(source="tmdb", source_id=tmdb_id, media_type=media_type)
 
         # Handle cast (add is_full_url for image path rendering)
         cast_data = []
@@ -2616,8 +2617,10 @@ def save_tmdb_item(media_type, tmdb_id):
         # Poster and banner
         poster_url = f"https://image.tmdb.org/t/p/w500{data.get('poster_path')}" if data.get("poster_path") else ""
         banner_url = f"https://image.tmdb.org/t/p/original{data.get('backdrop_path')}" if data.get("backdrop_path") else ""
-        local_poster = download_image(poster_url, f"posters/tmdb_{tmdb_id}.jpg") if poster_url else ""
-        local_banner = download_image(banner_url, f"banners/tmdb_{tmdb_id}.jpg") if banner_url else ""
+
+        cache_bust = int(time.time() * 1000)
+        local_poster = download_image(poster_url, f"posters/tmdb_{media_type}_{tmdb_id}_{cache_bust}.jpg") if poster_url else ""
+        local_banner = download_image(banner_url, f"banners/tmdb_{media_type}_{tmdb_id}_{cache_bust}.jpg") if banner_url else ""
 
         # Cast
         cast_data = []
@@ -2637,7 +2640,7 @@ def save_tmdb_item(media_type, tmdb_id):
             local_profile = ""
             if profile_url:
                 # Use actor ID instead of index to prevent mismatches
-                filename = f"cast/tmdb_{tmdb_id}_{actor_id}.jpg"
+                filename = f"cast/tmdb_{media_type}_{tmdb_id}_{actor_id}.jpg"
                 local_profile = download_image(profile_url, filename)
             
             cast_data.append({
@@ -2652,7 +2655,7 @@ def save_tmdb_item(media_type, tmdb_id):
         if media_type == "tv":
             for i, season in enumerate(data.get("seasons", [])):
                 season_poster_url = f"https://image.tmdb.org/t/p/w300{season.get('poster_path')}" if season.get("poster_path") else ""
-                local_season_poster = download_image(season_poster_url, f"seasons/tmdb_{tmdb_id}_s{i}.jpg") if season_poster_url else ""
+                local_season_poster = download_image(season_poster_url, f"seasons/tmdb_tv_{tmdb_id}_s{i}.jpg") if season_poster_url else ""
 
                 seasons.append({
                     "season_number": season.get("season_number"),
@@ -2900,8 +2903,9 @@ def save_tmdb_season(tmdb_id, season_number):
         banner_url = f"https://image.tmdb.org/t/p/original{show_data.get('backdrop_path')}" if show_data.get('backdrop_path') else ""
         
         season_source_id = f"{tmdb_id}_s{season_number}"
-        local_poster = download_image(poster_url, f"posters/tmdb_{season_source_id}.jpg") if poster_url else ""
-        local_banner = download_image(banner_url, f"banners/tmdb_{season_source_id}.jpg") if banner_url else ""
+        cache_bust = int(time.time() * 1000)
+        local_poster = download_image(poster_url, f"posters/tmdb_{season_source_id}_{cache_bust}.jpg") if poster_url else ""
+        local_banner = download_image(banner_url, f"banners/tmdb_{season_source_id}_{cache_bust}.jpg") if banner_url else ""
         
         # Cast data
         cast_data = []
@@ -2996,7 +3000,7 @@ def mal_detail(request, media_type, mal_id):
     in_my_list = False
 
     try:
-        item = MediaItem.objects.get(source="mal", source_id=mal_id)
+        item = MediaItem.objects.get(source="mal", source_id=mal_id, media_type=media_type)
         item_id = item.id
         title = item.title
         poster_url = item.cover_url
@@ -3102,13 +3106,14 @@ def save_mal_item(media_type, mal_id):
     try:
         anilist_data = fetch_anilist_data(mal_id, media_type)
 
+        cache_bust = int(time.time() * 1000)
         # --- Download images
         local_poster = download_image(
-            anilist_data["poster_url"], f"posters/mal_{mal_id}.jpg"
+            anilist_data["poster_url"], f"posters/mal_{media_type}_{mal_id}_{cache_bust}.jpg"
         ) if anilist_data["poster_url"] else ""
 
         local_banner = download_image(
-            anilist_data["banner_url"], f"banners/mal_{mal_id}.jpg"
+            anilist_data["banner_url"], f"banners/mal_{media_type}_{mal_id}_{cache_bust}.jpg"
         ) if anilist_data["banner_url"] else ""
 
         cast = []
@@ -3118,7 +3123,7 @@ def save_mal_item(media_type, mal_id):
             local_path = ""
             if profile_url:
                 # Use character ID instead of index to prevent mismatches
-                filename = f"cast/mal_{mal_id}_{character_id}.jpg"
+                filename = f"cast/mal_{media_type}_{mal_id}_{character_id}.jpg"
                 local_path = download_image(profile_url, filename)
             
             cast.append({
@@ -3132,7 +3137,7 @@ def save_mal_item(media_type, mal_id):
         for related in anilist_data["related_titles"]:
             r_id = related["mal_id"]
             poster_path = related["poster_path"]
-            local_related_poster = download_image(poster_path, f"related/mal_{r_id}.jpg") if poster_path else ""
+            local_related_poster = download_image(poster_path, f"related/mal_{media_type}_{r_id}.jpg") if poster_path else ""
 
             related_titles.append({
                 "mal_id": r_id,
@@ -3606,7 +3611,9 @@ def save_openlib_item(work_id):
     cover_id = cover_ids[0] if cover_ids else None
 
     poster_url = f"https://covers.openlibrary.org/b/id/{cover_id}-L.jpg" if cover_id else None
-    local_poster = download_image(poster_url, f"posters/openlib_{work_id}.jpg") if poster_url else ""
+    
+    cache_bust = int(time.time() * 1000)
+    local_poster = download_image(poster_url, f"posters/openlib_{work_id}_{cache_bust}.jpg") if poster_url else ""
 
     if local_poster.startswith("media/"):
         local_poster = local_poster[len("media/"):]
@@ -3732,7 +3739,7 @@ def igdb_detail(request, igdb_id):
 
     poster_url = None
     if "cover" in game and game["cover"]:
-        poster_url = "https:" + game["cover"]["url"].replace("t_thumb", "t_cover_big")
+        poster_url = "https:" + game["cover"]["url"].replace("t_thumb", "t_cover_big_2x")
 
     screenshots = []
     for ss in game.get("screenshots", []):
@@ -3848,10 +3855,11 @@ def save_igdb_item(igdb_id):
     overview = game.get("summary") or game.get("storyline") or ""
 
     # Poster
+    cache_bust = int(time.time() * 1000)
     poster_url = None
     if "cover" in game and game["cover"]:
-        poster_url = "https:" + game["cover"]["url"].replace("t_thumb", "t_cover_big")
-    local_poster = download_image(poster_url, f"posters/igdb_{igdb_id}.jpg") if poster_url else ""
+        poster_url = "https:" + game["cover"]["url"].replace("t_thumb", "t_cover_big_2x")
+    local_poster = download_image(poster_url, f"posters/igdb_{igdb_id}_{cache_bust}.jpg") if poster_url else ""
 
     # Strip media/ prefix
     if local_poster.startswith("media/"):
@@ -3878,7 +3886,7 @@ def save_igdb_item(igdb_id):
             used_screenshot_for_banner = True
 
     # Save banner  
-    local_banner = download_image(banner_url, f"banners/igdb_{igdb_id}.jpg") if banner_url else ""
+    local_banner = download_image(banner_url, f"banners/igdb_{igdb_id}_{cache_bust}.jpg") if banner_url else ""
     if local_banner.startswith("media/"):
         local_banner = local_banner[len("media/"):]
 
@@ -3942,8 +3950,7 @@ def upload_game_screenshots(request):
 
     def generate_unique_filename(index, ext):
         timestamp = int(time.time() * 1000)
-        random_suffix = uuid.uuid4().hex[:6]
-        return f"screenshots/igdb_{igdb_id}_{index}_{timestamp}_{random_suffix}{ext}"
+        return f"screenshots/igdb_{igdb_id}_{index}_{timestamp}{ext}"
 
     # DELETE action
     if action == "delete":
@@ -4031,7 +4038,7 @@ def add_to_list(request):
     media_type = data["media_type"]
 
     # Prevent duplicate entries
-    if MediaItem.objects.filter(source=source, source_id=source_id).exists():
+    if MediaItem.objects.filter(source=source, source_id=source_id, media_type=media_type).exists():
         return JsonResponse({"error": "Item already in list"}, status=400)
 
     # Route to the correct handler (TMDB, MAL, IGDB, etc.)
@@ -5076,9 +5083,8 @@ def upload_person_image(request):
         
         # Generate cache-busting filename
         timestamp = int(time.time() * 1000)
-        random_suffix = uuid.uuid4().hex[:6]
         slug_name = slugify(person.name)
-        base_name = f'{slug_name}_{timestamp}_{random_suffix}'
+        base_name = f'{slug_name}_{timestamp}'
         new_path = os.path.join(favorites_dir, base_name + ext)
         
         # Remove old image if it's in favorites directory
@@ -5184,15 +5190,27 @@ def upload_banner(request):
 
     # Generate cache-busting filename
     timestamp = int(time.time() * 1000)
-    random_suffix = uuid.uuid4().hex[:6]
-    base_name = f"{source}_{source_id}_{timestamp}_{random_suffix}"
+    media_type = request.POST.get("media_type", "")
+    if media_type and source in ['tmdb', 'mal']:
+        base_name = f"{source}_{media_type}_{source_id}_{timestamp}"
+    else:
+        base_name = f"{source}_{source_id}_{timestamp}"
     new_path = os.path.join(banner_dir, base_name + ext)
 
     # Remove any old banner files for this source/source_id
-    for existing_ext in [".jpg", ".jpeg", ".png", ".webp", ".gif"]:
-        old_path = os.path.join(banner_dir, f"{source}_{source_id}{existing_ext}")
-        if os.path.exists(old_path):
-            os.remove(old_path)
+    for old_file in glob.glob(os.path.join(banner_dir, f"{source}_*")):
+        if os.path.isfile(old_file):
+            filename = os.path.splitext(os.path.basename(old_file))[0]
+            # For tmdb/mal: match source_mediatype_id or source_mediatype_id_timestamp
+            if media_type and source in ['tmdb', 'mal']:
+                if filename == f"{source}_{media_type}_{source_id}" or \
+                   filename.startswith(f"{source}_{media_type}_{source_id}_"):
+                    os.remove(old_file)
+            # For others: match source_id or source_id_timestamp
+            else:
+                if filename == f"{source}_{source_id}" or \
+                   filename.startswith(f"{source}_{source_id}_"):
+                    os.remove(old_file)
 
     # Save the new file
     with open(new_path, "wb+") as destination:
@@ -5230,15 +5248,27 @@ def upload_cover(request):
 
     # Generate cache-busting filename
     timestamp = int(time.time() * 1000)
-    random_suffix = uuid.uuid4().hex[:6]
-    base_name = f"{source}_{source_id}_{timestamp}_{random_suffix}"
+    media_type = request.POST.get("media_type", "")
+    if media_type and source in ['tmdb', 'mal']:
+        base_name = f"{source}_{media_type}_{source_id}_{timestamp}"
+    else:
+        base_name = f"{source}_{source_id}_{timestamp}"
     new_path = os.path.join(poster_dir, base_name + ext)
 
     # Remove old cover files for this source/source_id
-    for existing_ext in [".jpg", ".jpeg", ".png", ".webp", ".gif"]:
-        old_path = os.path.join(poster_dir, f"{source}_{source_id}{existing_ext}")
-        if os.path.exists(old_path):
-            os.remove(old_path)
+    for old_file in glob.glob(os.path.join(poster_dir, f"{source}_*")):
+        if os.path.isfile(old_file):
+            filename = os.path.splitext(os.path.basename(old_file))[0]
+            # For tmdb/mal: match source_mediatype_id or source_mediatype_id_timestamp
+            if media_type and source in ['tmdb', 'mal']:
+                if filename == f"{source}_{media_type}_{source_id}" or \
+                   filename.startswith(f"{source}_{media_type}_{source_id}_"):
+                    os.remove(old_file)
+            # For others: match source_id or source_id_timestamp
+            else:
+                if filename == f"{source}_{source_id}" or \
+                   filename.startswith(f"{source}_{source_id}_"):
+                    os.remove(old_file)
 
     # Save the new file
     with open(new_path, "wb+") as destination:
@@ -5264,6 +5294,7 @@ def refresh_item(request):
     try:
         data = json.loads(request.body)
         item_id = data.get("id")
+        refresh_type = data.get("refresh_type", "all")
         if not item_id:
             return JsonResponse({"error": "Missing item ID."}, status=400)
 
@@ -5286,6 +5317,24 @@ def refresh_item(request):
             'screenshots': item.screenshots,
             'favorite_position': item.favorite_position,
         }
+
+        # Backup images based on refresh_type
+        banner_backup = None
+        cover_backup = None
+        
+        if refresh_type in ['data', 'cover']:
+            if item.banner_url and item.banner_url.startswith('/media/'):
+                file_path = os.path.join(settings.MEDIA_ROOT, item.banner_url.replace('/media/', ''))
+                if os.path.exists(file_path):
+                    with open(file_path, 'rb') as f:
+                        banner_backup = {'url': item.banner_url, 'data': f.read()}
+        
+        if refresh_type in ['data', 'banner']:
+            if item.cover_url and item.cover_url.startswith('/media/'):
+                file_path = os.path.join(settings.MEDIA_ROOT, item.cover_url.replace('/media/', ''))
+                if os.path.exists(file_path):
+                    with open(file_path, 'rb') as f:
+                        cover_backup = {'url': item.cover_url, 'data': f.read()}
 
         # Backup screenshot files
         screenshot_backups = []
@@ -5327,6 +5376,21 @@ def refresh_item(request):
         new_item = MediaItem.objects.get(source=source, source_id=source_id, media_type=media_type)
         for field, value in user_data.items():
             setattr(new_item, field, value)
+        
+        # Restore backed up images
+        if banner_backup:
+            file_path = os.path.join(settings.MEDIA_ROOT, banner_backup['url'].replace('/media/', ''))
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+            with open(file_path, 'wb') as f:
+                f.write(banner_backup['data'])
+            new_item.banner_url = banner_backup['url']
+        
+        if cover_backup:
+            file_path = os.path.join(settings.MEDIA_ROOT, cover_backup['url'].replace('/media/', ''))
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+            with open(file_path, 'wb') as f:
+                f.write(cover_backup['data'])
+            new_item.cover_url = cover_backup['url']
         
         # Restore screenshot files
         if screenshot_backups:
@@ -5875,7 +5939,8 @@ def favorite_music_videos(request):
                         videos.append({
                             'video_id': video_id,
                             'item_id': item.id,
-                            'is_favorite': item.favorite
+                            'is_favorite': item.favorite,
+                            'source_id': item.source_id
                         })
         
         return JsonResponse({'videos': videos})

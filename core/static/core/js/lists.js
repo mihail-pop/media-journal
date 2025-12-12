@@ -482,6 +482,7 @@ const statusLabelsMap = {
   if (matchingBtn) {
     filterButtons.forEach(b => b.classList.remove("active"));
     matchingBtn.classList.add("active");
+    localStorage.setItem('music_player_status', currentStatus);
   }
   
 
@@ -521,8 +522,8 @@ function updateSortButtons() {
 
 // Responsive arrow function
 function getArrow(isAscending) {
-  const isPortrait = window.matchMedia("(orientation: portrait)").matches;
-  return isAscending ? (isPortrait ? ' ▲' : ' ⮝') : (isPortrait ? ' ▼' : ' ⮟');
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  return isAscending ? (isMobile ? ' ▲' : ' ⮝') : (isMobile ? ' ▼' : ' ⮟');
 }
 
 updateSortButtons();
@@ -587,6 +588,7 @@ updateSortButtons();
       btn.classList.add("active");
       currentStatus = btn.dataset.filter;
       sessionStorage.setItem(filterKey, currentStatus);
+      localStorage.setItem('music_player_status', currentStatus);
       updateStatusContainer();
       resetAndLoad();
     });
@@ -767,6 +769,19 @@ updateSortButtons();
   updateStatusContainer();
   loadAllBanners();
   updateSortButtons();
+
+  // === MOBILE SIDEBAR TOGGLE ===
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  if (isMobile) {
+    const sidebar = document.querySelector('.sidebar');
+    const toggleBtn = document.createElement('button');
+    toggleBtn.className = 'sidebar-toggle-btn';
+    toggleBtn.innerHTML = '☰';
+    toggleBtn.addEventListener('click', () => {
+      sidebar.classList.toggle('sidebar-visible');
+    });
+    document.querySelector('.list-page-container').prepend(toggleBtn);
+  }
 
   // === BANNER ROTATOR ===
   let firstLoad = true;

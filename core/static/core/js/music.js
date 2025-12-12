@@ -20,8 +20,9 @@ function getCookie(name) {
   return cookieValue;
 }
 
-// Load YouTube IFrame API
-if (!window.YT) {
+function loadYouTubeAPI() {
+  if (window.YT || document.querySelector('script[src*="youtube.com/iframe_api"]')) return;
+  
   const tag = document.createElement('script');
   tag.src = 'https://www.youtube.com/iframe_api';
   const firstScriptTag = document.getElementsByTagName('script')[0];
@@ -45,7 +46,10 @@ function initMusicPlayer() {
   }
   
   if (savedMode) {
-    loadPlaylist();
+    loadYouTubeAPI();
+    if (window.YT && window.YT.Player) {
+      loadPlaylist();
+    }
   }
 }
 
@@ -54,10 +58,7 @@ function loadPlaylist() {
   let status = 'all';
   
   if (savedMode === 'status') {
-    const activeFilter = document.querySelector('.filter-btn.active');
-    if (activeFilter) {
-      status = activeFilter.dataset.filter;
-    }
+    status = localStorage.getItem('music_player_status') || 'all';
   }
   
   fetch(`/api/favorite-music-videos/?mode=${savedMode}&status=${status}`)
@@ -90,6 +91,7 @@ function createPlayer(videoId, startTime = 0) {
   const currentData = musicPlaylist.find(v => v.video_id === videoId);
   const isFavorite = currentData ? currentData.is_favorite : false;
   const itemId = currentData ? currentData.item_id : null;
+  const sourceId = currentData ? currentData.source_id : null;
   const heartColor = isFavorite ? 'red' : 'white';
   
   const isExpanded = localStorage.getItem('music_player_expanded') === 'true';
@@ -98,16 +100,30 @@ function createPlayer(videoId, startTime = 0) {
   const expandIcon = '⤢';
   
   const overlayHeight = height - 40;
-  container.innerHTML = `<div id="music-player"></div><div style="position:absolute;top:0;right:0;width:50px;height:${overlayHeight}px;background:transparent;z-index:9999;pointer-events:auto;"></div><div style="position:absolute;top:0;left:0;width:50px;height:${overlayHeight}px;background:transparent;z-index:9999;pointer-events:auto;"></div><button id="music-player-expand" style="position:absolute;top:5px;left:5px;background:rgba(0,0,0,0.7);color:white;border:none;width:32px;height:32px;border-radius:4px;cursor:pointer;font-size:20px;line-height:1;z-index:10000;pointer-events:auto;opacity:0;transition:opacity 0.2s;">${expandIcon}</button><button id="music-player-heart" data-item-id="${itemId}" data-favorite="${isFavorite}" style="position:absolute;top:42px;left:5px;background:rgba(0,0,0,0.7);color:${heartColor};border:none;width:32px;height:32px;border-radius:4px;cursor:pointer;font-size:20px;line-height:1;z-index:10000;pointer-events:auto;opacity:0;transition:opacity 0.2s;">♥</button><button id="music-player-close" style="position:absolute;top:5px;right:5px;background:rgba(0,0,0,0.7);color:white;border:none;width:32px;height:32px;border-radius:4px;cursor:pointer;font-size:20px;line-height:1;z-index:10000;pointer-events:auto;">✕</button><button id="music-player-skip" style="position:absolute;top:42px;right:5px;background:rgba(0,0,0,0.7);color:white;border:none;width:32px;height:32px;border-radius:4px;cursor:pointer;font-size:20px;line-height:1;z-index:10000;pointer-events:auto;">⏭</button>`;
+  const buttonStyle = 'position:absolute;background:rgba(0,0,0,0.7);color:white;border:none;width:32px;height:32px;border-radius:4px;cursor:pointer;font-size:20px;line-height:1;z-index:10000;pointer-events:auto;transition:all 0.2s;';
+  const hoverButtonStyle = buttonStyle + 'opacity:0;';
+  
+  container.innerHTML = `<div id="music-player"></div><div style="position:absolute;top:0;right:0;width:50px;height:${overlayHeight}px;background:transparent;z-index:9999;pointer-events:auto;"></div><div style="position:absolute;top:0;left:0;width:50px;height:${overlayHeight}px;background:transparent;z-index:9999;pointer-events:auto;"></div><button id="music-player-expand" style="${hoverButtonStyle}top:5px;left:5px;">${expandIcon}</button><button id="music-player-heart" data-item-id="${itemId}" data-favorite="${isFavorite}" style="${hoverButtonStyle}top:42px;left:5px;color:${heartColor};">♥</button><a id="music-player-info" href="/musicbrainz/music/${sourceId}/" style="${hoverButtonStyle}top:79px;left:5px;display:flex;align-items:center;justify-content:center;text-decoration:none;color:white;padding:0;"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/><path fill="rgba(0,0,0,0.7)" d="M11 10h2v7h-2zm0-4h2v2h-2z"/></svg></a><button id="music-player-close" style="${buttonStyle}top:5px;right:5px;">✕</button><button id="music-player-skip" style="${buttonStyle}top:42px;right:5px;">⏭</button>`;
   container.style.display = 'block';
   
   container.addEventListener('mouseenter', () => {
     document.getElementById('music-player-expand').style.opacity = '1';
     document.getElementById('music-player-heart').style.opacity = '1';
+    document.getElementById('music-player-info').style.opacity = '1';
   });
   container.addEventListener('mouseleave', () => {
     document.getElementById('music-player-expand').style.opacity = '0';
     document.getElementById('music-player-heart').style.opacity = '0';
+    document.getElementById('music-player-info').style.opacity = '0';
+  });
+  
+  // Add hover effects to all buttons
+  ['music-player-expand', 'music-player-heart', 'music-player-info', 'music-player-close', 'music-player-skip'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) {
+      btn.addEventListener('mouseenter', () => btn.style.background = 'rgba(0,0,0,0.9)');
+      btn.addEventListener('mouseleave', () => btn.style.background = 'rgba(0,0,0,0.7)');
+    }
   });
   
   document.getElementById('music-player-expand').addEventListener('click', () => {
@@ -218,12 +234,16 @@ function playNext() {
     localStorage.setItem('music_player_video', nextVideo.video_id);
     localStorage.setItem('music_player_time', '0');
     
-    // Update heart button
+    // Update heart button and info link
     const heartBtn = document.getElementById('music-player-heart');
     if (heartBtn) {
       heartBtn.dataset.itemId = nextVideo.item_id;
       heartBtn.dataset.favorite = nextVideo.is_favorite;
       heartBtn.style.color = nextVideo.is_favorite ? 'red' : 'white';
+    }
+    const infoLink = document.getElementById('music-player-info');
+    if (infoLink && nextVideo.source_id) {
+      infoLink.href = `/musicbrainz/music/${nextVideo.source_id}/`;
     }
   }
 }
@@ -264,6 +284,7 @@ document.addEventListener('DOMContentLoaded', () => {
           localStorage.removeItem('music_player_time');
         }
         localStorage.setItem('musicPlayerEnabled', mode);
+        loadYouTubeAPI();
       } else {
         localStorage.removeItem('musicPlayerEnabled');
         localStorage.removeItem('music_player_video');
@@ -272,7 +293,9 @@ document.addEventListener('DOMContentLoaded', () => {
       
       const container = document.getElementById('music-player-container');
       if (enabled) {
-        loadPlaylist();
+        if (window.YT && window.YT.Player) {
+          loadPlaylist();
+        }
       } else {
         if (musicPlayer && musicPlayer.destroy) {
           musicPlayer.destroy();
@@ -286,9 +309,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
   
-  // Initialize on page load if enabled and API ready
-  if (window.YT && window.YT.Player && !isMusicInitialized) {
-    isMusicInitialized = true;
-    initMusicPlayer();
+  // Initialize on page load if enabled
+  const savedMode = localStorage.getItem('musicPlayerEnabled');
+  if (savedMode) {
+    loadYouTubeAPI();
+    if (window.YT && window.YT.Player && !isMusicInitialized) {
+      isMusicInitialized = true;
+      initMusicPlayer();
+    }
   }
 });

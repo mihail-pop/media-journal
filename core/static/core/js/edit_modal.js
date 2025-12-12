@@ -673,7 +673,10 @@ document.getElementById("edit-delete-btn")?.addEventListener("click", function (
         .then(res => res.json())
         .then(res => {
           if (res.success) {
-            location.reload();
+            modal.classList.add("modal-hidden");
+            overlay.classList.add("modal-hidden");
+            const title = modal.querySelector('.modal-title')?.textContent || "Item";
+            showNotification(`${title} updated successfully!`, "success");
           } else {
             alert("Failed to update item.");
           }
@@ -730,6 +733,26 @@ document.getElementById("edit-delete-btn")?.addEventListener("click", function (
       }
     }
     return cookieValue;
+  }
+
+  function showNotification(message, type) {
+    const notification = document.createElement("div");
+    notification.textContent = message;
+    const bgColor = type === "success" ? "#4CAF50" : "#FF9800";
+    notification.style.cssText = `
+      position: fixed;
+      top: 4rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: ${bgColor};
+      color: white;
+      padding: 12px 24px;
+      border-radius: 6px;
+      z-index: 9999;
+      font-weight: 500;
+    `;
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 2000);
   }
 
   // Expose populateForm globally for use by other scripts

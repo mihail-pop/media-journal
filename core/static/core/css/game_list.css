@@ -605,13 +605,50 @@ html {
   border: none !important;
 }
 
+.sidebar-toggle-btn {
+  display: none;
+}
+
   @media (orientation: portrait) {
+
+  .sidebar-toggle-btn {
+    display: block;
+    position: fixed;
+    bottom: 40px;
+    left: 40px;
+    z-index: 1000;
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: none;
+    padding: 0.8rem 1.6rem;
+    font-size: 6rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transform-origin: bottom left;
+  }
+
+  .sidebar {
+    position: fixed;
+    left: -100%;
+    top: 0;
+    height: 100vh;
+    background: var(--bg-primary);
+    z-index: 999;
+    transition: left 0.3s ease;
+    overflow-y: auto;
+    margin-top: 40rem;
+  }
+
+  .sidebar.sidebar-visible {
+    margin-top: 40rem;
+    left: 0;
+  }
 
 
   .list-page-container{
     gap:8rem;
     padding-left: 3rem;
-
+    position: relative;
   }
 
   .modal{
@@ -624,12 +661,11 @@ html {
   }
 
   .sidebar{
-    transform: scale(2);
-    transform-origin: top;
-    max-width: 40rem;
-    width: 64%;
-    padding-bottom: 13rem;
-    padding-right: 0rem;
+    width: 90%;
+    max-width: 90%;
+    padding: 2rem;
+    padding-bottom: 4rem;
+    box-sizing: border-box;
   }
 
   .list-content{
@@ -648,7 +684,6 @@ html {
   }
 
 .modal-title-block {
-  transform: scale(1.2);
   left: 15rem !important;
   max-width: 12rem !important;       /* or any width you want */
   overflow: hidden !important;       /* hides excess text */
@@ -680,12 +715,15 @@ html {
        gap: 0.6rem 0.3rem;
     }
 
-    .filter-buttons, .view-toggle{
-      flex-direction: row;
+    .filter-buttons{
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.5rem;
     }
 
     .filter-btn{
-      gap: 0.2rem;
+      justify-content: center;
+      font-size: 2.5rem;
     }
 
     .list-table{
@@ -700,9 +738,40 @@ html {
         margin-bottom: 8rem;
     }
 
-    .filter-btn{
-      flex-wrap: wrap;
-      justify-content: center;
+    .sort-buttons{
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.5rem;
+    }
+
+    .sort-btn{
+      font-size: 2.5rem;
+    }
+
+    .view-toggle .dual-toggle{
+      max-height: none;
+    }
+
+    .toggle-text{
+      font-size: 2.5rem;
+    }
+
+    #search-input{
+      font-size: 2.5rem;
+      padding: 0.8rem;
+    }
+
+    .type-filter-btn{
+      font-size:2.5rem;
+    }
+
+    .toggle-btn{
+      font-size:2.5rem;
+    }
+
+    .sidebar h3{
+      font-size: 2.5rem;
+      margin-top: 2rem;
     }
 
     .btn-count {
