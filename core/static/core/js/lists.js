@@ -29,6 +29,9 @@ document.addEventListener("DOMContentLoaded", function () {
   let allItems = [];
   let ratingMode = 'faces';
 
+  // Canonical order for status groups (used to render and insert groups predictably)
+  const statusesOrder = ['ongoing', 'completed', 'on_hold', 'planned', 'dropped'];
+
   // === FILTER STATE ===
   let currentStatus = sessionStorage.getItem(filterKey) || "all";
   let currentSearch = "";
@@ -141,10 +144,21 @@ const statusLabelsMap = {
       const data = await response.json();
       
       if (reset) {
-        allItems = data.items;
+        allItems = data.items || [];
         currentPage = 1;
       } else {
-        allItems = [...allItems, ...data.items];
+        // Merge new page items into allItems without duplicating entries
+        const existingMap = new Map(allItems.map((it, idx) => [String(it.id), idx]));
+        for (const ni of (data.items || [])) {
+          const nid = String(ni.id);
+          if (existingMap.has(nid)) {
+            // replace existing entry with fresh data
+            allItems[existingMap.get(nid)] = ni;
+          } else {
+            existingMap.set(nid, allItems.length);
+            allItems.push(ni);
+          }
+        }
       }
       
       hasMore = data.has_more;
@@ -177,27 +191,26 @@ const statusLabelsMap = {
     container.innerHTML = '';
     
     // Render each status group
-    Object.entries(groupedItems).forEach(([status, items]) => {
+    const statusesToRender = [...statusesOrder, ...Object.keys(groupedItems).filter(s => !statusesOrder.includes(s))];
+    statusesToRender.forEach(status => {
+      const items = groupedItems[status] || [];
       if (items.length === 0) return;
-      
+
       const statusGroup = document.createElement('div');
       statusGroup.className = 'status-group';
       statusGroup.dataset.status = status;
-      
+
       const header = document.createElement('h2');
       header.className = 'status-header';
       const labels = statusLabelsMap[mediaType] || {};
       header.textContent = labels[status] || status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
       statusGroup.appendChild(header);
-      
+
       if (isCardView) {
         const cardGrid = document.createElement('div');
         cardGrid.className = 'card-grid';
-        
-        items.forEach(item => {
-          cardGrid.appendChild(createCardElement(item));
-        });
-        
+
+        items.forEach(item => cardGrid.appendChild(createCardElement(item)));
         statusGroup.appendChild(cardGrid);
       } else {
         const table = document.createElement('table');
@@ -382,9 +395,23 @@ const statusLabelsMap = {
 
   function getRatingHtml(rating) {
     if (!rating) return '';
-    
-    const rounded = Math.round(rating);
-    
+
+    const rnum = Number(rating);
+    if (isNaN(rnum)) return '';
+
+    // Normalize rating depending on detected ratingMode and possible formats
+    // Some updates may send 1-5 (stars) or 1-10 (scale_10) while UI expects 0-100
+    let normalized = rnum;
+    if (ratingMode === 'stars_5') {
+      // If value is 1-5, convert to 0-100 scale
+      normalized = (rnum > 0 && rnum <= 5) ? (rnum * 20) : rnum;
+    } else if (ratingMode === 'scale_10') {
+      // If value is 1-10, keep as-is for display; if it's 0-100, convert to 1-10 later
+      normalized = rnum;
+    }
+
+    const rounded = Math.round(normalized);
+
     if (ratingMode === 'faces') {
       if (rounded <= 33) {
         return '<span class="card-rating"><svg aria-hidden="true" focusable="false" data-prefix="far" data-icon="frown" class="svg-inline--fa fa-frown fa-w-16 fa-lg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><path fill="currentColor" d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zm0 448c-110.3 0-200-89.7-200-200S137.7 56 248 56s200 89.7 200 200-89.7 200-200 200zm-80-216c17.7 0 32-14.3 32-32s-14.3-32-32-32-32 14.3-32 32 14.3 32 32 32zm160-64c-17.7 0-32 14.3-32 32s14.3 32 32 32 32-14.3 32-32-14.3-32-32-32zm-80 128c-40.2 0-78 17.7-103.8 48.6-8.5 10.2-7.1 25.3 3.1 33.8 10.2 8.4 25.3 7.1 33.8-3.1 16.6-19.9 41-31.4 66.9-31.4s50.3 11.4 66.9 31.4c8.1 9.7 23.1 11.9 33.8 3.1 10.2-8.5 11.5-23.6 3.1-33.8C326 321.7 288.2 304 248 304z"></path></svg></span>';
@@ -394,10 +421,16 @@ const statusLabelsMap = {
         return '<span class="card-rating"><svg aria-hidden="true" focusable="false" data-prefix="far" data-icon="smile" class="svg-inline--fa fa-smile fa-w-16 fa-lg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><path fill="currentColor" d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zm0 448c-110.3 0-200-89.7-200-200S137.7 56 248 56s200 89.7 200 200-89.7 200-200 200zm-80-216c17.7 0 32-14.3 32-32s-14.3-32-32-32-32 14.3-32 32 14.3 32 32 32zm160 0c17.7 0 32-14.3 32-32s-14.3-32-32-32-32 14.3-32 32 14.3 32 32 32zm4 72.6c-20.8 25-51.5 39.4-84 39.4s-63.2-14.3-84-39.4c-8.5-10.2-23.7-11.5-33.8-3.1-10.2 8.5-11.5 23.6-3.1 33.8 30 36 74.1 56.6 120.9 56.6s90.9-20.6 120.9-56.6c8.5-10.2 7.1-25.3-3.1-33.8-10.1-8.4-25.3-7.1-33.8 3.1z"></path></svg></span>';
       }
     } else if (ratingMode === 'stars_5') {
-      const stars = Math.round(rating / 20);
+      // Determine star count from normalized 0-100 scale or raw 1-5
+      let starsCount = 0;
+      if (rnum > 0 && rnum <= 5) {
+        starsCount = Math.round(rnum);
+      } else {
+        starsCount = Math.round(normalized / 20);
+      }
       let starsHtml = '<span class="card-rating"><span class="star-rating">';
       for (let i = 1; i <= 5; i++) {
-        if (i <= stars) {
+        if (i <= starsCount) {
           starsHtml += '<svg class="star-icon filled" viewBox="0 0 32 32" style="color:gold;"><path fill="currentColor" stroke="#000" stroke-width="1.2" d="M16 2.5l4.09 8.29 9.16 1.33-6.62 6.45 1.56 9.09L16 23.13l-8.19 4.32 1.56-9.09-6.62-6.45 9.16-1.33L16 2.5z"/></svg>';
         } else {
           starsHtml += '<svg class="star-icon empty" viewBox="0 0 32 32" style="color:#444;"><path fill="currentColor" stroke="#000" stroke-width="1.2" d="M16 2.5l4.09 8.29 9.16 1.33-6.62 6.45 1.56 9.09L16 23.13l-8.19 4.32 1.56-9.09-6.62-6.45 9.16-1.33L16 2.5z"/></svg>';
@@ -406,9 +439,12 @@ const statusLabelsMap = {
       starsHtml += '</span></span>';
       return starsHtml;
     } else if (ratingMode === 'scale_10') {
-      return `<span class="card-rating"><span class="rating-number">${Math.round(rating / 10)}</span></span>`;
+      // If rating looks like 0-100, convert to 1-10 for display; if already 1-10, show it
+      let displayVal = rnum;
+      if (rnum > 10) displayVal = Math.round(rnum / 10);
+      return `<span class="card-rating"><span class="rating-number">${displayVal}</span></span>`;
     } else if (ratingMode === 'scale_100') {
-      return `<span class="card-rating"><span class="rating-number">${Math.round(rating)}</span></span>`;
+      return `<span class="card-rating"><span class="rating-number">${Math.round(rnum)}</span></span>`;
     }
     
     return '';
@@ -477,11 +513,359 @@ const statusLabelsMap = {
     }
   }
 
+  // Replace or move a single updated item in the DOM without reloading the whole page
+  function replaceItemElement(item) {
+    try {
+      const id = String(item.id);
+
+      // Get old status BEFORE updating allItems
+      const idx = allItems.findIndex(i => String(i.id) === id);
+      const oldStatus = idx !== -1 ? allItems[idx].status : null;
+      
+      // Update in-memory list (best-effort)
+      if (idx !== -1) {
+        allItems[idx] = Object.assign({}, allItems[idx], item);
+      } else {
+        // If not present, add to in-memory list (we don't know exact position without full load)
+        allItems.unshift(item);
+      }
+
+      // If a status filter is active, do not insert items of other statuses
+      if (currentStatus && currentStatus !== 'all' && item.status !== currentStatus) {
+        // Remove element if currently visible but being filtered out
+        document.querySelectorAll(`.card[data-id="${id}"], .list-row[data-id="${id}"]`).forEach(n => n.remove());
+        // Remove from memory
+        allItems = allItems.filter(i => String(i.id) !== id);
+        // Update counts BEFORE returning (if status changed)
+        if (oldStatus && oldStatus !== item.status) {
+          statusCounts[oldStatus] = Math.max(0, statusCounts[oldStatus] - 1);
+          statusCounts[item.status] = statusCounts[item.status] + 1;
+        }
+        
+        updateFilterButtons();
+        return;
+      }
+
+      // Create a fresh element using existing render helpers
+      const newEl = (currentView === 'card') ? createCardElement(item) : createListRowElement(item);
+      // Attach date data for comparisons
+      if (item.date_added) newEl.dataset.dateAdded = item.date_added;
+
+      // Try to find existing element in DOM BEFORE removing it
+      const selector = currentView === 'card' ? `.card[data-id="${id}"]` : `.list-row[data-id="${id}"]`;
+      const oldEl = (currentView === 'card' ? cardView : listView)?.querySelector(selector) || document.querySelector(selector);
+      if (oldEl) {
+        // If status didn't change and parent group is same, replace in-place (PRESERVE DOM position)
+        if (oldEl.dataset.status === item.status) {
+          oldEl.replaceWith(newEl);
+          return;
+        }
+        // Status changed (or other grouping), remove old and fallthrough to insert in new group
+        oldEl.remove();
+      }
+
+      // Comparison helpers using server-side fields in allItems
+      function compareItems(a, b) {
+        if (!a || !b) return 0;
+        // rating
+        if (currentSort === 'rating') {
+          const ra = Number(a.personal_rating) || 0;
+          const rb = Number(b.personal_rating) || 0;
+          return ra - rb;
+        }
+        // date
+        if (currentSort === 'date') {
+          const da = a.date_added ? new Date(a.date_added).getTime() : 0;
+          const db = b.date_added ? new Date(b.date_added).getTime() : 0;
+          return da - db;
+        }
+        // fallback to title
+        return String(a.title || '').localeCompare(String(b.title || ''));
+      }
+
+      // Insert into correct container/group (card or list)
+      if (currentView === 'card') {
+        // Find or create status group
+        let destGroup = cardView.querySelector(`.status-group[data-status="${item.status}"]`);
+        if (!destGroup) {
+          destGroup = document.createElement('div');
+          destGroup.className = 'status-group';
+          destGroup.dataset.status = item.status;
+          const header = document.createElement('h2');
+          header.className = 'status-header';
+          const labels = statusLabelsMap[mediaType] || {};
+          header.textContent = labels[item.status] || item.status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+          destGroup.appendChild(header);
+
+          // create card grid wrapper
+          const cardGrid = document.createElement('div');
+          cardGrid.className = 'card-grid';
+          destGroup.appendChild(cardGrid);
+
+          // Insert destGroup in canonical status order
+          const existingGroups = Array.from(cardView.querySelectorAll('.status-group'));
+          const myIndex = statusesOrder.indexOf(item.status);
+          let placed = false;
+          for (const g of existingGroups) {
+            const gIndex = statusesOrder.indexOf(g.dataset.status);
+            if (gIndex === -1) continue;
+            if (gIndex > myIndex) {
+              cardView.insertBefore(destGroup, g);
+              placed = true;
+              break;
+            }
+          }
+          if (!placed) cardView.appendChild(destGroup);
+        }
+
+        const cardGrid = destGroup.querySelector('.card-grid');
+        // Determine insertion point among currently loaded children using in-memory allItems for comparison
+        const children = Array.from(cardGrid.children);
+        let inserted = false;
+        for (const child of children) {
+          const cid = String(child.dataset.id);
+          const childItem = allItems.find(i => String(i.id) === cid);
+          if (!childItem) continue;
+          const cmp = compareItems(item, childItem);
+          const shouldInsertBefore = (currentSortOrder === 'desc' ? cmp > 0 : cmp < 0);
+          if (shouldInsertBefore) {
+            cardGrid.insertBefore(newEl, child);
+            inserted = true;
+            break;
+          }
+        }
+        if (!inserted) {
+          cardGrid.appendChild(newEl);
+        }
+      } else {
+        // List view: find or create status group table/tbody
+        let destGroup = listView.querySelector(`.status-group[data-status="${item.status}"]`);
+        if (!destGroup) {
+          destGroup = document.createElement('div');
+          destGroup.className = 'status-group';
+          destGroup.dataset.status = item.status;
+          const header = document.createElement('h2');
+          header.className = 'status-header';
+          const labels = statusLabelsMap[mediaType] || {};
+          header.textContent = labels[item.status] || item.status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+          destGroup.appendChild(header);
+
+          const table = document.createElement('table');
+          table.innerHTML = `<thead></thead><tbody></tbody>`;
+          destGroup.appendChild(table);
+
+          // Insert destGroup into listView according to statusesOrder
+          const existingGroups = Array.from(listView.querySelectorAll('.status-group'));
+          const myIndex = statusesOrder.indexOf(item.status);
+          let placed = false;
+          for (const g of existingGroups) {
+            const gIndex = statusesOrder.indexOf(g.dataset.status);
+            if (gIndex === -1) continue;
+            if (gIndex > myIndex) {
+              listView.insertBefore(destGroup, g);
+              placed = true;
+              break;
+            }
+          }
+          if (!placed) listView.appendChild(destGroup);
+          console.log('Created new destGroup for status:', item.status);
+        }
+
+        const tbody = destGroup.querySelector('tbody') || destGroup.querySelector('table tbody') || destGroup;
+        // Insert row by comparing to loaded rows
+        const rows = Array.from(tbody.children);
+        let insertedRow = false;
+        for (const row of rows) {
+          const rid = String(row.dataset.id);
+          const rowItem = allItems.find(i => String(i.id) === rid);
+          if (!rowItem) continue;
+          const cmp = compareItems(item, rowItem);
+          const shouldInsertBefore = (currentSortOrder === 'desc' ? cmp > 0 : cmp < 0);
+          if (shouldInsertBefore) {
+            tbody.insertBefore(newEl, row);
+            insertedRow = true;
+            break;
+          }
+        }
+        if (!insertedRow) {
+          tbody.appendChild(newEl);
+        }
+      }
+      
+      // Update counts if status changed
+      if (oldStatus && oldStatus !== item.status) {
+        // Item changed status: decrement old status, increment new status
+        statusCounts[oldStatus] = Math.max(0, statusCounts[oldStatus] - 1);
+        statusCounts[item.status] = statusCounts[item.status] + 1;
+      }
+      
+      // Update filter buttons after replacement
+      updateFilterButtons();
+    } catch (e) {
+      console.error('replaceItemElement error', e);
+    }
+  }
+
+  // Expose for edit_modal to call
+  window.replaceItemElement = replaceItemElement;
+
+  // Remove an item from DOM + in-memory arrays (used after delete)
+  function removeItemElement(id) {
+    try {
+      const sid = String(id);
+      // Find the item to get its status before removal
+      const itemIdx = allItems.findIndex(i => String(i.id) === sid);
+      const itemStatus = itemIdx !== -1 ? allItems[itemIdx].status : null;
+      
+      // Remove DOM nodes
+      document.querySelectorAll(`.card[data-id="${sid}"], .list-row[data-id="${sid}"]`).forEach(n => n.remove());
+      // Remove from allItems
+      allItems = allItems.filter(i => String(i.id) !== sid);
+      // Remove empty status groups
+      const groups = Array.from(cardView.querySelectorAll('.status-group')) || [];
+      groups.forEach(g => {
+        const grid = g.querySelector('.card-grid');
+        const tbody = g.querySelector('tbody');
+        const hasChildren = (grid && grid.children.length > 0) || (tbody && tbody.children.length > 0);
+        if (!hasChildren) g.remove();
+      });
+      
+      // Update counts: decrement status count and total
+      if (itemStatus) {
+        statusCounts[itemStatus] = Math.max(0, statusCounts[itemStatus] - 1);
+        statusCounts.all = Math.max(0, statusCounts.all - 1);
+      }
+      
+      // Update filter buttons after removal
+      updateFilterButtons();
+    } catch (e) {
+      console.error('removeItemElement error', e);
+    }
+  }
+
+  window.removeItemElement = removeItemElement;
+
+  // Initialize status counts from HTML (backend-provided)
+  const statusCounts = {
+    all: 0,
+    ongoing: 0,
+    completed: 0,
+    on_hold: 0,
+    planned: 0,
+    dropped: 0,
+  };
+  
+  // Extract initial counts from filter buttons
+  filterButtons.forEach(btn => {
+    const filter = btn.dataset.filter;
+    const countEl = btn.querySelector('.btn-count');
+    if (countEl) {
+      statusCounts[filter] = parseInt(countEl.textContent) || 0;
+    }
+  });
+
+  // Update filter button visibility and counts - only called on edit/delete
+  function updateFilterButtons() {
+    // Ensure buttons exist only for statuses that currently have items
+    Object.keys(statusCounts).forEach(filter => {
+      if (filter === 'all') return;
+      const cnt = statusCounts[filter] || 0;
+      if (cnt > 0 && !document.querySelector(`.filter-btn[data-filter="${filter}"]`)) {
+        ensureFilterButton(filter);
+      }
+    });
+
+    // Query buttons dynamically each time (in case new ones were added)
+    const allFilterButtons = document.querySelectorAll(".filter-btn");
+    
+    // Update each filter button
+    allFilterButtons.forEach(btn => {
+      const filter = btn.dataset.filter;
+      const count = statusCounts[filter];
+      const countEl = btn.querySelector('.btn-count');
+      
+      if (countEl) {
+        countEl.textContent = count;
+      }
+
+      // Show/hide button based on count (except for "all" which is always shown)
+      if (filter === 'all') {
+        btn.style.display = 'flex';
+      } else if (count > 0) {
+        btn.style.display = 'flex';
+      } else {
+        btn.style.display = 'none';
+      }
+    });
+
+    // If current filter has 0 items, auto-switch to "all" and reload
+    const currentFilterCount = statusCounts[currentStatus === 'all' ? 'all' : currentStatus] || 0;
+    if (currentStatus !== 'all' && currentFilterCount === 0) {
+      currentStatus = 'all';
+      sessionStorage.setItem(filterKey, currentStatus);
+      allFilterButtons.forEach(b => b.classList.remove("active"));
+      const allBtn = document.querySelector(`.filter-btn[data-filter="all"]`);
+      if (allBtn) allBtn.classList.add("active");
+      // Reload items to show the unfiltered list
+      resetAndLoad();
+    }
+  }
+
+  // Helper: Ensure a filter button exists, create if needed (but do NOT auto-run on load)
+  function ensureFilterButton(filter) {
+    let btn = document.querySelector(`.filter-btn[data-filter="${filter}"]`);
+    if (btn) return btn; // Already exists
+
+    // Create button for this filter matching server-rendered structure
+    btn = document.createElement('button');
+    btn.className = 'filter-btn';
+    btn.dataset.filter = filter;
+    const label = (statusLabelsMap[mediaType] && statusLabelsMap[mediaType][filter]) || filter.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+    btn.innerHTML = `<span class="btn-text">${label}</span><span class="btn-count">${statusCounts[filter] || 0}</span>`;
+
+    // Find the button container
+    const btnContainer = document.querySelector('.filter-buttons') || filterButtons[0]?.parentElement;
+    if (btnContainer) {
+      // Insert according to canonical statusesOrder
+      const myIndex = statusesOrder.indexOf(filter);
+      const existing = Array.from(btnContainer.querySelectorAll('.filter-btn'));
+      let placed = false;
+      for (const ex of existing) {
+        const exFilter = ex.dataset.filter;
+        if (!exFilter) continue;
+        const exIndex = statusesOrder.indexOf(exFilter);
+        if (exIndex === -1) continue;
+        if (exIndex > myIndex) {
+          btnContainer.insertBefore(btn, ex);
+          placed = true;
+          break;
+        }
+      }
+      if (!placed) btnContainer.appendChild(btn);
+    }
+
+    // Add click listener matching existing behavior
+    btn.addEventListener('click', () => {
+      const allButtons = document.querySelectorAll('.filter-btn');
+      allButtons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentStatus = btn.dataset.filter;
+      sessionStorage.setItem(filterKey, currentStatus);
+      localStorage.setItem('music_player_status', currentStatus);
+      updateStatusContainer();
+      resetAndLoad();
+    });
+
+    return btn;
+  }
+
+  window.updateFilterButtons = updateFilterButtons;
+
   // === Set active filter buttons ===
   const matchingBtn = document.querySelector(`.filter-btn[data-filter="${currentStatus}"]`);
   if (matchingBtn) {
-    filterButtons.forEach(b => b.classList.remove("active"));
-    matchingBtn.classList.add("active");
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    matchingBtn.classList.add('active');
     localStorage.setItem('music_player_status', currentStatus);
   }
   
@@ -584,8 +968,8 @@ updateSortButtons();
   // === STATUS FILTER BUTTONS ===
   filterButtons.forEach((btn) => {
     btn.addEventListener("click", () => {
-      filterButtons.forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
       currentStatus = btn.dataset.filter;
       sessionStorage.setItem(filterKey, currentStatus);
       localStorage.setItem('music_player_status', currentStatus);
@@ -769,6 +1153,62 @@ updateSortButtons();
   updateStatusContainer();
   loadAllBanners();
   updateSortButtons();
+  
+  // === CHECK STATUS BUTTON ===
+  const checkStatusBtn = document.getElementById("check-status-btn");
+
+  if (checkStatusBtn) {
+    checkStatusBtn.addEventListener("click", () => {
+      let apiUrl = "";
+
+      switch (mediaType) {
+        case "movies":
+          apiUrl = "/api/check_planned_movie_statuses/";
+          break;
+        case "tvshows":
+          apiUrl = "/api/check_planned_tvseries_statuses/";
+          break;
+        case "anime":
+        case "manga":
+          apiUrl = `/api/check_planned_anime_manga_statuses/?media_type=${mediaType}`;
+          break;
+        default:
+          console.warn("Unknown media type for status check");
+          return;
+      }
+
+      fetch(apiUrl)
+        .then(response => response.json())
+        .then(statuses => {
+          for (const [sourceId, status] of Object.entries(statuses)) {
+            const card = document.querySelector(`.card[data-source-id="${sourceId}"]`);
+            if (card && !card.querySelector(".status-dot")) {
+              const dot = document.createElement("div");
+              dot.classList.add("status-dot");
+
+              if (mediaType === "movies") {
+                if (status === "Released") dot.style.backgroundColor = "green";
+                else if (status.includes("Production")) dot.style.backgroundColor = "red";
+                else dot.style.backgroundColor = "red";
+              } else if (mediaType === "tvshows") {
+                if (status === "Ended") dot.style.backgroundColor = "green";
+                else if (status === "Returning with upcoming episode") dot.style.backgroundColor = "orange";
+                else if (status === "In Production") dot.style.backgroundColor = "red";
+                else dot.style.backgroundColor = "red";
+              } else if (mediaType === "anime" || mediaType === "manga") {
+                if (status === "Finished") dot.style.backgroundColor = "green";
+                else if (status === "Releasing") dot.style.backgroundColor = "orange";
+                else if (status === "Not yet released") dot.style.backgroundColor = "red";
+                else dot.style.backgroundColor = "gray";
+              }
+
+              card.appendChild(dot);
+            }
+          }
+        })
+        .catch(err => console.error('Error checking statuses', err));
+    });
+  }
 
   // === MOBILE SIDEBAR TOGGLE ===
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -781,6 +1221,23 @@ updateSortButtons();
       sidebar.classList.toggle('sidebar-visible');
     });
     document.querySelector('.list-page-container').prepend(toggleBtn);
+
+    // Close sidebar when clicking outside
+    document.addEventListener('click', (e) => {
+      if (
+        !toggleBtn.contains(e.target) &&
+        !sidebar.contains(e.target)
+      ) {
+        sidebar.classList.remove('sidebar-visible');
+      }
+    });
+
+    // Close sidebar on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        sidebar.classList.remove('sidebar-visible');
+      }
+    });
   }
 
   // === BANNER ROTATOR ===
@@ -835,57 +1292,3 @@ updateSortButtons();
 
 
 
-const checkStatusBtn = document.getElementById("check-status-btn");
-
-if (checkStatusBtn) {
-  checkStatusBtn.addEventListener("click", () => {
-    const mediaType = document.body.getAttribute("data-media-type");
-    let apiUrl = "";
-
-    switch (mediaType) {
-      case "movies":
-        apiUrl = "/api/check_planned_movie_statuses/";
-        break;
-      case "tvshows":
-        apiUrl = "/api/check_planned_tvseries_statuses/";
-        break;
-      case "anime":
-      case "manga":
-        apiUrl = `/api/check_planned_anime_manga_statuses/?media_type=${mediaType}`;
-        break;
-      default:
-        console.warn("Unknown media type for status check");
-        return;
-    }
-
-    fetch(apiUrl)
-      .then(response => response.json())
-      .then(statuses => {
-        for (const [sourceId, status] of Object.entries(statuses)) {
-          const card = document.querySelector(`.card[data-source-id="${sourceId}"]`);
-          if (card && !card.querySelector(".status-dot")) {
-            const dot = document.createElement("div");
-            dot.classList.add("status-dot");
-
-            if (mediaType === "movies") {
-              if (status === "Released") dot.style.backgroundColor = "green";
-              else if (status.includes("Production")) dot.style.backgroundColor = "red";
-              else dot.style.backgroundColor = "red";
-            } else if (mediaType === "tvshows") {
-              if (status === "Ended") dot.style.backgroundColor = "green";
-              else if (status === "Returning with upcoming episode") dot.style.backgroundColor = "orange";
-              else if (status === "In Production") dot.style.backgroundColor = "red";
-              else dot.style.backgroundColor = "red";
-            } else if (mediaType === "anime" || mediaType === "manga") {
-              if (status === "Finished") dot.style.backgroundColor = "green";
-              else if (status === "Releasing") dot.style.backgroundColor = "orange";
-              else if (status === "Not yet released") dot.style.backgroundColor = "red";
-              else dot.style.backgroundColor = "gray";
-            }
-
-            card.appendChild(dot);
-          }
-        }
-      });
-  });
-}

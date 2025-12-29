@@ -374,70 +374,127 @@ body {
   border: none !important;
 }
 
+.sidebar-toggle-btn {
+  display: none;
+}
+
 @media (orientation: portrait) {
   .hover-tooltip {
     display: none !important;
   }
+
+  .sidebar-toggle-btn {
+    display: block;
+    position: fixed;
+    bottom: 40px;
+    left: 40px;
+    z-index: 1000;
+    background: rgb(0 0 0 / 0.8);
+    color: #ffffff;
+    border: none;
+    padding: 0.8rem 1.6rem;
+    font-size: 6rem;
+    border-radius: 20px;
+    cursor: pointer;
+    transform-origin: bottom left;
+  }
+
+  .sidebar {
+    position: fixed;
+    left: -100%;
+    top: 0;
+    height: 100vh;
+    background: var(--bg-primary);
+    z-index: 999;
+    transition: left 0.3s ease;
+    overflow-y: auto;
+    margin-top: 40rem;
+    width: 90%;
+    max-width: 90%;
+    padding: 2rem;
+    padding-bottom: 4rem;
+    box-sizing: border-box;
+    border-radius: 20px;
+  }
+
+  .sidebar.sidebar-visible {
+    margin-top: 40rem;
+    left: 0;
+  }
+
   .list-page-container {
     flex-direction: column;
     padding-left: 16.3rem;
     padding-right: 0rem;
+    gap: 8rem;
+    position: relative;
   }
-  
-  .sidebar {
-    transform: scale(2);
-    transform-origin: top;
-    max-width: 40rem;
-    width: 64%;
-    padding-bottom: 24rem;
-    padding-right: 0rem;
-  }
-  
+
   .list-content {
     transform: scale(2);
     transform-origin: top;
     max-width: 30rem;
     margin-left: 0.4rem;
   }
-  
-.card-grid {
-  grid-template-columns: repeat(3, 155px);
-  row-gap: 0.5rem;
-  column-gap: 0;
-  justify-content: center;
-}
-  
-  .filter-group {
-    flex-direction: row;
+
+  .card-grid {
+    grid-template-columns: repeat(3, 155px);
+    row-gap: 0.8rem;
+    column-gap: 0;
+    justify-content: center;
   }
 
-  .status-filter{
+  .filter-group {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.5rem;
+  }
+
+
+  .status-filter {
     margin-bottom: 10rem;
   }
-  
+
   .separator-bar {
     width: 100%;
-    height: 45px;
-    margin-bottom: 16rem;
+    height: 1px;
   }
-  
-.card {
-  border-radius: 6px;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  transition: transform 0.15s ease-in-out;
-  cursor: pointer;
-  width: 140px; /* smaller */
-}
 
-.card img {
-  width: 140px;  /* same as card width */
-  height: 210px; /* keeps 2:3 ratio */
-  object-fit: cover;
-  display: block;
-  border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
+  .card {
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    transition: transform 0.15s ease-in-out;
+    cursor: pointer;
+    width: 140px;
+  }
 
+  .card img {
+    width: 140px;
+    height: 210px;
+    object-fit: cover;
+    display: block;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+
+  #search-input, #tmdb-year-input, #season-year-input, #game-year-input, #year-input {
+    font-size:2.5rem;
+  }
+
+  .sidebar h3{
+    font-size:2.5rem;
+  }
+
+  .filter-btn{
+    justify-content: center;
+    font-size:2.5rem;
+    max-width: 30rem;
+  }
+
+  .add-to-list-btn{
+    padding: 6px 10px;
+    font-size: 2rem;
+  }
 }

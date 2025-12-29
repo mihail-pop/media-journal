@@ -610,4 +610,31 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('scroll', hideTooltip);
   
   initialize();
+
+  // === MOBILE SIDEBAR TOGGLE ===
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  if (isMobile) {
+    const sidebar = document.querySelector('.sidebar');
+    const toggleBtn = document.createElement('button');
+    toggleBtn.className = 'sidebar-toggle-btn';
+    toggleBtn.innerHTML = '☰';
+    toggleBtn.addEventListener('click', () => {
+      sidebar.classList.toggle('sidebar-visible');
+    });
+    document.querySelector('.list-page-container').prepend(toggleBtn);
+
+    // Close sidebar when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!toggleBtn.contains(e.target) && !sidebar.contains(e.target)) {
+        sidebar.classList.remove('sidebar-visible');
+      }
+    });
+
+    // Close sidebar on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        sidebar.classList.remove('sidebar-visible');
+      }
+    });
+  }
 });

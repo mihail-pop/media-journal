@@ -62,10 +62,20 @@ document.addEventListener("DOMContentLoaded", () => {
       const data = await response.json();
       
       if (reset) {
-        allItems = data.items;
+        allItems = data.items || [];
         currentPage = 1;
       } else {
-        allItems = [...allItems, ...data.items];
+        // Merge without duplicates: replace existing items by id, append new ones
+        const existingMap = new Map(allItems.map((it, idx) => [String(it.id), idx]));
+        for (const ni of (data.items || [])) {
+          const nid = String(ni.id);
+          if (existingMap.has(nid)) {
+            allItems[existingMap.get(nid)] = ni;
+          } else {
+            existingMap.set(nid, allItems.length);
+            allItems.push(ni);
+          }
+        }
       }
       
       hasMore = data.has_more;
@@ -98,6 +108,120 @@ document.addEventListener("DOMContentLoaded", () => {
       noItemsMsg.style.display = allItems.length === 0 ? "block" : "none";
     }
   }
+
+  // Replace or move a single updated item in the History view without reloading
+  function replaceHistoryItem(item) {
+    try {
+      const id = String(item.id);
+
+      // Update in-memory list
+      const idx = allItems.findIndex(i => String(i.id) === id);
+      if (idx !== -1) {
+        allItems[idx] = item;
+      } else {
+        allItems.unshift(item);
+      }
+
+      // Helper: check whether the item matches current filters
+      function matchesFilters(it) {
+        if (!it) return false;
+        // Status filter
+        if (selectedStatus && selectedStatus !== 'all' && it.status !== selectedStatus) return false;
+        // Type filter
+        if (selectedType && selectedType !== 'all' && it.media_type !== selectedType) return false;
+        // Year filter
+        if (selectedYear && selectedYear !== 'all') {
+          const y = new Date(it.date_added).getFullYear();
+          if (String(y) !== String(selectedYear)) return false;
+        }
+        // Month filter
+        if (selectedMonth && selectedMonth !== 'all') {
+          const m = new Date(it.date_added).getMonth() + 1;
+          if (String(m) !== String(selectedMonth)) return false;
+        }
+        // Search query
+        if (searchQuery && searchQuery.trim()) {
+          const q = searchQuery.trim().toLowerCase();
+          if (!(String(it.title || '').toLowerCase().includes(q))) return false;
+        }
+        // Date range
+        if (startDate) {
+          const sd = new Date(startDate).getTime();
+          const da = it.date_added ? new Date(it.date_added).getTime() : 0;
+          if (da < sd) return false;
+        }
+        if (endDate) {
+          const ed = new Date(endDate).getTime();
+          const da = it.date_added ? new Date(it.date_added).getTime() : 0;
+          if (da > ed) return false;
+        }
+        return true;
+      }
+
+      // If the edited item no longer matches filters, remove any visible instance and stop
+      if (!matchesFilters(item)) {
+        document.querySelectorAll(`.card[data-id="${id}"]`).forEach(n => n.remove());
+        // ensure it's not in in-memory list for current view
+        allItems = allItems.filter(i => String(i.id) !== id);
+        return;
+      }
+
+      // Ensure date_formatted is present (APIs sometimes send this; edit endpoint sends ISO date only)
+      if (!item.date_formatted && item.date_added) {
+        try {
+          const d = new Date(item.date_added);
+          item.date_formatted = d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+        } catch (e) {
+          item.date_formatted = '';
+        }
+      }
+
+      // Remove any existing DOM nodes for this id (avoid duplicates)
+      document.querySelectorAll(`.card[data-id="${id}"]`).forEach(n => n.remove());
+
+      const newEl = createCardElement(item);
+      const oldEl = cardView.querySelector(`.card[data-id="${id}"]`);
+      if (oldEl) {
+        oldEl.replaceWith(newEl);
+        return;
+      }
+
+      // Insert among currently loaded cards by date (newest/oldest). If no loaded cards, append.
+      const cards = Array.from(cardView.querySelectorAll('.card'));
+      let inserted = false;
+      for (const c of cards) {
+        const cid = String(c.dataset.id);
+        const ci = allItems.find(i => String(i.id) === cid);
+        if (!ci) continue;
+        const a = item.date_added ? new Date(item.date_added).getTime() : 0;
+        const b = ci.date_added ? new Date(ci.date_added).getTime() : 0;
+        // history default is desc (newer first)
+        if (a > b) {
+          cardView.insertBefore(newEl, c);
+          inserted = true;
+          break;
+        }
+      }
+      if (!inserted) cardView.appendChild(newEl);
+    } catch (e) {
+      console.error('replaceHistoryItem error', e);
+    }
+  }
+
+  // Remove item from history DOM and in-memory list
+  function removeHistoryItem(id) {
+    try {
+      const sid = String(id);
+      document.querySelectorAll(`.card[data-id="${sid}"]`).forEach(n => n.remove());
+      allItems = allItems.filter(i => String(i.id) !== sid);
+    } catch (e) {
+      console.error('removeHistoryItem error', e);
+    }
+  }
+
+  window.removeHistoryItem = removeHistoryItem;
+
+  window.replaceHistoryItem = replaceHistoryItem;
 
   function createCardElement(item) {
     const card = document.createElement('div');
@@ -420,6 +544,33 @@ document.addEventListener("DOMContentLoaded", () => {
       sessionStorage.removeItem(pageKey);
     }
     loadItems(1, true);
+  }
+
+  // === MOBILE SIDEBAR TOGGLE ===
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  if (isMobile) {
+    const sidebar = document.querySelector('.sidebar');
+    const toggleBtn = document.createElement('button');
+    toggleBtn.className = 'sidebar-toggle-btn';
+    toggleBtn.innerHTML = '☰';
+    toggleBtn.addEventListener('click', () => {
+      sidebar.classList.toggle('sidebar-visible');
+    });
+    document.querySelector('.list-page-container').prepend(toggleBtn);
+
+    // Close sidebar when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!toggleBtn.contains(e.target) && !sidebar.contains(e.target)) {
+        sidebar.classList.remove('sidebar-visible');
+      }
+    });
+
+    // Close sidebar on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        sidebar.classList.remove('sidebar-visible');
+      }
+    });
   }
 });
 

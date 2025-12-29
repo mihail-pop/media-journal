@@ -848,16 +848,15 @@ body, html {
 
   @media (orientation: portrait) {
   body {
-    padding-top: 15rem;
+    margin-top: 0.1rem;
   }
-
   main{
     transform: scale(2.5);
     transform-origin: top;
   }
 
   .new-post-box {
-    max-width: 20rem;
+    max-width: 21rem;
   }
 
   .board-post{
@@ -897,4 +896,23 @@ body, html {
     justify-content: center;
     transform: translateY(-40%);
 }
+
+.post-tabs-right button {
+  max-width: 4.5rem;
+  white-space: nowrap;        /* keep on one line */
+  overflow: hidden;           /* hide excess text */
+  text-overflow: ellipsis;    /* show … at the end */
+}
+
+.comment-tabs-right {
+  white-space: nowrap;        /* keep on one line */
+  overflow: hidden;           /* hide excess text */
+  text-overflow: ellipsis;    /* show … at the end */
+}
+
+.board-post iframe {
+  height: 12rem;      /* new height */
+  max-width: 100%;    /* keep responsive */
+}
+
 }

@@ -1234,7 +1234,7 @@ function renderExtraInfo(mediaType, data) {
       const score = Math.round(data.vote_average * 10) / 10;
       const percentage = (score / 10) * 100;
       safeHTML.push(`
-        <div style="display: flex; align-items: center; gap: 12px; margin: 12px 0; padding: 8px; background: rgba(245, 197, 24, 0.1); max-width: 12rem; border-radius: 8px; border-right: 4px solid #f5c518; border-left: 4px solid #f5c518;">
+        <div class="tmdb-score-container" style="display: flex; align-items: center; gap: 12px; margin: 12px 0; padding: 8px; background: rgba(245, 197, 24, 0.1); max-width: 12rem; border-radius: 8px; border-right: 4px solid #f5c518; border-left: 4px solid #f5c518;">
           <span style="font-weight: bold; color: #f5c518; font-size: 14px;">TMDB</span>
           <div style="background: #333; border-radius: 10px; width: 120px; height: 8px; overflow: hidden;">
             <div style="background: linear-gradient(90deg, #ff4444 0%, #ffaa00 50%, #00ff00 100%); height: 100%; width: ${percentage}%; transition: width 0.3s;"></div>
@@ -1365,7 +1365,7 @@ if (data.recommendations?.length) {
       const score = Math.round(data.vote_average * 10) / 10;
       const percentage = (score / 10) * 100;
       safeHTML.push(`
-        <div style="display: flex; align-items: center; gap: 12px; margin: 12px 0; padding: 8px; background: rgba(245, 197, 24, 0.1); max-width: 12rem; border-right: 4px solid #f5c518; border-radius: 8px; border-left: 4px solid #f5c518;">
+        <div class="tmdb-score-container" style="display: flex; align-items: center; gap: 12px; margin: 12px 0; padding: 8px; background: rgba(245, 197, 24, 0.1); max-width: 12rem; border-right: 4px solid #f5c518; border-radius: 8px; border-left: 4px solid #f5c518;">
           <span style="font-weight: bold; color: #f5c518; font-size: 14px;">TMDB</span>
           <div style="background: #333; border-radius: 10px; width: 120px; height: 8px; overflow: hidden;">
             <div style="background: linear-gradient(90deg, #ff4444 0%, #ffaa00 50%, #00ff00 100%); height: 100%; width: ${percentage}%; transition: width 0.3s;"></div>
@@ -1490,7 +1490,7 @@ if (data.recommendations?.length) {
     if (data.averageScore) {
       const percentage = data.averageScore * 10;
       safeHTML.push(`
-        <div style="display: flex; align-items: center; gap: 12px; margin: 12px 0; padding: 8px; background: rgba(2, 169, 255, 0.1); border-radius: 8px; max-width: 12rem; border-right: 4px solid #02a9ff; border-left: 4px solid #02a9ff;">
+        <div class="anilist-score-container" style="display: flex; align-items: center; gap: 12px; margin: 12px 0; padding: 8px; background: rgba(2, 169, 255, 0.1); border-radius: 8px; max-width: 12rem; border-right: 4px solid #02a9ff; border-left: 4px solid #02a9ff;">
           <span style="font-weight: bold; color: #02a9ff; font-size: 14px;">AniList</span>
           <div style="background: #333; border-radius: 10px; width: 120px; height: 8px; overflow: hidden;">
             <div style="background: linear-gradient(90deg, #ff4444 0%, #ffaa00 50%, #00ff00 100%); height: 100%; width: ${percentage}%; transition: width 0.3s;"></div>
@@ -1666,7 +1666,7 @@ if (data.trailers?.length) {
     if (data.rating) {
       const percentage = data.rating * 10;
       safeHTML.push(`
-        <div style="display: flex; align-items: center; gap: 12px; margin: 12px 0; padding: 8px; background: rgba(145, 71, 255, 0.1); border-radius: 8px; max-width: 12rem; border-right: 4px solid #9147ff; border-left: 4px solid #9147ff;">
+        <div class="igdb-score-container" style="display: flex; align-items: center; gap: 12px; margin: 12px 0; padding: 8px; background: rgba(145, 71, 255, 0.1); border-radius: 8px; max-width: 12rem; border-right: 4px solid #9147ff; border-left: 4px solid #9147ff;">
           <span style="font-weight: bold; color: #9147ff; font-size: 14px;">IGDB</span>
           <div style="background: #333; border-radius: 10px; width: 120px; height: 8px; overflow: hidden;">
             <div style="background: linear-gradient(90deg, #ff4444 0%, #ffaa00 50%, #00ff00 100%); height: 100%; width: ${percentage}%; transition: width 0.3s;"></div>

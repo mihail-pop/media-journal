@@ -13,27 +13,39 @@ function getCookie(name) {
   return cookieValue;
 }
 
-function refreshItem(itemId) {
-  const refreshBtn = document.querySelector('.refresh-btn');
-  const originalText = refreshBtn.textContent;
-  refreshBtn.textContent = 'Refreshing...';
-  refreshBtn.disabled = true;
-  
-  fetch("/refresh-item/", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-CSRFToken": getCookie("csrftoken"),
-    },
-    body: JSON.stringify({ id: itemId }),
-  })
-    .then((res) => {
-      refreshBtn.textContent = originalText;
-      refreshBtn.disabled = false;
-      sessionStorage.setItem("refreshSuccess", "1");
-      setTimeout(() => window.location.reload(true));
-    });
-}
+  function toggleSettingsDropdown(event) {
+    event.stopPropagation();
+    const dropdown = document.getElementById('settingsDropdown');
+    if (!dropdown) return;
+    dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+  }
+
+  document.addEventListener('click', function(e) {
+    const dropdown = document.getElementById('settingsDropdown');
+    const cogwheel = document.querySelector('.settings-cogwheel-btn');
+    if (dropdown && cogwheel && !dropdown.contains(e.target) && !cogwheel.contains(e.target)) {
+      dropdown.style.display = 'none';
+    }
+  });
+  function refreshItem(itemId, refreshType = 'all') {
+    const dropdown = document.getElementById('settingsDropdown');
+    if (dropdown) dropdown.style.display = 'none';
+
+    showNotification('Refreshing...', 'warning');
+
+    fetch('/refresh-item/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken'),
+      },
+      body: JSON.stringify({ id: itemId, refresh_type: refreshType }),
+    })
+      .then((res) => {
+        sessionStorage.setItem('refreshSuccess', '1');
+        setTimeout(() => window.location.reload(true));
+      });
+  }
 
 function openBannerUpload(source, id) {
   const input = document.createElement("input");
@@ -50,22 +62,28 @@ function openBannerUpload(source, id) {
     formData.append("source", source);
     formData.append("id", id);
 
-    fetch("/upload-banner/", {
-      method: "POST",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-      },
-      body: formData,
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success && data.url) {
-          sessionStorage.setItem("refreshSuccess", "1");
-          window.location.reload(true);
-        } else {
-          alert(data.error || "Failed to upload banner.");
-        }
-      });
+      const mediaType = document.body.dataset.mediaType;
+      if (mediaType) formData.append('media_type', mediaType);
+
+      showNotification('Uploading banner...', 'warning');
+
+      fetch('/upload-banner/', {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': getCookie('csrftoken'),
+        },
+        body: formData,
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          const banner = document.querySelector('.banner-section');
+          if (data.success && data.url) {
+            if (banner) banner.style.backgroundImage = `url("${data.url}")`;
+            showNotification('Banner uploaded successfully.', 'success');
+          } else {
+            showNotification('Banner upload failed.', 'warning');
+          }
+        });
   };
 
   document.body.appendChild(input);
@@ -88,22 +106,29 @@ function openCoverUpload(source, id) {
     formData.append("source", source);
     formData.append("id", id);
 
-    fetch("/upload-cover/", {
-      method: "POST",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-      },
-      body: formData,
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success && data.url) {
-          sessionStorage.setItem("refreshSuccess", "1");
-          window.location.reload(true);
-        } else {
-          alert(data.error || "Failed to upload cover.");
-        }
-      });
+      const mediaType = document.body.dataset.mediaType;
+      if (mediaType) formData.append('media_type', mediaType);
+
+      showNotification('Uploading cover...', 'warning');
+
+      fetch('/upload-cover/', {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': getCookie('csrftoken'),
+        },
+        body: formData,
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && data.url) {
+            // If there's a poster element, update it
+            const poster = document.querySelector('.poster');
+            if (poster) poster.src = data.url;
+            showNotification('Cover uploaded successfully.', 'success');
+          } else {
+            showNotification('Cover upload failed.', 'warning');
+          }
+        });
   };
 
   document.body.appendChild(input);

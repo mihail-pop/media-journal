@@ -2904,8 +2904,8 @@ def save_tmdb_season(tmdb_id, season_number):
         
         season_source_id = f"{tmdb_id}_s{season_number}"
         cache_bust = int(time.time() * 1000)
-        local_poster = download_image(poster_url, f"posters/tmdb_{season_source_id}_{cache_bust}.jpg") if poster_url else ""
-        local_banner = download_image(banner_url, f"banners/tmdb_{season_source_id}_{cache_bust}.jpg") if banner_url else ""
+        local_poster = download_image(poster_url, f"posters/tmdb_tv_{season_source_id}_{cache_bust}.jpg") if poster_url else ""
+        local_banner = download_image(banner_url, f"banners/tmdb_tv_{season_source_id}_{cache_bust}.jpg") if banner_url else ""
         
         # Cast data
         cast_data = []
@@ -4162,7 +4162,38 @@ def edit_item(request, item_id):
                 item.favorite = data["favorite"] in ["true", "on", True]
 
             item.save()
-            return JsonResponse({"success": True})
+
+            # Build a minimal serialized item to return to the client for UI updates
+            AppSettings = apps.get_model('core', 'AppSettings')
+            try:
+                settings = AppSettings.objects.first()
+                rating_mode = settings.rating_mode if settings else 'faces'
+            except Exception:
+                rating_mode = 'faces'
+
+            display_rating = rating_to_display(item.personal_rating, rating_mode)
+
+            return JsonResponse({
+                "success": True,
+                "item": {
+                    "id": item.id,
+                    "title": item.title,
+                    "media_type": item.media_type,
+                    "source_id": item.source_id,
+                    "status": item.status,
+                    "personal_rating": display_rating,
+                    "notes": item.notes,
+                    "progress_main": item.progress_main if item.progress_main else None,
+                    "total_main": item.total_main,
+                    "progress_secondary": item.progress_secondary,
+                    "total_secondary": item.total_secondary,
+                    "favorite": item.favorite,
+                    "repeats": item.repeats or 0,
+                    "date_added": item.date_added.isoformat() if item.date_added else None,
+                    "cover_url": getattr(item, 'cover_url', None),
+                    "banner_url": getattr(item, 'banner_url', None),
+                }
+            })
 
         except Exception as e:
             return JsonResponse({"success": False, "error": str(e)})

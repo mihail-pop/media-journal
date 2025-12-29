@@ -928,53 +928,136 @@ h2 {
 
 /* --- Responsive --- */
 @media (orientation: portrait) {
+
+.status-header, .favorites-header{
+  font-size: 2.5rem;
+}
+
+.extra-stats-class h3, .activity-graph h3  {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
   .stats-section {
-  display: flex;
-  flex-direction: column; /* stack items vertically */
-  justify-content: center; /* centers them along main axis (vertical now) */
-  gap: 2rem; /* vertical spacing between sections */
-  align-items: center;
-  transform: scale(1.5);
-  margin-top: 15rem;
-  margin-bottom: 15rem;
-  max-width: 67vw;
-  margin-left: 10rem;
-}
-  .stats-summary-box{
-    max-width: 32rem !important;
+    display: flex;
+    flex-direction: column; /* stack items vertically */
+    justify-content: center; /* centers them along main axis (vertical now) */
+    gap: 12rem; /* vertical spacing between sections */
+    align-items: center;
+    margin-top: 6rem;
+    margin-bottom: 10rem;
+    max-width: 67vw;
+    margin-left: 10rem;
   }
-.separator-bar {
-  transform: scale(2);
-  max-width: 67vw;       /* makes it fill the viewport */
-  box-sizing: border-box; /* makes padding count toward width */
-  transform-origin: center;
-}
-  .notifications-button{
+
+  .extra-stats-class{
+    transform: scale(1.6);
+  }
+
+  .activity-graph{
+    transform: scale(1.6);
+  }
+
+  .stats-summary-box {
+    max-width: 40rem !important;
+  }
+
+  .separator-bar {
+    transform: scale(2);
+    max-width: 67vw;       /* makes it fill the viewport */
+    box-sizing: border-box; /* makes padding count toward width */
+    transform-origin: center;
+    padding: 0 0.5rem !important;
+  }
+
+  .notifications-button {
     margin-right: 2rem;
   }
 
-  .stats-summary-box{
+  .stats-summary-box {
     min-width: 0;
     max-width: 32rem;
     max-width: 70vw;
   }
-  .favorites-column{
-    max-width: 35%;
-    transform: scale(1.2);
-    padding-block: 4rem;
+
+  #advanced-activity-btn{
+    padding: 0.5rem 1rem;
+    font-size: 1.2rem;
   }
-  /* Show thumbnail only on hover */
-.activity-entry:hover .activity-thumbnail {
-  display: none;;
-}
+
+  #toggle-activity-btn {
+    display:none;
+  }
 
   .favorites-section{
-    margin-top: 3rem;
+    max-width: 47rem;
   }
 
-  .activity-graph{
-    margin-bottom: 2.5rem;
+  /* Favorites section mobile layout */
+  .favorites-row {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    margin-bottom: 2rem;
   }
+
+  .favorites-column {
+    max-width: 100%;
+    width: 100%;
+    transform: scale(1.2);
+    padding-block: 2rem;
+  }
+
+  .favorites-column h2 {
+    margin-top: 0;
+  }
+
+  .overlay-content{
+    max-width: 60rem;
+    margin-right: 4rem;
+  }
+
+  .favorites-overlay .close-button {
+    display: none;
+  }
+
+  /* Single row horizontal scrollable layout for mobile */
+  .card-grid {
+    display: flex;
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+    gap: 1rem;
+    padding: 1.5rem;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    background: var(--bg-tertiary);
+    border-radius: 4px;
+    margin-bottom: 2rem;
+  }
+
+  /* Larger cards for mobile */
+  .card {
+    width: 225px;
+    height: 300px;
+    flex-shrink: 0;
+
+  }
+
+  .card a{
+    max-height: 300px;
+  }
+
+  .card[data-media-type="music"] {
+    width: 150px;
+    height: 150px;
+  }
+
+  /* Show thumbnail only on hover */
+  .activity-entry:hover .activity-thumbnail {
+    display: none;
+  }
+
 }
 
 /* Music Player Button */

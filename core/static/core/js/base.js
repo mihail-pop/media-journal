@@ -158,4 +158,107 @@ document.addEventListener("DOMContentLoaded", () => {
       searchGrid.scrollTop += e.deltaY;
     }
   }, { passive: false });
+
+  // === HEADER MOBILE TOGGLE ===
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  
+  if (isMobile) {
+    const header = document.querySelector("header");
+    const navCenter = document.querySelector(".nav-center");
+    const searchBtn = document.getElementById("search-open-btn");
+    const settingsLink = document.querySelector('.nav-right a[href="/settings"]');
+
+    if (header) {
+      // Create header menu popup
+      const headerMenuPopup = document.createElement("div");
+      headerMenuPopup.className = "header-menu-popup";
+      headerMenuPopup.id = "header-menu-popup";
+
+      // Create 3x3 grid of buttons
+      const buttons = [];
+
+      // Collect nav-center links
+      if (navCenter) {
+        const centerLinks = navCenter.querySelectorAll("a");
+        centerLinks.forEach(link => {
+          buttons.push({
+            text: link.textContent.trim(),
+            href: link.href,
+            isLink: true,
+          });
+        });
+      }
+
+      // Add search button
+      if (searchBtn) {
+        buttons.push({
+          text: "Search",
+          isSearch: true,
+        });
+      }
+
+      // Add settings link
+      if (settingsLink) {
+        buttons.push({
+          text: "Settings",
+          href: settingsLink.href,
+          isLink: true,
+        });
+      }
+
+      // Build grid HTML
+      let gridHtml = '<div class="header-menu-grid">';
+      buttons.forEach((btn, idx) => {
+        if (btn.isSearch) {
+          gridHtml += `<button class="header-menu-btn header-menu-search-btn" data-index="${idx}">${btn.text}</button>`;
+        } else if (btn.isLink) {
+          gridHtml += `<a href="${btn.href}" class="header-menu-btn header-menu-link-btn">${btn.text}</a>`;
+        }
+      });
+      gridHtml += "</div>";
+
+      headerMenuPopup.innerHTML = gridHtml;
+      document.body.appendChild(headerMenuPopup);
+
+      // Create toggle button
+      const headerToggleBtn = document.createElement("button");
+      headerToggleBtn.className = "header-toggle-btn";
+      headerToggleBtn.innerHTML = "⋯";
+      headerToggleBtn.setAttribute("aria-label", "Menu");
+
+      headerToggleBtn.addEventListener("click", () => {
+        headerMenuPopup.classList.toggle("header-menu-visible");
+      });
+
+      document.body.appendChild(headerToggleBtn);
+
+      // Close menu on search button click
+      const searchMenuBtn = headerMenuPopup.querySelector(".header-menu-search-btn");
+      if (searchMenuBtn) {
+        searchMenuBtn.addEventListener("click", () => {
+          headerMenuPopup.classList.remove("header-menu-visible");
+          if (openSearchBtn) {
+            openSearchBtn.click();
+          }
+        });
+      }
+
+      // Close menu when clicking outside
+      document.addEventListener("click", (e) => {
+        if (
+          !headerToggleBtn.contains(e.target) &&
+          !headerMenuPopup.contains(e.target)
+        ) {
+          headerMenuPopup.classList.remove("header-menu-visible");
+        }
+      });
+
+      // Close menu on Escape key
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          headerMenuPopup.classList.remove("header-menu-visible");
+        }
+      });
+    }
+  }
 });

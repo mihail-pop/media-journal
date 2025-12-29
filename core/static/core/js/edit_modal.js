@@ -202,7 +202,17 @@ const statusSelect = form.querySelector('select[name="status"]');
 statusSelect.innerHTML = "";
 const mediaTypeKey = item.media_type === 'tv' ? 'tvshows' : item.media_type; // map tv -> tvshows
 
-item.item_status_choices.forEach(choice => {
+// Order statuses so 'on_hold' (paused) appears after 'completed'
+const desiredOrder = ['ongoing', 'completed', 'on_hold', 'planned', 'dropped'];
+const choicesSorted = (item.item_status_choices || []).slice().sort((a, b) => {
+  const ia = desiredOrder.indexOf(a[0]);
+  const ib = desiredOrder.indexOf(b[0]);
+  const va = ia === -1 ? desiredOrder.length : ia;
+  const vb = ib === -1 ? desiredOrder.length : ib;
+  return va - vb;
+});
+
+choicesSorted.forEach(choice => {
   const option = document.createElement("option");
   option.value = choice[0];
   // Use user-friendly label from statusLabelsMap if available
@@ -248,8 +258,14 @@ item.item_status_choices.forEach(choice => {
         face.classList.remove('selected');
         if (parseInt(face.dataset.value) === item.personal_rating) face.classList.add('selected');
         face.onclick = () => {
-          setRatingValue(face.dataset.value);
-          faces.forEach(f => f.classList.toggle('selected', f === face));
+          // If clicking the already-selected face, clear the rating
+          if (face.classList.contains('selected')) {
+            faces.forEach(f => f.classList.remove('selected'));
+            setRatingValue('');
+          } else {
+            setRatingValue(face.dataset.value);
+            faces.forEach(f => f.classList.toggle('selected', f === face));
+          }
         };
       });
       // Show the container
@@ -273,11 +289,18 @@ item.item_status_choices.forEach(choice => {
         star.dataset.value = i;
         if (item.personal_rating === i) star.classList.add('selected');
         star.onclick = () => {
-          setRatingValue(i);
-          // Highlight stars up to selected
-          starDiv.querySelectorAll('.star').forEach((s, idx) => {
-            s.classList.toggle('selected', idx < i);
-          });
+          // If clicking the currently-selected star count, clear the rating
+          const currentlySelected = starDiv.querySelectorAll('.star.selected').length;
+          if (currentlySelected === i) {
+            starDiv.querySelectorAll('.star').forEach(s => s.classList.remove('selected'));
+            setRatingValue('');
+          } else {
+            setRatingValue(i);
+            // Highlight stars up to selected
+            starDiv.querySelectorAll('.star').forEach((s, idx) => {
+              s.classList.toggle('selected', idx < i);
+            });
+          }
         };
         starDiv.appendChild(star);
       }
@@ -551,7 +574,13 @@ document.getElementById("edit-delete-btn")?.addEventListener("click", function (
   .then(res => res.json())
   .then(res => {
     if (res.success) {
-      window.location.reload();
+      // Remove from lists and history views if helpers are present
+      if (window.removeItemElement) window.removeItemElement(itemId);
+      if (window.removeHistoryItem) window.removeHistoryItem(itemId);
+      // Close modal and notify
+      modal.classList.add('modal-hidden');
+      overlay.classList.add('modal-hidden');
+      showNotification('Deleted.', 'success');
     } else {
       alert("Failed to delete item.");
     }
@@ -673,6 +702,16 @@ document.getElementById("edit-delete-btn")?.addEventListener("click", function (
         .then(res => res.json())
         .then(res => {
           if (res.success) {
+            // If server returned the updated item, try to replace/move it in any open lists
+            if (res.item) {
+              try {
+                if (window.replaceItemElement) window.replaceItemElement(res.item);
+                if (window.replaceHistoryItem) window.replaceHistoryItem(res.item);
+              } catch (e) {
+                console.error('Error replacing item element:', e);
+              }
+            }
+
             modal.classList.add("modal-hidden");
             overlay.classList.add("modal-hidden");
             const title = modal.querySelector('.modal-title')?.textContent || "Item";

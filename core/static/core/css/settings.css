@@ -568,9 +568,7 @@ input[type="checkbox"] {
 }
 
 @media (orientation: portrait) {
-  body {
-    padding-top: 12rem;
-  }
+  
   .settings-page-content{
     transform: scale(2);
     transform-origin: top;

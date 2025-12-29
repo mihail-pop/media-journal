@@ -370,7 +370,7 @@
   position: absolute;
   top: 14px;
   right: 14px;
-  background: transparent;
+  background: rgb(0 0 0 / 0.8);
   color: var(--text-close);
   font-weight: 700;
   font-size: 1.5rem;
@@ -658,5 +658,11 @@ input[type="number"] {
   max-width: none;  /* override the default max-width */
   border: none; /* removes the border around the select input */
   outline: none; /* removes focus outline */
+}
+
+@media (orientation: portrait) {
+ #date_added{
+  max-width: 8.5rem;
+ }
 }
 

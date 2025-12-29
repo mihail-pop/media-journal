@@ -1133,7 +1133,6 @@ body[data-media-type="music"] .poster {
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
-  justify-content: center;
 }
 
 .settings-cogwheel-btn:hover {
@@ -1426,6 +1425,7 @@ body[data-media-type="music"] .poster {
 }
 
 @media (orientation: portrait) {
+
   .settings-cogwheel-btn{
     width: 60px;
     height: 60px;
@@ -1434,6 +1434,7 @@ body[data-media-type="music"] .poster {
   .settings-dropdown {
     top: 4rem;
     min-width: 250px;
+    right: -2rem;
   }
   
   .dropdown-item {
@@ -1446,7 +1447,19 @@ body[data-media-type="music"] .poster {
   }
 
   .edit-favorite-wrapper{
-    transform: scale(1.8);
+    transform: scale(2);
+    margin-top: 1.5rem;
+    margin-left: 3rem;
+  }
+
+  .favorite-refresh-wrapper{
+    transform: scale(2.5) !important;
+    margin-top: 2rem !important;
+    margin-left: 2rem !important;
+  }
+
+  #add-season-to-list-button{
+    margin-top: 0.8rem;
   }
 
   .text-info h1 {
@@ -1461,8 +1474,12 @@ body[data-media-type="music"] .poster {
   }
 
   .top-colored-section{
-    min-height: 42rem;
+    min-height: 30rem;
     margin-top: 7rem;
+  }
+
+  body[data-media-type="music"] .top-colored-section{
+    min-height: 18rem;
   }
 
   /* Only remove margin if there’s a banner that is NOT empty */
@@ -1502,4 +1519,101 @@ body[data-media-type="music"] .poster {
     max-height: 100rem;
   }
 
+  body[data-media-type="music"] .poster {
+    width: 24rem;
+    height: 24rem;
+    object-fit: cover;
+    object-position: 49.7% top;
+}
+
+  .modal-title{
+    top: -3.2rem;
+    position: relative;
+  }
+
+  .nav-btn{
+    font-size: 2.5rem;
+  }
+
+  .top-content{
+    padding-top:0px;
+  }
+
+  .right-column{
+    padding-top:140px;
+  }
+
+  h2, .screenshots-header h2{
+    font-size: 3rem;
+  }
+
+  .cast-member, .season-card, .rec-card, .recommendation, .person-card, .media-card, .media-overlay {
+    width: 200px !important;
+    max-height: 410px !important;
+    overflow: hidden !important;
+  }
+
+  .cast-member img, .season-card img, .rec-card img, .recommendation img, .person-card img, .media-image-wrapper img, .media-image-wrapper {
+    width: 200px !important;
+    height: 300px !important;
+  }
+
+  .actor-name, .character-name, .season-name, .episode-count, .air-date, .rec-title, .person-name, .overlay-type, .overlay-date, .media-title, .media-character {
+    font-size: 1.8rem !important;
+  }
+
+  .load-more-btn, .inline-form button, .music-control-btn{
+    font-size: 2rem;
+  }
+
+  .music-delete-btn, .music-cover-btn, .music-up-btn, .music-down-btn{
+    width: 70px;
+    height: 70px;
+    font-size:2.5rem;
+  }
+
+  .music-video-controls{
+    flex-direction: row;
+    margin-bottom: 2rem;
+    font-size: 2rem;
+    justify-content: center;
+  }
+
+  .music-video-wrapper{
+    display: unset;
+  }
+
+  .search-toggle{
+    transform: scale(2);
+    margin-right: 1rem;
+  }
+
+  #person-search-input{
+    font-size: 2.5rem;
+    max-width: 10rem;
+  }
+
+  #person-search-input:focus{
+    max-width: 10rem;
+  }
+
+  .cast-favorite .heart, .person-favorite .heart {
+    width: 70px;
+    height: 70px;
+  }
+
+  .settings-cogwheel-btn {
+    margin-right: 0rem;
+  }
+
+  .tmdb-score-container, .igdb-score-container, .anilist-score-container{
+    transform: scale(2);
+    margin-left: 7rem !important;
+    margin-top: 2rem !important;
+    margin-bottom: 2rem !important;
+  }
+
+  .read-more-btn{
+    font-size: 2rem;
+  }
 }
