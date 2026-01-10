@@ -95,26 +95,49 @@ function createPlayer(videoId, startTime = 0) {
   const heartColor = isFavorite ? 'red' : 'white';
   
   const isExpanded = localStorage.getItem('music_player_expanded') === 'true';
-  const width = isExpanded ? 480 : 320;
-  const height = isExpanded ? 270 : 180;
+  const isMobilePortrait = window.matchMedia('(orientation: portrait)').matches;
+  const scale = isMobilePortrait ? 2 : 1;
+  const width = (isExpanded ? 480 : 320) * scale;
+  const height = (isExpanded ? 270 : 180) * scale;
   const expandIcon = '⤢';
   
-  const overlayHeight = height - 40;
-  const buttonStyle = 'position:absolute;background:rgba(0,0,0,0.7);color:white;border:none;width:32px;height:32px;border-radius:4px;cursor:pointer;font-size:20px;line-height:1;z-index:10000;pointer-events:auto;transition:all 0.2s;';
+  const overlayHeight = height - (40 * scale);
+  const btnSize = 32 * scale;
+  const fontSize = 20 * scale;
+  const buttonStyle = `position:absolute;background:rgba(0,0,0,0.7);color:white;border:none;width:${btnSize}px;height:${btnSize}px;border-radius:${4*scale}px;cursor:pointer;font-size:${fontSize}px;line-height:1;z-index:10000;pointer-events:auto;transition:all 0.2s;`;
   const hoverButtonStyle = buttonStyle + 'opacity:0;';
+  const spacing = 5 * scale;
+  const btnSpacing = 37 * scale;
   
-  container.innerHTML = `<div id="music-player"></div><div style="position:absolute;top:0;right:0;width:50px;height:${overlayHeight}px;background:transparent;z-index:9999;pointer-events:auto;"></div><div style="position:absolute;top:0;left:0;width:50px;height:${overlayHeight}px;background:transparent;z-index:9999;pointer-events:auto;"></div><button id="music-player-expand" style="${hoverButtonStyle}top:5px;left:5px;">${expandIcon}</button><button id="music-player-heart" data-item-id="${itemId}" data-favorite="${isFavorite}" style="${hoverButtonStyle}top:42px;left:5px;color:${heartColor};">♥</button><a id="music-player-info" href="/musicbrainz/music/${sourceId}/" style="${hoverButtonStyle}top:79px;left:5px;display:flex;align-items:center;justify-content:center;text-decoration:none;color:white;padding:0;"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/><path fill="rgba(0,0,0,0.7)" d="M11 10h2v7h-2zm0-4h2v2h-2z"/></svg></a><button id="music-player-close" style="${buttonStyle}top:5px;right:5px;">✕</button><button id="music-player-skip" style="${buttonStyle}top:42px;right:5px;">⏭</button>`;
+  const svgSize = 20 * scale;
+  container.innerHTML = `<div id="music-player"></div><div style="position:absolute;top:0;right:0;width:${50*scale}px;height:${overlayHeight}px;background:transparent;z-index:9999;pointer-events:auto;"></div><div style="position:absolute;top:0;left:0;width:${50*scale}px;height:${overlayHeight}px;background:transparent;z-index:9999;pointer-events:auto;"></div><button id="music-player-expand" style="${hoverButtonStyle}top:${spacing}px;left:${spacing}px;${isMobilePortrait ? 'opacity:1;' : ''}">${expandIcon}</button><button id="music-player-heart" data-item-id="${itemId}" data-favorite="${isFavorite}" style="${hoverButtonStyle}top:${spacing+btnSpacing}px;left:${spacing}px;color:${heartColor};${isMobilePortrait ? 'opacity:1;' : ''}">♥</button><a id="music-player-info" href="/musicbrainz/music/${sourceId}/" style="${hoverButtonStyle}top:${spacing+btnSpacing*2}px;left:${spacing}px;display:flex;align-items:center;justify-content:center;text-decoration:none;color:white;padding:0;${isMobilePortrait ? 'opacity:1;' : ''}"><svg width="${svgSize}" height="${svgSize}" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/><path fill="rgba(0,0,0,0.7)" d="M11 10h2v7h-2zm0-4h2v2h-2z"/></svg></a><button id="music-player-close" style="${buttonStyle}top:${spacing}px;right:${spacing}px;">✕</button><button id="music-player-skip" style="${buttonStyle}top:${spacing+btnSpacing}px;right:${spacing}px;">⏭</button>`;
   container.style.display = 'block';
+  container.style.width = width + 'px';
+  if (isMobilePortrait) {
+    container.style.setProperty('top', '0', 'important');
+    container.style.setProperty('right', '0', 'important');
+    container.style.setProperty('bottom', 'auto', 'important');
+    container.style.setProperty('left', 'auto', 'important');
+  } else {
+    container.style.setProperty('bottom', '20px', 'important');
+    container.style.setProperty('left', '20px', 'important');
+    container.style.setProperty('top', 'auto', 'important');
+    container.style.setProperty('right', 'auto', 'important');
+  }
   
   container.addEventListener('mouseenter', () => {
-    document.getElementById('music-player-expand').style.opacity = '1';
-    document.getElementById('music-player-heart').style.opacity = '1';
-    document.getElementById('music-player-info').style.opacity = '1';
+    if (!isMobilePortrait) {
+      document.getElementById('music-player-expand').style.opacity = '1';
+      document.getElementById('music-player-heart').style.opacity = '1';
+      document.getElementById('music-player-info').style.opacity = '1';
+    }
   });
   container.addEventListener('mouseleave', () => {
-    document.getElementById('music-player-expand').style.opacity = '0';
-    document.getElementById('music-player-heart').style.opacity = '0';
-    document.getElementById('music-player-info').style.opacity = '0';
+    if (!isMobilePortrait) {
+      document.getElementById('music-player-expand').style.opacity = '0';
+      document.getElementById('music-player-heart').style.opacity = '0';
+      document.getElementById('music-player-info').style.opacity = '0';
+    }
   });
   
   // Add hover effects to all buttons

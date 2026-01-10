@@ -177,8 +177,9 @@ body {
 /* --- Card View Grid --- */
 .card-grid {
   display: grid;
-  grid-template-columns: repeat(5, 180px);
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 1.5rem;
+  max-width: 63rem;
 }
 
 /* Individual Card */
@@ -351,20 +352,8 @@ body {
   font-size: 1.1rem;
 }
 
-
-
 #music-player-container {
   position: fixed !important;
-  bottom: 20px !important;
-  left: 20px !important;
-  z-index: 9999 !important;
-  line-height: 0 !important;
-}
-
-.music-player-container {
-  position: fixed !important;
-  bottom: 20px !important;
-  left: 20px !important;
   z-index: 9999 !important;
   line-height: 0 !important;
 }
@@ -399,28 +388,34 @@ body {
     transform-origin: bottom left;
   }
 
-  .sidebar {
-    position: fixed;
-    left: -100%;
-    top: 0;
-    height: 100vh;
-    background: var(--bg-primary);
-    z-index: 999;
-    transition: left 0.3s ease;
-    overflow-y: auto;
-    margin-top: 40rem;
-    width: 90%;
-    max-width: 90%;
-    padding: 2rem;
-    padding-bottom: 4rem;
-    box-sizing: border-box;
-    border-radius: 20px;
-  }
+.sidebar {
+  position: fixed;
+  left: -100%;             /* start off-screen */
+  bottom: 0;               /* anchor to bottom-left corner */
+  width: 280px;
+  background: var(--bg-primary);
+  z-index: 999;
+  border-radius: 20px;
 
-  .sidebar.sidebar-visible {
-    margin-top: 40rem;
-    left: 0;
-  }
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end; /* stack elements from bottom up */
+  padding: 2rem;
+
+  max-height: 100vh;        /* prevent overflow off-screen */
+  overflow-y: auto;         /* scroll if content taller than screen */
+
+  transition: left 0.3s ease;
+  padding-bottom: 15rem;
+
+  width: 90%;
+  max-width: 90%;
+  box-sizing: border-box;
+}
+
+.sidebar.sidebar-visible {
+  left: 0;
+}
 
   .list-page-container {
     flex-direction: column;
@@ -448,11 +443,6 @@ body {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
         gap: 0.5rem;
-  }
-
-
-  .status-filter {
-    margin-bottom: 10rem;
   }
 
   .separator-bar {

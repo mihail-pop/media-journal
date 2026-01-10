@@ -139,18 +139,24 @@ function openCoverUpload(source, id) {
 function showNotification(message, type) {
   const notification = document.createElement("div");
   notification.textContent = message;
+  const isMobile = window.matchMedia("(orientation: portrait)").matches;
   const bgColor = type === "warning" ? "#FF9800" : "#4CAF50";
   notification.style.cssText = `
     position: fixed;
-    top: 4rem;
+    top: ${isMobile ? '5rem' : '4rem'};
     left: 50%;
     transform: translateX(-50%);
     background: ${bgColor};
     color: white;
-    padding: 12px 24px;
-    border-radius: 6px;
+    padding: ${isMobile ? '20px 40px' : '12px 24px'};
+    border-radius: ${isMobile ? '12px' : '6px'};
     z-index: 9999;
     font-weight: 500;
+    font-size: ${isMobile ? '2.5rem' : '1rem'};
+    width: ${isMobile ? '90%' : 'auto'};
+    max-width: ${isMobile ? '90%' : 'auto'};
+    text-align: center;
+    box-sizing: border-box;
   `;
   document.body.appendChild(notification);
   const duration = type === "warning" ? 20000 : 2000;

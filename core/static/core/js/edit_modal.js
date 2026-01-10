@@ -1,6 +1,7 @@
 document.addEventListener("DOMContentLoaded", function () {
   const modal = document.getElementById("edit-modal");
   const overlay = document.getElementById("edit-overlay");
+  let scrollY = 0;
 
 const statusLabelsMap = {
   movie: {
@@ -420,12 +421,16 @@ choicesSorted.forEach(choice => {
     updateTotalDisplays(item);
   }
 
-  // Card edit button click
-  document.querySelectorAll(".edit-card-btn").forEach(button => {
-    button.addEventListener("click", function (e) {
-      e.preventDefault();
+  // Card edit button click - use event delegation
+  document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('edit-card-btn') || e.target.closest('.edit-card-btn')) {
+      const button = e.target.classList.contains('edit-card-btn') ? e.target : e.target.closest('.edit-card-btn');
       const card = button.closest(".card");
       if (!card) return;
+      
+      e.preventDefault();
+      e.stopPropagation();
+      
       const itemId = card.dataset.id;
       const mediaType = card.dataset.mediaType;
       const coverUrl = card.dataset.coverUrl;
@@ -438,25 +443,26 @@ choicesSorted.forEach(choice => {
       const coverContainer = modal.querySelector('.modal-cover');
       const title = card.dataset.title;
 
-const titleElement = modal.querySelector('.modal-title');
-if (titleElement && title) {
-  titleElement.textContent = title;
-}
+      const titleElement = modal.querySelector('.modal-title');
+      if (titleElement && title) {
+        titleElement.textContent = title;
+      }
+      
       const form = document.getElementById("edit-form");
       if (!form) return console.error("Edit form not found");
-          // Set cover image
-    if (cover && coverUrl) {
-      cover.src = coverUrl;
-    }
-    if (coverContainer && mediaType) {
-      coverContainer.dataset.mediaType = mediaType;
-    }
+      
+      if (cover && coverUrl) {
+        cover.src = coverUrl;
+      }
+      if (coverContainer && mediaType) {
+        coverContainer.dataset.mediaType = mediaType;
+      }
 
-    // Set banner background via data attribute + CSS
-    if (banner && bannerUrl) {
-      banner.dataset.banner = bannerUrl;
-      banner.style.backgroundImage = `url("${bannerUrl}")`;
-    }
+      if (banner && bannerUrl) {
+        banner.dataset.banner = bannerUrl;
+        banner.style.backgroundImage = `url("${bannerUrl}")`;
+      }
+      
       fetch(`/get-item/${itemId}/`)
         .then(res => res.json())
         .then(data => {
@@ -465,66 +471,18 @@ if (titleElement && title) {
           populateForm(form, data.item);
           modal.classList.remove("modal-hidden");
           overlay.classList.remove("modal-hidden");
+          scrollY = window.scrollY;
+          document.body.style.top = `-${scrollY}px`;
+          document.body.style.height = `${document.documentElement.scrollHeight}px`;
+          document.body.classList.add("modal-open");
+          document.documentElement.classList.add("modal-open");
         })
         .catch(err => {
           console.error("Fetch error:", err);
           alert("Failed to load item");
         });
-    });
+    }
   });
-
-  // List view edit button click
-document.querySelectorAll("#list-view .edit-card-btn").forEach(button => {
-  button.addEventListener("click", function (e) {
-    e.preventDefault();
-    const row = button.closest(".list-row");
-    const itemId = row.dataset.id;
-    const mediaType = row.dataset.mediaType;
-    const coverUrl = row.dataset.coverUrl;
-    const bannerUrl = row.dataset.bannerUrl;
-    const title = row.dataset.title;
-    const sourceId = row.dataset.sourceId;
-
-    const modal = document.getElementById('edit-modal');
-    const banner = modal.querySelector('.modal-banner');
-    const cover = modal.querySelector('.modal-cover img');
-    const coverContainer = modal.querySelector('.modal-cover');
-    const titleElement = modal.querySelector('.modal-title');
-
-    if (titleElement && title) {
-      titleElement.textContent = title;
-    }
-
-    if (cover && coverUrl) {
-      cover.src = coverUrl;
-    }
-    if (coverContainer && mediaType) {
-      coverContainer.dataset.mediaType = mediaType;
-    }
-
-    if (banner && bannerUrl) {
-      banner.dataset.banner = bannerUrl;
-      banner.style.backgroundImage = `url("${bannerUrl}")`;
-    }
-
-    const form = document.getElementById("edit-form");
-    if (!form) return console.error("Edit form not found");
-
-    fetch(`/get-item/${itemId}/`)
-      .then(res => res.json())
-      .then(data => {
-        if (!data.success) return alert("Failed to load item");
-
-        populateForm(form, data.item);
-        modal.classList.remove("modal-hidden");
-        overlay.classList.remove("modal-hidden");
-      })
-      .catch(err => {
-        console.error("Fetch error:", err);
-        alert("Failed to load item");
-      });
-  });
-});
 
   // Detail page edit button click
   const detailEditBtn = document.getElementById("edit-button");
@@ -542,6 +500,11 @@ document.querySelectorAll("#list-view .edit-card-btn").forEach(button => {
           populateForm(form, data.item);
           modal.classList.remove("modal-hidden");
           overlay.classList.remove("modal-hidden");
+          scrollY = window.scrollY;
+          document.body.style.top = `-${scrollY}px`;
+          document.body.style.height = `${document.documentElement.scrollHeight}px`;
+          document.body.classList.add("modal-open");
+          document.documentElement.classList.add("modal-open");
         })
         .catch(err => {
           console.error("Fetch error:", err);
@@ -554,11 +517,21 @@ document.querySelectorAll("#list-view .edit-card-btn").forEach(button => {
   document.getElementById("edit-close-btn")?.addEventListener("click", () => {
     modal.classList.add("modal-hidden");
     overlay.classList.add("modal-hidden");
+    document.body.classList.remove("modal-open");
+    document.documentElement.classList.remove("modal-open");
+    document.body.style.top = "";
+    document.body.style.height = "";
+    window.scrollTo(0, scrollY);
   });
 
   overlay?.addEventListener("click", () => {
     modal.classList.add("modal-hidden");
     overlay.classList.add("modal-hidden");
+    document.body.classList.remove("modal-open");
+    document.documentElement.classList.remove("modal-open");
+    document.body.style.top = "";
+    document.body.style.height = "";
+    window.scrollTo(0, scrollY);
   });
   
 document.getElementById("edit-delete-btn")?.addEventListener("click", function () {
@@ -580,6 +553,11 @@ document.getElementById("edit-delete-btn")?.addEventListener("click", function (
       // Close modal and notify
       modal.classList.add('modal-hidden');
       overlay.classList.add('modal-hidden');
+      document.body.classList.remove("modal-open");
+      document.documentElement.classList.remove("modal-open");
+      document.body.style.top = "";
+      document.body.style.height = "";
+      window.scrollTo(0, scrollY);
       showNotification('Deleted.', 'success');
     } else {
       alert("Failed to delete item.");
@@ -714,6 +692,11 @@ document.getElementById("edit-delete-btn")?.addEventListener("click", function (
 
             modal.classList.add("modal-hidden");
             overlay.classList.add("modal-hidden");
+            document.body.classList.remove("modal-open");
+            document.documentElement.classList.remove("modal-open");
+            document.body.style.top = "";
+            document.body.style.height = "";
+            window.scrollTo(0, scrollY);
             const title = modal.querySelector('.modal-title')?.textContent || "Item";
             showNotification(`${title} updated successfully!`, "success");
           } else {
@@ -777,18 +760,24 @@ document.getElementById("edit-delete-btn")?.addEventListener("click", function (
   function showNotification(message, type) {
     const notification = document.createElement("div");
     notification.textContent = message;
+    const isMobile = window.matchMedia("(orientation: portrait)").matches;
     const bgColor = type === "success" ? "#4CAF50" : "#FF9800";
     notification.style.cssText = `
       position: fixed;
-      top: 4rem;
+      top: ${isMobile ? '5rem' : '4rem'};
       left: 50%;
       transform: translateX(-50%);
       background: ${bgColor};
       color: white;
-      padding: 12px 24px;
-      border-radius: 6px;
+      padding: ${isMobile ? '20px 40px' : '12px 24px'};
+      border-radius: ${isMobile ? '12px' : '6px'};
       z-index: 9999;
       font-weight: 500;
+      font-size: ${isMobile ? '2.5rem' : '1rem'};
+      width: ${isMobile ? '90%' : 'auto'};
+      max-width: ${isMobile ? '90%' : 'auto'};
+      text-align: center;
+      box-sizing: border-box;
     `;
     document.body.appendChild(notification);
     setTimeout(() => notification.remove(), 2000);

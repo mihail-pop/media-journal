@@ -105,13 +105,25 @@
   transition: opacity 0.3s ease;
 }
 
+body {
+  scrollbar-gutter: stable;
+}
+
+body.modal-open,
+html.modal-open {
+  overflow: hidden !important;
+  position: fixed !important;
+  width: 100% !important;
+  left: 0 !important;
+  right: 0 !important;
+}
+
 /* Overlay behind the modal to darken the page */
 .modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
   background: rgba(0, 0, 0, 0.55);
   backdrop-filter: blur(4px);
   z-index: 20000; /* Raised above search overlay */
@@ -558,11 +570,6 @@ textarea[name="notes"]::-webkit-scrollbar {
   width: 100%;
 }
 
-.rating-faces {
-  display: flex;
-  gap: 10px;
-}
-
 .face {
   width: 30px;
   height: 30px;
@@ -661,8 +668,166 @@ input[type="number"] {
 }
 
 @media (orientation: portrait) {
- #date_added{
-  max-width: 8.5rem;
+
+ .modal-banner{
+  height: 20rem;
  }
+
+.modal-cover[data-media-type="music"] {
+    top: 150px;
+    left: 30px;
+    width: 191px;
+    height: 191px;
+}
+
+.modal-cover[data-media-type="music"] img {
+    width: unset;       /* zoom in by increasing image width */
+    height: 100%;      /* match container height */
+    left: -4.6rem;
+}
+
+ .modal-cover{
+    top: 70px;
+    left: 30px;
+    width: 191px;
+    height: 270px;
+ }
+
+ .modal-title-block {
+    top: 15rem;
+    left: 15rem;
+    max-width: 20rem;
+}
+
+.modal-title {
+  font-size: 2rem;
+  line-height: 1.2;
+
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.close-btn {
+  font-size: 4rem;
+}
+
+.danger-btn {
+  font-size: 2.5rem;
+  margin-right: 0rem;
+}
+
+.modal-actions-top {
+  top: 14.5rem;
+  right: 2rem;
+}
+
+.btn.save-btn{
+  font-size: 2.5rem;
+}
+
+ .modal-actions-top .favorite-checkbox .heart {
+  width: 80px;
+  height: 80px;
+}
+
+ .modal-body form {
+    padding-left: 0rem;
+ }
+
+ .form-group:first-child {
+    margin-right: 7rem;
+ }
+
+  .form-group:nth-child(3) {
+    margin-right: 7rem;
+ }
+
+ .form-group input, .form-group select, .form-group textarea, #date_area{
+  font-size: 2rem;
+  max-width: 20rem;
+
+  padding: 1rem 1rem;
+ }
+
+ #progress_main_group label, #progress_secondary_group label, #date_added_group label, #repeats_group label {
+   max-width: 20rem;
+   width: 20rem;
+ }
+
+ #date_added_group, #repeats_group {
+    max-width: 20rem;
+}
+
+#date_added{
+  width: 18rem;
+}
+
+#repeats{
+  width: 18rem;
+}
+
+ .form-group{
+  max-width: 20rem;
+ }
+
+ #status, .status-select {
+   width: 20rem;
+ }
+
+ .form-row-two{
+  max-width: 50rem;
+ }
+
+ .star{
+  font-size: 4rem;
+ }
+
+ .face {
+  width: 60px;
+  height: 60px;
+ }
+
+ .rating-stars{
+  padding: 0.5rem 0.5rem;
+ }
+
+ .rating-faces{
+  gap: 3.7rem;
+  padding: 0.7rem 0.7rem;
+ }
+
+ .rating-number input[type="number"] {
+  font-size: 2.5rem;
+  padding: 0.2rem 0.5rem;
+  width: 18rem;
+  height: 4.4rem;
+ }
+
+ .form-group.notes-group {
+    max-width: 45rem;
+ }
+
+ textarea[name="notes"] {
+    width: 45rem;
+    max-width: 45rem;
+ }
+
+ .form-group label {
+    font-size:2rem;
+ }
+
+ .progress-total-display {
+    font-size:2rem;
+ }
+
+.modal-body {
+    padding: 2rem 2rem 2rem 2rem;
+}
+
+
 }
 

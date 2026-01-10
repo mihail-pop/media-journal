@@ -228,15 +228,11 @@ header {
 /* Music Player Container - Global */
 .music-player-container {
   position: sticky;
-  bottom: 20px;
-  left: 20px;
   z-index: 9999;
   display: none;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
   border-radius: 8px;
   overflow: hidden;
-  margin-top: calc(100vh - 130px);
-  float: left;
 }
 
 /* === HEADER MOBILE TOGGLE BUTTON === */

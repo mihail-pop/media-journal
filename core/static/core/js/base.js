@@ -10,7 +10,6 @@ document.addEventListener("DOMContentLoaded", () => {
   if (openSearchBtn) {
     openSearchBtn.addEventListener("click", () => {
       overlay.classList.remove("hidden");
-      document.body.style.overflow = "hidden";
       overlaySearchInput.value = "";
       overlaySearchInput.focus();
     });
@@ -53,7 +52,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!query.trim()) {
       resultsContainer.innerHTML = "";
       overlay.classList.add("hidden");
-      document.body.style.overflow = "";
       return;
     }
 
@@ -136,7 +134,6 @@ document.addEventListener("DOMContentLoaded", () => {
   overlay.addEventListener("click", e => {
     if (e.target === overlay) {
       overlay.classList.add("hidden");
-      document.body.style.overflow = "";
       resultsContainer.innerHTML = "";
     }
   });
@@ -145,7 +142,6 @@ document.addEventListener("DOMContentLoaded", () => {
   document.addEventListener("keydown", e => {
     if (e.key === "Escape" && !overlay.classList.contains("hidden")) {
       overlay.classList.add("hidden");
-      document.body.style.overflow = "";
       resultsContainer.innerHTML = "";
     }
   });
@@ -160,9 +156,10 @@ document.addEventListener("DOMContentLoaded", () => {
   }, { passive: false });
 
   // === HEADER MOBILE TOGGLE ===
-  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  const isTouch = window.matchMedia('(pointer: coarse)').matches;
+  const isPortrait = window.matchMedia('(orientation: portrait)').matches;
   
-  if (isMobile) {
+  if (isTouch && isPortrait) {
     const header = document.querySelector("header");
     const navCenter = document.querySelector(".nav-center");
     const searchBtn = document.getElementById("search-open-btn");

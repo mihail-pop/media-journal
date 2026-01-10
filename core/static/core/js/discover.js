@@ -612,8 +612,9 @@ document.addEventListener('DOMContentLoaded', () => {
   initialize();
 
   // === MOBILE SIDEBAR TOGGLE ===
-  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-  if (isMobile) {
+  const isTouch = window.matchMedia('(pointer: coarse)').matches;
+  const isPortrait = window.matchMedia('(orientation: portrait)').matches;
+  if (isTouch && isPortrait) {
     const sidebar = document.querySelector('.sidebar');
     const toggleBtn = document.createElement('button');
     toggleBtn.className = 'sidebar-toggle-btn';

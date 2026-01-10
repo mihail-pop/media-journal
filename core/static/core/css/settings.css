@@ -548,16 +548,6 @@ input[type="checkbox"] {
 
 #music-player-container {
   position: fixed !important;
-  bottom: 20px !important;
-  left: 20px !important;
-  z-index: 9999 !important;
-  line-height: 0 !important;
-}
-
-.music-player-container {
-  position: fixed !important;
-  bottom: 20px !important;
-  left: 20px !important;
   z-index: 9999 !important;
   line-height: 0 !important;
 }

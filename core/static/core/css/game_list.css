@@ -586,16 +586,6 @@ html {
 
 #music-player-container {
   position: fixed !important;
-  bottom: 20px !important;
-  left: 20px !important;
-  z-index: 9999 !important;
-  line-height: 0 !important;
-}
-
-.music-player-container {
-  position: fixed !important;
-  bottom: 20px !important;
-  left: 20px !important;
   z-index: 9999 !important;
   line-height: 0 !important;
 }
@@ -609,18 +599,17 @@ html {
   display: none;
 }
 
-  @media (orientation: portrait) {
+@media(orientation: portrait) {
 
   .separator-bar{
     margin-bottom: 0.1rem;
     height: 4rem;
   }
 
-
-  .edit-card-btn{
+.edit-card-btn{
     padding: 6px 10px;
-    font-size: 2rem;
-  }
+    font-size: 4rem;
+}
 
   .sidebar-toggle-btn {
     display: block;
@@ -638,93 +627,115 @@ html {
     transform-origin: bottom left;
   }
 
-  .sidebar {
-    position: fixed;
-    left: -100%;
-    top: 0;
-    height: 100vh;
-    background: var(--bg-primary);
-    z-index: 999;
-    transition: left 0.3s ease;
-    overflow-y: auto;
-    margin-top: 40rem;
-    border-radius: 20px;
-  }
+.sidebar {
+  position: fixed;
+  left: -100%;             /* start off-screen */
+  bottom: 0;               /* anchor to bottom-left corner */
+  width: 280px;
+  background: var(--bg-primary);
+  z-index: 999;
+  border-radius: 20px;
 
-  .sidebar.sidebar-visible {
-    margin-top: 40rem;
-    left: 0;
-  }
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end; /* stack elements from bottom up */
+  padding: 2rem;
+
+  max-height: 100vh;        /* prevent overflow off-screen */
+  overflow-y: auto;         /* scroll if content taller than screen */
+
+  transition: left 0.3s ease;
+  padding-bottom: 15rem;
+
+  width: 90%;
+  max-width: 90%;
+  box-sizing: border-box;
+}
+
+.sidebar.sidebar-visible {
+  left: 0;
+}
 
 
   .list-page-container{
     gap:8rem;
-    padding-left: 3rem;
+    padding-left: 2.3rem;
     position: relative;
-  }
-
-  .modal{
-    overflow: visible !important;
-    min-height: 60rem;
-  }
-
-  .modal-content{
-    transform: scale(2.1);
-  }
-
-  .sidebar{
-    width: 90%;
-    max-width: 90%;
-    padding: 2rem;
-    padding-bottom: 4rem;
-    box-sizing: border-box;
+    flex-direction: column;
+    padding-right: 0rem;
   }
 
   .list-content{
-    transform: scale(2);
     transform-origin: top;
-    max-width: 40rem;
-
+    width: unset;
+    margin-top: unset;
   }
 
-  .modal-actions-top{
-    right: 14rem !important;
-  }
-
-  .danger-btn{
-    margin-right: 12.5rem!important;
-  }
-
-.modal-title-block {
-  left: 15rem !important;
-  max-width: 12rem !important;       /* or any width you want */
-  overflow: hidden !important;       /* hides excess text */
-  text-overflow: ellipsis !important; /* adds "..." if text is too long */
-  white-space: nowrap !important;    /* prevents text from wrapping to next line */
-}
-
-  .modal-body{
-    overflow: visible !important;
-  }
-
-  .modal-banner{
-    max-width: 24.5rem;
-    margin-left: 13.40rem;
-    border-radius:6px;
-  }
-
-  .close-btn{
-    right: 14rem !important;
-  }
-
-  .list-page-container {
-        flex-direction: column;
-        padding-left: 16.3rem;
-        padding-right: 0rem;
+    .card{
+width: 293px;
+height: 390px;
     }
 
-    .card-grid{
-       gap: 0.6rem 0.3rem;
+    .card-image{
+      border-radius: 8px;
+    }
+
+    .card[data-media-type="music"] {
+  width: 293px;
+  height: 293px;
+}
+
+.card[data-media-type="music"] .card-image {
+  width: 528px;
+  height: 100%;
+  left: -117px;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(293px, 293px));
+  gap: 0.9rem;
+
+}
+
+    .card-title {
+      font-size: 1.7rem;
+    }
+
+    .card-title-overlay{
+      min-height: 6.5rem;
+    }
+
+    .card-rating svg {
+    width: 2.5rem;
+    height: 2.5rem;
+    margin-right: 0.5rem;
+    }
+
+    .card-rating {
+      font-size: 2rem;
+    }
+
+    .star-rating {
+        top: -0.2rem;
+    }
+
+    .rating-number{
+      font-size: 2rem;
+      margin-right: 0.5rem;
+    }
+
+    .card-progress {
+      font-size: 2rem;
+      margin-left: 0.5rem;
+    }
+
+    .card-meta-row {
+      margin-bottom: 0.8rem;
+    }
+
+    .status-header {
+      font-size: 3.2rem;
     }
 
     .filter-buttons{
@@ -739,15 +750,7 @@ html {
     }
 
     .list-table{
-      max-width: 29rem;
-    }
-
-    .list-content{
-      max-width: 29rem;
-    }
-
-    .check-status-container{
-        margin-bottom: 8rem;
+      max-width: 57rem;
     }
 
     .sort-buttons{
@@ -789,4 +792,5 @@ html {
     .btn-count {
     display: none;
   }
+
 }

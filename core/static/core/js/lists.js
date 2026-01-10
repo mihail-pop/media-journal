@@ -906,8 +906,8 @@ function updateSortButtons() {
 
 // Responsive arrow function
 function getArrow(isAscending) {
-  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-  return isAscending ? (isMobile ? ' ▲' : ' ⮝') : (isMobile ? ' ▼' : ' ⮟');
+  const isTouch = window.matchMedia('(pointer: coarse)').matches;
+  return isAscending ? (isTouch ? ' ▲' : ' ⮝') : (isTouch ? ' ▼' : ' ⮟');
 }
 
 updateSortButtons();
@@ -1211,8 +1211,9 @@ updateSortButtons();
   }
 
   // === MOBILE SIDEBAR TOGGLE ===
-  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-  if (isMobile) {
+  const isTouch = window.matchMedia('(pointer: coarse)').matches;
+  const isPortrait = window.matchMedia('(orientation: portrait)').matches;
+  if (isTouch && isPortrait) {
     const sidebar = document.querySelector('.sidebar');
     const toggleBtn = document.createElement('button');
     toggleBtn.className = 'sidebar-toggle-btn';

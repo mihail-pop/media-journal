@@ -8,17 +8,23 @@ function getCookie(name) {
 function showNotification(message, type) {
   const notification = document.createElement("div");
   notification.textContent = message;
+  const isMobile = window.matchMedia("(orientation: portrait)").matches;
   notification.style.cssText = `
     position: fixed;
-    top: 4rem;
+    top: ${isMobile ? '5rem' : '4rem'};
     left: 50%;
     transform: translateX(-50%);
     background: #4CAF50;
     color: white;
-    padding: 12px 24px;
-    border-radius: 6px;
+    padding: ${isMobile ? '20px 40px' : '12px 24px'};
+    border-radius: ${isMobile ? '12px' : '6px'};
     z-index: 9999;
     font-weight: 500;
+    font-size: ${isMobile ? '2.5rem' : '1rem'};
+    width: ${isMobile ? '90%' : 'auto'};
+    max-width: ${isMobile ? '90%' : 'auto'};
+    text-align: center;
+    box-sizing: border-box;
   `;
   document.body.appendChild(notification);
   setTimeout(() => notification.remove(), 2000);
@@ -347,15 +353,17 @@ function checkVersions() {
   fetch('/api/version_info/')
     .then(response => response.json())
     .then(data => {
-      document.getElementById('current-version').textContent = data.current_version;
-      document.getElementById('latest-version').textContent = data.latest_version;
+      const currentVersionEl = document.getElementById('current-version');
+      const latestVersionEl = document.getElementById('latest-version');
+      
+      currentVersionEl.innerHTML = `<a href="https://github.com/mihail-pop/media-journal/releases/tag/${data.current_version}" target="_blank" style="text-decoration: none;">${data.current_version}</a>`;
+      latestVersionEl.innerHTML = `<a href="https://github.com/mihail-pop/media-journal/releases/tag/${data.latest_version}" target="_blank" style="text-decoration: none;">${data.latest_version}</a>`;
       
       const status = document.getElementById('update-status');
       if (data.current_version === data.latest_version) {
-        status.textContent = '✓ You have the latest version';
-        status.style.color = '#4CAF50';
+        status.innerHTML = '<a href="https://github.com/mihail-pop/media-journal/releases" target="_blank" style="color: #4CAF50; text-decoration: none;">✓ You have the latest version</a>';
       } else {
-        status.innerHTML = '<a href="https://github.com/mihail-pop/media-journal/releases" target="_blank" style="color: #ff9800; text-decoration: none;">⚠ Update available</a>';
+        status.innerHTML = '<a href="https://github.com/mihail-pop/media-journal/releases" target="_blank" style="color: #ff9800; text-decoration: none;">↻ Update available</a>';
       }
     })
     .catch(() => {

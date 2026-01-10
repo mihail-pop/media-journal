@@ -738,6 +738,117 @@ body[data-media-type="music"] .poster {
   filter: drop-shadow(0 2px 6px rgba(76, 175, 80, 0.8));
 }
 
+.autoplay-screenshot-btn.speed-2 svg {
+  fill: #FFA726;
+  filter: drop-shadow(0 2px 6px rgba(255, 167, 38, 0.8));
+}
+
+.autoplay-screenshot-btn.speed-3 svg {
+  fill: #EF5350;
+  filter: drop-shadow(0 2px 6px rgba(239, 83, 80, 0.8));
+}
+
+.fullscreen-screenshot-btn {
+  position: absolute;
+  right: 1.5rem;
+  bottom: 1.5rem;
+  width: 50px;
+  height: 50px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.screenshot-rotator:hover .fullscreen-screenshot-btn {
+  opacity: 1;
+}
+
+.fullscreen-screenshot-btn svg {
+  width: 40px;
+  height: 40px;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+  transition: transform 0.2s;
+}
+
+.fullscreen-screenshot-btn:hover svg {
+  transform: scale(1.2);
+}
+
+.screenshot-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;        /* missing */
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.95);
+  z-index: 10000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.screenshot-overlay.active {
+  display: flex;
+}
+
+.screenshot-overlay img {
+  max-width: 90%;
+  max-height: 90%;
+  object-fit: contain;
+}
+
+.screenshot-overlay .rotator-btn {
+  display: block;
+  opacity: 1;
+  font-size: 5rem;
+  width: 80px;
+  height: 100px;
+}
+
+.screenshot-overlay .rotator-btn.left {
+}
+
+.screenshot-overlay .rotator-btn.right {
+  right: 3rem;
+}
+
+.screenshot-overlay .delete-screenshot-btn {
+  opacity: 1;
+  font-size: 80px;
+  top: 1rem;
+  right: 2rem;
+}
+
+.screenshot-overlay .autoplay-screenshot-btn {
+  opacity: 1;
+  width: 70px;
+  height: 70px;
+  top: 6rem;
+  right: 2rem;
+}
+
+.screenshot-overlay .autoplay-screenshot-btn svg {
+  width: 60px;
+  height: 60px;
+}
+
+.screenshot-overlay .fullscreen-screenshot-btn {
+  opacity: 1;
+  width: 70px;
+  height: 70px;
+  right: 2rem;
+}
+
+.screenshot-overlay .fullscreen-screenshot-btn svg {
+  width: 60px;
+  height: 60px;
+}
+
 .screenshots-background{
   background: var(--bg-secondary);
   max-width: 80rem;
@@ -1403,18 +1514,8 @@ body[data-media-type="music"] .poster {
   color: var(--text-secondary);
 }
 
-#music-player-container {
-  position: fixed !important;
-  bottom: 20px !important;
-  left: 20px !important;
-  z-index: 9999 !important;
-  line-height: 0 !important;
-}
-
 .music-player-container {
   position: fixed !important;
-  bottom: 20px !important;
-  left: 20px !important;
   z-index: 9999 !important;
   line-height: 0 !important;
 }
@@ -1458,8 +1559,63 @@ body[data-media-type="music"] .poster {
     margin-left: 2rem !important;
   }
 
+  #add-to-list-button{
+    margin-left: -1.6rem;
+  }
+
   #add-season-to-list-button{
     margin-top: 0.8rem;
+    margin-left: -1.6rem;
+  }
+
+  .episode-image-container {
+  width: 356px;
+  height: 200px;
+  }
+
+  
+  .episode-card img {
+  width: 356px;
+  height: 200px;
+  }
+
+  .expand-icon {
+    width: 100px;
+    height: 100px;
+    font-size: 4rem;
+  }
+
+  .image-modal-content {
+  width: 60rem;
+  height: 33.75rem;
+  }
+
+  .image-modal-content img {
+  width: 60rem;
+  height: 33.75rem;
+  }
+
+  .image-modal-close {
+    font-size: 6rem;
+    margin-top: 1rem;
+    margin-right: 1rem;
+  }
+
+  .episode-info h3 {
+    font-size: 2.5rem;
+  }
+
+  .episode-overview{
+    font-size: 2rem;
+    -webkit-line-clamp: 2;
+  }
+
+  .episode-read-more-btn {
+    font-size: 2.5rem;
+  }
+
+  .episode-air-date {
+    font-size: 2rem;
   }
 
   .text-info h1 {
@@ -1496,23 +1652,7 @@ body[data-media-type="music"] .poster {
     font-size: 2rem;
   }
 
-  .modal{
-    transform: scale(2) !important;
-    margin-right: 30rem;
-    width: auto !important;
-    top: 30% !important;
-    left: 28% !important;
-  }
 
-  .modal-body form {
-    padding-left: 6rem!important;
-    padding-right: 6rem!important;
-    padding-top: 2rem!important;
-  }
-
-  .modal-actions-top{
-    right: 1rem !important;
-  }
 
   .poster{
     width:24rem;
@@ -1526,13 +1666,10 @@ body[data-media-type="music"] .poster {
     object-position: 49.7% top;
 }
 
-  .modal-title{
-    top: -3.2rem;
-    position: relative;
-  }
+
 
   .nav-btn{
-    font-size: 2.5rem;
+    font-size: 2rem;
   }
 
   .top-content{
@@ -1566,6 +1703,10 @@ body[data-media-type="music"] .poster {
     font-size: 2rem;
   }
 
+  .music-add-form button, .music-add-form input {
+    font-size: 2rem;
+  }
+
   .music-delete-btn, .music-cover-btn, .music-up-btn, .music-down-btn{
     width: 70px;
     height: 70px;
@@ -1574,9 +1715,9 @@ body[data-media-type="music"] .poster {
 
   .music-video-controls{
     flex-direction: row;
-    margin-bottom: 2rem;
     font-size: 2rem;
     justify-content: center;
+    gap: 0.8rem;
   }
 
   .music-video-wrapper{
@@ -1616,4 +1757,63 @@ body[data-media-type="music"] .poster {
   .read-more-btn{
     font-size: 2rem;
   }
+
+  .screenshots-list{
+    max-height: calc((7.4rem * 2) + 1rem);
+  }
+
+  .screenshots-list img{
+    max-width: 205px;
+    max-height: unset;
+  }
+
+  .rotator-btn{
+    font-size: 7rem;
+    width: 100px;
+    height: 140px;
+  }
+
+.screenshot-overlay .autoplay-screenshot-btn svg {
+    width: 120px;
+    height: 120px;
+}
+
+  .autoplay-screenshot-btn, .fullscreen-screenshot-btn{
+    width: 100px;
+    height: 100px;
+  }
+
+  .delete-screenshot-btn{
+    top: -1rem;
+  }
+
+  .screenshot-overlay .autoplay-screenshot-btn {
+    top: 38rem;
+    width: 140px;
+    height: 140px;
+  }
+
+  .screenshot-overlay .delete-screenshot-btn {
+    top: 36.8rem;
+    font-size: 160px;
+    margin-right: 9rem;
+  }
+
+  
+.screenshot-overlay .fullscreen-screenshot-btn {
+    width: 140px;
+    height: 140px;
+    margin-bottom: 40rem;
+}
+
+.screenshot-overlay .fullscreen-screenshot-btn svg {
+    width: 120px;
+    height: 120px;
+}
+
+.screenshot-overlay .rotator-btn {
+    font-size: 7rem;
+    height: 150px;
+}
+
 }

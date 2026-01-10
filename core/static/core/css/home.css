@@ -926,16 +926,25 @@ h2 {
   background-color: var(--bg-quaternary);
 }
 
+@media (hover: none), (pointer: coarse) {
+  .activity-thumbnail{
+    display:none !important;
+  }
+}
+
 /* --- Responsive --- */
 @media (orientation: portrait) {
 
+.hover-title-overlay{
+  display: none;
+}
+
 .status-header, .favorites-header{
-  font-size: 2.5rem;
+  font-size: 2rem;
 }
 
 .extra-stats-class h3, .activity-graph h3  {
-  font-size: 2rem;
-  margin-bottom: 0.5rem;
+  font-size: 1.5rem;
 }
 
   .stats-section {
@@ -1026,7 +1035,7 @@ h2 {
     display: flex;
     flex-direction: row;
     overflow-x: auto;
-    overflow-y: hidden;
+    overflow-y: visible;
     gap: 1rem;
     padding: 1.5rem;
     scroll-snap-type: x mandatory;
@@ -1056,6 +1065,17 @@ h2 {
   /* Show thumbnail only on hover */
   .activity-entry:hover .activity-thumbnail {
     display: none;
+  }
+
+  .reorder-buttons button{
+    width: 70px;
+    height: 70px;
+    font-size: 3.6rem;
+    opacity: 1 !important;
+  }
+
+  .reorder-buttons {
+    opacity: 1 !important;
   }
 
 }
@@ -1098,8 +1118,6 @@ h2 {
 /* Music Player Container */
 .music-player-container {
   position: fixed;
-  bottom: 20px;
-  left: 20px;
   z-index: 9999;
   display: none;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
@@ -1140,8 +1158,6 @@ h2 {
 
 .music-player-container {
   position: fixed !important;
-  bottom: 20px !important;
-  left: 20px !important;
   z-index: 9999 !important;
   line-height: 0 !important;
 }

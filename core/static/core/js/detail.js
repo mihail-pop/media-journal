@@ -50,18 +50,24 @@ document.addEventListener('click', function(e) {
 function showNotification(message, type) {
   const notification = document.createElement("div");
   notification.textContent = message;
+  const isMobile = window.matchMedia("(orientation: portrait)").matches;
   const bgColor = type === "warning" ? "#FF9800" : "#4CAF50";
   notification.style.cssText = `
     position: fixed;
-    top: 4rem;
+    top: ${isMobile ? '5rem' : '4rem'};
     left: 50%;
     transform: translateX(-50%);
     background: ${bgColor};
     color: white;
-    padding: 12px 24px;
-    border-radius: 6px;
+    padding: ${isMobile ? '20px 40px' : '12px 24px'};
+    border-radius: ${isMobile ? '12px' : '6px'};
     z-index: 9999;
     font-weight: 500;
+    font-size: ${isMobile ? '2.5rem' : '1rem'};
+    width: ${isMobile ? '90%' : 'auto'};
+    max-width: ${isMobile ? '90%' : 'auto'};
+    text-align: center;
+    box-sizing: border-box;
   `;
   document.body.appendChild(notification);
   const duration = type === "warning" ? 20000 : 2000;
@@ -153,23 +159,27 @@ const screenshotsElement = document.getElementById("screenshots-data");
 const screenshotsData = screenshotsElement ? JSON.parse(screenshotsElement.textContent) : [];
 let currentIndex = 0;
 let autoplayInterval = null;
+let autoplaySpeed = 0;
+const SPEEDS = [0, 3000, 1500, 500];
 
 function updateScreenshot(index) {
   if (index < 0 || index >= screenshotsData.length) return;
   
   const img = document.getElementById("screenshot-image");
+  const overlayImg = document.getElementById("overlay-screenshot-image");
   img.style.opacity = 0;
+  if (overlayImg) overlayImg.style.opacity = 0;
 
-  // Remove old highlight
   document.querySelectorAll('.thumbnail').forEach((thumb, i) => {
     thumb.classList.toggle('active-thumbnail', i === index);
   });
 
   currentIndex = index;
   img.src = screenshotsData[currentIndex].url;
+  if (overlayImg) overlayImg.src = screenshotsData[currentIndex].url;
   img.style.opacity = 1;
+  if (overlayImg) overlayImg.style.opacity = 1;
   
-  // Center the active thumbnail
   const activeThumbnail = document.querySelector('.thumbnail.active-thumbnail');
   if (activeThumbnail) {
     activeThumbnail.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
@@ -197,92 +207,142 @@ function hideArrows(container) {
   container.querySelector(".right").style.display = "none";
 }
 
-let deleteConfirm = false;
-const deleteBtn = document.querySelector(".delete-screenshot-btn");
+// Fullscreen functionality
+const fullscreenBtn = document.getElementById("fullscreen-screenshot-btn");
+const overlayFullscreenBtn = document.getElementById("overlay-fullscreen-btn");
+const screenshotOverlay = document.getElementById("screenshot-overlay");
 
-// Autoplay functionality
-const autoplayBtn = document.getElementById("autoplay-screenshot-btn");
-if (autoplayBtn) {
-  autoplayBtn.addEventListener("click", function() {
-    if (autoplayInterval) {
-      clearInterval(autoplayInterval);
-      autoplayInterval = null;
-      autoplayBtn.classList.remove("active");
-    } else {
-      autoplayBtn.classList.add("active");
-      autoplayInterval = setInterval(() => {
-        changeScreenshot(1);
-      }, 2000);
+if (fullscreenBtn) {
+  fullscreenBtn.addEventListener("click", function() {
+    screenshotOverlay.classList.add("active");
+  });
+}
+
+if (overlayFullscreenBtn) {
+  overlayFullscreenBtn.addEventListener("click", function() {
+    screenshotOverlay.classList.remove("active");
+  });
+}
+
+if (screenshotOverlay) {
+  screenshotOverlay.addEventListener("click", function(e) {
+    if (e.target === screenshotOverlay) {
+      screenshotOverlay.classList.remove("active");
     }
   });
 }
 
-if (deleteBtn) { // only attach if it exists
-  deleteBtn.addEventListener("click", function () {
-    if (!deleteConfirm) {
-      deleteBtn.textContent = "×";
-      deleteBtn.style.color = "#ff3b38ff";
-      deleteBtn.title = "Are you sure?";
-      deleteConfirm = true;
+let deleteConfirm = false;
 
-      setTimeout(() => {
-        deleteConfirm = false;
-        deleteBtn.textContent = "×";
-        deleteBtn.style.backgroundColor = "";
-        deleteBtn.style.color = "";
-        deleteBtn.title = "";
-      }, 5000);
-    } else {
-      const img = document.getElementById("screenshot-image");
-      const screenshotUrl = img.src.replace(window.location.origin, "");
-      const IGDB_ID = document.querySelector('.screenshots-background').dataset.igdbId;
+function handleDeleteScreenshot(btn) {
+  if (!deleteConfirm) {
+    btn.textContent = "×";
+    btn.style.color = "#ff3b38ff";
+    btn.title = "Are you sure?";
+    deleteConfirm = true;
 
-      const nextIndex = currentIndex < screenshotsData.length - 1 ? currentIndex : Math.max(0, currentIndex - 1);
-      
-      const formData = new FormData();
-      formData.append("igdb_id", IGDB_ID);
-      formData.append("screenshot_url", screenshotUrl);
-
-      fetch("/upload-game-screenshots/", {
-        method: "POST",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "X-Action": "delete",
-        },
-        body: formData,
-      })
-      .then(r => r.json())
-      .then(data => {
-        if (data.success) {
-          // Remove from array and DOM
-          screenshotsData.splice(currentIndex, 1);
-          const thumbnails = document.querySelectorAll('.thumbnail');
-          thumbnails[currentIndex].remove();
-          
-          // Re-attach click handlers to remaining thumbnails
-          document.querySelectorAll('.thumbnail').forEach((thumb, i) => {
-            thumb.onclick = () => setScreenshot(i);
-          });
-          
-          // Update to next screenshot
-          if (screenshotsData.length > 0) {
-            const newIndex = Math.min(nextIndex, screenshotsData.length - 1);
-            updateScreenshot(newIndex);
-            showNotification("Screenshot deleted successfully!", "success");
-          } else {
-            window.location.reload();
-          }
-        } else {
-          alert(data.message);
-        }
-      });
-      
+    setTimeout(() => {
       deleteConfirm = false;
-      deleteBtn.textContent = "×";
-      deleteBtn.style.color = "";
-      deleteBtn.title = "";
-    }
+      btn.textContent = "×";
+      btn.style.color = "";
+      btn.title = "Delete Screenshot";
+    }, 5000);
+  } else {
+    const img = document.getElementById("screenshot-image");
+    const screenshotUrl = img.src.replace(window.location.origin, "");
+    const IGDB_ID = document.querySelector('.screenshots-background').dataset.igdbId;
+
+    const nextIndex = currentIndex < screenshotsData.length - 1 ? currentIndex : Math.max(0, currentIndex - 1);
+    
+    const formData = new FormData();
+    formData.append("igdb_id", IGDB_ID);
+    formData.append("screenshot_url", screenshotUrl);
+
+    fetch("/upload-game-screenshots/", {
+      method: "POST",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+        "X-Action": "delete",
+      },
+      body: formData,
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        screenshotsData.splice(currentIndex, 1);
+        const thumbnails = document.querySelectorAll('.thumbnail');
+        thumbnails[currentIndex].remove();
+        
+        document.querySelectorAll('.thumbnail').forEach((thumb, i) => {
+          thumb.onclick = () => setScreenshot(i);
+        });
+        
+        if (screenshotsData.length > 0) {
+          const newIndex = Math.min(nextIndex, screenshotsData.length - 1);
+          updateScreenshot(newIndex);
+          showNotification("Screenshot deleted successfully!", "success");
+        } else {
+          window.location.reload();
+        }
+      } else {
+        alert(data.message);
+      }
+    });
+    
+    deleteConfirm = false;
+    btn.textContent = "×";
+    btn.style.color = "";
+    btn.title = "Delete Screenshot";
+  }
+}
+
+const deleteBtn = document.querySelector(".delete-screenshot-btn");
+const overlayDeleteBtn = document.querySelector(".screenshot-overlay .delete-screenshot-btn");
+
+if (deleteBtn) {
+  deleteBtn.addEventListener("click", function() {
+    handleDeleteScreenshot(this);
   });
+}
+
+if (overlayDeleteBtn) {
+  overlayDeleteBtn.addEventListener("click", function() {
+    handleDeleteScreenshot(this);
+  });
+}
+
+// Autoplay functionality
+const autoplayBtn = document.getElementById("autoplay-screenshot-btn");
+const overlayAutoplayBtn = document.getElementById("overlay-autoplay-btn");
+
+function toggleAutoplay(btn) {
+  if (autoplayInterval) {
+    clearInterval(autoplayInterval);
+    autoplayInterval = null;
+  }
+  
+  autoplaySpeed = (autoplaySpeed + 1) % SPEEDS.length;
+  
+  [autoplayBtn, overlayAutoplayBtn].forEach(b => {
+    if (!b) return;
+    b.classList.remove('active', 'speed-2', 'speed-3');
+    if (autoplaySpeed === 1) b.classList.add('active');
+    else if (autoplaySpeed === 2) b.classList.add('active', 'speed-2');
+    else if (autoplaySpeed === 3) b.classList.add('active', 'speed-3');
+  });
+  
+  if (autoplaySpeed > 0) {
+    autoplayInterval = setInterval(() => {
+      changeScreenshot(1);
+    }, SPEEDS[autoplaySpeed]);
+  }
+}
+
+if (autoplayBtn) {
+  autoplayBtn.addEventListener("click", () => toggleAutoplay(autoplayBtn));
+}
+if (overlayAutoplayBtn) {
+  overlayAutoplayBtn.addEventListener("click", () => toggleAutoplay(overlayAutoplayBtn));
 }
 
 document.addEventListener("DOMContentLoaded", function () {
