@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-  const root = document.getElementById('board-root');
+  const root = document.getElementById('community-root');
   const FIREBASE_URL = root.dataset.firebaseUrl.replace(/\/$/, '');
   const MEDIA_ITEMS = JSON.parse(document.getElementById('media-items-json').textContent);
 
@@ -309,7 +309,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderPost(post, postId) {
     const div = document.createElement('div');
-    div.className = 'board-post';
+    div.className = 'community-post';
     div.dataset.postId = postId;
 
     // Support old post format

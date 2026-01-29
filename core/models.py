@@ -127,7 +127,7 @@ class NavItem(models.Model):
         ("music", "Music"),
     ]
 
-    name = models.CharField(max_length=20, choices=CATEGORY_CHOICES, unique=True)
+    name = models.CharField(max_length=20, choices=CATEGORY_CHOICES) # Removed unique=True to allow update_or_create to work safely if duplicates exist in backup
     visible = models.BooleanField(default=True)
     position = models.PositiveIntegerField(default=1)
 

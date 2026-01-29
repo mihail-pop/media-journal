@@ -337,6 +337,11 @@ html {
   height: 210px;
 }
 
+/* Game-specific card height */
+body[data-media-type="games"] .card {
+  height: 200px;
+}
+
 .card-image {
   overflow: hidden;
   border-radius: 3px;
@@ -540,6 +545,7 @@ html {
   border-collapse: collapse;
   margin-top: 1rem;
   table-layout: fixed;
+  overflow: hidden;
 }
 
 .list-table th:nth-child(1),
@@ -796,6 +802,10 @@ width: 293px;
 height: 410px;
     }
 
+    body[data-media-type="games"] .card {
+      height: 390px;
+    }
+
     .card-image{
       border-radius: 8px;
     }
@@ -852,6 +862,51 @@ height: 410px;
 
     .card-meta-row {
       margin-bottom: 0.8rem;
+    }
+
+    .status-dot{
+      width: 5rem;
+      height: 5rem;
+      top: -2rem;
+      left: -2rem;
+    }
+
+    .repeat-indicator {
+      top: 2rem;
+      left: 2rem;
+    }
+
+    .repeat-count{
+      font-size: 2rem;
+    }
+
+    .repeat-icon{
+      width: 2.2rem;
+      height: 2.2rem;
+    }
+
+    .list-table table {
+      font-size: 2rem;
+      table-layout: fixed;
+    }
+
+    .list-table th:nth-child(1), .list-table td:nth-child(1){
+      width: unset; 
+    }
+
+    .list-table table td,
+    .list-table table th {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .banner-quote {
+      font-size: 2rem;
+    }
+
+    .list-table .edit-card-btn {
+      font-size: 2rem;
     }
 
     .status-header {

@@ -547,6 +547,12 @@ document.getElementById("edit-delete-btn")?.addEventListener("click", function (
   .then(res => res.json())
   .then(res => {
     if (res.success) {
+      // If on detail page, reload to update UI state
+      if (document.getElementById("edit-button")) {
+        window.location.reload();
+        return;
+      }
+
       // Remove from lists and history views if helpers are present
       if (window.removeItemElement) window.removeItemElement(itemId);
       if (window.removeHistoryItem) window.removeHistoryItem(itemId);

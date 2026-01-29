@@ -1,0 +1,65 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block head %}
+{{ block.super }}
+<title>Favorites - Media Journal</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0-rc.2/default.css">
+<script src="https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0-rc.2/index.min.js"></script>
+<link rel="stylesheet" href="{% static 'core/css/favorites.css' %}?v={{ version }}">
+{% endblock %}
+
+{% block content %}
+<script>
+  document.body.setAttribute('data-theme', '{{ theme_mode }}');
+</script>
+
+<div class="separator-bar"></div>
+
+<div class="favorites-container">
+  <div class="favorites-header-bar">
+    <div class="info-group">
+      <button class="info-toggle-btn" id="info-toggle-btn" title="Toggle Info">
+        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+      </button>
+      <div class="mode-info-cloud" id="mode-info-text">
+        Detail View - Drag by title or image, hover to unfavorite, click on image for details page
+      </div>
+    </div>
+    <div class="view-controls">
+      <button class="view-btn active" id="view-big" title="Detail View">
+        <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><path d="M14 4h7"></path><path d="M14 9h7"></path><path d="M14 15h7"></path><path d="M14 20h7"></path></svg>
+      </button>
+      <button class="view-btn" id="view-small" title="Compact View">
+        <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+      </button>
+    </div>
+  </div>
+
+  {% for section in sections %}
+    <section class="favorite-section" data-category="{{ section.slug }}" data-type="{{ section.type }}" data-page="{{ section.page }}" data-has-more="{{ section.has_more|yesno:'true,false' }}">
+      <h2>{{ section.category }}</h2>
+      <div class="card-grid draggable-container">
+        {% for item in section.items %}
+        <div class="card draggable" draggable="true" data-id="{{ item.id }}" data-media-type="{{ item.media_type }}">
+          <a href="{{ item.url }}" class="card-link" draggable="false">
+            <div class="card-image"><img src="{{ item.cover_url }}" alt="{{ item.title }}" draggable="false"></div>
+          </a>
+          <div class="card-title">{{ item.title }}</div>
+          <label class="card-favorite" data-id="{{ item.id }}" data-type="{{ section.type }}" data-slug="{{ section.slug }}" data-title="{{ item.title }}" data-img="{{ item.cover_url }}">
+            <input type="checkbox" checked>
+            <span class="heart"></span>
+          </label>
+        </div>
+        {% endfor %}
+        <div class="loading-sentinel"></div>
+      </div>
+    </section>
+  {% endfor %}
+
+</div>
+
+{% csrf_token %}
+<script src="{% static 'core/js/favorites.js' %}?v={{ version }}"></script>
+{% endblock %}

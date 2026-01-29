@@ -3,7 +3,7 @@ from core.utils import download_image, fetch_anilist_data, get_igdb_token, get_a
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_POST
 from django.db.models import Case, When, IntegerField, Value, F, Q
-from django.conf import settings
+
 from django.core.files.storage import default_storage
 from django.core.serializers import deserialize
 from core.background import start_tmdb_background_loop, start_anilist_background_loop
@@ -14,8 +14,8 @@ from django.conf import settings
 from django.http import JsonResponse
 from django.utils import timezone
 from datetime import timedelta
-from collections import defaultdict
-from .models import APIKey, MediaItem, FavoritePerson, NavItem
+from collections import defaultdict 
+from .models import APIKey, MediaItem, FavoritePerson, NavItem, AppSettings
 from django.db.models import Sum
 from django.utils.text import slugify
 from django.urls import reverse
@@ -33,8 +33,10 @@ import datetime
 import shutil
 import tempfile
 import zipfile
+import io
 import glob
 import re
+import threading
 
 
 
@@ -1250,6 +1252,208 @@ def home(request):
         "theme_mode": theme_mode,
     })
 
+@ensure_csrf_cookie
+def favorites_page(request):
+    AppSettings = apps.get_model('core', 'AppSettings')
+    settings = AppSettings.objects.first()
+    theme_mode = settings.theme_mode if settings else 'dark'
+
+    # Fetch favorite media items
+    favorite_media = MediaItem.objects.filter(favorite=True).order_by('favorite_position', 'date_added')
+    
+    # Fetch favorite people
+    favorite_characters = FavoritePerson.objects.filter(type="character").order_by("position")
+    favorite_actors = FavoritePerson.objects.filter(type="actor").order_by("position")
+
+    # Define all sections with their metadata
+    # (Display Name, Slug/Key, Type, QuerySet)
+    all_section_defs = [
+        ("Movies", "movie", "media", favorite_media.filter(media_type="movie")),
+        ("TV Shows", "tv", "media", favorite_media.filter(media_type="tv")),
+        ("Anime", "anime", "media", favorite_media.filter(media_type="anime")),
+        ("Manga", "manga", "media", favorite_media.filter(media_type="manga")),
+        ("Games", "game", "media", favorite_media.filter(media_type="game")),
+        ("Books", "book", "media", favorite_media.filter(media_type="book")),
+        ("Music", "music", "media", favorite_media.filter(media_type="music")),
+        ("Characters", "characters", "person", favorite_characters),
+        ("Actors", "actors", "person", favorite_actors),
+    ]
+
+    # Reorder based on requested section
+    requested_section = request.GET.get('section')
+    if requested_section:
+        # Find the index of the requested section
+        index = next((i for i, s in enumerate(all_section_defs) if s[0] == requested_section), -1)
+        if index > 0:
+            # Move to front
+            item = all_section_defs.pop(index)
+            all_section_defs.insert(0, item)
+
+    # Build the final list of sections to render
+    sections = []
+    global_limit = 100
+    current_total = 0
+
+    for display_name, key, kind, queryset in all_section_defs:
+        count = queryset.count()
+        if count > 0:
+            # For media, key is the media_type code (e.g. 'movie')
+            # For person, key is the slug (e.g. 'characters')
+            # We need a consistent slug for the API/template
+            if kind == 'media':
+                slug = slugify(display_name)
+            else:
+                slug = key
+    
+            # Determine items to take based on global limit
+            remaining = global_limit - current_total
+            items_to_take = 0
+            
+            if count <= remaining:
+                items_to_take = count
+            else:
+                # Take multiples of 50 that fit in remaining to align with API pages
+                items_to_take = (remaining // 50) * 50
+
+            # Normalize items for template
+            items_data = []
+            for item in queryset[:items_to_take]:
+                url = "#"
+                cover_url = ""
+                title = ""
+                
+                if kind == 'media':
+                    title = item.title
+                    cover_url = item.cover_url or '/static/core/img/placeholder.png'
+                    
+                    if item.media_type in ['movie', 'tv']:
+                        if '_s' in item.source_id:
+                            parts = item.source_id.split('_s')
+                            url = f"/tmdb/season/{parts[0]}/{parts[1]}/"
+                        else:
+                            url = reverse('tmdb_detail', args=[item.media_type, item.source_id])
+                    elif item.media_type in ['anime', 'manga']:
+                        url = reverse('mal_detail', args=[item.media_type, item.source_id])
+                    elif item.media_type == 'game':
+                        url = reverse('igdb_detail', args=[item.source_id])
+                    elif item.media_type == 'book':
+                        url = reverse('openlib_detail', args=[item.source_id])
+                    elif item.media_type == 'music':
+                        url = reverse('musicbrainz_detail', args=[item.source_id])
+                else:
+                    # Person
+                    title = item.name
+                    cover_url = item.image_url or '/static/core/img/placeholder.png'
+                    if item.person_id:
+                        url = f"/person/{item.type}/{item.person_id}/"
+                
+                items_data.append({
+                    "id": item.id,
+                    "title": title,
+                    "cover_url": cover_url,
+                    "url": url,
+                    "media_type": key,
+                })
+
+            current_total += items_to_take
+
+            sections.append({
+                "category": display_name,
+                "slug": slug,
+                "type": kind,
+                "items": items_data,
+                "has_more": count > items_to_take,
+                "page": items_to_take // 50,
+            })
+
+    return render(request, "core/favorites.html", {
+        "theme_mode": theme_mode,
+        "sections": sections,
+    })
+
+@require_GET
+def favorites_api(request):
+    category_slug = request.GET.get('category')
+    page = int(request.GET.get('page', 1))
+    offset = request.GET.get('offset')
+    page_size = 50
+    
+    if offset is not None:
+        start = int(offset)
+    else:
+        start = (page - 1) * page_size
+        
+    end = start + page_size
+
+    items_data = []
+    has_more = False
+    
+    # Map slug to media_type
+    slug_map = {
+        "movies": "movie", "tv-shows": "tv", "anime": "anime",
+        "manga": "manga", "games": "game", "books": "book", "music": "music"
+    }
+    
+    if category_slug in slug_map:
+        media_type = slug_map[category_slug]
+        qs = MediaItem.objects.filter(favorite=True, media_type=media_type).order_by('favorite_position', 'date_added')
+        total = qs.count()
+        items = qs[start:end]
+        has_more = total > end
+        
+        for item in items:
+            # Generate URL
+            url = "#"
+            if item.media_type in ['movie', 'tv']:
+                if '_s' in item.source_id:
+                    parts = item.source_id.split('_s')
+                    url = f"/tmdb/season/{parts[0]}/{parts[1]}/"
+                else:
+                    url = reverse('tmdb_detail', args=[item.media_type, item.source_id])
+            elif item.media_type in ['anime', 'manga']:
+                url = reverse('mal_detail', args=[item.media_type, item.source_id])
+            elif item.media_type == 'game':
+                url = reverse('igdb_detail', args=[item.source_id])
+            elif item.media_type == 'book':
+                url = reverse('openlib_detail', args=[item.source_id])
+            elif item.media_type == 'music':
+                url = reverse('musicbrainz_detail', args=[item.source_id])
+
+            items_data.append({
+                "id": item.id,
+                "title": item.title,
+                "cover_url": item.cover_url or '/static/core/img/placeholder.png',
+                "url": url,
+                "type": "media",
+                "media_type": media_type
+            })
+            
+    elif category_slug in ["characters", "actors"]:
+        p_type = "character" if category_slug == "characters" else "actor"
+        qs = FavoritePerson.objects.filter(type=p_type).order_by("position")
+        total = qs.count()
+        items = qs[start:end]
+        has_more = total > end
+        
+        for person in items:
+            url = "#"
+            if person.person_id:
+                url = f"/person/{person.type}/{person.person_id}/"
+            
+            items_data.append({
+                "id": person.id,
+                "title": person.name,
+                "cover_url": person.image_url or '/static/core/img/placeholder.png',
+                "url": url,
+                "type": "person",
+                "media_type": category_slug
+            })
+
+    return JsonResponse({
+        "items": items_data,
+        "has_more": has_more,
+        "page": page
+    })
 
 @ensure_csrf_cookie
 @require_POST
@@ -1437,7 +1641,7 @@ def discover_api(request):
         return JsonResponse({'error': str(e)}, status=500)
 
 @ensure_csrf_cookie
-def board(request):
+def community(request):
     firebase_url = "https://media-journal-6c8cf-default-rtdb.europe-west1.firebasedatabase.app"
 
     # Get only the fields we need for posting
@@ -1457,7 +1661,7 @@ def board(request):
     settings = AppSettings.objects.first()
     theme_mode = settings.theme_mode if settings else 'dark'
 
-    return render(request, "core/board.html", {
+    return render(request, "core/community.html", {
         "firebase_url": firebase_url,
         "items": list(items),
         "media_types": media_types,
@@ -3651,6 +3855,50 @@ def save_openlib_item(work_id):
     return JsonResponse({"success": True, "message": "Book added to list"})
 
 
+# Helper for game screenshots API
+def get_game_screenshots_data(igdb_id):
+    # Try DB first
+    try:
+        item = MediaItem.objects.get(source="igdb", source_id=str(igdb_id))
+        return item.screenshots or []
+    except MediaItem.DoesNotExist:
+        pass
+    
+    # Try IGDB API
+    token = get_igdb_token()
+    if not token:
+        return []
+    
+    try:
+        igdb_keys = APIKey.objects.get(name="igdb")
+    except APIKey.DoesNotExist:
+        return []
+        
+    headers = {
+        "Client-ID": igdb_keys.key_1,
+        "Authorization": f"Bearer {token}",
+    }
+    
+    # Fetch only screenshots
+    query = f'fields screenshots.url; where id = {igdb_id};'
+    try:
+        response = requests.post("https://api.igdb.com/v4/games", headers=headers, data=query)
+        if response.status_code == 200:
+            data = response.json()
+            if data and "screenshots" in data[0]:
+                screenshots = []
+                for ss in data[0]["screenshots"]:
+                    if ss and "url" in ss:
+                        url = "https:" + ss["url"].replace("t_thumb", "t_1080p")
+                        screenshots.append({
+                            "url": url,
+                            "is_full_url": True
+                        })
+                return screenshots
+    except:
+        pass
+    return []
+
 # Game Details
 @ensure_csrf_cookie
 @require_GET
@@ -3676,6 +3924,10 @@ def igdb_detail(request, igdb_id):
             except ValueError:
                 formatted_release_date = item.release_date
 
+        # Slice screenshots for initial load
+        total_screenshots = len(screenshots)
+        initial_screenshots = screenshots[:40]
+
         # Get theme mode
         AppSettings = apps.get_model('core', 'AppSettings')
         settings = AppSettings.objects.first()
@@ -3695,7 +3947,8 @@ def igdb_detail(request, igdb_id):
             "cast": [],
             "seasons": None,
             "recommendations": [],
-            "screenshots": screenshots,
+            "screenshots": initial_screenshots,
+            "total_screenshots": total_screenshots,
             "in_my_list": True,
             'page_type': "game",
             "theme_mode": theme_mode,
@@ -3762,6 +4015,9 @@ def igdb_detail(request, igdb_id):
         banner_url = "https:" + screenshots[0]["url"].replace("t_thumb", "t_1080p")
         screenshots = screenshots[1:] if len(screenshots) > 1 else []
 
+    # Slice screenshots for initial load
+    total_screenshots = len(screenshots)
+    initial_screenshots = screenshots[:40]
 
     # Format release date from IGDB (timestamp -> %Y-%m-%d -> %d %B %Y)
     release_date = ""
@@ -3806,7 +4062,8 @@ def igdb_detail(request, igdb_id):
         "cast": [],
         "seasons": None,
         "recommendations": recommendations,
-        "screenshots": screenshots,
+        "screenshots": initial_screenshots,
+        "total_screenshots": total_screenshots,
         "genres": genres,
         "platforms": platforms,
         "in_my_list": False,
@@ -3816,6 +4073,26 @@ def igdb_detail(request, igdb_id):
 
     return render(request, "core/detail.html", context)
 
+@require_GET
+def game_screenshots_api(request):
+    igdb_id = request.GET.get('igdb_id')
+    page = int(request.GET.get('page', 1))
+    page_size = 40
+    
+    if not igdb_id:
+        return JsonResponse({'error': 'Missing igdb_id'}, status=400)
+        
+    all_screenshots = get_game_screenshots_data(igdb_id)
+    
+    start = (page - 1) * page_size
+    end = start + page_size
+    items = all_screenshots[start:end]
+    
+    return JsonResponse({
+        'screenshots': items,
+        'has_more': end < len(all_screenshots),
+        'page': page
+    })
 
 
 def save_igdb_item(igdb_id):
@@ -3899,7 +4176,7 @@ def save_igdb_item(igdb_id):
     for i, ss in enumerate(screenshots[start_index:], start=start_index):
         if ss and "url" in ss:
             url = "https:" + ss["url"].replace("t_thumb", "t_1080p")
-            local_path = download_image(url, f"screenshots/igdb_{igdb_id}_{i}.jpg")
+            local_path = download_image(url, f"screenshots/igdb_{igdb_id}_{i}_{cache_bust}.jpg")
             if local_path.startswith("media/"):
                 local_path = local_path[len("media/"):]
             if local_path:
@@ -3967,16 +4244,6 @@ def upload_game_screenshots(request):
         if os.path.exists(file_path):
             os.remove(file_path)
 
-        # Renumber remaining files with cache-busting
-        for i, s in enumerate(new_screenshots, start=1):
-            old_url = s["url"]
-            ext = os.path.splitext(old_url)[1]
-            new_filename = generate_unique_filename(i, ext)
-            old_path = os.path.join(settings.MEDIA_ROOT, old_url.replace("/media/", ""))
-            if os.path.exists(old_path):
-                os.rename(old_path, os.path.join(settings.MEDIA_ROOT, new_filename))
-            s["url"] = f"/media/{new_filename}"
-
         media_item.screenshots = new_screenshots
         media_item.save()
         return JsonResponse({"success": True, "message": "Screenshot deleted.", "screenshots": new_screenshots})
@@ -3996,7 +4263,28 @@ def upload_game_screenshots(request):
 
     elif action == "add":
         old_screenshots = media_item.screenshots or []
-        start_index = len(old_screenshots) + 1
+        
+        # Find the highest index in existing screenshots to avoid collisions
+        max_index = 0
+        prefix = f"igdb_{igdb_id}_"
+        
+        for s in old_screenshots:
+            try:
+                url = s.get("url", "")
+                filename = url.split('/')[-1]
+                if filename.startswith(prefix):
+                    # Format: igdb_{id}_{index}_{timestamp}.ext OR igdb_{id}_{index}.ext
+                    suffix = filename[len(prefix):]
+                    name_body = os.path.splitext(suffix)[0]
+                    parts = name_body.split('_')
+                    if len(parts) >= 1 and parts[0].isdigit():
+                        idx = int(parts[0])
+                        if idx > max_index:
+                            max_index = idx
+            except (ValueError, IndexError, AttributeError):
+                continue
+        
+        start_index = max_index + 1
 
     else:
         return JsonResponse({"success": False, "message": "Invalid action."}, status=400)
@@ -4354,91 +4642,341 @@ def get_item(request, item_id):
 
 # Settings
 
+# Global dictionary to store backup tasks (in-memory for simplicity)
+BACKUP_TASKS = {}
+
+class BackupTask(threading.Thread):
+    def __init__(self, task_id, task_type, upload_path=None):
+        super().__init__()
+        self.task_id = task_id
+        self.task_type = task_type
+        self.upload_path = upload_path
+        self.progress = 0
+        self.status = 'pending'  # pending, running, completed, error, cancelled
+        self.message = 'Initializing...'
+        self.details = ''
+        self.result_path = None
+        self.error = None
+        self._cancel_event = threading.Event()
+        self.daemon = True
+        self.created_at = time.time()
+        self.start_processing_time = None
+
+    def cancel(self):
+        self._cancel_event.set()
+        self.status = 'cancelled'
+        self.message = 'Cancelling...'
+
+    def run(self):
+        self.status = 'running'
+        self.start_processing_time = time.time()
+        try:
+            if self.task_type == 'export':
+                self.do_export()
+            elif self.task_type == 'import':
+                self.do_import()
+        except Exception as e:
+            self.status = 'error'
+            self.error = str(e)
+            logger.error(f"Backup task error: {e}")
+        finally:
+            # Cleanup upload file if import
+            if self.upload_path and os.path.exists(self.upload_path):
+                try:
+                    os.remove(self.upload_path)
+                except:
+                    pass
+            
+            if self.status == 'running':
+                self.status = 'completed'
+                self.progress = 100
+                self.message = 'Done!'
+            elif self.status == 'cancelled':
+                self.message = 'Cancelled.'
+                # Cleanup result if export cancelled
+                if self.result_path and os.path.exists(self.result_path):
+                    try:
+                        os.remove(self.result_path)
+                    except:
+                        pass
+
+    def update_progress(self, processed, total, message):
+        self.progress = int((processed / total) * 100)
+        self.message = message
+        
+        if self.start_processing_time:
+            elapsed = time.time() - self.start_processing_time
+            if elapsed > 0 and processed > 0:
+                rate = processed / elapsed
+                remaining_items = total - processed
+                seconds_left = int(remaining_items / rate)
+                
+                if seconds_left < 60:
+                    time_str = f"{seconds_left} sec left"
+                else:
+                    time_str = f"{seconds_left // 60} min {seconds_left % 60} sec left"
+                
+                self.details = f"{processed}/{total} ({time_str})"
+            else:
+                self.details = f"{processed}/{total}"
+
+    def do_export(self):
+        self.message = 'Gathering database data'
+        
+        # 1. Serialize Data (Include all relevant models)
+        models_to_backup = [
+            MediaItem.objects.all(),
+            FavoritePerson.objects.all(),
+            APIKey.objects.all(),
+            NavItem.objects.all(),
+            AppSettings.objects.all()
+        ]
+        
+        all_objects = []
+        for qs in models_to_backup:
+            all_objects.extend(list(qs))
+            
+        json_data = serialize("json", all_objects)
+        
+        if self._cancel_event.is_set(): return
+
+        # 2. Prepare Zip
+        self.message = 'Scanning files'
+        temp_dir = tempfile.gettempdir()
+        zip_filename = f"media_journal_backup_{uuid.uuid4().hex}.zip"
+        zip_path = os.path.join(temp_dir, zip_filename)
+        self.result_path = zip_path
+
+        media_root = settings.MEDIA_ROOT
+        files_to_zip = []
+        
+        # Folders to include
+        include_folders = ["posters", "banners", "cast", "related", "screenshots", "seasons", "episodes", "favorites"]
+        
+        for folder in include_folders:
+            folder_path = os.path.join(media_root, folder)
+            if os.path.exists(folder_path):
+                for root, dirs, files in os.walk(folder_path):
+                    for file in files:
+                        abs_path = os.path.join(root, file)
+                        rel_path = os.path.relpath(abs_path, media_root)
+                        files_to_zip.append((abs_path, rel_path))
+        
+        total_items = len(files_to_zip) + 1 # +1 for json
+        processed = 0
+        
+        with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_STORED) as zipf:
+            # Write JSON
+            zipf.writestr("backup_data.json", json_data)
+            
+            processed += 1
+            self.update_progress(processed, total_items, 'Archiving')
+            
+            # Write Files directly (efficient)
+            for abs_path, rel_path in files_to_zip:
+                if self._cancel_event.is_set():
+                    return
+                
+                try:
+                    zipf.write(abs_path, arcname=rel_path)
+                except Exception as e:
+                    logger.warning(f"Could not zip {abs_path}: {e}")
+                
+                processed += 1
+                if processed % 100 == 0: # Update progress periodically
+                    self.update_progress(processed, total_items, 'Archiving')
+
+    def do_import(self):
+        self.message = 'Reading backup file'
+        if not self.upload_path or not os.path.exists(self.upload_path):
+            raise Exception("Upload file not found")
+
+        with zipfile.ZipFile(self.upload_path, 'r') as zipf:
+            all_files = zipf.namelist()
+            
+            # 1. Restore DB
+            json_filename = "backup_data.json"
+            if "media_items.json" in all_files and json_filename not in all_files:
+                json_filename = "media_items.json" # Legacy support
+            
+            # Initialize variables to avoid UnboundLocalError
+            files_to_extract = [f for f in all_files if not f.endswith('.json')]
+            processed = 0
+            total_items = len(files_to_extract)
+
+            if json_filename in all_files:
+                self.message = 'Restoring database'
+                json_data = zipf.read(json_filename)
+                
+                # Deserialize to list first to get count for progress
+                objects = list(deserialize("json", json_data))
+                del json_data # Free memory: Raw JSON bytes no longer needed
+                total_items += len(objects)
+                
+                if total_items == 0: total_items = 1 # Avoid division by zero
+                
+                for deserialized_object in objects:
+                    if self._cancel_event.is_set(): return
+                    obj = deserialized_object.object
+                    
+                    try:
+                        # Smart Merge Logic
+                        if isinstance(obj, MediaItem):
+                            MediaItem.objects.update_or_create(
+                                source=obj.source,
+                                source_id=obj.source_id,
+                                media_type=obj.media_type,
+                                defaults={field.name: getattr(obj, field.name) for field in MediaItem._meta.fields if field.name != 'id'}
+                            )
+                        elif isinstance(obj, FavoritePerson):
+                            # Try to find existing by name and type to avoid duplicates
+                            existing = FavoritePerson.objects.filter(name=obj.name, type=obj.type).first()
+                            if existing:
+                                for field in FavoritePerson._meta.fields:
+                                    if field.name != 'id':
+                                        setattr(existing, field.name, getattr(obj, field.name))
+                                existing.save()
+                            else:
+                                obj.save()
+                        elif isinstance(obj, APIKey):
+                            APIKey.objects.update_or_create(
+                                name=obj.name,
+                                defaults={'key_1': obj.key_1, 'key_2': obj.key_2}
+                            )
+                        elif isinstance(obj, NavItem):
+                            NavItem.objects.update_or_create(
+                                name=obj.name,
+                                defaults={'visible': obj.visible, 'position': obj.position}
+                            )
+                        elif isinstance(obj, AppSettings):
+                            if not AppSettings.objects.exists():
+                                obj.save()
+                            else:
+                                current = AppSettings.objects.first()
+                                for field in AppSettings._meta.fields:
+                                    if field.name != 'id':
+                                        setattr(current, field.name, getattr(obj, field.name))
+                                current.save()
+                        else:
+                            obj.save()
+                    except Exception as e:
+                        logger.warning(f"Error restoring object {obj}: {e}")
+                    
+                    processed += 1
+                    if processed % 100 == 0:
+                        self.update_progress(processed, total_items, 'Restoring database')
+
+            # 2. Restore Files
+            self.message = 'Restoring media files'
+            media_root = settings.MEDIA_ROOT
+            
+            if total_items == 0: total_items = 1
+            
+            for file_name in files_to_extract:
+                if self._cancel_event.is_set(): return
+                
+                # Security check
+                if '..' in file_name or file_name.startswith('/') or file_name.startswith('\\'):
+                    continue
+                
+                # Extract
+                target_path = os.path.join(media_root, file_name)
+                os.makedirs(os.path.dirname(target_path), exist_ok=True)
+                
+                with open(target_path, "wb") as f:
+                    f.write(zipf.read(file_name))
+                
+                processed += 1
+                if processed % 100 == 0:
+                    self.update_progress(processed, total_items, 'Restoring media files')
+
+def cleanup_old_tasks():
+    """Remove backup tasks older than 1 hour"""
+    now = time.time()
+    to_remove = []
+    for tid, task in list(BACKUP_TASKS.items()):
+        if now - task.created_at > 3600:  # 1 hour
+            to_remove.append(tid)
+            # Clean up files
+            if task.result_path and os.path.exists(task.result_path):
+                try:
+                    os.remove(task.result_path)
+                except:
+                    pass
+            if task.upload_path and os.path.exists(task.upload_path):
+                try:
+                    os.remove(task.upload_path)
+                except:
+                    pass
+    
+    for tid in to_remove:
+        del BACKUP_TASKS[tid]
+
 @ensure_csrf_cookie
 @require_GET
 def create_backup(request):
-    import uuid
-
-    with tempfile.TemporaryDirectory() as temp_dir:
-        # Export MediaItem and FavoritePerson
-        media_items = list(MediaItem.objects.all())
-        favorite_people = list(FavoritePerson.objects.all())
-        all_data = media_items + favorite_people
-
-        json_path = os.path.join(temp_dir, "media_items.json")
-        with open(json_path, "w", encoding="utf-8") as f:
-            f.write(serialize("json", all_data))
-
-        # Copy media
-        media_root = settings.MEDIA_ROOT
-        folders = ["posters", "banners", "cast", "related", "screenshots", "seasons", "episodes", "favorites/actors", "favorites/characters"]
-        for folder in folders:
-            src = os.path.join(media_root, folder)
-            dst = os.path.join(temp_dir, folder)
-            if os.path.exists(src):
-                shutil.copytree(src, dst)
-
-        # Save to a permanent temp file outside context manager
-        temp_zip = tempfile.NamedTemporaryFile(suffix=".zip", delete=False)
-        temp_zip_path = temp_zip.name
-        temp_zip.close()  # We'll write manually
-
-        with zipfile.ZipFile(temp_zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
-            for root, _, files in os.walk(temp_dir):
-                for file in files:
-                    abs_path = os.path.join(root, file)
-                    rel_path = os.path.relpath(abs_path, temp_dir)
-                    zipf.write(abs_path, rel_path)
-
-    # Open outside the `with` block to avoid "used by another process"
-    return FileResponse(open(temp_zip_path, "rb"), as_attachment=True, filename="media_backup.zip")
-
+    cleanup_old_tasks()
+    task_id = uuid.uuid4().hex
+    task = BackupTask(task_id, 'export')
+    BACKUP_TASKS[task_id] = task
+    task.start()
+    return JsonResponse({'task_id': task_id})
 
 @ensure_csrf_cookie
 @require_POST
 def restore_backup(request):
-    uploaded_zip = request.FILES.get("backup_zip")
-    if not uploaded_zip:
+    cleanup_old_tasks()
+    uploaded_file = request.FILES.get("backup_file")
+    if not uploaded_file:
         return JsonResponse({"error": "No file uploaded"}, status=400)
 
-    with tempfile.TemporaryDirectory() as temp_dir:
-        # Save uploaded zip and extract it
-        zip_path = os.path.join(temp_dir, "uploaded_backup.zip")
-        with open(zip_path, "wb") as f:
-            for chunk in uploaded_zip.chunks():
-                f.write(chunk)
+    # Save to temp file first
+    temp_fd, temp_path = tempfile.mkstemp(suffix='.zip')
+    os.close(temp_fd)
+    
+    with open(temp_path, 'wb') as f:
+        for chunk in uploaded_file.chunks():
+            f.write(chunk)
+            
+    task_id = uuid.uuid4().hex
+    task = BackupTask(task_id, 'import', upload_path=temp_path)
+    BACKUP_TASKS[task_id] = task
+    task.start()
+    
+    return JsonResponse({'task_id': task_id})
 
-        with zipfile.ZipFile(zip_path, "r") as zipf:
-            zipf.extractall(temp_dir)
+@require_GET
+def backup_status(request, task_id):
+    task = BACKUP_TASKS.get(task_id)
+    if not task:
+        return JsonResponse({'error': 'Task not found'}, status=404)
+    
+    return JsonResponse({
+        'status': task.status,
+        'progress': task.progress,
+        'message': task.message,
+        'details': task.details,
+        'error': task.error
+    })
 
-        # Load JSON data
-        json_file = os.path.join(temp_dir, "media_items.json")
-        with open(json_file, "r", encoding="utf-8") as f:
-            media_data = json.load(f)
+@require_GET
+def backup_cancel(request, task_id):
+    task = BACKUP_TASKS.get(task_id)
+    if task:
+        task.cancel()
+    return JsonResponse({'success': True})
 
-        for obj in deserialize("json", json.dumps(media_data)):
-            try:
-                instance = obj.object
-                if isinstance(instance, MediaItem):
-                    if not MediaItem.objects.filter(source=instance.source, source_id=instance.source_id).exists():
-                        obj.save()
-                elif isinstance(instance, FavoritePerson):
-                    if not FavoritePerson.objects.filter(name=instance.name, type=instance.type).exists():
-                        obj.save()
-            except Exception as e:
-                continue  # optionally log errors
-
-
-        # Copy media folders
-        media_root = settings.MEDIA_ROOT
-        folders = ["posters", "banners", "cast", "related", "screenshots", "seasons","favorites/actors", "favorites/characters"]
-        for folder in folders:
-            src_folder = os.path.join(temp_dir, folder)
-            dest_folder = os.path.join(media_root, folder)
-            if os.path.exists(src_folder):
-                shutil.copytree(src_folder, dest_folder, dirs_exist_ok=True)
-
-        return JsonResponse({"message": "Backup restored successfully"})
+@require_GET
+def backup_download(request, task_id):
+    task = BACKUP_TASKS.get(task_id)
+    if not task or task.status != 'completed' or not task.result_path:
+        return HttpResponseBadRequest("Backup not ready or not found")
+    
+    return FileResponse(
+        open(task.result_path, "rb"), 
+        as_attachment=True, 
+        filename=f"media_journal_backup_{datetime.datetime.now().strftime('%Y%m%d')}.zip"
+    )
 
 @ensure_csrf_cookie
 def add_key(request):

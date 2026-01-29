@@ -4,12 +4,13 @@
 {% block head %}
   {{ block.super }}
   <title>{{ person_name }} - Media Journal</title>
-  <link rel="stylesheet" href="{% static 'core/css/person_detail.css' %}?v={{ version }}" />
+  <link rel="stylesheet" href="{% static 'core/css/detail.css' %}?v={{ version }}" />
 {% endblock %}
 
 {% block content %}
 <script>
   document.body.dataset.theme = '{{ theme_mode }}';
+  document.body.dataset.pageType = 'person-detail';
 </script>
 
 <!-- Banner section -->

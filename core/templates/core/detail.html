@@ -239,7 +239,7 @@
     {% endif %}
 </div>
 {% if screenshots %}
-  <div class="screenshots-background" data-igdb-id="{{ source_id }}">
+  <div class="screenshots-background" data-igdb-id="{{ source_id }}" data-total-screenshots="{{ total_screenshots|default:0 }}">
   <div class="screenshot-rotator" onmouseenter="showArrows(this)" onmouseleave="hideArrows(this)">
     <img id="screenshot-image" src="{{ screenshots.0.url }}" alt="Screenshot" />
     <button class="rotator-btn left" onclick="changeScreenshot(-1)" style="display: none;">‹</button>

@@ -47,7 +47,7 @@ document.addEventListener('click', function(e) {
   }
 })
 
-function showNotification(message, type) {
+function showNotification(message, type, duration = null) {
   const notification = document.createElement("div");
   notification.textContent = message;
   const isMobile = window.matchMedia("(orientation: portrait)").matches;
@@ -70,8 +70,11 @@ function showNotification(message, type) {
     box-sizing: border-box;
   `;
   document.body.appendChild(notification);
-  const duration = type === "warning" ? 20000 : 2000;
-  setTimeout(() => notification.remove(), duration);
+  
+  const timeoutDuration = duration !== null ? duration : (type === "warning" ? 20000 : 2000);
+  if (timeoutDuration > 0) {
+    setTimeout(() => notification.remove(), timeoutDuration);
+  }
   return notification; // Return notification element for updates
 }
 
@@ -162,7 +165,63 @@ let autoplayInterval = null;
 let autoplaySpeed = 0;
 const SPEEDS = [0, 3000, 1500, 500];
 
-function updateScreenshot(index) {
+let screenshotsPage = 1;
+let isLoadingScreenshots = false;
+let hasMoreScreenshots = true;
+
+document.addEventListener("DOMContentLoaded", function () {
+  const bg = document.querySelector('.screenshots-background');
+  if (bg) {
+    const total = parseInt(bg.dataset.totalScreenshots || 0);
+    if (screenshotsData.length >= total) {
+      hasMoreScreenshots = false;
+    }
+    
+    const list = document.querySelector('.screenshots-list');
+    if (list) {
+      list.addEventListener('scroll', () => {
+        if (list.scrollTop + list.clientHeight >= list.scrollHeight - 200) {
+          loadMoreScreenshots();
+        }
+      });
+    }
+  }
+});
+
+function loadMoreScreenshots() {
+  if (isLoadingScreenshots || !hasMoreScreenshots) return;
+  
+  isLoadingScreenshots = true;
+  const igdbId = document.querySelector('.screenshots-background').dataset.igdbId;
+  const nextPage = screenshotsPage + 1;
+  
+  fetch(`/api/game_screenshots/?igdb_id=${igdbId}&page=${nextPage}`)
+    .then(r => r.json())
+    .then(data => {
+      if (data.screenshots && data.screenshots.length > 0) {
+        data.screenshots.forEach(s => {
+          screenshotsData.push(s);
+          const index = screenshotsData.length - 1;
+          // Append to DOM
+          const img = document.createElement('img');
+          img.src = s.url;
+          img.alt = `Screenshot ${screenshotsData.length}`;
+          img.className = 'thumbnail';
+          img.onclick = () => setScreenshot(index);
+          document.querySelector('.screenshots-list').appendChild(img);
+        });
+        screenshotsPage = nextPage;
+        hasMoreScreenshots = data.has_more;
+      } else {
+        hasMoreScreenshots = false;
+      }
+    })
+    .finally(() => {
+      isLoadingScreenshots = false;
+    });
+}
+
+function updateScreenshot(index, autoScroll = true) {
   if (index < 0 || index >= screenshotsData.length) return;
   
   const img = document.getElementById("screenshot-image");
@@ -181,19 +240,25 @@ function updateScreenshot(index) {
   if (overlayImg) overlayImg.style.opacity = 1;
   
   const activeThumbnail = document.querySelector('.thumbnail.active-thumbnail');
-  if (activeThumbnail) {
+  if (activeThumbnail && autoScroll) {
     activeThumbnail.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
   }
 }
 
 function changeScreenshot(direction) {
   let newIndex = (currentIndex + direction + screenshotsData.length) % screenshotsData.length;
+  
+  // If we are near the end (within 5 items) and moving forward, try loading more
+  if (direction > 0 && newIndex >= screenshotsData.length - 5) {
+    loadMoreScreenshots();
+  }
+  
   updateScreenshot(newIndex);
 }
 
 function setScreenshot(index) {
   if (index >= 0 && index < screenshotsData.length) {
-    updateScreenshot(index);
+    updateScreenshot(index, false);
   }
 }
 
@@ -233,21 +298,44 @@ if (screenshotOverlay) {
 }
 
 let deleteConfirm = false;
+let isDeletingScreenshot = false;
+let deleteTimeout = null;
 
 function handleDeleteScreenshot(btn) {
+  if (isDeletingScreenshot || btn.disabled) return;
+
   if (!deleteConfirm) {
     btn.textContent = "×";
     btn.style.color = "#ff3b38ff";
     btn.title = "Are you sure?";
     deleteConfirm = true;
 
-    setTimeout(() => {
-      deleteConfirm = false;
-      btn.textContent = "×";
-      btn.style.color = "";
-      btn.title = "Delete Screenshot";
-    }, 5000);
+    if (deleteTimeout) clearTimeout(deleteTimeout);
+
+    deleteTimeout = setTimeout(() => {
+      if (!isDeletingScreenshot) {
+        deleteConfirm = false;
+        const allDeleteBtns = document.querySelectorAll(".delete-screenshot-btn");
+        allDeleteBtns.forEach(b => {
+          b.textContent = "×";
+          b.style.color = "";
+          b.title = "Delete Screenshot";
+        });
+      }
+    }, 2000);
   } else {
+    if (deleteTimeout) {
+      clearTimeout(deleteTimeout);
+      deleteTimeout = null;
+    }
+    isDeletingScreenshot = true;
+    const allDeleteBtns = document.querySelectorAll(".delete-screenshot-btn");
+    allDeleteBtns.forEach(b => {
+      b.disabled = true;
+      b.style.opacity = "0.5";
+      b.style.cursor = "wait";
+    });
+
     const img = document.getElementById("screenshot-image");
     const screenshotUrl = img.src.replace(window.location.origin, "");
     const IGDB_ID = document.querySelector('.screenshots-background').dataset.igdbId;
@@ -269,30 +357,74 @@ function handleDeleteScreenshot(btn) {
     .then(r => r.json())
     .then(data => {
       if (data.success) {
-        screenshotsData.splice(currentIndex, 1);
-        const thumbnails = document.querySelectorAll('.thumbnail');
-        thumbnails[currentIndex].remove();
-        
-        document.querySelectorAll('.thumbnail').forEach((thumb, i) => {
-          thumb.onclick = () => setScreenshot(i);
-        });
+        showNotification("Screenshot deleted successfully!", "success");
+
+        // Capture scroll position before clearing
+        const listContainer = document.querySelector('.screenshots-list');
+        const savedScrollTop = listContainer ? listContainer.scrollTop : 0;
+
+        // We want to maintain the same number of items to keep the scrollbar stable.
+        // If we had 80 items, we want 80 items back (filling the gap of the deleted one).
+        const targetLength = screenshotsData.length;
+
+        screenshotsData.length = 0;
+        if (data.screenshots && Array.isArray(data.screenshots)) {
+          // Take only what fits in current view + fill the gap
+          const newItems = data.screenshots.slice(0, targetLength);
+          newItems.forEach(s => screenshotsData.push(s));
+          
+          // Update pagination state so 'load more' works correctly from this point
+          hasMoreScreenshots = data.screenshots.length > targetLength;
+          screenshotsPage = Math.ceil(targetLength / 40) || 1;
+        }
+
+        // Re-render thumbnails
+        if (listContainer) {
+          listContainer.innerHTML = '';
+          screenshotsData.forEach((shot, i) => {
+            const img = document.createElement('img');
+            img.src = shot.url;
+            img.alt = `Screenshot ${i + 1}`;
+            img.className = 'thumbnail';
+            img.onclick = () => setScreenshot(i);
+            listContainer.appendChild(img);
+          });
+
+          // Restore scroll position immediately
+          listContainer.scrollTop = savedScrollTop;
+        }
         
         if (screenshotsData.length > 0) {
-          const newIndex = Math.min(nextIndex, screenshotsData.length - 1);
-          updateScreenshot(newIndex);
-          showNotification("Screenshot deleted successfully!", "success");
+          // Adjust index if we deleted the last item
+          if (currentIndex >= screenshotsData.length) {
+            currentIndex = screenshotsData.length - 1;
+          }
+          // Update main image without auto-scrolling the list (false)
+          updateScreenshot(currentIndex, false);
         } else {
           window.location.reload();
         }
       } else {
         alert(data.message);
       }
+    })
+    .catch(err => {
+      console.error(err);
+      alert("Failed to delete screenshot.");
+    })
+    .finally(() => {
+      isDeletingScreenshot = false;
+      deleteConfirm = false;
+      const allDeleteBtns = document.querySelectorAll(".delete-screenshot-btn");
+      allDeleteBtns.forEach(b => {
+        b.disabled = false;
+        b.textContent = "×";
+        b.style.color = "";
+        b.title = "Delete Screenshot";
+        b.style.opacity = "";
+        b.style.cursor = "";
+      });
     });
-    
-    deleteConfirm = false;
-    btn.textContent = "×";
-    btn.style.color = "";
-    btn.title = "Delete Screenshot";
   }
 }
 
@@ -609,7 +741,7 @@ swapBtn?.addEventListener("click", function () {
     // Show progress notification
     const totalFiles = files.length;
     let uploadedFiles = 0;
-    const notification = showNotification(`Uploading 0/${totalFiles} screenshots...`, "warning");
+    const notification = showNotification(`Uploading 0/${totalFiles} screenshots...`, "warning", 0);
     
     try {
       // Upload in batches
@@ -661,7 +793,7 @@ swapBtn?.addEventListener("click", function () {
     // Show progress notification
     const totalFiles = files.length;
     let uploadedFiles = 0;
-    const notification = showNotification(`Adding 0/${totalFiles} screenshots...`, "warning");
+    const notification = showNotification(`Adding 0/${totalFiles} screenshots...`, "warning", 0);
     
     try {
       // Upload in batches

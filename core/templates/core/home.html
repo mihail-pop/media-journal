@@ -5,7 +5,6 @@
 {% block head %}
 {{ block.super }}
 <title>Media Journal</title>
-<link rel="stylesheet" href="{% static 'core/css/rain.css' %}?v={{ version }}">
 <link rel="stylesheet" href="{% static 'core/css/home.css' %}?v={{ version }}">
 {% endblock %}
 
@@ -23,12 +22,7 @@
 </div>
 
 <!-- Separator Bar -->
-<div class="separator-bar" style="display: flex; gap: 1rem; align-items: center; padding: 0 1rem;">
-<button id="bat-toggle" class="bat-toggle">
-  <svg viewBox="0 0 24 24">
-    <path d="M12 2c-1 2-2.5 3.5-4.5 4.5C5.5 7.5 4 9 4 11c0 1 0.5 2 1.5 2.5C6.5 14 8 14.5 10 14c1-0.5 2-1 2-2s-1-1.5-2-2c1 0 2 0.5 2 1.5s1 1.5 2 2c2 0.5 3.5 0 4.5-0.5C19.5 13 20 12 20 11c0-2-1.5-3.5-3.5-4.5C14.5 5.5 13 4 12 2z"/>
-  </svg>
-</button>
+<div class="separator-bar">
 {% if favorite_sections_dict.Music %}
 <label class="music-player-btn">
   <input type="checkbox" id="music-player-toggle" data-mode="favorites">
@@ -37,10 +31,10 @@
   </svg>
 </label>
 {% endif %}
-<div id="board-wrapper" class="board-wrapper">
-  <a href="/board/" class="board-button" aria-label="Board content">
+<div id="community-wrapper" class="community-wrapper">
+  <a href="/community/" class="community-button" aria-label="community content">
     Community
-    <svg class="board-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img">
+    <svg class="community-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img">
       <!-- Circle of small circles / community icon -->
       <!-- Center circle -->
       <circle cx="12" cy="12" r="2" fill="currentColor"/>
@@ -175,7 +169,7 @@
       {% for category, items in row %}
         {% if items %}
         <div class="favorites-column">
-          <h2> <span class="favorites-header" onclick="openFavoritesOverlay('{{ category }}')">{{ category }}</span></h2>
+          <h2> <a href="{% url 'favorites' %}?section={{ category }}" class="favorites-header">{{ category }}</a></h2>
           <div class="card-grid">
             {% for item in items|slice:":25" %}
             <div class="card"
@@ -212,51 +206,13 @@
   {% endfor %}
 </section>
 
-{% for category, items in favorite_sections %}
-  {% if items %}
-  <div class="favorites-overlay hidden" id="overlay-{{ category|slugify }}">
-    <div class="overlay-content">
-      <button class="close-button" onclick="closeFavoritesOverlay('{{ category|slugify }}')">✕</button>
-      <div class="card-grid" id="{{ category|slugify }}-card-grid">
-        {% for item in items %}
-        <div class="card" data-id="{{ item.id }}" data-media-type="{{ item.media_type }}">
-          <div class="reorder-buttons">
-            <button class="move-up-btn" title="Move Left" aria-label="Move Left">⬅️</button>
-            <button class="move-down-btn" title="Move Right" aria-label="Move Right">➡️</button>
-          </div>
-          {% if item.media_type in 'movie,tvshow' %}
-            <a href="{% if '_s' in item.source_id %}/tmdb/season/{% with parts=item.source_id|split:'_s' %}{{ parts.0 }}/{{ parts.1 }}/{% endwith %}{% else %}{% url 'tmdb_detail' media_type=item.media_type tmdb_id=item.source_id %}{% endif %}" class="card-link">
-          {% elif item.media_type == 'anime' or item.media_type == 'manga' %}
-            <a href="{% url 'mal_detail' media_type=item.media_type mal_id=item.source_id %}">
-          {% elif item.media_type == 'game' %}
-            <a href="{% url 'igdb_detail' igdb_id=item.source_id %}">
-          {% elif item.media_type == 'book' %}
-            <a href="{% url 'openlib_detail' work_id=item.source_id %}">
-          {% elif item.media_type == 'music' %}
-            <a href="{% url 'musicbrainz_detail' recording_id=item.source_id %}">
-          {% else %}
-            <a href="#">
-          {% endif %}
-              <div class="card-image"><img src="{{ item.cover_url|default:'/static/core/img/placeholder.png' }}" alt="{{ item.title }}"></div>
-            </a>
-            <div class="hover-title-overlay">
-              <span class="hover-title-text">{{ item.title }}</span>
-            </div>
-        </div>
-        {% endfor %}
-      </div>
-    </div>
-  </div>
-  {% endif %}
-{% endfor %}
-
 <section class="favorites-section">
 {% if favorite_characters or favorite_actors %}
 <section class="favorite-people-section">
   <div class="favorites-row">
     {% if favorite_characters %}
     <div class="favorites-column">
-      <h2> <span class="favorites-header" onclick="openFavoritesOverlay('characters')">Characters</span></h2>
+      <h2> <a href="{% url 'favorites' %}?section=Characters" class="favorites-header">Characters</a></h2>
       <div class="card-grid">
         {% for person in favorite_characters|slice:":25" %}
         {% if person.person_id %}
@@ -281,7 +237,7 @@
 
     {% if favorite_actors %}
     <div class="favorites-column">
-      <h2><span class="favorites-header" onclick="openFavoritesOverlay('actors')">Actors</span></h2>
+      <h2><a href="{% url 'favorites' %}?section=Actors" class="favorites-header">Actors</a></h2>
       <div class="card-grid">
         {% for person in favorite_actors|slice:":25" %}
         {% if person.person_id %}
@@ -308,77 +264,10 @@
 {% endif %}
 </section>
 
-{% if favorite_characters %}
-<div class="favorites-overlay hidden" id="overlay-characters">
-  <div class="overlay-content">
-    <button class="close-button" onclick="closeFavoritesOverlay('characters')">✕</button>
-    <div class="card-grid" id="characters-card-grid">
-      {% for person in favorite_characters %}
-      <div class="card" data-id="{{ person.id }}">
-        {% if person.person_id %}
-          <a href="/person/character/{{ person.person_id }}/" class="card-link">
-            <div class="card-image"><img src="{{ person.image_url|default:'/static/core/img/placeholder.png' }}" alt="{{ person.name }}"></div>
-            <div class="hover-title-overlay">
-              <span class="hover-title-text">{{ person.name }}</span>
-            </div>
-          </a>
-        {% else %}
-          <div class="card-image"><img src="{{ person.image_url|default:'/static/core/img/placeholder.png' }}" alt="{{ person.name }}"></div>
-          <div class="hover-title-overlay">
-            <span class="hover-title-text">{{ person.name }}</span>
-          </div>
-        {% endif %}
-        <div class="reorder-buttons">
-          <button class="move-up-btn" title="Move Left" aria-label="Move Left">⬅️</button>
-          <button class="move-down-btn" title="Move Right" aria-label="Move Right">➡️</button>
-          <button class="delete-person-btn" title="Remove" aria-label="Remove">❌</button>
-        </div>
-      </div>
-      {% endfor %}
-    </div>
-  </div>
-</div>
-{% endif %}
-
-{% if favorite_actors %}
-<div class="favorites-overlay hidden" id="overlay-actors">
-  <div class="overlay-content">
-    <button class="close-button" onclick="closeFavoritesOverlay('actors')">✕</button>
-    <div class="card-grid" id="actors-card-grid">
-      {% for person in favorite_actors %}
-      <div class="card" data-id="{{ person.id }}">
-        {% if person.person_id %}
-          <a href="/person/actor/{{ person.person_id }}/" class="card-link">
-            <div class="card-image"><img src="{{ person.image_url|default:'/static/core/img/placeholder.png' }}" alt="{{ person.name }}"></div>
-            <div class="hover-title-overlay">
-              <span class="hover-title-text">{{ person.name }}</span>
-            </div>
-          </a>
-        {% else %}
-          <div class="card-image"><img src="{{ person.image_url|default:'/static/core/img/placeholder.png' }}" alt="{{ person.name }}"></div>
-          <div class="hover-title-overlay">
-            <span class="hover-title-text">{{ person.name }}</span>
-          </div>
-        {% endif %}
-        <div class="reorder-buttons">
-          <button class="move-up-btn" title="Move Left" aria-label="Move Left">⬅️</button>
-          <button class="move-down-btn" title="Move Right" aria-label="Move Right">➡️</button>
-          <button class="delete-person-btn" title="Remove" aria-label="Remove">❌</button>
-        </div>
-      </div>
-      {% endfor %}
-    </div>
-  </div>
-</div>
-{% endif %}
-
 {% endblock %}
 
 {% block script %}
 {{ block.super }}
-
-<!-- <script src="{% static 'core/js/rain.js' %}?v={{ version }}"></script> -->
-<!-- <script src="{% static 'core/js/halloween.js' %}?v={{ version }}"></script> -->
 
 <script src="{% static 'core/js/home.js' %}?v={{ version }}"></script>
 <script src="{% static 'core/js/stats.js' %}?v={{ version }}"></script>

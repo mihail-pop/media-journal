@@ -31,33 +31,34 @@ function showNotification(message, type) {
 }
 
 // ----- Rating Mode (Scoring System) -----
-  const ratingModeForm = document.getElementById("rating-mode-form");
-  if (ratingModeForm) {
-    ratingModeForm.addEventListener("submit", function(e) {
-      e.preventDefault();
-      const select = document.getElementById("rating-mode-select");
-      const value = select.value;
-      fetch("/update-rating-mode/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRFToken": getCookie("csrftoken"),
-        },
-        body: JSON.stringify({ rating_mode: value }),
+const ratingModeForm = document.getElementById("rating-mode-form");
+if (ratingModeForm) {
+  ratingModeForm.addEventListener("submit", function(e) {
+    e.preventDefault();
+    const select = document.getElementById("rating-mode-select");
+    const value = select.value;
+    fetch("/update-rating-mode/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": getCookie("csrftoken"),
+      },
+      body: JSON.stringify({ rating_mode: value }),
+    })
+      .then(res => res.json())
+      .then(res => {
+        if (res.success) {
+          showNotification("Scoring system saved successfully!");
+        } else {
+          alert(res.error || "Failed to update scoring system.");
+        }
       })
-        .then(res => res.json())
-        .then(res => {
-          if (res.success) {
-            showNotification("Scoring system saved successfully!");
-          } else {
-            alert(res.error || "Failed to update scoring system.");
-          }
-        })
-        .catch(err => {
-          alert("Request failed.");
-        });
-    });
-  }
+      .catch(err => {
+        alert("Request failed.");
+      });
+  });
+}
+
 document.addEventListener("DOMContentLoaded", function () {
   // ----- Navigation Buttons Logic -----
   const navForm = document.getElementById("nav-items-form");
@@ -193,45 +194,130 @@ document.addEventListener("DOMContentLoaded", function () {
       if (response.ok) location.reload();
     });
   }
+});
 
-  // ----- Backup Import/Export -----
-function showSpinner(button) {
-  const spinner = button.querySelector(".spinner");
-  if (spinner) spinner.style.display = "inline-block";
-}
+// ----- Backup Import/Export -----
+function showProgressModal(title) {
+  let modal = document.getElementById('backup-progress-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'backup-progress-modal';
+    modal.className = 'backup-modal-overlay';
+    modal.innerHTML = `
+      <div class="backup-modal-content">
+        <h3 id="backup-modal-title" style="margin-top: 0; margin-bottom: 1rem;">${title}</h3>
+        <div style="background: rgba(255,255,255,0.1); height: 20px; border-radius: 10px; overflow: hidden; margin-bottom: 1rem; position: relative;">
+          <div id="backup-progress-bar" class="progress-animated" style="width: 0%; height: 100%; background-color: #4CAF50; transition: width 0.3s ease;"></div>
+        </div>
+        <p id="backup-status-text" style="margin-bottom: 1.5rem; font-size: 0.9rem; opacity: 0.9;">Initializing...</p>
+        <button id="backup-cancel-btn" style="background: #dc3545; color: white; border: none; padding: 8px 20px; border-radius: 6px; cursor: pointer; font-weight: bold;">Cancel</button>
+      </div>
+    `;
+    document.body.appendChild(modal);
+  } else {
+    document.getElementById('backup-modal-title').textContent = title;
+    document.getElementById('backup-progress-bar').style.width = '0%';
+    document.getElementById('backup-status-text').textContent = 'Initializing...';
+  }
 
-function hideSpinner(button) {
-  const spinner = button.querySelector(".spinner");
-  if (spinner) spinner.style.display = "none";
+  modal.style.display = 'flex';
+  void modal.offsetWidth; // Trigger reflow
+  modal.classList.add('visible');
+
+  const cancelBtn = document.getElementById('backup-cancel-btn');
+  const progressBar = document.getElementById('backup-progress-bar');
+  const statusText = document.getElementById('backup-status-text');
+  let pollInterval = null;
+  let currentTaskId = null;
+
+  const closeModal = () => {
+    modal.classList.remove('visible');
+    setTimeout(() => {
+      modal.style.display = 'none';
+    }, 300);
+    if (pollInterval) clearInterval(pollInterval);
+  };
+
+  cancelBtn.onclick = () => {
+    if (currentTaskId) {
+      fetch(`/backup/cancel/${currentTaskId}/`);
+    }
+    closeModal();
+  };
+
+  return {
+    updateMessage: (msg) => {
+      statusText.textContent = msg;
+    },
+    startPolling: (taskId, isDownload = true) => {
+      currentTaskId = taskId;
+      pollInterval = setInterval(() => {
+        fetch(`/backup/status/${taskId}/`)
+          .then(res => res.json())
+          .then(data => {
+            if (data.error) {
+              clearInterval(pollInterval);
+              alert("Error: " + data.error);
+              closeModal();
+              return;
+            }
+
+            progressBar.style.width = `${data.progress}%`;
+            
+            // Format: "Message... Details"
+            const message = data.message || 'Processing';
+            const details = data.details || '';
+            statusText.textContent = `${message}... ${details}`;
+
+            if (data.status === 'completed') {
+              clearInterval(pollInterval);
+              statusText.textContent = "Completed!";
+              progressBar.style.width = '100%';
+              
+              setTimeout(() => {
+                closeModal();
+                if (isDownload) {
+                  window.location.href = `/backup/download/${taskId}/`;
+                } else {
+                  showNotification("Backup restored successfully!");
+                  setTimeout(() => window.location.reload(), 1000);
+                }
+              }, 800);
+            } else if (data.status === 'cancelled' || data.status === 'error') {
+              clearInterval(pollInterval);
+              closeModal();
+              if (data.status === 'error') alert("Process failed: " + data.error);
+            }
+          })
+          .catch(err => {
+            console.error(err);
+            clearInterval(pollInterval);
+            closeModal();
+          });
+      }, 1000);
+    },
+    close: closeModal
+  };
 }
 
 const downloadBtn = document.getElementById("download-backup-btn");
 if (downloadBtn) {
   downloadBtn.addEventListener("click", () => {
-    showSpinner(downloadBtn);
-
+    const modal = showProgressModal("Creating Backup");
     fetch("/backup/export/")
-      .then((response) => {
-        if (!response.ok) throw new Error("Download failed.");
-        return response.blob();
+      .then(res => res.json())
+      .then(data => {
+        if (data.task_id) {
+          modal.startPolling(data.task_id, true);
+        } else {
+          alert("Failed to start backup.");
+          modal.close();
+        }
       })
-      .then((blob) => {
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "backup.zip";
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        window.URL.revokeObjectURL(url);
-        showNotification("Backup downloaded successfully!");
-      })
-      .catch((err) => {
+      .catch(err => {
         console.error(err);
-        alert("Backup download failed.");
-      })
-      .finally(() => {
-        hideSpinner(downloadBtn);
+        alert("Error starting backup.");
+        modal.close();
       });
   });
 }
@@ -248,10 +334,11 @@ if (uploadBtn && uploadInput) {
     const file = this.files[0];
     if (!file) return;
 
-    showSpinner(uploadBtn);
+    const modal = showProgressModal("Restoring Backup");
+    modal.updateMessage("Uploading backup file... Please wait.");
 
     const formData = new FormData();
-    formData.append("backup_zip", file);
+    formData.append("backup_file", file);
     const csrftoken = getCookie("csrftoken");
 
     fetch("/backup/import/", {
@@ -263,45 +350,35 @@ if (uploadBtn && uploadInput) {
     })
       .then((response) => response.json())
       .then((data) => {
-        if (data.message && !data.error) {
-          showNotification("Backup loaded successfully!");
+        if (data.task_id) {
+          modal.startPolling(data.task_id, false);
         } else {
-          alert(data.error || "Import failed.");
+          alert(data.error || "Upload failed.");
+          modal.close();
         }
-        window.location.reload();
       })
       .catch((err) => {
         console.error("Backup import failed:", err);
         alert("Backup import failed.");
+        modal.close();
       })
-      .finally(() => {
-        hideSpinner(uploadBtn);
-        uploadInput.value = ""; // reset input
-      });
+      .finally(() => { uploadInput.value = ""; });
   });
 }
 
-  // ----- Tab Functionality -----
-  document.querySelectorAll(".tab-button").forEach(button => {
-    button.addEventListener("click", () => {
-      const tabId = button.dataset.tab;
-      
-      // Remove active class from all tabs and content
-      document.querySelectorAll(".tab-button").forEach(btn => btn.classList.remove("active"));
-      document.querySelectorAll(".tab-content").forEach(content => content.classList.remove("active"));
-      
-      // Add active class to clicked tab and corresponding content
-      button.classList.add("active");
-      document.getElementById(tabId).classList.add("active");
-    });
+// ----- Tab Functionality -----
+document.querySelectorAll(".tab-button").forEach(button => {
+  button.addEventListener("click", () => {
+    const tabId = button.dataset.tab;
+    
+    // Remove active class from all tabs and content
+    document.querySelectorAll(".tab-button").forEach(btn => btn.classList.remove("active"));
+    document.querySelectorAll(".tab-content").forEach(content => content.classList.remove("active"));
+    
+    // Add active class to clicked tab and corresponding content
+    button.classList.add("active");
+    document.getElementById(tabId).classList.add("active");
   });
-
-  // ----- CSRF Token Getter -----
-  function getCookie(name) {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(";").shift();
-  }
 });
 
 document.addEventListener("DOMContentLoaded", function() {
@@ -335,6 +412,7 @@ document.addEventListener("DOMContentLoaded", function() {
     });
   }
 });
+
 // Update tooltip text dynamically for checkboxes
 document.addEventListener("DOMContentLoaded", function() {
   const checkboxes = document.querySelectorAll('.toggle-visible');

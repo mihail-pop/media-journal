@@ -82,7 +82,7 @@ The application can be configured using environment variables.
    ```
 6. Start the app:
    ```sh
-   python manage.py runserver
+   python manage.py runserver --noreload
    ```
 7. Open the app in your browser at: http://localhost:8000
 8. Inside the app navigate to **Settings → API Keys**.
@@ -92,10 +92,10 @@ The application can be configured using environment variables.
 
 - To easily start the app in the future, you can create a `.bat` file that runs the `runserver` command and a `.vbs` file in the shell:startup folder to start that bat file at startup.
 
-- To access the app from your phone or other devices on the same network, run the server using your PC’s IPv4 address instead of `localhost`:
+- To access the app from your phone or other devices on the same network, run the server using this command:
 
   ```sh
-  python manage.py runserver <IPv4_address>:8000
+  python manage.py runserver 0.0.0.0:8000 --noreload
   ```
-   You can find your IPv4 address by running `ipconfig` in the terminal.
-- Some YouTube videos (especially music) may show “Video unavailable, watch on YouTube” if you use a numeric URL (e.g., `http://127.0.0.1:8000`). Those videos work on `http://localhost:8000` or a custom URL (e.g., `http://myapp.mediajournal:8000`). To use a custom URL across devices, you need local DNS, which many routers don’t support. Mine doesn't, so I set a URL on my laptop (where the app runs) and listen to music there; my other devices still access it using the numeric URL. A middle ground.
+   Then on your other devices you can access it using your machine's IPv4 address. You can find your IPv4 address by running `ipconfig` in the terminal.
+- Some YouTube videos (especially music) may show “Video unavailable, watch on YouTube” if you use a numeric URL (e.g., `http://127.0.0.1:8000`). Those videos work on `http://localhost:8000` or a custom URL (e.g., `http://myapp.mediajournal:8000`). To use a custom URL across devices, you need local DNS, which many routers don’t support. The other option is hosting a local DNS app on your machine, but it would always have to be turned on.

@@ -520,7 +520,8 @@ const statusLabelsMap = {
 
       // Get old status BEFORE updating allItems
       const idx = allItems.findIndex(i => String(i.id) === id);
-      const oldStatus = idx !== -1 ? allItems[idx].status : null;
+      const oldItem = idx !== -1 ? {...allItems[idx]} : null;
+      const oldStatus = oldItem ? oldItem.status : null;
       
       // Update in-memory list (best-effort)
       if (idx !== -1) {
@@ -555,29 +556,60 @@ const statusLabelsMap = {
       const selector = currentView === 'card' ? `.card[data-id="${id}"]` : `.list-row[data-id="${id}"]`;
       const oldEl = (currentView === 'card' ? cardView : listView)?.querySelector(selector) || document.querySelector(selector);
       if (oldEl) {
-        // If status didn't change and parent group is same, replace in-place (PRESERVE DOM position)
-        if (oldEl.dataset.status === item.status) {
+        // Check if we need to re-sort based on current sort criteria
+        let needsResort = false;
+        if (oldStatus !== item.status) needsResort = true;
+        else if (currentSort === 'rating' && oldItem && oldItem.personal_rating != item.personal_rating) needsResort = true;
+        else if (currentSort === 'date' && oldItem && oldItem.date_added != item.date_added) needsResort = true;
+        else if ((currentSort === 'hours' || currentSort === 'pages') && oldItem && oldItem.progress_main != item.progress_main) needsResort = true;
+        else if (currentSort === 'title' && oldItem && oldItem.title != item.title) needsResort = true;
+
+        // If status didn't change and no re-sort needed, replace in-place (PRESERVE DOM position)
+        if (!needsResort && oldEl.dataset.status === item.status) {
           oldEl.replaceWith(newEl);
           return;
         }
         // Status changed (or other grouping), remove old and fallthrough to insert in new group
+        const oldGroup = oldEl.closest('.status-group');
         oldEl.remove();
+
+        // Check if oldGroup is empty
+        if (oldGroup) {
+             const grid = oldGroup.querySelector('.card-grid');
+             const tbody = oldGroup.querySelector('tbody');
+             const hasChildren = (grid && grid.children.length > 0) || (tbody && tbody.children.length > 0);
+             if (!hasChildren) oldGroup.remove();
+        }
       }
 
       // Comparison helpers using server-side fields in allItems
+      function normalizeRating(r) {
+          const val = Number(r) || 0;
+          if (ratingMode === 'stars_5' && val <= 5 && val > 0) return val * 20;
+          if (ratingMode === 'scale_10' && val <= 10 && val > 0) return val * 10;
+          return val;
+      }
+
       function compareItems(a, b) {
         if (!a || !b) return 0;
         // rating
         if (currentSort === 'rating') {
-          const ra = Number(a.personal_rating) || 0;
-          const rb = Number(b.personal_rating) || 0;
-          return ra - rb;
+          const ra = normalizeRating(a.personal_rating);
+          const rb = normalizeRating(b.personal_rating);
+          if (ra !== rb) return ra - rb;
+          return String(a.title || '').localeCompare(String(b.title || ''));
         }
         // date
         if (currentSort === 'date') {
           const da = a.date_added ? new Date(a.date_added).getTime() : 0;
           const db = b.date_added ? new Date(b.date_added).getTime() : 0;
           return da - db;
+        }
+        // hours / pages
+        if (currentSort === 'hours' || currentSort === 'pages') {
+            const pa = Number(a.progress_main) || 0;
+            const pb = Number(b.progress_main) || 0;
+            return pa - pb;
         }
         // fallback to title
         return String(a.title || '').localeCompare(String(b.title || ''));
@@ -722,12 +754,15 @@ const statusLabelsMap = {
       // Remove from allItems
       allItems = allItems.filter(i => String(i.id) !== sid);
       // Remove empty status groups
-      const groups = Array.from(cardView.querySelectorAll('.status-group')) || [];
-      groups.forEach(g => {
-        const grid = g.querySelector('.card-grid');
-        const tbody = g.querySelector('tbody');
-        const hasChildren = (grid && grid.children.length > 0) || (tbody && tbody.children.length > 0);
-        if (!hasChildren) g.remove();
+      const containers = [cardView, listView];
+      containers.forEach(container => {
+          const groups = Array.from(container.querySelectorAll('.status-group')) || [];
+          groups.forEach(g => {
+            const grid = g.querySelector('.card-grid');
+            const tbody = g.querySelector('tbody');
+            const hasChildren = (grid && grid.children.length > 0) || (tbody && tbody.children.length > 0);
+            if (!hasChildren) g.remove();
+          });
       });
       
       // Update counts: decrement status count and total
@@ -941,6 +976,7 @@ updateSortButtons();
     listView.style.display = "none";
     currentView = "card";
     sessionStorage.setItem(viewKey, currentView);
+    updateStatusContainer();
     renderItems();
   });
 
@@ -951,6 +987,7 @@ updateSortButtons();
     cardView.style.display = "none";
     currentView = "list";
     sessionStorage.setItem(viewKey, currentView);
+    updateStatusContainer();
     renderItems();
   });
 
@@ -1035,7 +1072,7 @@ updateSortButtons();
   function updateStatusContainer() {
     const statusBtnContainer = document.getElementById("check-status-container");
     if (statusBtnContainer) {
-      statusBtnContainer.style.display = (currentStatus === "planned") ? "block" : "none";
+      statusBtnContainer.style.display = (currentStatus === "planned" && currentView === "card") ? "block" : "none";
     }
   }
 
@@ -1290,6 +1327,3 @@ updateSortButtons();
 
 
 });
-
-
-

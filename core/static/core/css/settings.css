@@ -210,6 +210,10 @@ table td:last-child .delete-btn {
   justify-content: center;
 }
 
+#backup-cancel-btn:hover{
+  background: #a82a36 !important;
+}
+
 .backup-actions button {
   padding: 0.4rem 0.8rem;
   font-size: 0.95rem;
@@ -558,6 +562,14 @@ input[type="checkbox"] {
 }
 
 @media (orientation: portrait) {
+
+  #backup-modal-title, #backup-status-text, #backup-cancel-btn{
+    font-size: 2.5rem !important;
+  }
+
+  .backup-modal-content {
+    max-width: unset !important;
+  }
   
   .settings-page-content{
     transform: scale(2);
@@ -603,3 +615,25 @@ input[type="checkbox"] {
     padding: 2px 4px;
   }
 }
+
+/* Backup Progress Modal */
+@keyframes progress-stripes { from { background-position: 1rem 0; } to { background-position: 0 0; } }
+.progress-animated {
+  background-image: linear-gradient(45deg,rgba(255,255,255,.15) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.15) 50%,rgba(255,255,255,.15) 75%,transparent 75%,transparent);
+  background-size: 1rem 1rem;
+  animation: progress-stripes 1s linear infinite;
+}
+.backup-modal-overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.7); z-index: 10000; display: none;
+  justify-content: center; align-items: center;
+  opacity: 0; transition: opacity 0.3s ease;
+}
+.backup-modal-content {
+  background: var(--bg-secondary, #1a2332); padding: 2rem; border-radius: 12px;
+  width: 90%; max-width: 400px; text-align: center; color: var(--text-primary, #fff);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+  transform: scale(0.9); transition: transform 0.3s ease;
+}
+.backup-modal-overlay.visible { opacity: 1; }
+.backup-modal-overlay.visible .backup-modal-content { transform: scale(1); }

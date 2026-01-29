@@ -205,6 +205,16 @@ body[data-media-type="music"] .poster {
 
 .overview.expanded {
   max-height: none;
+  display: block;
+  -webkit-line-clamp: unset;
+  -webkit-box-orient: unset;
+}
+
+.overview-container.clicked .overview {
+  max-height: none;
+  display: block;
+  -webkit-line-clamp: unset;
+  -webkit-box-orient: unset;
 }
 
 .overview:hover{
@@ -227,11 +237,16 @@ body[data-media-type="music"] .poster {
   opacity: 0;
   transition: opacity 0.3s ease;
   pointer-events: none;
+  display: none;
 }
 
 .overview-container:hover .read-more-btn {
   opacity: 1;
   pointer-events: auto;
+}
+
+.overview-container.clicked .read-more-btn {
+  display: none !important;
 }
 
 /* --- EDIT + FAVORITE --- */
@@ -401,15 +416,6 @@ body[data-media-type="music"] .poster {
 .double-recs .rec-block {
   flex: 1;
   min-width: 280px;
-}
-
-/* --- SCREENSHOTS --- */
-.screenshots-list img {
-  width: 100%;
-  max-width: 300px;
-  height: auto;
-  border-radius: 6px;
-  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.15);
 }
 
 /* Container for the inline search */
@@ -811,6 +817,7 @@ body[data-media-type="music"] .poster {
 }
 
 .screenshot-overlay .rotator-btn.left {
+  left: 3rem;
 }
 
 .screenshot-overlay .rotator-btn.right {
@@ -892,8 +899,10 @@ body[data-media-type="music"] .poster {
 
 
 .screenshots-list img {
+  width: 100%;
   max-width: 152px;
   height: auto;
+  min-height: 85px;
   cursor: pointer;
   border-radius: 6px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
@@ -1525,6 +1534,176 @@ body[data-media-type="music"] .poster {
   border: none !important;
 }
 
+/* --- Person Detail Page --- */
+
+body[data-page-type="person-detail"] .overview {
+  margin-top: 0;
+}
+
+.favorite-refresh-wrapper {
+  margin-top: 0.6rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  opacity: 0;
+}
+
+.favorite-refresh-wrapper.loaded {
+  opacity: 1;
+  transition: opacity 0.2s ease;
+}
+
+.refresh-person-btn {
+  background: none;
+  border: none;
+  color: var(--text-overview);
+  cursor: pointer;
+  padding: 0.5rem;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.3s ease, transform 0.2s ease;
+}
+
+.refresh-person-btn:hover {
+  color: var(--text-primary);
+  transform: rotate(180deg);
+}
+
+.refresh-person-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.upload-person-btn {
+  background: none;
+  border: none;
+  color: var(--text-overview);
+  cursor: pointer;
+  padding: 0.5rem;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.3s ease;
+}
+
+.upload-person-btn:hover {
+  color: var(--text-primary);
+}
+
+/* Related Media & Voice Actor Cards */
+.media-card {
+  background: var(--bg-tertiary);
+  border-radius: 6px;
+  padding: 8px;
+  width: 120px;
+  text-align: center;
+  box-shadow: 0 1px 5px rgba(0,0,0,0.6);
+  transition: transform 0.2s ease;
+}
+
+.media-card:hover {
+  transform: scale(1.05);
+}
+
+.media-card[style*="cursor: pointer"]:hover {
+  transform: scale(1.08);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.8);
+}
+
+.media-image-wrapper {
+  position: relative;
+  width: 120px;
+  height: 180px;
+  margin-bottom: 6px;
+}
+
+.media-image-wrapper img {
+  width: 100%;
+  height: 100%;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.media-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(14, 15, 15, .8);
+  padding: 8px 4px 4px;
+  border-radius: 0 0 4px 4px;
+}
+
+.overlay-type {
+  font-size: 0.7rem;
+  margin: 0 0 2px 0;
+  color: #fff;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.overlay-date {
+  font-size: 0.65rem;
+  margin: 0;
+  color: rgba(255,255,255,0.8);
+  font-weight: 400;
+}
+
+.spoiler {
+  background-color: var(--text-overview);
+  color: var(--text-overview);
+}
+
+.media-title {
+  font-size: 0.85rem;
+  margin: 0 0 4px 0;
+  line-height: 1.2;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.media-character {
+  font-size: 0.75rem;
+  margin: 0;
+  color: var(--text-overview);
+  font-weight: 400;
+  font-style: italic;
+}
+
+.related-media-list,
+.voice-actors-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-top: 6px;
+}
+
+.voice-actors-section {
+  margin-top: 1rem;
+  margin-bottom: 2rem;
+}
+
+.voice-actors-section h2,
+.related-media-section h2 {
+  color: var(--text-title);
+  margin-top: 0.5rem;
+  margin-bottom: 0.7rem;
+}
+
+/* Specific overlay for voice actors */
+.voice-actors-list .media-overlay {
+  padding: 6px 4px 4px;
+}
+
+.voice-actors-list .overlay-type {
+  font-size: 0.65rem;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
 @media (orientation: portrait) {
 
   .settings-cogwheel-btn{
@@ -1690,6 +1869,14 @@ body[data-media-type="music"] .poster {
     overflow: hidden !important;
   }
 
+  .media-title {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
   .cast-member img, .season-card img, .rec-card img, .recommendation img, .person-card img, .media-image-wrapper img, .media-image-wrapper {
     width: 200px !important;
     height: 300px !important;
@@ -1765,12 +1952,27 @@ body[data-media-type="music"] .poster {
   .screenshots-list img{
     max-width: 205px;
     max-height: unset;
+    min-height: 115px;
   }
 
   .rotator-btn{
     font-size: 7rem;
     width: 100px;
     height: 140px;
+  }
+
+  .screenshot-overlay .rotator-btn {
+    bottom: 10rem;
+    top: unset;
+  }
+
+  .fullscreen-screenshot-btn svg, .autoplay-screenshot-btn svg {
+    width: 5rem;
+    height: 5rem;
+  }
+
+  .autoplay-screenshot-btn {
+     top: 5.5rem;
   }
 
 .screenshot-overlay .autoplay-screenshot-btn svg {
@@ -1784,26 +1986,31 @@ body[data-media-type="music"] .poster {
   }
 
   .delete-screenshot-btn{
-    top: -1rem;
+    top: -0.5rem;
+    right: 2rem;
+    font-size: 7rem;
   }
 
   .screenshot-overlay .autoplay-screenshot-btn {
-    top: 38rem;
+    bottom: 3.5rem;
     width: 140px;
     height: 140px;
+    margin-right: 9rem;
+    top: unset;
   }
 
   .screenshot-overlay .delete-screenshot-btn {
-    top: 36.8rem;
+    bottom: 2rem;
     font-size: 160px;
-    margin-right: 9rem;
+    margin-right: 18rem;
+    top: unset;
   }
 
   
 .screenshot-overlay .fullscreen-screenshot-btn {
     width: 140px;
     height: 140px;
-    margin-bottom: 40rem;
+    margin-bottom: 2rem;
 }
 
 .screenshot-overlay .fullscreen-screenshot-btn svg {

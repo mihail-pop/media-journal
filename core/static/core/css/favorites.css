@@ -1,0 +1,349 @@
+:root {
+  /* Dark theme (default) */
+  --bg-primary: #0b1622;
+  --bg-secondary: #1a2332;
+  --text-primary: #8596a5;
+  --text-secondary: #a8b5c4;
+  --text-light: #edf1f5;
+  --border-color: #32445b;
+}
+
+[data-theme="light"] {
+  --bg-primary: #e7f0f8;
+  --bg-secondary: #f8f8f8;
+  --text-primary: #0b5f97;
+  --text-secondary: #063e63;
+  --text-light: #0b5f97;
+  --border-color: #DCECF8;
+}
+
+[data-theme="brown"] {
+  --bg-primary: #271c19;
+  --bg-secondary: #55423d;
+  --text-primary: #e2c7b7;
+  --text-secondary: #f1dbce;
+  --text-light: #faeee7;
+  --border-color: #fffffe;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.separator-bar {
+  width: 100%;
+  height: 45px;
+  margin-bottom: 2rem;
+}
+
+.favorites-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 2rem 2rem;
+}
+
+.favorite-section {
+  margin-bottom: 3rem;
+}
+
+.favorite-section h2 {
+  color: var(--text-secondary);
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  border-bottom: 2px solid var(--border-color);
+  padding-bottom: 0.5rem;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 1.5rem;
+}
+
+.card {
+  background-color: var(--bg-secondary);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  cursor: grab;
+}
+
+.card.dragging {
+  opacity: 0.5;
+  transform: scale(0.95);
+  filter: grayscale(0.8);
+}
+
+.card a {
+  text-decoration: none;
+}
+
+.card-image {
+  width: 100%;
+  padding-top: 150%; /* Aspect ratio 2:3 */
+  position: relative;
+  overflow: hidden;
+  border-radius: 4px 4px 0 0;
+}
+
+.card-image img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  object-fit: cover;
+}
+
+.card[data-media-type="music"] .card-image img{
+  width: 170%;
+  left: 50%;
+  transform: translateX(-50%);
+
+}
+
+.card-link{
+  height: 205px;
+  overflow: hidden;
+}
+
+.favorites-container.small-mode .card-link {
+  height: 126px;
+  overflow: hidden;
+  border-radius: 4px;
+}
+
+.favorites-container.small-mode 
+.card[data-media-type="music"] 
+.card-link {
+  height: 90px;
+}
+ 
+.card[data-media-type="music"] 
+.card-link {
+  height: 150px;
+}
+
+.card-title {
+  padding: 0.6rem;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.3;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card:hover .card-title {
+  color: var(--text-light);
+}
+
+.loading-sentinel {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 1rem;
+  color: var(--text-secondary);
+  font-style: italic;
+  min-height: 20px;
+}
+
+.card-favorite {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  cursor: pointer;
+  user-select: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 5;
+}
+
+body:not(.drag-active) .card-link:hover ~ .card-favorite,
+body:not(.drag-active) .card-favorite:hover {
+  opacity: 1;
+}
+
+body.drag-active .card-favorite {
+  pointer-events: none;
+  display: none !important;
+}
+
+.card-favorite input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.card-favorite .heart {
+  width: 35px;
+  height: 35px;
+  display: inline-block;
+  background: url('data:image/svg+xml;utf8,<svg fill="%23ffffff" stroke="%23ffffff" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 21C12 21 7 16.5 5 12.5C3 8.5 5 5 8.5 5C10.5 5 12 7 12 7C12 7 13.5 5 15.5 5C19 5 21 8.5 19 12.5C17 16.5 12 21 12 21Z"/></svg>') no-repeat center center;
+  background-size: contain;
+  transition: background 0.3s ease, transform 0.2s ease;
+  filter: drop-shadow(0 0 2px rgba(0,0,0,0.8));
+}
+
+.card-favorite input[type="checkbox"]:checked + .heart {
+  background: url('data:image/svg+xml;utf8,<svg fill="%23e0245e" stroke="%23e0245e" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 21C12 21 7 16.5 5 12.5C3 8.5 5 5 8.5 5C10.5 5 12 7 12 7C12 7 13.5 5 15.5 5C19 5 21 8.5 19 12.5C17 16.5 12 21 12 21Z"/></svg>') no-repeat center center;
+  background-size: contain;
+  opacity: 1;
+}
+
+.card-favorite .heart:hover {
+  filter: drop-shadow(0 0 4px #fff) brightness(1.2);
+  transform: scale(1.1);
+  cursor: pointer;
+}
+
+.card-favorite input[type="checkbox"]:checked + .heart:hover {
+  filter: drop-shadow(0 0 6px #e0245e) brightness(1.1);
+  cursor: pointer;
+}
+
+/* --- Header & View Controls --- */
+.favorites-header-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.info-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.info-toggle-btn {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+}
+
+.info-toggle-btn:hover {
+  background-color: var(--border-color);
+}
+
+.mode-info-cloud {
+  background-color: var(--bg-secondary);
+  color: var(--text-secondary);
+  padding: 0.8rem 1.2rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: all 0.3s ease;
+}
+
+.mode-info-cloud.hidden {
+  opacity: 0;
+  pointer-events: none; /* Prevent interaction when hidden but keep space */
+}
+
+.view-controls {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.view-btn {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.view-btn:hover {
+  background-color: var(--border-color);
+  color: var(--text-light);
+}
+
+.view-btn.active {
+  background-color: var(--text-primary);
+  color: var(--bg-primary);
+  border-color: var(--text-primary);
+}
+
+/* --- Small Mode Overrides --- */
+.favorites-container.small-mode .card-grid {
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: 0.8rem;
+}
+
+.favorites-container.small-mode .card {
+  border-radius: 4px;
+}
+
+.favorites-container.small-mode .card-image {
+  padding-top: 150%; /* Keep aspect ratio */
+  border-radius: 4px;
+}
+
+.favorites-container.small-mode .card-title {
+  display: none;
+}
+
+.favorites-container.small-mode .card-favorite {
+  display: none;
+}
+
+/* Prevent link interaction in small mode (handled via JS mostly, but cursor help) */
+.favorites-container.small-mode .card-link {
+  cursor: grab;
+}
+
+@media (orientation: portrait) {
+
+.separator-bar{
+  height: 0px;
+}
+
+.info-toggle-btn, .info-toggle-btn svg{
+  width: 4rem;
+  height: 4rem;
+}
+
+.mode-info-cloud{
+  font-size: 2rem;
+}
+
+.view-btn, .view-btn svg{
+  width:4rem;
+  height:4rem;
+}
+
+.favorite-section h2{
+  font-size: 2.5rem;
+}
+
+.card-title{
+  font-size: 1.5rem;
+}
+
+.card-favorite .heart {
+  width: 4rem;
+  height: 4rem;
+}
+
+}

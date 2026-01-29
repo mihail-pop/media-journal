@@ -5,7 +5,7 @@
 {% block head %}
 {{ block.super }}
 <title>Community - Media Journal</title>
-<link rel="stylesheet" href="{% static 'core/css/board.css' %}?v={{ version }}">
+<link rel="stylesheet" href="{% static 'core/css/community.css' %}?v={{ version }}">
 {% endblock %}
 
 {% block content %}
@@ -17,9 +17,9 @@
 
 <div class="list-page-container">
   <section class="list-content">
-    <div id="board-root" data-firebase-url="{{ firebase_url }}">
-      <div class="board-feed">
-        <div class="board-header">
+    <div id="community-root" data-firebase-url="{{ firebase_url }}">
+      <div class="community-feed">
+        <div class="community-header">
           <h2 class="section-title" style="font-size:1.5rem; font-weight:700;">Activity</h2>
           <div class="username-container">
             <input type="text" id="username-field" placeholder="Username (optional)" value="{% if username %}{{ username }}{% endif %}">
@@ -75,5 +75,5 @@
   </section>
 </div>
 
-<script src="{% static 'core/js/board.js' %}?v={{ version }}"></script>
+<script src="{% static 'core/js/community.js' %}?v={{ version }}"></script>
 {% endblock %}
