@@ -134,7 +134,10 @@ body {
   background-color: var(--table-bg);
 }
 
-#year-input, #season-year-input, #game-year-input, #tmdb-year-input {
+#year-input,
+#season-year-input,
+#game-year-input,
+#tmdb-year-input {
   width: 100%;
   padding: 0.5rem;
   font-size: 0.95rem;
@@ -146,7 +149,7 @@ body {
   outline: none;
   transition: background-color 0.3s ease, border-color 0.3s ease;
   margin-bottom: 0.3rem;
-    /* For Firefox */
+  /* For Firefox */
   -moz-appearance: textfield;
 }
 
@@ -163,7 +166,10 @@ body {
   margin: 0;
 }
 
-#year-input::placeholder, #season-year-input::placeholder, #game-year-input::placeholder, #tmdb-year-input::placeholder {
+#year-input::placeholder,
+#season-year-input::placeholder,
+#game-year-input::placeholder,
+#tmdb-year-input::placeholder {
   color: var(--text-primary);
   opacity: 1;
 }
@@ -283,21 +289,19 @@ body {
   position: absolute;
   inset: 0;
 
-  background: 
+  background:
     linear-gradient(to right,
       rgba(var(--bg-secondary-rgb), 1) 5%,
       rgba(var(--bg-secondary-rgb), 0.95) 20%,
       rgba(var(--bg-secondary-rgb), 0.90) 25%,
       rgba(var(--bg-secondary-rgb), 0.85) 30%,
-      rgba(var(--bg-secondary-rgb), 0.1) 100%
-    ),
+      rgba(var(--bg-secondary-rgb), 0.1) 100%),
     linear-gradient(to top,
       rgba(var(--bg-secondary-rgb), 1) 5%,
       rgba(var(--bg-secondary-rgb), 0.95) 20%,
       rgba(var(--bg-secondary-rgb), 0.90) 25%,
       rgba(var(--bg-secondary-rgb), 0.85) 30%,
-      rgba(var(--bg-secondary-rgb), 0.1) 100%
-    );
+      rgba(var(--bg-secondary-rgb), 0.1) 100%);
 
   border-radius: 8px 8px 0 0;
   z-index: 1;
@@ -388,34 +392,39 @@ body {
     transform-origin: bottom left;
   }
 
-.sidebar {
-  position: fixed;
-  left: -100%;             /* start off-screen */
-  bottom: 0;               /* anchor to bottom-left corner */
-  width: 280px;
-  background: var(--bg-primary);
-  z-index: 999;
-  border-radius: 20px;
+  .sidebar {
+    position: fixed;
+    left: -100%;
+    /* start off-screen */
+    bottom: 0;
+    /* anchor to bottom-left corner */
+    width: 280px;
+    background: var(--bg-primary);
+    z-index: 999;
+    border-radius: 20px;
 
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end; /* stack elements from bottom up */
-  padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    /* stack elements from bottom up */
+    padding: 2rem;
 
-  max-height: 100vh;        /* prevent overflow off-screen */
-  overflow-y: auto;         /* scroll if content taller than screen */
+    max-height: 100vh;
+    /* prevent overflow off-screen */
+    overflow-y: auto;
+    /* scroll if content taller than screen */
 
-  transition: left 0.3s ease;
-  padding-bottom: 15rem;
+    transition: left 0.3s ease;
+    padding-bottom: 15rem;
 
-  width: 90%;
-  max-width: 90%;
-  box-sizing: border-box;
-}
+    width: 90%;
+    max-width: 90%;
+    box-sizing: border-box;
+  }
 
-.sidebar.sidebar-visible {
-  left: 0;
-}
+  .sidebar.sidebar-visible {
+    left: 0;
+  }
 
   .list-page-container {
     flex-direction: column;
@@ -440,9 +449,9 @@ body {
   }
 
   .filter-group {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 0.5rem;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
   }
 
   .separator-bar {
@@ -469,21 +478,25 @@ body {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   }
 
-  #search-input, #tmdb-year-input, #season-year-input, #game-year-input, #year-input {
-    font-size:2.5rem;
+  #search-input,
+  #tmdb-year-input,
+  #season-year-input,
+  #game-year-input,
+  #year-input {
+    font-size: 2.5rem;
   }
 
-  .sidebar h3{
-    font-size:2.5rem;
+  .sidebar h3 {
+    font-size: 2.5rem;
   }
 
-  .filter-btn{
+  .filter-btn {
     justify-content: center;
-    font-size:2.5rem;
+    font-size: 2.5rem;
     max-width: 30rem;
   }
 
-  .add-to-list-btn{
+  .add-to-list-btn {
     padding: 6px 10px;
     font-size: 2rem;
   }

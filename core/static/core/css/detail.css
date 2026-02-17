@@ -7,7 +7,7 @@
   --text-primary: #8596a5;
   --text-secondary: #a8b5c4;
   --text-overview: #728aa1;
-  --text-title: 	#9fadbd;
+  --text-title: #9fadbd;
   --border-color: #2a3b4d;
   --hover-bg: #2a3441;
   --special-color: #00bfff;
@@ -55,7 +55,7 @@ a {
   text-decoration: none;
 }
 
-a:hover{
+a:hover {
   color: var(--special-color-hover);
 }
 
@@ -79,7 +79,8 @@ a:hover{
   flex-direction: column;
   gap: 6px;
   align-items: center;
-  margin-top: -300px; /* move up by 20px (adjust as needed) */
+  margin-top: -300px;
+  /* move up by 20px (adjust as needed) */
 }
 
 
@@ -119,9 +120,9 @@ a:hover{
   z-index: 1;
 }
 
-.banner-section.no-banner .banner-overlay{
+.banner-section.no-banner .banner-overlay {
   background: none;
- 
+
 }
 
 /* --- TOP SECTION (under banner) --- */
@@ -157,7 +158,8 @@ body[data-media-type="music"] .poster {
   gap: 2rem;
   padding-top: 140px;
   flex-wrap: wrap;
-  align-items: flex-start; /* currently */
+  align-items: flex-start;
+  /* currently */
 }
 
 .text-info {
@@ -217,7 +219,7 @@ body[data-media-type="music"] .poster {
   -webkit-box-orient: unset;
 }
 
-.overview:hover{
+.overview:hover {
   color: var(--text-secondary);
 }
 
@@ -272,7 +274,8 @@ body[data-media-type="music"] .poster {
 .edit-card-btn:hover,
 #add-to-list-button:hover,
 #add-season-to-list-button:hover {
-  background-color: var(--button-primary-hover);;
+  background-color: var(--button-primary-hover);
+  ;
 }
 
 /* --- FAVORITE HEART --- */
@@ -304,7 +307,7 @@ body[data-media-type="music"] .poster {
   transition: background 0.3s ease;
 }
 
-.favorite-checkbox input[type="checkbox"]:checked + .heart {
+.favorite-checkbox input[type="checkbox"]:checked+.heart {
   background: url('data:image/svg+xml;utf8,<svg fill="%23e0245e" stroke="%23e0245e" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 21C12 21 7 16.5 5 12.5C3 8.5 5 5 8.5 5C10.5 5 12 7 12 7C12 7 13.5 5 15.5 5C19 5 21 8.5 19 12.5C17 16.5 12 21 12 21Z"/></svg>') no-repeat center center;
   background-size: contain;
 }
@@ -314,7 +317,7 @@ body[data-media-type="music"] .poster {
   cursor: pointer;
 }
 
-.favorite-checkbox input[type="checkbox"]:checked + .heart:hover {
+.favorite-checkbox input[type="checkbox"]:checked+.heart:hover {
   filter: drop-shadow(0 0 6px #e0245e) brightness(1.1);
   cursor: pointer;
 }
@@ -327,22 +330,32 @@ body[data-media-type="music"] .poster {
 }
 
 /* --- SECTION LAYOUTS --- */
-.cast-section, .seasons-section, .recommendations-section, .screenshots-section, .episodes-section {
+.cast-section,
+.seasons-section,
+.recommendations-section,
+.screenshots-section,
+.episodes-section {
   margin-top: 1rem;
   margin-bottom: 2rem;
 }
 
-.cast-list, .seasons-list, .recommendations-list, .screenshots-list {
+.cast-list,
+.seasons-list,
+.recommendations-list,
+.screenshots-list {
   display: flex;
   flex-wrap: wrap;
   gap: 15px;
 }
 
-.cast-list{
+.cast-list {
   margin-top: 6px;
 }
 
-.cast-member, .season-card, .rec-card, .recommendation {
+.cast-member,
+.season-card,
+.rec-card,
+.recommendation {
   background: var(--bg-tertiary);
   border-radius: 6px;
   padding: 8px;
@@ -350,13 +363,15 @@ body[data-media-type="music"] .poster {
   text-align: center;
   text-decoration: none;
   color: var(--text-title);
-  box-shadow: 0 1px 5px rgba(0,0,0,0.6);
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.6);
   transition: transform 0.2s ease;
   display: block;
   position: relative;
 }
 
-.rec-card:hover, .recommendation:hover, .season-card:hover {
+.rec-card:hover,
+.recommendation:hover,
+.season-card:hover {
   transform: scale(1.05);
 }
 
@@ -364,35 +379,48 @@ body[data-media-type="music"] .poster {
   transform: scale(1.05);
 }
 
-.cast-member[href]:hover .actor-name{
+.cast-member[href]:hover .actor-name {
   color: var(--text-title);
 }
+
 .cast-member[href]:hover .character-name {
   color: var(--text-overview);
 }
 
-.cast-member img, .season-card img, .rec-card img, .recommendation img {
+.cast-member img,
+.season-card img,
+.rec-card img,
+.recommendation img {
   width: 120px;
   height: 180px;
   border-radius: 4px;
   margin-bottom: 6px;
 }
 
-.actor-name, .character-name, .season-name, .episode-count, .air-date, .rec-title {
+.actor-name,
+.character-name,
+.season-name,
+.episode-count,
+.air-date,
+.rec-title {
   font-size: 0.85rem;
   margin: 0;
   line-height: 1.2;
 }
 
-.actor-name, .season-name{
+.actor-name,
+.season-name {
   font-weight: 500;
 }
 
 .season-card:hover .season-name {
-  color: var(--text-title); /* lock it to not be affected by a element hover */
+  color: var(--text-title);
+  /* lock it to not be affected by a element hover */
 }
 
-.character-name, .episode-count, .air-date {
+.character-name,
+.episode-count,
+.air-date {
   color: var(--text-overview);
 }
 
@@ -476,7 +504,7 @@ body[data-media-type="music"] .poster {
   text-align: center;
   text-decoration: none;
   color: var(--text-secondary);
-  box-shadow: 0 1px 5px rgba(0,0,0,0.6);
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.6);
   transition: transform 0.2s ease;
   display: flex;
   flex-direction: column;
@@ -541,18 +569,18 @@ body[data-media-type="music"] .poster {
   background: url('data:image/svg+xml;utf8,<svg fill="%23ffffff" stroke="%23ffffff" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 21C12 21 7 16.5 5 12.5C3 8.5 5 5 8.5 5C10.5 5 12 7 12 7C12 7 13.5 5 15.5 5C19 5 21 8.5 19 12.5C17 16.5 12 21 12 21Z"/></svg>') no-repeat center center;
   background-size: contain;
   transition: background 0.3s ease, transform 0.2s ease;
-  filter: drop-shadow(0 0 2px rgba(0,0,0,0.8));
+  filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.8));
 }
 
-.person-favorite input[type="checkbox"]:checked + .heart {
+.person-favorite input[type="checkbox"]:checked+.heart {
   opacity: 1;
 }
 
-.person-card:hover .person-favorite input[type="checkbox"]:checked + .heart {
+.person-card:hover .person-favorite input[type="checkbox"]:checked+.heart {
   opacity: 1;
 }
 
-.person-favorite input[type="checkbox"]:checked + .heart {
+.person-favorite input[type="checkbox"]:checked+.heart {
   background: url('data:image/svg+xml;utf8,<svg fill="%23e0245e" stroke="%23e0245e" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 21C12 21 7 16.5 5 12.5C3 8.5 5 5 8.5 5C10.5 5 12 7 12 7C12 7 13.5 5 15.5 5C19 5 21 8.5 19 12.5C17 16.5 12 21 12 21Z"/></svg>') no-repeat center center;
   background-size: contain;
 }
@@ -563,7 +591,7 @@ body[data-media-type="music"] .poster {
   cursor: pointer;
 }
 
-.person-favorite input[type="checkbox"]:checked + .heart:hover {
+.person-favorite input[type="checkbox"]:checked+.heart:hover {
   filter: drop-shadow(0 0 6px #e0245e) brightness(1.1);
   cursor: pointer;
 }
@@ -599,10 +627,10 @@ body[data-media-type="music"] .poster {
   background: url('data:image/svg+xml;utf8,<svg fill="%23ffffff" stroke="%23ffffff" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 21C12 21 7 16.5 5 12.5C3 8.5 5 5 8.5 5C10.5 5 12 7 12 7C12 7 13.5 5 15.5 5C19 5 21 8.5 19 12.5C17 16.5 12 21 12 21Z"/></svg>') no-repeat center center;
   background-size: contain;
   transition: background 0.3s ease, transform 0.2s ease;
-  filter: drop-shadow(0 0 2px rgba(0,0,0,0.8));
+  filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.8));
 }
 
-.cast-favorite input[type="checkbox"]:checked + .heart {
+.cast-favorite input[type="checkbox"]:checked+.heart {
   background: url('data:image/svg+xml;utf8,<svg fill="%23e0245e" stroke="%23e0245e" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 21C12 21 7 16.5 5 12.5C3 8.5 5 5 8.5 5C10.5 5 12 7 12 7C12 7 13.5 5 15.5 5C19 5 21 8.5 19 12.5C17 16.5 12 21 12 21Z"/></svg>') no-repeat center center;
   background-size: contain;
   opacity: 1;
@@ -614,16 +642,16 @@ body[data-media-type="music"] .poster {
   cursor: pointer;
 }
 
-.cast-favorite input[type="checkbox"]:checked + .heart:hover {
+.cast-favorite input[type="checkbox"]:checked+.heart:hover {
   filter: drop-shadow(0 0 6px #e0245e) brightness(1.1);
   cursor: pointer;
 }
 
-.cast-favorite input[type="checkbox"]:checked + .heart {
+.cast-favorite input[type="checkbox"]:checked+.heart {
   opacity: 1;
 }
 
-.cast-member:hover .cast-favorite input[type="checkbox"]:checked + .heart {
+.cast-member:hover .cast-favorite input[type="checkbox"]:checked+.heart {
   opacity: 1;
 }
 
@@ -651,9 +679,11 @@ body[data-media-type="music"] .poster {
   background: rgba(0, 0, 0, 0.6);
   color: white;
   border: none;
-  font-size: 3.5rem;           /* bigger arrows */
+  font-size: 3.5rem;
+  /* bigger arrows */
   line-height: 1;
-  width: 50px;                /* bigger clickable area */
+  width: 50px;
+  /* bigger clickable area */
   height: 70px;
   cursor: pointer;
   user-select: none;
@@ -696,11 +726,11 @@ body[data-media-type="music"] .poster {
   cursor: pointer;
   opacity: 0;
   transition: opacity 0.2s;
-  background:none;
+  background: none;
 }
 
-.delete-screenshot-btn:hover{
-  color:white;
+.delete-screenshot-btn:hover {
+  color: white;
 }
 
 .screenshot-rotator:hover .delete-screenshot-btn {
@@ -730,7 +760,7 @@ body[data-media-type="music"] .poster {
 .autoplay-screenshot-btn svg {
   width: 40px;
   height: 40px;
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
   transition: transform 0.2s, filter 0.2s;
 }
 
@@ -777,7 +807,7 @@ body[data-media-type="music"] .poster {
 .fullscreen-screenshot-btn svg {
   width: 40px;
   height: 40px;
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
   transition: transform 0.2s;
 }
 
@@ -788,7 +818,8 @@ body[data-media-type="music"] .poster {
 .screenshot-overlay {
   position: fixed;
   top: 0;
-  left: 0;        /* missing */
+  left: 0;
+  /* missing */
   width: 100%;
   height: 100%;
   background: rgba(0, 0, 0, 0.95);
@@ -856,7 +887,7 @@ body[data-media-type="music"] .poster {
   height: 60px;
 }
 
-.screenshots-background{
+.screenshots-background {
   background: var(--bg-secondary);
   max-width: 80rem;
   border-radius: 6px;
@@ -866,11 +897,15 @@ body[data-media-type="music"] .poster {
 
 .screenshots-list {
   display: flex;
-  flex-wrap: wrap;           /* allow multiple rows */
+  flex-wrap: wrap;
+  /* allow multiple rows */
   gap: 8px;
-  max-height: calc((5.4rem * 2) + 1rem); /* 2 rows tall (adjust 150px to your thumbnail height) */
-  overflow-y: auto;          /* vertical scroll when exceeding 2 rows */
-  overflow-x: hidden;        /* disable horizontal scroll */
+  max-height: calc((5.4rem * 2) + 1rem);
+  /* 2 rows tall (adjust 150px to your thumbnail height) */
+  overflow-y: auto;
+  /* vertical scroll when exceeding 2 rows */
+  overflow-x: hidden;
+  /* disable horizontal scroll */
   padding: 0 1rem 1rem 1rem;
   margin-left: 0.4rem;
   scrollbar-color: var(--text-overview) var(--bg-secondary);
@@ -917,10 +952,11 @@ body[data-media-type="music"] .poster {
 .screenshots-list img:hover,
 .screenshots-list img.active-thumbnail {
   opacity: 1;
-  border-color: var(--text-secondary); /* or your accent color */
+  border-color: var(--text-secondary);
+  /* or your accent color */
 }
 
-.screenshots-header-buttons{
+.screenshots-header-buttons {
   display: flex;
   align-items: center;
   gap: 1em;
@@ -930,8 +966,10 @@ body[data-media-type="music"] .poster {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1em; /* space between title and buttons */
-  flex-wrap: wrap; /* if screen is narrow, forms wrap below */
+  gap: 1em;
+  /* space between title and buttons */
+  flex-wrap: wrap;
+  /* if screen is narrow, forms wrap below */
   margin-bottom: 1em;
 }
 
@@ -1015,17 +1053,17 @@ body[data-media-type="music"] .poster {
   border-color: var(--special-color);
 }
 
-.recommendations-section h2{
+.recommendations-section h2 {
   color: var(--text-title);
   margin-top: 0px;
   margin-bottom: 12px;
 }
 
-.seasons-section h2{
+.seasons-section h2 {
   color: var(--text-title);
 }
 
-.episodes-section h2{
+.episodes-section h2 {
   color: var(--text-title);
 }
 
@@ -1042,7 +1080,7 @@ body[data-media-type="music"] .poster {
   border-radius: 6px;
   padding: 12px;
   gap: 15px;
-  box-shadow: 0 1px 5px rgba(0,0,0,0.6);
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.6);
   transition: background-color 0.2s ease;
 }
 
@@ -1221,7 +1259,8 @@ body[data-media-type="music"] .poster {
 
 
 .inline-form {
-  margin: 0;  /* remove default form margin */
+  margin: 0;
+  /* remove default form margin */
 }
 
 .inline-form button {
@@ -1306,7 +1345,8 @@ body[data-media-type="music"] .poster {
 }
 
 .label {
-  font-weight: 500; /* medium */
+  font-weight: 500;
+  /* medium */
 }
 
 .more-info-btn {
@@ -1316,24 +1356,29 @@ body[data-media-type="music"] .poster {
   color: var(--text-overview);
   text-decoration: underline;
   cursor: pointer;
-  font: inherit; /* Inherit font styling from surrounding text */
-  padding: 0;    /* Remove default padding */
+  font: inherit;
+  /* Inherit font styling from surrounding text */
+  padding: 0;
+  /* Remove default padding */
 }
 
 .more-info-btn:hover,
 .more-info-btn:focus {
   background: none;
   text-decoration: underline;
-  color: var(--text-secondary); /* Keep the same color on hover/focus */
+  color: var(--text-secondary);
+  /* Keep the same color on hover/focus */
   outline: none;
 }
 
 .trailer-grid {
   display: grid;
-  grid-template-columns: 1fr; /* single column by default */
+  grid-template-columns: 1fr;
+  /* single column by default */
 }
 
-#trailer-container h2, .seasons-section h2 {
+#trailer-container h2,
+.seasons-section h2 {
   margin-top: 0.5rem;
   margin-bottom: 0.7rem;
 }
@@ -1462,7 +1507,8 @@ body[data-media-type="music"] .poster {
 }
 
 .relation-list {
-  display: inline; /* keeps items on the same line */
+  display: inline;
+  /* keeps items on the same line */
 }
 
 .relation-item {
@@ -1477,7 +1523,7 @@ body[data-media-type="music"] .poster {
   width: 125px;
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   display: none;
   z-index: 10;
   pointer-events: none;
@@ -1494,7 +1540,7 @@ body[data-media-type="music"] .poster {
   left: 0;
   width: 100%;
   padding: 2px 4px;
-  background: rgba(0,0,0,0.7);
+  background: rgba(0, 0, 0, 0.7);
   color: #fff;
   font-size: 0.7rem;
   text-align: center;
@@ -1598,7 +1644,7 @@ body[data-page-type="person-detail"] .overview {
   padding: 8px;
   width: 120px;
   text-align: center;
-  box-shadow: 0 1px 5px rgba(0,0,0,0.6);
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.6);
   transition: transform 0.2s ease;
 }
 
@@ -1608,7 +1654,7 @@ body[data-page-type="person-detail"] .overview {
 
 .media-card[style*="cursor: pointer"]:hover {
   transform: scale(1.08);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.8);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
 }
 
 .media-image-wrapper {
@@ -1647,7 +1693,7 @@ body[data-page-type="person-detail"] .overview {
 .overlay-date {
   font-size: 0.65rem;
   margin: 0;
-  color: rgba(255,255,255,0.8);
+  color: rgba(255, 255, 255, 0.8);
   font-weight: 400;
 }
 
@@ -1706,56 +1752,56 @@ body[data-page-type="person-detail"] .overview {
 
 @media (orientation: portrait) {
 
-  .settings-cogwheel-btn{
+  .settings-cogwheel-btn {
     width: 60px;
     height: 60px;
   }
-  
+
   .settings-dropdown {
     top: 4rem;
     min-width: 250px;
     right: -2rem;
   }
-  
+
   .dropdown-item {
     padding: 16px 20px;
     font-size: 18px;
   }
 
-  .left-column{
+  .left-column {
     margin-top: -14rem;
   }
 
-  .edit-favorite-wrapper{
+  .edit-favorite-wrapper {
     transform: scale(2);
     margin-top: 1.5rem;
     margin-left: 3rem;
   }
 
-  .favorite-refresh-wrapper{
+  .favorite-refresh-wrapper {
     transform: scale(2.5) !important;
     margin-top: 2rem !important;
     margin-left: 2rem !important;
   }
 
-  #add-to-list-button{
+  #add-to-list-button {
     margin-left: -1.6rem;
   }
 
-  #add-season-to-list-button{
+  #add-season-to-list-button {
     margin-top: 0.8rem;
     margin-left: -1.6rem;
   }
 
   .episode-image-container {
-  width: 356px;
-  height: 200px;
+    width: 356px;
+    height: 200px;
   }
 
-  
+
   .episode-card img {
-  width: 356px;
-  height: 200px;
+    width: 356px;
+    height: 200px;
   }
 
   .expand-icon {
@@ -1765,13 +1811,13 @@ body[data-page-type="person-detail"] .overview {
   }
 
   .image-modal-content {
-  width: 60rem;
-  height: 33.75rem;
+    width: 60rem;
+    height: 33.75rem;
   }
 
   .image-modal-content img {
-  width: 60rem;
-  height: 33.75rem;
+    width: 60rem;
+    height: 33.75rem;
   }
 
   .image-modal-close {
@@ -1784,7 +1830,7 @@ body[data-page-type="person-detail"] .overview {
     font-size: 2.5rem;
   }
 
-  .episode-overview{
+  .episode-overview {
     font-size: 2rem;
     -webkit-line-clamp: 2;
   }
@@ -1800,41 +1846,45 @@ body[data-page-type="person-detail"] .overview {
   .text-info h1 {
     font-size: 3rem;
   }
-  .release-date{
+
+  .release-date {
     font-size: 2rem;
   }
 
-  .more-info-btn{
+  .more-info-btn {
     font-size: 2rem;
   }
 
-  .top-colored-section{
+  .top-colored-section {
     min-height: 30rem;
     margin-top: 7rem;
   }
 
-  body[data-media-type="music"] .top-colored-section{
+  body[data-media-type="music"] .top-colored-section {
     min-height: 18rem;
   }
 
   /* Only remove margin if there’s a banner that is NOT empty */
-  .banner-section:not(.no-banner) ~ .top-colored-section {
+  .banner-section:not(.no-banner)~.top-colored-section {
     margin-top: 0;
   }
+
   body {
     background-color: var(--bg-tertiary);
   }
-  .text-info p{
+
+  .text-info p {
     font-size: 2rem;
   }
-  #extra-info-container{
+
+  #extra-info-container {
     font-size: 2rem;
   }
 
 
 
-  .poster{
-    width:24rem;
+  .poster {
+    width: 24rem;
     max-height: 100rem;
   }
 
@@ -1843,27 +1893,34 @@ body[data-page-type="person-detail"] .overview {
     height: 24rem;
     object-fit: cover;
     object-position: 49.7% top;
-}
+  }
 
 
 
-  .nav-btn{
+  .nav-btn {
     font-size: 2rem;
   }
 
-  .top-content{
-    padding-top:0px;
+  .top-content {
+    padding-top: 0px;
   }
 
-  .right-column{
-    padding-top:140px;
+  .right-column {
+    padding-top: 140px;
   }
 
-  h2, .screenshots-header h2{
+  h2,
+  .screenshots-header h2 {
     font-size: 3rem;
   }
 
-  .cast-member, .season-card, .rec-card, .recommendation, .person-card, .media-card, .media-overlay {
+  .cast-member,
+  .season-card,
+  .rec-card,
+  .recommendation,
+  .person-card,
+  .media-card,
+  .media-overlay {
     width: 200px !important;
     max-height: 410px !important;
     overflow: hidden !important;
@@ -1877,55 +1934,78 @@ body[data-page-type="person-detail"] .overview {
     text-overflow: ellipsis;
   }
 
-  .cast-member img, .season-card img, .rec-card img, .recommendation img, .person-card img, .media-image-wrapper img, .media-image-wrapper {
+  .cast-member img,
+  .season-card img,
+  .rec-card img,
+  .recommendation img,
+  .person-card img,
+  .media-image-wrapper img,
+  .media-image-wrapper {
     width: 200px !important;
     height: 300px !important;
   }
 
-  .actor-name, .character-name, .season-name, .episode-count, .air-date, .rec-title, .person-name, .overlay-type, .overlay-date, .media-title, .media-character {
+  .actor-name,
+  .character-name,
+  .season-name,
+  .episode-count,
+  .air-date,
+  .rec-title,
+  .person-name,
+  .overlay-type,
+  .overlay-date,
+  .media-title,
+  .media-character {
     font-size: 1.8rem !important;
   }
 
-  .load-more-btn, .inline-form button, .music-control-btn{
+  .load-more-btn,
+  .inline-form button,
+  .music-control-btn {
     font-size: 2rem;
   }
 
-  .music-add-form button, .music-add-form input {
+  .music-add-form button,
+  .music-add-form input {
     font-size: 2rem;
   }
 
-  .music-delete-btn, .music-cover-btn, .music-up-btn, .music-down-btn{
+  .music-delete-btn,
+  .music-cover-btn,
+  .music-up-btn,
+  .music-down-btn {
     width: 70px;
     height: 70px;
-    font-size:2.5rem;
+    font-size: 2.5rem;
   }
 
-  .music-video-controls{
+  .music-video-controls {
     flex-direction: row;
     font-size: 2rem;
     justify-content: center;
     gap: 0.8rem;
   }
 
-  .music-video-wrapper{
+  .music-video-wrapper {
     display: unset;
   }
 
-  .search-toggle{
+  .search-toggle {
     transform: scale(2);
     margin-right: 1rem;
   }
 
-  #person-search-input{
+  #person-search-input {
     font-size: 2.5rem;
     max-width: 10rem;
   }
 
-  #person-search-input:focus{
+  #person-search-input:focus {
     max-width: 10rem;
   }
 
-  .cast-favorite .heart, .person-favorite .heart {
+  .cast-favorite .heart,
+  .person-favorite .heart {
     width: 70px;
     height: 70px;
   }
@@ -1934,28 +2014,30 @@ body[data-page-type="person-detail"] .overview {
     margin-right: 0rem;
   }
 
-  .tmdb-score-container, .igdb-score-container, .anilist-score-container{
+  .tmdb-score-container,
+  .igdb-score-container,
+  .anilist-score-container {
     transform: scale(2);
     margin-left: 7rem !important;
     margin-top: 2rem !important;
     margin-bottom: 2rem !important;
   }
 
-  .read-more-btn{
+  .read-more-btn {
     font-size: 2rem;
   }
 
-  .screenshots-list{
+  .screenshots-list {
     max-height: calc((7.4rem * 2) + 1rem);
   }
 
-  .screenshots-list img{
+  .screenshots-list img {
     max-width: 205px;
     max-height: unset;
     min-height: 115px;
   }
 
-  .rotator-btn{
+  .rotator-btn {
     font-size: 7rem;
     width: 100px;
     height: 140px;
@@ -1966,26 +2048,28 @@ body[data-page-type="person-detail"] .overview {
     top: unset;
   }
 
-  .fullscreen-screenshot-btn svg, .autoplay-screenshot-btn svg {
+  .fullscreen-screenshot-btn svg,
+  .autoplay-screenshot-btn svg {
     width: 5rem;
     height: 5rem;
   }
 
   .autoplay-screenshot-btn {
-     top: 5.5rem;
+    top: 5.5rem;
   }
 
-.screenshot-overlay .autoplay-screenshot-btn svg {
+  .screenshot-overlay .autoplay-screenshot-btn svg {
     width: 120px;
     height: 120px;
-}
+  }
 
-  .autoplay-screenshot-btn, .fullscreen-screenshot-btn{
+  .autoplay-screenshot-btn,
+  .fullscreen-screenshot-btn {
     width: 100px;
     height: 100px;
   }
 
-  .delete-screenshot-btn{
+  .delete-screenshot-btn {
     top: -0.5rem;
     right: 2rem;
     font-size: 7rem;
@@ -2006,21 +2090,21 @@ body[data-page-type="person-detail"] .overview {
     top: unset;
   }
 
-  
-.screenshot-overlay .fullscreen-screenshot-btn {
+
+  .screenshot-overlay .fullscreen-screenshot-btn {
     width: 140px;
     height: 140px;
     margin-bottom: 2rem;
-}
+  }
 
-.screenshot-overlay .fullscreen-screenshot-btn svg {
+  .screenshot-overlay .fullscreen-screenshot-btn svg {
     width: 120px;
     height: 120px;
-}
+  }
 
-.screenshot-overlay .rotator-btn {
+  .screenshot-overlay .rotator-btn {
     font-size: 7rem;
     height: 150px;
-}
+  }
 
 }

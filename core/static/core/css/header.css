@@ -8,7 +8,8 @@ body {
 
 /* Header base */
 header {
-  background-color: rgba(0, 0, 0, 0.3); /* black with 30% opacity */
+  background-color: rgba(0, 0, 0, 0.3);
+  /* black with 30% opacity */
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
   padding: 0.6rem 1rem;
   position: absolute;
@@ -96,7 +97,7 @@ header {
 
 /* Dropdown menu */
 .dropdown-content {
-  margin: 0; 
+  margin: 0;
   padding-left: 0;
   list-style: none;
   display: none;
@@ -160,7 +161,8 @@ header {
 
 /* Lock header height to avoid layout shift */
 header {
-  min-height: 54px; /* consistent height */
+  min-height: 54px;
+  /* consistent height */
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -172,7 +174,8 @@ header {
 
 /* Invisible placeholder when search button is hidden */
 .nav-right .search-container {
-  width: 36px; /* Reserve space even if hidden */
+  width: 36px;
+  /* Reserve space even if hidden */
   height: 36px;
   display: flex;
   align-items: center;
@@ -220,7 +223,8 @@ header {
     height: 50px;
     margin-top: 0;
   }
-  header{
+
+  header {
     max-height: 15rem;
   }
 }

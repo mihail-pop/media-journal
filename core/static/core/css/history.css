@@ -52,16 +52,19 @@
   line-height: 1;
   top: -0.38em;
 }
+
 .star-rating .star-icon {
   width: 1.1em;
   height: 1.1em;
   display: inline-block;
   position: relative;
-  margin-left: -0.85em; /* strong overlap for cool effect */
+  margin-left: -0.85em;
+  /* strong overlap for cool effect */
   z-index: 1;
   vertical-align: middle;
   transition: filter 0.2s;
 }
+
 .star-rating .star-icon:first-child {
   margin-left: 0;
 }
@@ -83,14 +86,17 @@ html {
 }
 
 .status-header {
-  margin-top: 50px;    /* adjust this value as you want */
-  margin-bottom: 10px; /* adjust this value as you want */
+  margin-top: 50px;
+  /* adjust this value as you want */
+  margin-bottom: 10px;
+  /* adjust this value as you want */
   font-weight: bold;
 }
 
 .separator-bar {
   width: 100%;
-  height: 45px; /* or any height you want */
+  height: 45px;
+  /* or any height you want */
   margin-bottom: 5rem;
 }
 
@@ -100,12 +106,13 @@ html {
   max-width: 1400px;
   margin: 0 auto;
   padding: 0 10rem 2rem;
-  
+
 }
 
 /* --- Banner Rotator --- */
 .banner-rotator {
-  position: relative; /* Needed to contain the overlay */
+  position: relative;
+  /* Needed to contain the overlay */
   width: 100%;
   height: 330px;
   overflow: hidden;
@@ -126,16 +133,19 @@ html {
 
 /* The overlay that covers the whole image */
 .banner-overlay {
-  position: absolute; /* sits over the image */
+  position: absolute;
+  /* sits over the image */
   top: 0;
   left: 0;
   height: 100%;
   width: 100%;
   background: linear-gradient(180deg, rgba(6, 13, 34, 0) 40%, rgba(6, 13, 34, 0.6) 100%);
   z-index: 1;
-  pointer-events: none; /* let clicks pass through */
+  pointer-events: none;
+  /* let clicks pass through */
   display: flex;
-  justify-content: flex-end; /* align quote container to right */
+  justify-content: flex-end;
+  /* align quote container to right */
   align-items: stretch;
   padding-right: 2rem;
   box-sizing: border-box;
@@ -143,7 +153,8 @@ html {
 
 /* The quote container on right side, initially hidden */
 .banner-quote {
-  display: none; /* toggle via JS */
+  display: none;
+  /* toggle via JS */
   color: white;
   font-style: italic;
   padding: 1rem 2rem;
@@ -156,17 +167,23 @@ html {
   white-space: pre-wrap;
   box-sizing: border-box;
   background: rgba(0, 0, 0, 0.4);
-  pointer-events: auto; /* allow text selection if needed */
+  pointer-events: auto;
+  /* allow text selection if needed */
   border-radius: 0 0 0 12px;
 
-  margin-top: auto;       /* push it down inside flex container */
-  margin-bottom: 2rem;    /* add some space from bottom */
+  margin-top: auto;
+  /* push it down inside flex container */
+  margin-bottom: 2rem;
+  /* add some space from bottom */
 
   transition: opacity 1s ease-in-out;
 
-  scrollbar-width: none; /* for Firefox */
-  -ms-overflow-style: none;  /* for IE and Edge */
+  scrollbar-width: none;
+  /* for Firefox */
+  -ms-overflow-style: none;
+  /* for IE and Edge */
 }
+
 .banner-quote::-webkit-scrollbar {
   display: none;
 }
@@ -177,7 +194,7 @@ html {
   padding-right: 2.5rem;
   display: flex;
   flex-direction: column;
-  
+
 }
 
 #search-input {
@@ -242,8 +259,10 @@ html {
 
 .filter-group {
   display: flex;
-  flex-wrap: wrap;       /* allow wrapping */
-  gap: 0.4rem;           /* space between buttons */
+  flex-wrap: wrap;
+  /* allow wrapping */
+  gap: 0.4rem;
+  /* space between buttons */
 }
 
 .filter-btn {
@@ -290,10 +309,12 @@ html {
 
 .date-range-filter {
   display: flex;
-  gap: 0.5rem;        /* space between inputs */
+  gap: 0.5rem;
+  /* space between inputs */
 }
 
-#start-date, #end-date {
+#start-date,
+#end-date {
   width: calc(60%);
   padding: 0.35rem;
   font-size: 0.85rem;
@@ -317,8 +338,9 @@ html {
 #end-date:focus {
   background-color: var(--bg-quaternary);
 }
+
 /* Optional: small spacing between two inputs */
-.date-range-filter input + input {
+.date-range-filter input+input {
   margin-top: 0.5rem;
 }
 
@@ -355,7 +377,7 @@ html {
 }
 
 .card-image {
-  overflow:hidden;
+  overflow: hidden;
   border-radius: 3px;
 }
 
@@ -385,22 +407,24 @@ html {
 }
 
 .card[data-media-type="music"] .card-image img {
-  width: 179.8%; /* Same scale factor as before (152/85 = 1.788) */
+  width: 179.8%;
+  /* Same scale factor as before (152/85 = 1.788) */
   height: 100%;
   object-fit: cover;
   object-position: center center;
-  transform: translateX(-22.3%); /* Adjust this to center the crop */
+  transform: translateX(-22.3%);
+  /* Adjust this to center the crop */
   transform-origin: center;
   border-radius: 3px;
 }
 
 .card[data-media-type="music"] .card-title-overlay {
-  background: rgba(14,15,15);
+  background: rgba(14, 15, 15);
 }
 
 /* Title & Rating Overlay */
 .card-title-overlay {
-  background: rgba(14,15,15, .8);
+  background: rgba(14, 15, 15, .8);
   color: var(--text-light);
   padding: 0.5rem 0.6rem;
   display: flex;
@@ -420,18 +444,24 @@ html {
 .card-subtitle {
   font-size: 0.8rem;
   opacity: 0.9;
-  white-space: nowrap;        /* keep it on one line */
-  overflow: hidden;           /* hide overflow text */
-  text-overflow: ellipsis;    /* add "..." */
-  max-width: 100%;            /* prevent overflow of container */
-  display: block;             /* ensures ellipsis works properly */
+  white-space: nowrap;
+  /* keep it on one line */
+  overflow: hidden;
+  /* hide overflow text */
+  text-overflow: ellipsis;
+  /* add "..." */
+  max-width: 100%;
+  /* prevent overflow of container */
+  display: block;
+  /* ensures ellipsis works properly */
   text-align: center !important;
   width: 100%;
   display: none;
 }
 
 .card:hover .card-subtitle {
-  display: block; /* appears on hover */
+  display: block;
+  /* appears on hover */
 }
 
 .card-date {
@@ -452,23 +482,28 @@ html {
 }
 
 .status-completed {
-  background-color: #28a745; /* green */
+  background-color: #28a745;
+  /* green */
 }
 
 .status-ongoing {
-  background-color: #17a2b8; /* light blue */
+  background-color: #17a2b8;
+  /* light blue */
 }
 
 .status-planned {
-  background-color: #6c757d; /* gray */
+  background-color: #6c757d;
+  /* gray */
 }
 
 .status-on_hold {
-  background-color: #ffc107; /* yellow */
+  background-color: #ffc107;
+  /* yellow */
 }
 
 .status-dropped {
-  background-color: #dc3545; /* red */
+  background-color: #dc3545;
+  /* red */
 }
 
 
@@ -642,19 +677,22 @@ html {
 }
 
 
-#card-view, #list-view {
+#card-view,
+#list-view {
   display: none;
 }
 
 .status-dot {
   position: absolute;
-  top: -10px;      /* align to top edge */
-  left: -10px;     /* align to left edge */
+  top: -10px;
+  /* align to top edge */
+  left: -10px;
+  /* align to left edge */
   width: 30px;
   height: 30px;
   border-radius: 50%;
   z-index: 10;
-  box-shadow: 0 0 8px 2px rgba(0,0,0,0.6);
+  box-shadow: 0 0 8px 2px rgba(0, 0, 0, 0.6);
 }
 
 #check-status-container {
@@ -719,10 +757,10 @@ html {
 
 @media (orientation: portrait) {
 
-.edit-card-btn{
-  padding: 6px 10px;
-  font-size: 2rem;
-}
+  .edit-card-btn {
+    padding: 6px 10px;
+    font-size: 2rem;
+  }
 
   .sidebar-toggle-btn {
     display: block;
@@ -740,44 +778,49 @@ html {
     transform-origin: bottom left;
   }
 
-.sidebar {
-  position: fixed;
-  left: -100%;             /* start off-screen */
-  bottom: 0;               /* anchor to bottom-left corner */
-  width: 280px;
-  background: var(--bg-primary);
-  z-index: 999;
-  border-radius: 20px;
+  .sidebar {
+    position: fixed;
+    left: -100%;
+    /* start off-screen */
+    bottom: 0;
+    /* anchor to bottom-left corner */
+    width: 280px;
+    background: var(--bg-primary);
+    z-index: 999;
+    border-radius: 20px;
 
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end; /* stack elements from bottom up */
-  padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    /* stack elements from bottom up */
+    padding: 2rem;
 
-  max-height: 100vh;        /* prevent overflow off-screen */
-  overflow-y: auto;         /* scroll if content taller than screen */
+    max-height: 100vh;
+    /* prevent overflow off-screen */
+    overflow-y: auto;
+    /* scroll if content taller than screen */
 
-  transition: left 0.3s ease;
-  padding-bottom: 15rem;
+    transition: left 0.3s ease;
+    padding-bottom: 15rem;
 
-  width: 90%;
-  max-width: 90%;
-  box-sizing: border-box;
-}
+    width: 90%;
+    max-width: 90%;
+    box-sizing: border-box;
+  }
 
-.sidebar.sidebar-visible {
-  left: 0;
-}
+  .sidebar.sidebar-visible {
+    left: 0;
+  }
 
 
-  .list-page-container{
-    gap:8rem;
+  .list-page-container {
+    gap: 8rem;
     padding-left: 3rem;
     flex-direction: column;
     position: relative;
   }
 
-  .list-content{
+  .list-content {
     transform: scale(2);
     transform-origin: top;
     max-width: 40rem;
@@ -785,41 +828,45 @@ html {
   }
 
   .list-page-container {
-        flex-direction: column;
-        padding-left: 16.3rem;
-        padding-right: 0rem;
-    }
+    flex-direction: column;
+    padding-left: 16.3rem;
+    padding-right: 0rem;
+  }
 
-    .card-grid{
-       gap: 0.6rem 0.3rem;
-    }
+  .card-grid {
+    gap: 0.6rem 0.3rem;
+  }
 
-    .filter-buttons, .view-toggle{
-      flex-direction: row;
-    }
+  .filter-buttons,
+  .view-toggle {
+    flex-direction: row;
+  }
 
-    .filter-btn{
-      gap: 0.2rem;
-    }
+  .filter-btn {
+    gap: 0.2rem;
+  }
 
-    .list-table{
-      max-width: 29rem;
-    }
+  .list-table {
+    max-width: 29rem;
+  }
 
-    .list-content{
-      max-width: 29rem;
-    }
+  .list-content {
+    max-width: 29rem;
+  }
 
-    .filter-btn{
-      flex-wrap: wrap;
-      justify-content: center;
-    }
+  .filter-btn {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
 
-    .btn-count {
+  .btn-count {
     display: none;
   }
 
-  .sidebar h3, #sort-asc, #sort-desc, #custom-year{
+  .sidebar h3,
+  #sort-asc,
+  #sort-desc,
+  #custom-year {
     font-size: 2.5rem;
   }
 
@@ -829,23 +876,23 @@ html {
     gap: 0.5rem;
   }
 
-  .filter-btn{
+  .filter-btn {
     justify-content: center;
-    font-size:2.5rem;
+    font-size: 2.5rem;
     max-width: 30rem;
   }
 
-  .separator-bar{
+  .separator-bar {
     width: 100%;
     height: 1px;
   }
 
-   .date-range-title,
+  .date-range-title,
   .date-range-filter {
     display: none;
   }
 
-  #search-input{
+  #search-input {
     display: none;
   }
 }

@@ -19,7 +19,7 @@ def update_tmdb_seasons(media_item):
     except APIKey.DoesNotExist:
         print("TMDB API key not found.")
         return False
-    
+
     url = f"https://api.themoviedb.org/3/tv/{media_item.source_id}"
     params = {"api_key": api_key}
     response = requests.get(url, params=params)
@@ -29,12 +29,13 @@ def update_tmdb_seasons(media_item):
         response = requests.get(url, params=params, timeout=10)
         response.raise_for_status()
         data = response.json()
-            # proceed with update if valid
+        # proceed with update if valid
     except RequestException as e:
-        print(f"🌐 TMDB update skipped for {media_item.title} — no connection or error: {e}")
+        print(
+            f"🌐 TMDB update skipped for {media_item.title} — no connection or error: {e}"
+        )
     except Exception as e:
         print(f"⚠️ Unexpected error while updating {media_item.title}: {e}")
-    
 
     if response.status_code != 200:
         print(f"TMDB fetch failed for ID {media_item.source_id}")
@@ -58,15 +59,19 @@ def update_tmdb_seasons(media_item):
         local_poster = ""
         if poster_path:
             full_url = f"https://image.tmdb.org/t/p/w300{poster_path}"
-            local_poster = download_image(full_url, f"seasons/tmdb_{media_item.source_id}_s{season_number}.jpg")
+            local_poster = download_image(
+                full_url, f"seasons/tmdb_{media_item.source_id}_s{season_number}.jpg"
+            )
 
-        new_seasons.append({
-            "season_number": season_number,
-            "name": season.get("name"),
-            "episode_count": season.get("episode_count"),
-            "poster_path": local_poster,
-            "air_date": season.get("air_date"),
-        })
+        new_seasons.append(
+            {
+                "season_number": season_number,
+                "name": season.get("name"),
+                "episode_count": season.get("episode_count"),
+                "poster_path": local_poster,
+                "air_date": season.get("air_date"),
+            }
+        )
 
     if new_seasons:
         media_item.seasons = existing_seasons + new_seasons
@@ -80,6 +85,7 @@ def update_tmdb_seasons(media_item):
     media_item.last_updated = timezone.now()
     media_item.save()
     return False
+
 
 def update_mal_anime_manga(item: MediaItem):
     if item.source != "mal" or item.media_type not in ["anime", "manga"]:
@@ -111,17 +117,25 @@ def update_mal_anime_manga(item: MediaItem):
 
         # Download image if needed
         poster_path = rel.get("poster_path")
-        local_path = download_image(poster_path, f"related/mal_{rel['mal_id']}.jpg") if poster_path else ""
+        local_path = (
+            download_image(poster_path, f"related/mal_{rel['mal_id']}.jpg")
+            if poster_path
+            else ""
+        )
 
-        new_sequels.append({
-            "mal_id": rel["mal_id"],
-            "title": rel["title"],
-            "poster_path": local_path,
-            "relation": "Sequel",
-        })
+        new_sequels.append(
+            {
+                "mal_id": rel["mal_id"],
+                "title": rel["title"],
+                "poster_path": local_path,
+                "relation": "Sequel",
+            }
+        )
 
     if new_sequels:
-        print(f"[AniList Update] Found {len(new_sequels)} new sequel(s) for {item.title}")
+        print(
+            f"[AniList Update] Found {len(new_sequels)} new sequel(s) for {item.title}"
+        )
         item.related_titles = existing + new_sequels
         item.notification = True
 

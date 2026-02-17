@@ -3,10 +3,14 @@ import time
 from datetime import timedelta
 from django.utils import timezone
 from core.models import MediaItem
-from core.updaters import update_tmdb_seasons, update_mal_anime_manga  # make sure both are importable
+from core.updaters import (
+    update_tmdb_seasons,
+    update_mal_anime_manga,
+)
 
 _started_tmdb = False
 _started_anilist = False
+
 
 def start_tmdb_background_loop():
     global _started_tmdb
@@ -20,7 +24,9 @@ def start_tmdb_background_loop():
             now = timezone.now()
             cutoff = now - timedelta(days=30)
 
-            items = MediaItem.objects.filter(media_type="tv", source="tmdb").exclude(source_id__contains="_s")
+            items = MediaItem.objects.filter(media_type="tv", source="tmdb").exclude(
+                source_id__contains="_s"
+            )
             eligible = [item for item in items if item.last_updated < cutoff]
 
             for item in eligible[:30]:
@@ -46,9 +52,12 @@ def start_anilist_background_loop():
             now = timezone.now()
             cutoff = now - timedelta(days=30)
 
-            items = MediaItem.objects.filter(media_type__in=["anime", "manga"], source="mal")
+            items = MediaItem.objects.filter(
+                media_type__in=["anime", "manga"], source="mal"
+            )
             eligible = [
-                item for item in items
+                item
+                for item in items
                 if item.last_updated < cutoff and not has_sequel(item)
             ]
 

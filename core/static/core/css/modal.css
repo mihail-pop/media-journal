@@ -72,10 +72,12 @@
   vertical-align: middle;
   display: inline-block;
 }
+
 .star.selected {
   color: #FFD600;
   text-shadow: 0 1px 4px #ffecb3;
 }
+
 .star:hover,
 .star:focus {
   color: #FFC107;
@@ -94,9 +96,11 @@
   height: 2rem;
   width: 8rem;
 }
+
 .rating-number input[type="number"]:focus {
   border-color: var(--button-primary);
 }
+
 /* Utility class to hide modal elements specifically */
 .modal-hidden {
   display: none !important;
@@ -126,7 +130,8 @@ html.modal-open {
   height: 100vh;
   background: rgba(0, 0, 0, 0.55);
   backdrop-filter: blur(4px);
-  z-index: 20000; /* Raised above search overlay */
+  z-index: 20000;
+  /* Raised above search overlay */
   opacity: 1;
   transition: opacity 0.3s ease;
   animation: modalFade 0.25s ease-in-out forwards;
@@ -136,9 +141,11 @@ html.modal-open {
   0% {
     opacity: 0;
   }
+
   60% {
     opacity: 1;
   }
+
   100% {
     opacity: 1;
   }
@@ -175,9 +182,11 @@ html.modal-open {
     opacity: 0;
     transform: translate(-50%, -50%) scale(0.95);
   }
+
   60% {
     opacity: 1;
   }
+
   100% {
     transform: translate(-50%, -50%) scale(1);
   }
@@ -218,7 +227,8 @@ html.modal-open {
   content: "";
   position: absolute;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.45); /* consistent dark tint */
+  background-color: rgba(0, 0, 0, 0.45);
+  /* consistent dark tint */
   z-index: 0;
 }
 
@@ -226,8 +236,10 @@ html.modal-open {
 /* Cover image in top-right of banner */
 .modal-cover {
   position: absolute;
-  top: 70px;       /* Adjust to overlap banner and body */
-  left: 30px;       /* Move to left side */
+  top: 70px;
+  /* Adjust to overlap banner and body */
+  left: 30px;
+  /* Move to left side */
   width: 120px;
   height: 170px;
   border-radius: 4px;
@@ -240,32 +252,41 @@ html.modal-open {
   width: 100%;
   height: 100%;
 
-  overflow:hidden;
+  overflow: hidden;
 }
 
 /* Special case for music */
 .modal-cover[data-media-type="music"] {
-  width: 140px;       /* container stays same */
-  height: 140px;      /* square for music */
+  width: 140px;
+  /* container stays same */
+  height: 140px;
+  /* square for music */
   overflow: hidden;
-  top: 90px;       /* Adjust to overlap banner and body */
+  top: 90px;
+  /* Adjust to overlap banner and body */
   left: 15px;
 }
 
 .modal-cover[data-media-type="music"] img {
-  width: 200px;       /* zoom in by increasing image width */
-  height: 140px;      /* match container height */
+  width: 200px;
+  /* zoom in by increasing image width */
+  height: 140px;
+  /* match container height */
   object-fit: cover;
-  object-position: center;  /* adjust to shift left/right */
+  object-position: center;
+  /* adjust to shift left/right */
   position: relative;
-  left: -1.9rem;        /* shift image left to center the zoomed portion */
+  left: -1.9rem;
+  /* shift image left to center the zoomed portion */
   display: block;
 }
 
 .modal-title-block {
   position: absolute;
-  top: 160px;              /* Align with cover */
-  left: 170px;            /* To the right of the 120px wide cover + spacing */
+  top: 160px;
+  /* Align with cover */
+  left: 170px;
+  /* To the right of the 120px wide cover + spacing */
   z-index: 10;
   max-width: 520px;
   color: rgb(224, 223, 223);
@@ -288,10 +309,12 @@ html.modal-open {
 /* Form group with label and input */
 .form-group {
   display: flex;
-  flex-direction: column; /* Stack label + input inside */
+  flex-direction: column;
+  /* Stack label + input inside */
   margin-bottom: 1rem;
   width: 100%;
-  max-width: 250px; /* controls how wide each one is in the row */
+  max-width: 250px;
+  /* controls how wide each one is in the row */
 }
 
 /* Label takes fixed width, right-aligned */
@@ -423,8 +446,10 @@ html.modal-open {
 
 .modal-actions-top {
   position: absolute;
-  top: 150px;     /* adjust vertical position */
-  right: 60px;   /* adjust horizontal position */
+  top: 150px;
+  /* adjust vertical position */
+  right: 60px;
+  /* adjust horizontal position */
   display: flex;
   align-items: center;
   gap: 10px;
@@ -440,7 +465,8 @@ html.modal-open {
 .edit-favorite-wrapper {
   display: flex;
   align-items: center;
-  gap: 12px; /* space between heart and Save */
+  gap: 12px;
+  /* space between heart and Save */
 }
 
 .favorite-checkbox {
@@ -474,7 +500,7 @@ html.modal-open {
 }
 
 /* Red heart when checked */
-.favorite-checkbox input[type="checkbox"]:checked + .heart {
+.favorite-checkbox input[type="checkbox"]:checked+.heart {
   background: url('data:image/svg+xml;utf8,<svg fill="%23e0245e" stroke="%23e0245e" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 21C12 21 7 16.5 5 12.5C3 8.5 5 5 8.5 5C10.5 5 12 7 12 7C12 7 13.5 5 15.5 5C19 5 21 8.5 19 12.5C17 16.5 12 21 12 21Z"/></svg>') no-repeat center center;
   background-size: contain;
 }
@@ -486,7 +512,7 @@ html.modal-open {
 }
 
 /* Hover effect for checked heart (red) */
-.favorite-checkbox input[type="checkbox"]:checked + .heart:hover {
+.favorite-checkbox input[type="checkbox"]:checked+.heart:hover {
   filter: drop-shadow(0 0 6px #e0245e) brightness(1.1);
   cursor: pointer;
 }
@@ -520,10 +546,12 @@ html.modal-open {
 #progress_secondary_group label,
 #date_added_group label,
 #repeats_group label {
-  gap: 0.25rem; /* tightens spacing between items inside label */
+  gap: 0.25rem;
+  /* tightens spacing between items inside label */
   display: flex;
   flex-direction: column;
-  width: 150px; /* or any specific value you prefer */
+  width: 150px;
+  /* or any specific value you prefer */
   max-width: 100%;
 }
 
@@ -532,7 +560,7 @@ html.modal-open {
   max-width: 218px;
 }
 
-#repeats{
+#repeats {
   width: 135px;
 }
 
@@ -550,15 +578,20 @@ html.modal-open {
 
 textarea[name="notes"] {
   flex: none;
-  min-height: 50px;   /* less tall */
-  width: 100%;        /* full width */
+  min-height: 50px;
+  /* less tall */
+  width: 100%;
+  /* full width */
   height: auto;
-  max-width: 600px;   /* wider */
-  resize:vertical;
+  max-width: 600px;
+  /* wider */
+  resize: vertical;
   max-height: 231px;
 
-  scrollbar-width: none; /* for Firefox */
-  -ms-overflow-style: none;  /* for IE and Edge */
+  scrollbar-width: none;
+  /* for Firefox */
+  -ms-overflow-style: none;
+  /* for IE and Edge */
 }
 
 textarea[name="notes"]::-webkit-scrollbar {
@@ -566,7 +599,8 @@ textarea[name="notes"]::-webkit-scrollbar {
 }
 
 .form-group.notes-group {
-  max-width: 350px; /* wider max-width just for notes */
+  max-width: 350px;
+  /* wider max-width just for notes */
   width: 100%;
 }
 
@@ -641,6 +675,7 @@ textarea[name="notes"]::-webkit-scrollbar {
   border: 0;
   background-color: var(--bg-primary);
 }
+
 .rating-faces.modal-hidden {
   display: none !important;
   padding: 0 !important;
@@ -661,173 +696,186 @@ input[type="number"] {
 
 #status,
 .status-select {
-  min-width: 150px; /* or any width you want */
-  max-width: none;  /* override the default max-width */
-  border: none; /* removes the border around the select input */
-  outline: none; /* removes focus outline */
+  min-width: 150px;
+  /* or any width you want */
+  max-width: none;
+  /* override the default max-width */
+  border: none;
+  /* removes the border around the select input */
+  outline: none;
+  /* removes focus outline */
 }
 
 @media (orientation: portrait) {
 
- .modal-banner{
-  height: 20rem;
- }
+  .modal-banner {
+    height: 20rem;
+  }
 
-.modal-cover[data-media-type="music"] {
+  .modal-cover[data-media-type="music"] {
     top: 150px;
     left: 30px;
     width: 191px;
     height: 191px;
-}
+  }
 
-.modal-cover[data-media-type="music"] img {
-    width: unset;       /* zoom in by increasing image width */
-    height: 100%;      /* match container height */
+  .modal-cover[data-media-type="music"] img {
+    width: unset;
+    /* zoom in by increasing image width */
+    height: 100%;
+    /* match container height */
     left: -4.6rem;
-}
+  }
 
- .modal-cover{
+  .modal-cover {
     top: 70px;
     left: 30px;
     width: 191px;
     height: 270px;
- }
+  }
 
- .modal-title-block {
+  .modal-title-block {
     top: 15rem;
     left: 15rem;
     max-width: 20rem;
-}
+  }
 
-.modal-title {
-  font-size: 2rem;
-  line-height: 1.2;
+  .modal-title {
+    font-size: 2rem;
+    line-height: 1.2;
 
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
 
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 
-.close-btn {
-  font-size: 4rem;
-}
+  .close-btn {
+    font-size: 4rem;
+  }
 
-.danger-btn {
-  font-size: 2.5rem;
-  margin-right: 0rem;
-}
+  .danger-btn {
+    font-size: 2.5rem;
+    margin-right: 0rem;
+  }
 
-.modal-actions-top {
-  top: 14.5rem;
-  right: 2rem;
-}
+  .modal-actions-top {
+    top: 14.5rem;
+    right: 2rem;
+  }
 
-.btn.save-btn{
-  font-size: 2.5rem;
-}
+  .btn.save-btn {
+    font-size: 2.5rem;
+  }
 
- .modal-actions-top .favorite-checkbox .heart {
-  width: 80px;
-  height: 80px;
-}
+  .modal-actions-top .favorite-checkbox .heart {
+    width: 80px;
+    height: 80px;
+  }
 
- .modal-body form {
+  .modal-body form {
     padding-left: 0rem;
- }
+  }
 
- .form-group:first-child {
+  .form-group:first-child {
     margin-right: 7rem;
- }
+  }
 
   .form-group:nth-child(3) {
     margin-right: 7rem;
- }
+  }
 
- .form-group input, .form-group select, .form-group textarea, #date_area{
-  font-size: 2rem;
-  max-width: 20rem;
-
-  padding: 1rem 1rem;
- }
-
- #progress_main_group label, #progress_secondary_group label, #date_added_group label, #repeats_group label {
-   max-width: 20rem;
-   width: 20rem;
- }
-
- #date_added_group, #repeats_group {
+  .form-group input,
+  .form-group select,
+  .form-group textarea,
+  #date_area {
+    font-size: 2rem;
     max-width: 20rem;
-}
 
-#date_added{
-  width: 18rem;
-}
+    padding: 1rem 1rem;
+  }
 
-#repeats{
-  width: 18rem;
-}
+  #progress_main_group label,
+  #progress_secondary_group label,
+  #date_added_group label,
+  #repeats_group label {
+    max-width: 20rem;
+    width: 20rem;
+  }
 
- .form-group{
-  max-width: 20rem;
- }
+  #date_added_group,
+  #repeats_group {
+    max-width: 20rem;
+  }
 
- #status, .status-select {
-   width: 20rem;
- }
+  #date_added {
+    width: 18rem;
+  }
 
- .form-row-two{
-  max-width: 50rem;
- }
+  #repeats {
+    width: 18rem;
+  }
 
- .star{
-  font-size: 4rem;
- }
+  .form-group {
+    max-width: 20rem;
+  }
 
- .face {
-  width: 60px;
-  height: 60px;
- }
+  #status,
+  .status-select {
+    width: 20rem;
+  }
 
- .rating-stars{
-  padding: 0.5rem 0.5rem;
- }
+  .form-row-two {
+    max-width: 50rem;
+  }
 
- .rating-faces{
-  gap: 3.7rem;
-  padding: 0.7rem 0.7rem;
- }
+  .star {
+    font-size: 4rem;
+  }
 
- .rating-number input[type="number"] {
-  font-size: 2.5rem;
-  padding: 0.2rem 0.5rem;
-  width: 18rem;
-  height: 4.4rem;
- }
+  .face {
+    width: 60px;
+    height: 60px;
+  }
 
- .form-group.notes-group {
+  .rating-stars {
+    padding: 0.5rem 0.5rem;
+  }
+
+  .rating-faces {
+    gap: 3.7rem;
+    padding: 0.7rem 0.7rem;
+  }
+
+  .rating-number input[type="number"] {
+    font-size: 2.5rem;
+    padding: 0.2rem 0.5rem;
+    width: 18rem;
+    height: 4.4rem;
+  }
+
+  .form-group.notes-group {
     max-width: 45rem;
- }
+  }
 
- textarea[name="notes"] {
+  textarea[name="notes"] {
     width: 45rem;
     max-width: 45rem;
- }
+  }
 
- .form-group label {
-    font-size:2rem;
- }
+  .form-group label {
+    font-size: 2rem;
+  }
 
- .progress-total-display {
-    font-size:2rem;
- }
+  .progress-total-display {
+    font-size: 2rem;
+  }
 
-.modal-body {
+  .modal-body {
     padding: 2rem 2rem 2rem 2rem;
-}
+  }
 
 
 }
-

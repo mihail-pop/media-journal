@@ -49,16 +49,19 @@
   line-height: 1;
   top: -0.38em;
 }
+
 .star-rating .star-icon {
   width: 1.1em;
   height: 1.1em;
   display: inline-block;
   position: relative;
-  margin-left: -0.85em; /* strong overlap for cool effect */
+  margin-left: -0.85em;
+  /* strong overlap for cool effect */
   z-index: 1;
   vertical-align: middle;
   transition: filter 0.2s;
 }
+
 .star-rating .star-icon:first-child {
   margin-left: 0;
 }
@@ -80,8 +83,10 @@ html {
 }
 
 .status-header {
-  margin-top: 50px;    /* adjust this value as you want */
-  margin-bottom: 10px; /* adjust this value as you want */
+  margin-top: 50px;
+  /* adjust this value as you want */
+  margin-bottom: 10px;
+  /* adjust this value as you want */
   font-weight: bold;
 }
 
@@ -98,12 +103,13 @@ html {
   max-width: 1400px;
   margin: 0 auto;
   padding: 0 10rem 2rem;
-  
+
 }
 
 /* --- Banner Rotator --- */
 .banner-rotator {
-  position: relative; /* Needed to contain the overlay */
+  position: relative;
+  /* Needed to contain the overlay */
   width: 100%;
   height: 330px;
   overflow: hidden;
@@ -124,16 +130,19 @@ html {
 
 /* The overlay that covers the whole image */
 .banner-overlay {
-  position: absolute; /* sits over the image */
+  position: absolute;
+  /* sits over the image */
   top: 0;
   left: 0;
   height: 100%;
   width: 100%;
   background: linear-gradient(180deg, rgba(6, 13, 34, 0) 40%, rgba(6, 13, 34, 0.6) 100%);
   z-index: 1;
-  pointer-events: none; /* let clicks pass through */
+  pointer-events: none;
+  /* let clicks pass through */
   display: flex;
-  justify-content: flex-end; /* align quote container to right */
+  justify-content: flex-end;
+  /* align quote container to right */
   align-items: stretch;
   padding-right: 2rem;
   box-sizing: border-box;
@@ -141,7 +150,8 @@ html {
 
 /* The quote container on right side, initially hidden */
 .banner-quote {
-  display: none; /* toggle via JS */
+  display: none;
+  /* toggle via JS */
   color: white;
   font-style: italic;
   padding: 1rem 2rem;
@@ -154,17 +164,23 @@ html {
   white-space: pre-wrap;
   box-sizing: border-box;
   background: rgba(0, 0, 0, 0.4);
-  pointer-events: auto; /* allow text selection if needed */
+  pointer-events: auto;
+  /* allow text selection if needed */
   border-radius: 0 0 0 12px;
 
-  margin-top: auto;       /* push it down inside flex container */
-  margin-bottom: 2rem;    /* add some space from bottom */
+  margin-top: auto;
+  /* push it down inside flex container */
+  margin-bottom: 2rem;
+  /* add some space from bottom */
 
   transition: opacity 1s ease-in-out;
 
-  scrollbar-width: none; /* for Firefox */
-  -ms-overflow-style: none;  /* for IE and Edge */
+  scrollbar-width: none;
+  /* for Firefox */
+  -ms-overflow-style: none;
+  /* for IE and Edge */
 }
+
 .banner-quote::-webkit-scrollbar {
   display: none;
 }
@@ -175,7 +191,7 @@ html {
   padding-right: 2.5rem;
   display: flex;
   flex-direction: column;
-  
+
 }
 
 #search-input {
@@ -286,7 +302,7 @@ html {
   background-color: var(--bg-quaternary);
 }
 
-#check-status-btn:hover{
+#check-status-btn:hover {
   background-color: var(--bg-quaternary);
 }
 
@@ -348,8 +364,10 @@ body[data-media-type="games"] .card {
   position: relative;
   width: 100%;
   height: 100%;
-  object-fit: cover; /* ensures image covers container */
-  object-position: center top; /* default crop */
+  object-fit: cover;
+  /* ensures image covers container */
+  object-position: center top;
+  /* default crop */
 }
 
 /* Card Image */
@@ -423,7 +441,7 @@ body[data-media-type="games"] .card {
 
 /* Title & Rating Overlay */
 .card-title-overlay {
-  background: rgba(14,15,15, .8);
+  background: rgba(14, 15, 15, .8);
   color: var(--text-light);
   padding: 0.5rem 0.6rem;
   display: flex;
@@ -612,19 +630,22 @@ body[data-media-type="games"] .card {
 }
 
 
-#card-view, #list-view {
+#card-view,
+#list-view {
   display: none;
 }
 
 .status-dot {
   position: absolute;
-  top: -10px;      /* align to top edge */
-  left: -10px;     /* align to left edge */
+  top: -10px;
+  /* align to top edge */
+  left: -10px;
+  /* align to left edge */
   width: 30px;
   height: 30px;
   border-radius: 50%;
   z-index: 10;
-  box-shadow: 0 0 8px 2px rgba(0,0,0,0.6);
+  box-shadow: 0 0 8px 2px rgba(0, 0, 0, 0.6);
 }
 
 #check-status-container {
@@ -727,15 +748,15 @@ label.music-player-btn:hover .music-icon path {
 
 @media(orientation: portrait) {
 
-  .separator-bar{
+  .separator-bar {
     margin-bottom: 0.1rem;
     height: 4rem;
   }
 
-.edit-card-btn{
+  .edit-card-btn {
     padding: 6px 10px;
     font-size: 4rem;
-}
+  }
 
   .sidebar-toggle-btn {
     display: block;
@@ -753,226 +774,232 @@ label.music-player-btn:hover .music-icon path {
     transform-origin: bottom left;
   }
 
-.sidebar {
-  position: fixed;
-  left: -100%;             /* start off-screen */
-  bottom: 0;               /* anchor to bottom-left corner */
-  width: 280px;
-  background: var(--bg-primary);
-  z-index: 999;
-  border-radius: 20px;
+  .sidebar {
+    position: fixed;
+    left: -100%;
+    /* start off-screen */
+    bottom: 0;
+    /* anchor to bottom-left corner */
+    width: 280px;
+    background: var(--bg-primary);
+    z-index: 999;
+    border-radius: 20px;
 
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end; /* stack elements from bottom up */
-  padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    /* stack elements from bottom up */
+    padding: 2rem;
 
-  max-height: 100vh;        /* prevent overflow off-screen */
-  overflow-y: auto;         /* scroll if content taller than screen */
+    max-height: 100vh;
+    /* prevent overflow off-screen */
+    overflow-y: auto;
+    /* scroll if content taller than screen */
 
-  transition: left 0.3s ease;
-  padding-bottom: 15rem;
+    transition: left 0.3s ease;
+    padding-bottom: 15rem;
 
-  width: 90%;
-  max-width: 90%;
-  box-sizing: border-box;
-}
+    width: 90%;
+    max-width: 90%;
+    box-sizing: border-box;
+  }
 
-.sidebar.sidebar-visible {
-  left: 0;
-}
+  .sidebar.sidebar-visible {
+    left: 0;
+  }
 
 
-  .list-page-container{
-    gap:8rem;
+  .list-page-container {
+    gap: 8rem;
     padding-left: 2.3rem;
     position: relative;
     flex-direction: column;
     padding-right: 0rem;
   }
 
-  .list-content{
+  .list-content {
     transform-origin: top;
     width: unset;
     margin-top: unset;
   }
 
-    .card{
-width: 293px;
-height: 410px;
-    }
+  .card {
+    width: 293px;
+    height: 410px;
+  }
 
-    body[data-media-type="games"] .card {
-      height: 390px;
-    }
+  body[data-media-type="games"] .card {
+    height: 390px;
+  }
 
-    .card-image{
-      border-radius: 8px;
-    }
+  .card-image {
+    border-radius: 8px;
+  }
 
-    .card[data-media-type="music"] {
-  width: 293px;
-  height: 293px;
-}
+  .card[data-media-type="music"] {
+    width: 293px;
+    height: 293px;
+  }
 
-.card[data-media-type="music"] .card-image {
-  width: 528px;
-  height: 100%;
-  left: -117px;
-}
+  .card[data-media-type="music"] .card-image {
+    width: 528px;
+    height: 100%;
+    left: -117px;
+  }
 
-.card-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(293px, 293px));
-  gap: 0.9rem;
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(293px, 293px));
+    gap: 0.9rem;
 
-}
+  }
 
-    .card-title {
-      font-size: 1.7rem;
-    }
+  .card-title {
+    font-size: 1.7rem;
+  }
 
-    .card-title-overlay{
-      min-height: 6.5rem;
-    }
+  .card-title-overlay {
+    min-height: 6.5rem;
+  }
 
-    .card-rating svg {
+  .card-rating svg {
     width: 2.5rem;
     height: 2.5rem;
     margin-right: 0.5rem;
-    }
-
-    .card-rating {
-      font-size: 2rem;
-    }
-
-    .star-rating {
-        top: -0.2rem;
-    }
-
-    .rating-number{
-      font-size: 2rem;
-      margin-right: 0.5rem;
-    }
-
-    .card-progress {
-      font-size: 2rem;
-      margin-left: 0.5rem;
-    }
-
-    .card-meta-row {
-      margin-bottom: 0.8rem;
-    }
-
-    .status-dot{
-      width: 5rem;
-      height: 5rem;
-      top: -2rem;
-      left: -2rem;
-    }
-
-    .repeat-indicator {
-      top: 2rem;
-      left: 2rem;
-    }
-
-    .repeat-count{
-      font-size: 2rem;
-    }
-
-    .repeat-icon{
-      width: 2.2rem;
-      height: 2.2rem;
-    }
-
-    .list-table table {
-      font-size: 2rem;
-      table-layout: fixed;
-    }
-
-    .list-table th:nth-child(1), .list-table td:nth-child(1){
-      width: unset; 
-    }
-
-    .list-table table td,
-    .list-table table th {
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .banner-quote {
-      font-size: 2rem;
-    }
-
-    .list-table .edit-card-btn {
-      font-size: 2rem;
-    }
-
-    .status-header {
-      font-size: 3.2rem;
-    }
-
-    .filter-buttons{
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 0.5rem;
-    }
-
-    .filter-btn{
-      justify-content: center;
-      font-size: 2.5rem;
-    }
-
-    .list-table{
-      max-width: 57rem;
-    }
-
-    .sort-buttons{
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 0.5rem;
-    }
-
-    .sort-btn{
-      font-size: 2.5rem;
-    }
-
-    .view-toggle .dual-toggle{
-      max-height: none;
-    }
-
-    .toggle-text{
-      font-size: 2.5rem;
-    }
-
-    #search-input{
-      font-size: 2.5rem;
-      padding: 0.8rem;
-    }
-
-    .type-filter-btn{
-      font-size:2.5rem;
-    }
-
-    .toggle-btn{
-      font-size:2.5rem;
-    }
-
-    .sidebar h3{
-      font-size: 2.5rem;
-      margin-top: 2rem;
-    }
-
-    .btn-count {
-    display: none;
   }
-  
-  .status-legend{
+
+  .card-rating {
+    font-size: 2rem;
+  }
+
+  .star-rating {
+    top: -0.2rem;
+  }
+
+  .rating-number {
+    font-size: 2rem;
+    margin-right: 0.5rem;
+  }
+
+  .card-progress {
+    font-size: 2rem;
+    margin-left: 0.5rem;
+  }
+
+  .card-meta-row {
+    margin-bottom: 0.8rem;
+  }
+
+  .status-dot {
+    width: 5rem;
+    height: 5rem;
+    top: -2rem;
+    left: -2rem;
+  }
+
+  .repeat-indicator {
+    top: 2rem;
+    left: 2rem;
+  }
+
+  .repeat-count {
+    font-size: 2rem;
+  }
+
+  .repeat-icon {
+    width: 2.2rem;
+    height: 2.2rem;
+  }
+
+  .list-table table {
+    font-size: 2rem;
+    table-layout: fixed;
+  }
+
+  .list-table th:nth-child(1),
+  .list-table td:nth-child(1) {
+    width: unset;
+  }
+
+  .list-table table td,
+  .list-table table th {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .banner-quote {
+    font-size: 2rem;
+  }
+
+  .list-table .edit-card-btn {
+    font-size: 2rem;
+  }
+
+  .status-header {
+    font-size: 3.2rem;
+  }
+
+  .filter-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+  }
+
+  .filter-btn {
+    justify-content: center;
+    font-size: 2.5rem;
+  }
+
+  .list-table {
+    max-width: 57rem;
+  }
+
+  .sort-buttons {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+  }
+
+  .sort-btn {
+    font-size: 2.5rem;
+  }
+
+  .view-toggle .dual-toggle {
+    max-height: none;
+  }
+
+  .toggle-text {
+    font-size: 2.5rem;
+  }
+
+  #search-input {
+    font-size: 2.5rem;
+    padding: 0.8rem;
+  }
+
+  .type-filter-btn {
+    font-size: 2.5rem;
+  }
+
+  .toggle-btn {
+    font-size: 2.5rem;
+  }
+
+  .sidebar h3 {
+    font-size: 2.5rem;
+    margin-top: 2rem;
+  }
+
+  .btn-count {
     display: none;
   }
 
-  .music-icon{
+  .status-legend {
+    display: none;
+  }
+
+  .music-icon {
     height: 2.5rem;
     width: 2.5rem;
   }
