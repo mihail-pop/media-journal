@@ -51,7 +51,6 @@ document.addEventListener("DOMContentLoaded", () => {
   async function doSearch(query) {
     if (!query.trim()) {
       resultsContainer.innerHTML = "";
-      overlay.classList.add("hidden");
       return;
     }
 
@@ -112,9 +111,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // === MODIFIED SECTION: Dynamic Debounce ===
+  const debounceDelay = pageType === "game" ? 500 : 300;
+
   const liveSearchHandler = debounce(e => {
     doSearch(e.target.value);
-  });
+  }, debounceDelay);
+  // === END MODIFIED SECTION ===
 
   overlaySearchInput.addEventListener("keydown", e => {
     if (e.key === "Enter") {

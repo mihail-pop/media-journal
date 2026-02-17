@@ -37,6 +37,7 @@ import io
 import glob
 import re
 import threading
+import unicodedata
 
 
 
@@ -1814,20 +1815,35 @@ def mal_search(request):
 #     return JsonResponse({"results": results})
 
 
-# music search
+last_request_time = 0
+
+def wait_for_rate_limit():
+    """
+    Ensures that at least one second has passed since the last API call for all the musicbrainz functions.
+    """
+    global last_request_time
+    elapsed = time.time() - last_request_time
+    if elapsed < 1:
+        time.sleep(1 - elapsed)
+    last_request_time = time.time()
+
+# Music Search
+
 @ensure_csrf_cookie
 @require_GET
 def musicbrainz_search(request):
+    wait_for_rate_limit()
     query = request.GET.get("q", "").strip()
 
     if not query:
         return JsonResponse({"error": "Query parameter 'q' is required."}, status=400)
 
+    # 1. Fetch data from MusicBrainz
     try:
         url = "https://musicbrainz.org/ws/2/recording"
         params = {
-            "query": query,
-            "limit": 20,
+            "query": query, 
+            "limit": 20, 
             "fmt": "json"
         }
         headers = {
@@ -1835,75 +1851,83 @@ def musicbrainz_search(request):
         }
 
         response = requests.get(url, params=params, headers=headers, timeout=10)
-        if response.status_code != 200:
-            return JsonResponse({"error": "Failed to fetch from MusicBrainz."}, status=500)
-
+        response.raise_for_status()
         data = response.json()
-        entries = []
 
-        # Process each recording
-        for recording in data.get("recordings", []):
-            title = recording.get("title", "Untitled")
-            artists_list = [a.get("name", "") for a in recording.get("artist-credit", [])]
-            recording_id = recording.get("id")
+    except requests.exceptions.HTTPError as e:
+        if e.response.status_code == 503:
+            return JsonResponse({"error": "Most likely MusicBrainz API rate limit error. Please try again in a moment."}, status=503)
+        return JsonResponse({"error": f"Failed to fetch from MusicBrainz (Error {e.response.status_code})."}, status=e.response.status_code)
 
-            for r in recording.get("releases", []):
-                rg = r.get("release-group", {})
-                primary_type = rg.get("primary-type", "").lower()
-                secondary_types = [s.lower() for s in rg.get("secondary-types", [])]
-
-                if not r.get("date"):
-                    continue
-
-                year = r.get("date")[:4] if len(r.get("date")) >= 4 else ""
-
-                entries.append({
-                    "id": recording_id,
-                    "title": title,
-                    "artists": artists_list,
-                    "release_title": r.get("title", ""),
-                    "release_type": primary_type,
-                    "secondary_types": secondary_types,
-                    "year": year,
-                })
-
-        # Group by song title + artists
-        grouped = {}
-        for e in entries:
-            key = (e["title"].lower(), tuple([a.lower() for a in e["artists"]]))
-            grouped.setdefault(key, []).append(e)
-
-        # Filter: keep all albums, only show singles if no album
-        filtered = []
-        for recs in grouped.values():
-            albums = [
-                r for r in recs
-                if r["release_type"] == "album" and not any(st in ["live","remix","compilation","ep"] for st in r["secondary_types"])
-            ]
-            if albums:
-                filtered.append(albums[0])  # keep only the first album per title+artist
-            else:
-                filtered.append(recs[0])  # keep only the first single if no album
-
-        # Format results
-        results = []
-        for r in filtered:
-            display_title = r["title"]
-            if r["artists"]:
-                display_title += f" by {', '.join(r['artists'])}"
-            if r["year"]:
-                display_title += f" | {r['year']}"
-            results.append({
-                "id": r["id"],
-                "title": display_title,
-                "poster_path": None,
-            })
-
-        return JsonResponse({"results": results})
+    except requests.exceptions.RequestException:
+        return JsonResponse({"error": "Failed to connect to MusicBrainz. Please check your network connection."}, status=500)
 
     except Exception as e:
         logger.error(f"MusicBrainz search error: {str(e)}")
         return JsonResponse({"error": f"Search failed: {str(e)}"}, status=500)
+
+    # 2. Process recordings into entries
+    entries = []
+    for recording in data.get("recordings", []):
+        title = recording.get("title", "Untitled")
+        artists_list = [a.get("name", "") for a in recording.get("artist-credit", [])]
+        recording_id = recording.get("id")
+
+        for r in recording.get("releases", []):
+            rg = r.get("release-group", {})
+            primary_type = rg.get("primary-type", "").lower()
+            secondary_types = [s.lower() for s in rg.get("secondary-types", [])]
+
+            if not r.get("date"):
+                continue
+
+            year = r.get("date")[:4] if len(r.get("date")) >= 4 else ""
+
+            entries.append({
+                "id": recording_id,
+                "title": title,
+                "artists": artists_list,
+                "release_title": r.get("title", ""),
+                "release_type": primary_type,
+                "secondary_types": secondary_types,
+                "year": year,
+            })
+
+    # 3. Group by song title + artists
+    grouped = {}
+    for e in entries:
+        key = (e["title"].lower(), tuple([a.lower() for a in e["artists"]]))
+        grouped.setdefault(key, []).append(e)
+
+    # 4. Filter: keep all albums, only show singles if no album
+    filtered = []
+    for recs in grouped.values():
+        albums = [
+            r for r in recs
+            if r["release_type"] == "album" 
+            and not any(st in ["live", "remix", "compilation", "ep"] for st in r["secondary_types"])
+        ]
+        if albums:
+            filtered.append(albums[0])  # keep only the first album per title+artist
+        else:
+            filtered.append(recs[0])  # keep only the first single if no album
+
+    # 5. Format results for the frontend
+    results = []
+    for r in filtered:
+        display_title = r["title"]
+        if r["artists"]:
+            display_title += f" by {', '.join(r['artists'])}"
+        if r["year"]:
+            display_title += f" | {r['year']}"
+            
+        results.append({
+            "id": r["id"],
+            "title": display_title,
+            "poster_path": None,
+        })
+
+    return JsonResponse({"results": results})
 
 
 
@@ -1960,22 +1984,26 @@ def musicbrainz_detail(request, recording_id):
     except MediaItem.DoesNotExist:
         pass
     
+    wait_for_rate_limit()
     # Fetch from MusicBrainz API
     headers = {"User-Agent": "MediaJournal/1.0 (https://github.com/mihail-pop/media-journal)"}
     
     # Get recording details
-    time.sleep(1)  # MusicBrainz rate limit
     recording_url = f"https://musicbrainz.org/ws/2/recording/{recording_id}"
     recording_params = {"inc": "artists+releases+release-groups+isrcs+tags", "fmt": "json"}
     
     try:
         recording_response = requests.get(recording_url, params=recording_params, headers=headers, timeout=10)
+        recording_response.raise_for_status()
+
+    except requests.exceptions.HTTPError as e:
+        if e.response.status_code == 503:
+            return JsonResponse({"error": "Most likely MusicBrainz api rate limit error. Please try again in a moment."}, status=503)
+        else:
+            return JsonResponse({"error": f"Failed to fetch details from MusicBrainz (Error {e.response.status_code})."}, status=e.response.status_code)
+            
     except requests.exceptions.RequestException as e:
-        logger.error(f"MusicBrainz API error: {str(e)}")
-        return JsonResponse({"error": "Failed to connect to MusicBrainz API."}, status=500)
-    
-    if recording_response.status_code != 200:
-        return JsonResponse({"error": "Failed to fetch recording details."}, status=500)
+        return JsonResponse({"error": "Failed to connect to MusicBrainz. Please check your network connection."}, status=500)
     
     recording_data = recording_response.json()
     
@@ -2205,20 +2233,26 @@ def musicbrainz_detail(request, recording_id):
 
 
 def save_musicbrainz_item(recording_id):
+    wait_for_rate_limit()
     headers = {"User-Agent": "MediaJournal/1.0 (https://github.com/mihail-pop/media-journal)"}
     
     # Get recording details
-    time.sleep(1)  # MusicBrainz rate limit
     recording_url = f"https://musicbrainz.org/ws/2/recording/{recording_id}"
     recording_params = {"inc": "artists+releases+release-groups+isrcs+tags", "fmt": "json"}
     
     try:
         recording_response = requests.get(recording_url, params=recording_params, headers=headers, timeout=10)
+        recording_response.raise_for_status()
+
+    except requests.exceptions.HTTPError as e:
+        if e.response.status_code == 503:
+            return JsonResponse({"error": "Most likely MusicBrainz api rate limit error. Please try again in a moment."}, status=503)
+        else:
+            return JsonResponse({"error": f"Failed to fetch details from MusicBrainz (Error {e.response.status_code})."}, status=e.response.status_code)
+            
     except requests.exceptions.RequestException as e:
-        raise Exception(f"Failed to connect to MusicBrainz API: {str(e)}")
-    
-    if recording_response.status_code != 200:
-        raise Exception("Failed to fetch recording details.")
+        return JsonResponse({"error": "Failed to connect to MusicBrainz. Please check your network connection."}, status=500)
+
     
     recording_data = recording_response.json()
     
@@ -2519,47 +2553,115 @@ def igdb_search(request):
     headers = {
         "Client-ID": igdb_keys.key_1,
         "Authorization": f"Bearer {token}",
+        "Accept": "application/json"
     }
 
-    data = f'''
-    search "{query}";
-    fields id, name, cover.url;
+    def process_cover(item):
+        """Helper to resize IGDB cover images."""
+        if item.get("cover") and item["cover"].get("url"):
+            return "https:" + item["cover"]["url"].replace("t_thumb", "t_cover_big")
+        return None
+
+    # 1. Generate Presumed Slug
+    # Normalize input to create a likely slug (e.g., "Pokémon Go" -> "pokemon-go")
+    # This is used to check if the search results missed the exact game.
+    query_norm = unicodedata.normalize('NFKD', query).encode('ASCII', 'ignore').decode('utf-8').lower()
+    query_slug = re.sub(r'[^a-z0-9\s-]', '', query_norm).strip().replace(" ", "-")
+
+    # 2. Primary Search (Fast)
+    # Uses IGDB's text search index. Fast, but can occasionally bury exact matches.
+    clean_query = query.replace('"', '\\"')
+    data_search = f'''
+    search "{clean_query}";
+    fields id, name, cover.url, slug;
     limit 30;
     '''
+    
+    results = []
+    found_exact_slug = False
 
-    response = requests.post("https://api.igdb.com/v4/games", headers=headers, data=data)
-    if response.status_code != 200:
+    try:
+        response = requests.post("https://api.igdb.com/v4/games", headers=headers, data=data_search)
+        if response.status_code == 200:
+            for item in response.json():
+                if item.get("slug") == query_slug:
+                    found_exact_slug = True
+                
+                results.append({
+                    "id": str(item["id"]),
+                    "title": item.get("name", "Untitled"),
+                    "poster_path": process_cover(item),
+                    "slug": item.get("slug", "")
+                })
+    except Exception as e:
+        print(f"IGDB Search Error: {e}")
         return JsonResponse({"error": "Failed to fetch from IGDB."}, status=500)
 
+    # 3. Fallback Search (Specific)
+    # If the exact slug wasn't found in the primary results, perform a direct lookup.
+    # This handles edge cases (like 'Pokémon Go') where the index prioritizes other titles.
+    if not found_exact_slug and len(query_slug) > 2:
+        data_slug_check = f'''
+        fields id, name, cover.url, slug;
+        where slug = "{query_slug}";
+        '''
+        try:
+            slug_response = requests.post("https://api.igdb.com/v4/games", headers=headers, data=data_slug_check)
+            if slug_response.status_code == 200:
+                slug_results = slug_response.json()
+                if slug_results:
+                    missing_game = slug_results[0]
+                    # Insert the missing exact match at the top of the list
+                    results.insert(0, {
+                        "id": str(missing_game["id"]),
+                        "title": missing_game.get("name", "Untitled"),
+                        "poster_path": process_cover(missing_game),
+                        "slug": missing_game.get("slug", "")
+                    })
+        except Exception:
+            pass 
+
+    # 4. Rank Results
+    # Prioritize exact name matches and games starting with the query.
     query_lower = query.lower()
-    results_raw = response.json()
-    results = []
-
-    for item in results_raw:
-        cover_url = None
-        if "cover" in item and item["cover"] and "url" in item["cover"]:
-            cover_url = "https:" + item["cover"]["url"].replace("t_thumb", "t_cover_big")
-
-        results.append({
-            "id": str(item["id"]),
-            "title": item.get("name", "Untitled"),
-            "poster_path": cover_url,
-        })
-
-    # Manual relevance ranking
+    
     def rank(item):
-        name = item["title"].lower()
-        if name == query_lower:
+        name = item["title"]
+        slug = item.get("slug", "")
+        
+        # Priority 0: Exact slug match
+        if slug == query_slug:
             return 0
-        if name.startswith(query_lower):
-            return 1
-        if query_lower in name:
-            return 2
+
+        try:
+            name_norm = unicodedata.normalize('NFKD', name).encode('ASCII', 'ignore').decode('utf-8').lower()
+            q_norm = unicodedata.normalize('NFKD', query_lower).encode('ASCII', 'ignore').decode('utf-8')
+        except:
+            return 3
+
+        # Priority 0: Exact name match
+        if name_norm == q_norm: return 0
+        # Priority 1: Starts with query
+        if name_norm.startswith(q_norm): return 1
+        # Priority 2: Contains query
+        if q_norm in name_norm: return 2
+        
         return 3
 
     results.sort(key=rank)
 
-    return JsonResponse({"results": results})
+    # 5. Clean and Deduplicate
+    # Remove internal 'slug' field and ensure unique IDs
+    final_results = []
+    seen_ids = set()
+    
+    for r in results:
+        if r['id'] not in seen_ids:
+            # Create a new dict excluding 'slug'
+            final_results.append({k: v for k, v in r.items() if k != 'slug'})
+            seen_ids.add(r['id'])
+
+    return JsonResponse({"results": final_results[:30]})
 
 
 # Movies/Shows Search
