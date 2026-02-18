@@ -66,24 +66,34 @@
             </div>
           </div>
 
-          <button type="submit" class="save-nav-btn scoring-system-save">Save</button>
         </form>
       </div>
 
       <div class="preferences-section">
         <h3>Edit Modal</h3>
         <form id="preferences-form" class="preferences-form">
-          <label class="toggle-label">
-            <b>Display date field</b>
-            <input type="checkbox" id="show-date-field" name="show_date_field"
-              {% if show_date_field %}checked{% endif %}>
+          <label class="preference-toggle-label">
+            <input type="checkbox" id="show-date-field" name="show_date_field" {% if show_date_field %}checked{% endif %}>
+            <div class="preference-toggle-content">
+              <div class="preference-toggle-text">
+                <b>Display date field</b>
+              </div>
+              <div class="preference-toggle-icon">
+                <svg viewBox="0 0 448 512"><path fill="currentColor" d="M148 288h-40c-6.6 0-12-5.4-12-12v-40c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v40c0 6.6-5.4 12-12 12zm108-12v-40c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12zm96 0v-40c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12zm-96 96v-40c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12zm-96 0v-40c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12zm192 0v-40c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12zm96-260v352c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V112c0-26.5 21.5-48 48-48h48V12c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v52h128V12c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v52h48c26.5 0 48 21.5 48 48zm-48 346V160H48v298c0 3.3 2.7 6 6 6h340c3.3 0 6-2.7 6-6z"/></svg>
+              </div>
+            </div>
           </label>
-          <label class="toggle-label">
-            <b>Display repeats field <br>(Rewatches/Replays/Rereads)</b>
-            <input type="checkbox" id="show-repeats-field" name="show_repeats_field"
-              {% if show_repeats_field %}checked{% endif %}>
+          <label class="preference-toggle-label">
+            <input type="checkbox" id="show-repeats-field" name="show_repeats_field" {% if show_repeats_field %}checked{% endif %}>
+            <div class="preference-toggle-content">
+              <div class="preference-toggle-text">
+                <b>Display repeats field <br>(Rewatches/Replays/Rereads)</b>
+              </div>
+              <div class="preference-toggle-icon">
+                <svg class="repeat-icon" viewBox="0 0 512 512"><path fill="currentColor" d="M256.455 8c66.269.119 126.437 26.233 170.859 68.685l35.715-35.715C478.149 25.851 504 36.559 504 57.941V192c0 13.255-10.745 24-24 24H345.941c-21.382 0-32.09-25.851-16.971-40.971l41.75-41.75c-30.864-28.899-70.801-44.907-113.23-45.273-92.398-.798-170.283 73.977-169.484 169.442C88.764 348.009 162.184 424 256 424c41.127 0 79.997-14.678 110.629-41.556 4.743-4.161 11.906-3.908 16.368.553l39.662 39.662c4.872 4.872 4.631 12.815-.482 17.433C378.202 479.813 319.926 504 256 504 119.034 504 8.001 392.967 8 256.002 7.999 119.193 119.646 7.755 256.455 8z"></path></svg>
+              </div>
+            </div>
           </label>
-          <button type="submit" class="save-nav-btn preferences-save">Save</button>
         </form>
       </div>
 
@@ -111,41 +121,61 @@
 
       <div class="preferences-section nav-buttons-section">
         <h3>Navigation Buttons</h3>
-        <form id="nav-items-form">
+        <div id="nav-items-form">
           {% for item in nav_items %}
-            <div class="nav-item-row" data-id="{{ item.id }}">
-              <span class="nav-item-name">{{ item.name }}</span>
-              <div class="nav-buttons-container">
-                <button type="button" class="move-up" title="Move left">←</button>
-                <button type="button" class="move-down" title="Move right">→</button>
-                <label class="toggle-label">
-                  <input type="checkbox" class="toggle-visible" {% if item.visible %}checked{% endif %} data-tooltip="{% if item.visible %}Hide{% else %}Show{% endif %}">
-                </label>
+            <div class="nav-item-box {% if item.visible %}active{% endif %}" data-id="{{ item.id }}" draggable="true">
+              <input type="checkbox" class="nav-item-checkbox" {% if item.visible %}checked{% endif %}>
+              <div class="nav-item-icon">
+                {% if item.name == 'home' %}
+                  <svg viewBox="0 0 576 512"><path fill="currentColor" d="M280.37 148.26L96 300.11V464a16 16 0 0 0 16 16l112.06-.29a16 16 0 0 0 15.92-16V368a16 16 0 0 1 16-16h64a16 16 0 0 1 16 16v95.64a16 16 0 0 0 16 16.05L464 480a16 16 0 0 0 16-16V300L295.67 148.26a12.19 12.19 0 0 0-15.3 0zM571.6 251.47L488 182.56V44.05a12 12 0 0 0-12-12h-56a12 12 0 0 0-12 12v72.61L318.47 43a48 48 0 0 0-61 0L4.34 251.47a12 12 0 0 0-1.6 16.9l25.5 31A12 12 0 0 0 45.15 301l235.22-193.74a12.19 12.19 0 0 1 15.3 0L530.9 301a12 12 0 0 0 16.9-1.6l25.5-31a12 12 0 0 0-1.7-16.93z"/></svg>
+                {% elif item.name == 'movies' %}
+                  <svg viewBox="0 0 512 512"><path fill="currentColor" d="M488 64h-8v20c0 6.6-5.4 12-12 12h-40c-6.6 0-12-5.4-12-12V64H96v20c0 6.6-5.4 12-12 12H44c-6.6 0-12-5.4-12-12V64h-8C10.7 64 0 74.7 0 88v336c0 13.3 10.7 24 24 24h8v-20c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v20h320v-20c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v20h8c13.3 0 24-10.7 24-24V88c0-13.3-10.7-24-24-24zM96 372c0 6.6-5.4 12-12 12H44c-6.6 0-12-5.4-12-12v-40c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v40zm0-96c0 6.6-5.4 12-12 12H44c-6.6 0-12-5.4-12-12v-40c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v40zm0-96c0 6.6-5.4 12-12 12H44c-6.6 0-12-5.4-12-12v-40c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v40zm368 192c0 6.6-5.4 12-12 12h-40c-6.6 0-12-5.4-12-12v-40c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v40zm0-96c0 6.6-5.4 12-12 12h-40c-6.6 0-12-5.4-12-12v-40c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v40zm0-96c0 6.6-5.4 12-12 12h-40c-6.6 0-12-5.4-12-12v-40c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v40zM112 160h288v96H112z"/></svg>
+                {% elif item.name == 'tvshows' %}
+                  <svg viewBox="0 0 640 512"><path fill="currentColor" d="M592 0H48C21.5 0 0 21.5 0 48v320c0 26.5 21.5 48 48 48h245.1v32h-160c-17.7 0-32 14.3-32 32s14.3 32 32 32h384c17.7 0 32-14.3 32-32s-14.3-32-32-32h-160v-32H592c26.5 0 48-21.5 48-48V48c0-26.5-21.5-48-48-48zm-16 352H64V64h512v288z"/></svg>
+                {% elif item.name == 'anime' %}
+                  <svg viewBox="0 0 640 512"><path fill="currentColor" d="M278.9 511.5l-61-17.7c-6.4-1.8-10-8.5-8.2-14.9L346.2 8.7c1.8-6.4 8.5-10 14.9-8.2l61 17.7c6.4 1.8 10 8.5 8.2 14.9L293.8 503.3c-1.9 6.4-8.5 10.1-14.9 8.2zm-114-112.2l43.5-46.4c4.6-4.9 4.3-12.7-.8-17.2L117 256l90.6-79.7c5.1-4.5 5.5-12.3.8-17.2l-43.5-46.4c-4.5-4.8-12.1-5.1-17-.5L3.8 247.2c-5.1 4.7-5.1 12.8 0 17.5l144.1 135.1c4.9 4.6 12.5 4.4 17-.5zm327.2.6l144.1-135.1c5.1-4.7 5.1-12.8 0-17.5L492.1 112.1c-4.8-4.5-12.4-4.3-17 .5L431.6 159c-4.6 4.9-4.3 12.7.8 17.2L523 256l-90.6 79.7c-5.1 4.5-5.5 12.3-.8 17.2l43.5 46.4c4.5 4.9 12.1 5.1 17 .6z"/></svg>
+                {% elif item.name == 'games' %}
+                  <svg viewBox="0 0 640 512"><path fill="currentColor" d="M480.07 96H160a160 160 0 1 0 114.24 272h91.52A160 160 0 1 0 480.07 96zM248 268a12 12 0 0 1-12 12h-52v52a12 12 0 0 1-12 12h-24a12 12 0 0 1-12-12v-52H84a12 12 0 0 1-12-12v-24a12 12 0 0 1 12-12h52v-52a12 12 0 0 1 12-12h24a12 12 0 0 1 12 12v52h52a12 12 0 0 1 12 12zm216 76a40 40 0 1 1 40-40 40 40 0 0 1-40 40zm64-96a40 40 0 1 1 40-40 40 40 0 0 1-40 40z"/></svg>
+                {% elif item.name == 'manga' %}
+                  <svg viewBox="0 0 448 512"><path fill="currentColor" d="M448 360V24c0-13.3-10.7-24-24-24H96C43 0 0 43 0 96v320c0 53 43 96 96 96h328c13.3 0 24-10.7 24-24v-16c0-7.5-3.5-14.3-8.9-18.7-4.2-15.4-4.2-59.3 0-74.7 5.4-4.3 8.9-11.1 8.9-18.6zM128 134c0-3.3 2.7-6 6-6h212c3.3 0 6 2.7 6 6v20c0 3.3-2.7 6-6 6H134c-3.3 0-6-2.7-6-6v-20zm0 64c0-3.3 2.7-6 6-6h212c3.3 0 6 2.7 6 6v20c0 3.3-2.7 6-6 6H134c-3.3 0-6-2.7-6-6v-20zm253.4 250H96c-17.7 0-32-14.3-32-32 0-17.6 14.4-32 32-32h285.4c-1.9 17.1-1.9 46.9 0 64z"/></svg>
+                {% elif item.name == 'books' %}
+                  <svg viewBox="0 0 448 512"><path fill="currentColor" d="M448 360V24c0-13.3-10.7-24-24-24H96C43 0 0 43 0 96v320c0 53 43 96 96 96h328c13.3 0 24-10.7 24-24v-16c0-7.5-3.5-14.3-8.9-18.7-4.2-15.4-4.2-59.3 0-74.7 5.4-4.3 8.9-11.1 8.9-18.6zM128 134c0-3.3 2.7-6 6-6h212c3.3 0 6 2.7 6 6v20c0 3.3-2.7 6-6 6H134c-3.3 0-6-2.7-6-6v-20zm0 64c0-3.3 2.7-6 6-6h212c3.3 0 6 2.7 6 6v20c0 3.3-2.7 6-6 6H134c-3.3 0-6-2.7-6-6v-20zm253.4 250H96c-17.7 0-32-14.3-32-32 0-17.6 14.4-32 32-32h285.4c-1.9 17.1-1.9 46.9 0 64z"/></svg>
+                {% elif item.name == 'music' %}
+                  <svg viewBox="0 0 512 512"><path fill="currentColor" d="M470.38 1.51L150.41 96A32 32 0 0 0 128 126.51v261.41A139 139 0 0 0 96 384c-53 0-96 28.66-96 64s43 64 96 64 96-28.66 96-64V214.32l256-75v184.61a138.4 138.4 0 0 0-32-3.93c-53 0-96 28.66-96 64s43 64 96 64 96-28.65 96-64V32a32 32 0 0 0-41.62-30.49z"/></svg>
+                {% else %}
+                  <svg viewBox="0 0 512 512"><path fill="currentColor" d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8z"/></svg>
+                {% endif %}
               </div>
+              <span class="nav-item-name">{{ item.name }}</span>
             </div>
           {% endfor %}
-          <button type="submit" class="save-nav-btn nav-form-save">Save</button>
-        </form>
-    <p style="font-size: 0.9rem; margin-top: 1.5rem; text-align: center;">
-      <b> The hidden buttons will disappear on all the other pages, but will still appear on the Settings page header. </b>
-    </p>
+        </div>
+        <p style="font-size: 0.9rem; margin-top: 1.5rem; text-align: center;">
+          <b>Click to show/hide • Drag to reorder • Hidden buttons will disappear on the other pages but remain visible here</b>
+        </p>
       </div>
     </div>
   </div>
 
   <div class="tab-content" id="backup">
     <div class="preferences-container">
-      <div class="preferences-section">
+      <div class="preferences-section" style="grid-column: 1 / -1; max-width: 700px; margin: 0 auto;">
         <h3>Backup & Restore</h3>
         <div class="backup-actions">
-          <button id="download-backup-btn">Create Backup
+          <button id="download-backup-btn" class="backup-btn">
+            <svg viewBox="0 0 512 512" style="width: 20px; height: 20px; margin-right: 8px;"><path fill="currentColor" d="M216 0h80c13.3 0 24 10.7 24 24v168h87.7c17.8 0 26.7 21.5 14.1 34.1L269.7 378.3c-7.5 7.5-19.8 7.5-27.3 0L90.1 226.1c-12.6-12.6-3.7-34.1 14.1-34.1H192V24c0-13.3 10.7-24 24-24zm296 376v112c0 13.3-10.7 24-24 24H24c-13.3 0-24-10.7-24-24V376c0-13.3 10.7-24 24-24h146.7l49 49c20.1 20.1 52.5 20.1 72.6 0l49-49H488c13.3 0 24 10.7 24 24zm-124 88c0-11-9-20-20-20s-20 9-20 20 9 20 20 20 20-9 20-20zm64 0c0-11-9-20-20-20s-20 9-20 20 9 20 20 20 20-9 20-20z"/></svg>
+            Create Backup
           </button>
           <input type="file" id="upload-backup-input" accept=".zip" style="display: none;" />
-          <button id="upload-backup-btn">Load Backup
+          <button id="upload-backup-btn" class="backup-btn">
+            <svg viewBox="0 0 512 512" style="width: 20px; height: 20px; margin-right: 8px;"><path fill="currentColor" d="M296 384h-80c-13.3 0-24-10.7-24-24V192h-87.7c-17.8 0-26.7-21.5-14.1-34.1L242.3 5.7c7.5-7.5 19.8-7.5 27.3 0l152.2 152.2c12.6 12.6 3.7 34.1-14.1 34.1H320v168c0 13.3-10.7 24-24 24zm216-8v112c0 13.3-10.7 24-24 24H24c-13.3 0-24-10.7-24-24V376c0-13.3 10.7-24 24-24h146.7l49 49c20.1 20.1 52.5 20.1 72.6 0l49-49H488c13.3 0 24 10.7 24 24zm-124 88c0-11-9-20-20-20s-20 9-20 20 9 20 20 20 20-9 20-20zm64 0c0-11-9-20-20-20s-20 9-20 20 9 20 20 20 20-9 20-20z"/></svg>
+            Load Backup
           </button>
         </div>
-        <p style="font-size: 0.95rem; margin-top: 1rem; text-align: center;"> <b>Keep the downloaded backup file as it is (.zip). </b>
-        </p>
+        <div class="backup-info-box">
+          <p style="margin: 0 0 0.5rem 0;">During backup creation or loading you can see the remaining time. You can cancel at any time.</p>
+          <p style="margin: 0;">Keep the downloaded backup file as it is (.zip) for loading.</p>
+        </div>
       </div>
     </div>
   </div>
@@ -167,15 +197,15 @@
             {% for key in keys %}
             <tr data-id="{{ key.id }}">
               <td><input type="text" class="key-name" value="{{ key.name }}" readonly /></td>
-              <td><input type="text" class="key-1" value="{{ key.key_1 }}" /></td>
-              <td><input type="text" class="key-2" value="{{ key.key_2 }}" /></td>
+              <td><input type="password" class="key-1 api-key-input" value="{{ key.key_1 }}" data-value="{{ key.key_1 }}" /></td>
+              <td><input type="password" class="key-2 api-key-input" value="{{ key.key_2 }}" data-value="{{ key.key_2 }}" /></td>
               <td>
                 <button class="save-btn">Save</button>
                 <button class="delete-btn">Delete</button>
               </td>
             </tr>
             {% endfor %}
-            <tr>
+            <tr id="add-key-row" {% if not allowed_names or existing_names|length == allowed_names|length %}style="display: none;"{% endif %}>
               <td>
                 <select id="new-name">
                   <option value="">Select API</option>
@@ -192,14 +222,33 @@
             </tr>
           </tbody>
         </table>
-        <p style="font-size: 0.95rem; margin-top: 1rem; text-align: left;">
-          Here you can add the required API keys for the web app to work. You can get the API keys from each site in around 2 to 5 minutes.
-          <br/>
-          <br/> <b> TMDB </b> needs <b>ID</b> and you can find the steps on how to get their keys <a href="https://developers.themoviedb.org/3/getting-started/introduction" target="_blank" rel="noopener noreferrer">here</a>.  <a href="https://imgur.com/a/iU3RsvR" target="_blank" rel="noopener noreferrer"  style="text-decoration: none;">(Example)</a>
-          <br/> <b> IGDB </b> needs <b>ID</b> and <b>Secret</b> and you can find the steps on how to get their keys <a href="https://api-docs.igdb.com/#getting-started" target="_blank" rel="noopener noreferrer">here</a>.  <a href="https://imgur.com/a/sp6uWVl" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">(Example)</a>
-          <br/> <b> AniList </b> needs <b>ID</b> and <b>Secret</b> and you can find the steps on how to get their keys <a href="https://docs.anilist.co/guide/auth/" target="_blank" rel="noopener noreferrer">here</a> (at the "Creating an application" section).  <a href="https://imgur.com/a/Zgrkygo" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">(Example)</a>
-          <br/><br/> (Optional)<b> MAL </b> needs <b>ID</b> and you can find the steps on how to get their keys <a href="https://myanimelist.net/apiconfig" target="_blank" rel="noopener noreferrer">here</a> (you need to login first).  <a href="https://imgur.com/a/d9NkhmN" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">(Example)</a>
-        </p>
+        <div class="api-info-box">
+          <p style="margin: 0 0 1rem 0; font-weight: 600;">How to get the API keys (takes 2-5 minutes per service):</p>
+          <div class="api-service">
+            <span class="api-service-name">TMDB</span>
+            <span class="api-service-desc">Needs <b>ID</b> only</span>
+            <a href="https://developers.themoviedb.org/3/getting-started/introduction" target="_blank" rel="noopener noreferrer">Guide</a>
+            <a href="https://imgur.com/a/iU3RsvR" target="_blank" rel="noopener noreferrer">Example</a>
+          </div>
+          <div class="api-service">
+            <span class="api-service-name">IGDB</span>
+            <span class="api-service-desc">Needs <b>ID</b> and <b>Secret</b></span>
+            <a href="https://api-docs.igdb.com/#getting-started" target="_blank" rel="noopener noreferrer">Guide</a>
+            <a href="https://imgur.com/a/sp6uWVl" target="_blank" rel="noopener noreferrer">Example</a>
+          </div>
+          <div class="api-service">
+            <span class="api-service-name">AniList</span>
+            <span class="api-service-desc">Needs <b>ID</b> and <b>Secret</b></span>
+            <a href="https://docs.anilist.co/guide/auth/" target="_blank" rel="noopener noreferrer">Guide</a>
+            <a href="https://imgur.com/a/Zgrkygo" target="_blank" rel="noopener noreferrer">Example</a>
+          </div>
+          <div class="api-service">
+            <span class="api-service-name">MAL (Optional)</span>
+            <span class="api-service-desc">Needs <b>ID</b> only</span>
+            <a href="https://myanimelist.net/apiconfig" target="_blank" rel="noopener noreferrer">Guide</a>
+            <a href="https://imgur.com/a/d9NkhmN" target="_blank" rel="noopener noreferrer">Example</a>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -233,7 +282,6 @@
         </div>
         <p style="font-size: 0.9rem; margin-top: 1rem; text-align: center;">
           <br/> <a href="https://github.com/mihail-pop/media-journal/issues" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">[Report an issue]</a> <a href="https://github.com/mihail-pop/media-journal/discussions" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">[Ask a question]</a>
-          <br/> (More information and tips to come!)
         </p>
       </div>
     </div>

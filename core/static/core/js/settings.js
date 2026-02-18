@@ -31,32 +31,26 @@ function showNotification(message, type) {
 }
 
 // ----- Rating Mode (Scoring System) -----
-const ratingModeForm = document.getElementById("rating-mode-form");
-if (ratingModeForm) {
-  ratingModeForm.addEventListener("submit", function(e) {
-    e.preventDefault();
-    const select = document.getElementById("rating-mode-select");
-    const value = select.value;
-    fetch("/update-rating-mode/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-CSRFToken": getCookie("csrftoken"),
-      },
-      body: JSON.stringify({ rating_mode: value }),
+function saveRatingMode(value) {
+  fetch("/update-rating-mode/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": getCookie("csrftoken"),
+    },
+    body: JSON.stringify({ rating_mode: value }),
+  })
+    .then(res => res.json())
+    .then(res => {
+      if (res.success) {
+        showNotification("Scoring system updated!");
+      } else {
+        alert(res.error || "Failed to update scoring system.");
+      }
     })
-      .then(res => res.json())
-      .then(res => {
-        if (res.success) {
-          showNotification("Scoring system saved successfully!");
-        } else {
-          alert(res.error || "Failed to update scoring system.");
-        }
-      })
-      .catch(err => {
-        alert("Request failed.");
-      });
-  });
+    .catch(err => {
+      alert("Request failed.");
+    });
 }
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -93,6 +87,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
         // Close dropdown
         select.classList.remove('open');
+
+        // Auto-save
+        saveRatingMode(option.dataset.value);
       });
     });
 
@@ -120,43 +117,69 @@ document.addEventListener("DOMContentLoaded", function () {
   const navForm = document.getElementById("nav-items-form");
 
   if (navForm) {
-    function updateDOMOrder() {
-      const rows = Array.from(document.querySelectorAll(".nav-item-row"));
-      rows.forEach((row, index) => {
-        row.dataset.position = index + 1;
-      });
+    let draggedItem = null;
+
+    // Click to toggle visibility
+    navForm.addEventListener('click', (e) => {
+      const box = e.target.closest('.nav-item-box');
+      if (box && !e.target.closest('.nav-item-checkbox')) {
+        const checkbox = box.querySelector('.nav-item-checkbox');
+        checkbox.checked = !checkbox.checked;
+        box.classList.toggle('active', checkbox.checked);
+        saveNavItems();
+      }
+    });
+
+    // Drag and drop
+    navForm.addEventListener('dragstart', (e) => {
+      const box = e.target.closest('.nav-item-box');
+      if (box) {
+        draggedItem = box;
+        setTimeout(() => box.classList.add('dragging'), 0);
+      }
+    });
+
+    navForm.addEventListener('dragend', (e) => {
+      const box = e.target.closest('.nav-item-box');
+      if (box) {
+        box.classList.remove('dragging');
+        saveNavItems();
+        draggedItem = null;
+      }
+    });
+
+    navForm.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      const afterElement = getDragAfterElement(navForm, e.clientX);
+      const dragging = navForm.querySelector('.dragging');
+      if (dragging) {
+        if (afterElement == null) {
+          navForm.appendChild(dragging);
+        } else {
+          navForm.insertBefore(dragging, afterElement);
+        }
+      }
+    });
+
+    function getDragAfterElement(container, x) {
+      const draggableElements = [...container.querySelectorAll('.nav-item-box:not(.dragging)')];
+      return draggableElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = x - box.left - box.width / 2;
+        if (offset < 0 && offset > closest.offset) {
+          return { offset: offset, element: child };
+        } else {
+          return closest;
+        }
+      }, { offset: Number.NEGATIVE_INFINITY }).element;
     }
 
-    navForm.querySelectorAll(".move-up").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const row = btn.closest(".nav-item-row");
-        const prev = row.previousElementSibling;
-        if (prev) {
-          row.parentNode.insertBefore(row, prev);
-          updateDOMOrder();
-        }
-      });
-    });
-
-    navForm.querySelectorAll(".move-down").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const row = btn.closest(".nav-item-row");
-        const next = row.nextElementSibling;
-        if (next) {
-          row.parentNode.insertBefore(next, row);
-          updateDOMOrder();
-        }
-      });
-    });
-
-    navForm.addEventListener("submit", function (e) {
-      e.preventDefault();
-      const rows = document.querySelectorAll(".nav-item-row");
-
-      const data = Array.from(rows).map((row, index) => ({
-        id: row.dataset.id,
+    function saveNavItems() {
+      const boxes = document.querySelectorAll(".nav-item-box");
+      const data = Array.from(boxes).map((box, index) => ({
+        id: box.dataset.id,
         position: index + 1,
-        visible: row.querySelector(".toggle-visible").checked
+        visible: box.querySelector(".nav-item-checkbox").checked
       }));
 
       fetch("/update-nav-items/", {
@@ -170,7 +193,8 @@ document.addEventListener("DOMContentLoaded", function () {
         .then(res => res.json())
         .then(res => {
           if (res.success) {
-            setTimeout(() => window.location.reload(true));
+            showNotification("Navigation buttons updated!");
+            setTimeout(() => window.location.reload(true), 1000);
           } else {
             alert("Update failed.");
           }
@@ -179,9 +203,7 @@ document.addEventListener("DOMContentLoaded", function () {
           console.error("Error:", err);
           alert("Error updating items.");
         });
-    });
-
-    updateDOMOrder();
+    }
   }
 
   // ----- API Key Management -----
@@ -223,7 +245,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
       const data = await response.json();
       alert(data.message || data.error);
-      if (response.ok) row.remove();
+      if (response.ok) {
+        row.remove();
+        // Show add row if it was hidden
+        const addRow = document.getElementById('add-key-row');
+        if (addRow) addRow.style.display = '';
+      }
     });
   });
 
@@ -250,6 +277,16 @@ document.addEventListener("DOMContentLoaded", function () {
       if (response.ok) location.reload();
     });
   }
+
+  // Password masking for API keys
+  document.querySelectorAll('.api-key-input').forEach(input => {
+    input.addEventListener('focus', function() {
+      this.type = 'text';
+    });
+    input.addEventListener('blur', function() {
+      this.type = 'password';
+    });
+  });
 });
 
 // ----- Backup Import/Export -----
@@ -438,35 +475,36 @@ document.querySelectorAll(".tab-button").forEach(button => {
 });
 
 document.addEventListener("DOMContentLoaded", function() {
-  const preferencesForm = document.getElementById("preferences-form");
-  if (preferencesForm) {
-    preferencesForm.addEventListener("submit", function(e) {
-      e.preventDefault();
+  function savePreferences() {
+    const showDate = document.getElementById("show-date-field").checked;
+    const showRepeats = document.getElementById("show-repeats-field").checked;
 
-      const showDate = document.getElementById("show-date-field").checked;
-      const showRepeats = document.getElementById("show-repeats-field").checked;
-
-      fetch("/settings/update_preferences/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRFToken": getCookie("csrftoken"),
-        },
-        body: JSON.stringify({
-          show_date_field: showDate,
-          show_repeats_field: showRepeats,
-        }),
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          showNotification("Edit modal preferences saved successfully!");
-        } else {
-          alert("Failed to save preferences.");
-        }
-      });
+    fetch("/settings/update_preferences/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": getCookie("csrftoken"),
+      },
+      body: JSON.stringify({
+        show_date_field: showDate,
+        show_repeats_field: showRepeats,
+      }),
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        showNotification("Edit modal preferences updated!");
+      } else {
+        alert("Failed to save preferences.");
+      }
     });
   }
+
+  const dateField = document.getElementById("show-date-field");
+  const repeatsField = document.getElementById("show-repeats-field");
+  
+  if (dateField) dateField.addEventListener("change", savePreferences);
+  if (repeatsField) repeatsField.addEventListener("change", savePreferences);
 });
 
 // Update tooltip text dynamically for checkboxes
