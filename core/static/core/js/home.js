@@ -5,6 +5,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   let bannerPool = [];
   let firstLoad = true;
+  let lastBannerIndex = -1;
 
   function initBannerRotator() {
     const cards = [...document.querySelectorAll(".card")];
@@ -28,7 +29,16 @@ document.addEventListener("DOMContentLoaded", function () {
   function updateBanner() {
     if (bannerPool.length === 0) return;
 
-    const random = Math.floor(Math.random() * bannerPool.length);
+    let random;
+    if (bannerPool.length > 1) {
+      do {
+        random = Math.floor(Math.random() * bannerPool.length);
+      } while (random === lastBannerIndex);
+    } else {
+      random = 0;
+    }
+    lastBannerIndex = random;
+
     const { bannerUrl, notes } = bannerPool[random];
 
     if (firstLoad) {
@@ -295,4 +305,3 @@ function redirectScrollToOverlay(e) {
     window.currentOverlayContent.scrollTop += e.deltaY * 0.5;
   }
 }
-

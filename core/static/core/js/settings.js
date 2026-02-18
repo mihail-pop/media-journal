@@ -60,6 +60,62 @@ if (ratingModeForm) {
 }
 
 document.addEventListener("DOMContentLoaded", function () {
+  // ----- Custom Select for Rating Mode -----
+  function setupCustomSelect() {
+    const wrapper = document.querySelector('.custom-select-wrapper');
+    if (!wrapper) return;
+
+    const select = wrapper.querySelector('.custom-select');
+    const trigger = select.querySelector('.custom-select-trigger');
+    const options = select.querySelectorAll('.custom-option');
+    const originalSelect = document.getElementById('rating-mode-select');
+
+    // Toggle dropdown
+    trigger.addEventListener('click', () => {
+      select.classList.toggle('open');
+    });
+
+    // Handle option click
+    options.forEach(option => {
+      option.addEventListener('click', () => {
+        // Update original select
+        originalSelect.value = option.dataset.value;
+
+        // Update trigger
+        trigger.innerHTML = option.innerHTML;
+        const arrow = document.createElement('div');
+        arrow.className = 'arrow';
+        trigger.appendChild(arrow);
+
+        // Update selected class
+        options.forEach(opt => opt.classList.remove('selected'));
+        option.classList.add('selected');
+
+        // Close dropdown
+        select.classList.remove('open');
+      });
+    });
+
+    // Close when clicking outside
+    window.addEventListener('click', e => {
+      if (!select.contains(e.target)) {
+        select.classList.remove('open');
+      }
+    });
+
+    // Set initial value from the original select
+    const selectedValue = originalSelect.value;
+    const initialOption = select.querySelector(`.custom-option[data-value="${selectedValue}"]`);
+    if (initialOption) {
+      trigger.innerHTML = initialOption.innerHTML;
+      const arrow = document.createElement('div');
+      arrow.className = 'arrow';
+      trigger.appendChild(arrow);
+      initialOption.classList.add('selected');
+    }
+  }
+  setupCustomSelect();
+
   // ----- Navigation Buttons Logic -----
   const navForm = document.getElementById("nav-items-form");
 

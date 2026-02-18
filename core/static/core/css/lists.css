@@ -55,7 +55,7 @@
   height: 1.1em;
   display: inline-block;
   position: relative;
-  margin-left: -0.85em;
+  margin-left: -0.25em;
   /* strong overlap for cool effect */
   z-index: 1;
   vertical-align: middle;

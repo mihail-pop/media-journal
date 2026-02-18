@@ -1177,14 +1177,16 @@ def home(request):
     start_tmdb_background_loop()
     start_anilist_background_loop()
 
+    limit = 25
+
     favorite_sections = {
-        "Movies": favorites.filter(media_type="movie"),
-        "TV Shows": favorites.filter(media_type="tv"),
-        "Anime": favorites.filter(media_type="anime"),
-        "Manga": favorites.filter(media_type="manga"),
-        "Games": favorites.filter(media_type="game"),
-        "Books": favorites.filter(media_type="book"),
-        "Music": favorites.filter(media_type="music"),
+        "Movies": favorites.filter(media_type="movie")[:limit],
+        "TV Shows": favorites.filter(media_type="tv")[:limit],
+        "Anime": favorites.filter(media_type="anime")[:limit],
+        "Manga": favorites.filter(media_type="manga")[:limit],
+        "Games": favorites.filter(media_type="game")[:limit],
+        "Books": favorites.filter(media_type="book")[:limit],
+        "Music": favorites.filter(media_type="music")[:limit],
     }
 
     all_items = MediaItem.objects.all()
@@ -1334,10 +1336,8 @@ def home(request):
             }
         )
 
-    favorite_characters = FavoritePerson.objects.filter(type="character").order_by(
-        "position"
-    )
-    favorite_actors = FavoritePerson.objects.filter(type="actor").order_by("position")
+    favorite_characters = FavoritePerson.objects.filter(type="character").order_by("position")[:limit]
+    favorite_actors = FavoritePerson.objects.filter(type="actor").order_by("position")[:limit]
 
     recent_items = MediaItem.objects.order_by("-date_added")[:12]
     recent_activity = []

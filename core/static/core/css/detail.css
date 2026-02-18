@@ -664,12 +664,12 @@ body[data-media-type="music"] .poster {
 }
 
 .screenshot-rotator img#screenshot-image {
-  max-width: 100%;
-  height: auto;
+  width: 100%;
+  height: 41rem;
+  object-fit: contain;
   display: block;
   margin: 0 auto;
-  max-height: 41rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.6));
 }
 
 .rotator-btn {
@@ -936,8 +936,8 @@ body[data-media-type="music"] .poster {
 .screenshots-list img {
   width: 100%;
   max-width: 152px;
-  height: auto;
-  min-height: 85px;
+  aspect-ratio: 16 / 9;
+  object-fit: contain;
   cursor: pointer;
   border-radius: 6px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
@@ -945,7 +945,6 @@ body[data-media-type="music"] .poster {
   transition: opacity 0.3s ease, border 0.3s ease;
   flex-shrink: 0;
   border: 2px solid transparent;
-  max-height: 5.4rem;
   content-visibility: auto;
 }
 
@@ -1417,14 +1416,14 @@ body[data-media-type="music"] .poster {
   background: none;
   border: 1px solid var(--border-color);
   color: var(--text-overview);
-  padding: 0.4em 1em;
+  padding: 0.4em 0.6em;
   font-size: 1rem;
   border-radius: 4px;
   cursor: pointer;
   transition: background-color 0.2s ease;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.3rem;
 }
 
 .music-control-btn:hover {
@@ -1433,8 +1432,17 @@ body[data-media-type="music"] .poster {
 }
 
 .music-control-btn input[type="checkbox"] {
-  margin: 0;
-  cursor: pointer;
+  display: none;
+}
+
+.music-control-btn:has(input:checked) {
+  color: var(--text-title);
+  border-color: var(--special-color);
+}
+
+.music-control-btn:has(input:checked) svg {
+  stroke: var(--special-color);
+  filter: drop-shadow(0 0 2px var(--special-color));
 }
 
 .music-add-form {
@@ -1700,6 +1708,14 @@ body[data-page-type="person-detail"] .overview {
 .spoiler {
   background-color: var(--text-overview);
   color: var(--text-overview);
+  cursor: pointer;
+  user-select: none; 
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.spoiler.revealed {
+  background-color: transparent;
+  color: inherit;
 }
 
 .media-title {

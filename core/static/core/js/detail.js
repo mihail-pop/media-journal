@@ -1159,6 +1159,25 @@ swapBtn?.addEventListener("click", function () {
   const musicCancelBtn = document.getElementById('music-cancel-btn');
   const musicVideosContainer = document.getElementById('music-videos-container');
 
+  function updateMusicControlVisibility() {
+    if (!musicVideosContainer) return;
+    const wrappers = musicVideosContainer.querySelectorAll('.music-video-wrapper');
+    wrappers.forEach((wrapper, index) => {
+      const upBtn = wrapper.querySelector('.music-up-btn');
+      const downBtn = wrapper.querySelector('.music-down-btn');
+      
+      if (upBtn) {
+        upBtn.style.display = index === 0 ? 'none' : '';
+      }
+      
+      if (downBtn) {
+        downBtn.style.display = index === wrappers.length - 1 ? 'none' : '';
+      }
+    });
+  }
+
+  updateMusicControlVisibility();
+
   // Load saved preferences
   if (musicAutoplayToggle) {
     const autoplayEnabled = localStorage.getItem('musicAutoplay') === 'true';

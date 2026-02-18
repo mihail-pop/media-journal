@@ -313,6 +313,21 @@ body.drag-active .card-favorite {
   cursor: grab;
 }
 
+#music-player-container {
+  position: fixed !important;
+  z-index: 9999 !important;
+  line-height: 0 !important;
+}
+
+.music-player-container iframe {
+  display: block !important;
+  border: none !important;
+}
+
+.sidebar-toggle-btn {
+  display: none;
+}
+
 @media (orientation: portrait) {
 
   .separator-bar {

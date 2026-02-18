@@ -1281,6 +1281,7 @@ updateSortButtons();
   // === BANNER ROTATOR ===
   let firstLoad = true;
   let bannerInterval;
+  let lastBannerIndex = -1;
 
   function initBannerRotator() {
     if (bannerPool.length === 0) return;
@@ -1292,7 +1293,17 @@ updateSortButtons();
 
   function updateBanner() {
     if (bannerPool.length === 0) return;
-    const random = Math.floor(Math.random() * bannerPool.length);
+    
+    let random;
+    if (bannerPool.length > 1) {
+      do {
+        random = Math.floor(Math.random() * bannerPool.length);
+      } while (random === lastBannerIndex);
+    } else {
+      random = 0;
+    }
+    lastBannerIndex = random;
+
     const { bannerUrl, notes } = bannerPool[random];
 
     const quoteBox = document.querySelector(".banner-quote");

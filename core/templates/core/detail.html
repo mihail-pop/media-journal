@@ -169,14 +169,27 @@
     <div class="music-controls">
       <label class="music-control-btn">
         <input type="checkbox" id="music-autoplay-toggle">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="5 3 19 12 5 21 5 3"></polygon>
+        </svg>
         <span>Autoplay</span>
       </label>
       <label class="music-control-btn">
         <input type="checkbox" id="music-hide-toggle">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+          <line x1="1" y1="1" x2="23" y2="23"></line>
+        </svg>
         <span>Hide</span>
       </label>
       {% if in_my_list %}
-      <button id="music-add-btn" class="music-control-btn">Add</button>
+      <button id="music-add-btn" class="music-control-btn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        <span>Add</span>
+      </button>
       {% endif %}
     </div>
   </div>
@@ -198,8 +211,14 @@
           ></iframe>
           {% if in_my_list %}
           <div class="music-video-controls">
-            <button class="music-delete-btn" data-position="{{ link.position }}">✕</button>
-            <button class="music-cover-btn" data-position="{{ link.position }}" title="Set as Cover">🖼️</button>
+            <button class="music-delete-btn" data-position="{{ link.position }}" title="Delete Video">✕</button>
+            <button class="music-cover-btn" data-position="{{ link.position }}" title="Set thumbnail as banner and cover">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="pointer-events: none;">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                <polyline points="21 15 16 10 5 21"></polyline>
+              </svg>
+            </button>
             <button class="music-up-btn" data-position="{{ link.position }}" title="Move Up">▲</button>
             <button class="music-down-btn" data-position="{{ link.position }}" title="Move Down">▼</button>
           </div>
