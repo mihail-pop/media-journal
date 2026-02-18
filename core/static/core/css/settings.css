@@ -332,8 +332,8 @@ table td:last-child .delete-btn {
 }
 
 .backup-btn:hover {
-  background-color: var(--hover-bg);
-  border-color: var(--special-color);
+  border-color: var(--text-secondary);
+  background-color: var(--bg-tertiary);
 }
 
 .backup-btn svg {
@@ -522,7 +522,6 @@ table td:last-child .delete-btn {
 }
 
 .preference-toggle-text {
-  font-size: 0.9rem;
   color: var(--text-secondary);
   line-height: 1.4;
 }
@@ -571,6 +570,94 @@ table td:last-child .delete-btn {
 .nav-buttons-section {
   grid-column: 1 / -1;
   max-width: none;
+}
+
+.info-section {
+  grid-column: 1 / -1;
+  max-width: none;
+}
+
+.info-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.resource-card {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 1rem 1.2rem;
+  transition: all 0.2s ease;
+}
+
+.resource-card p {
+  margin: 0.5rem 0;
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+
+.resource-card p:first-child {
+  margin-top: 0;
+  font-size: 1rem;
+}
+
+.resource-card p:last-child {
+  margin-bottom: 0;
+}
+
+.tips-card {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 1rem 1.2rem;
+  margin-top: 0.5rem;
+}
+
+.tips-card p {
+  margin: 0.7rem 0;
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+
+.tips-card p:first-child {
+  margin-top: 0;
+}
+
+.tips-card p:last-child {
+  margin-bottom: 0;
+}
+
+.version-info-content {
+  text-align: center;
+  margin: 1.5rem 0;
+}
+
+.version-info-content p {
+  margin: 0.7rem 0;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 1rem;
+}
+
+.support-links {
+  text-align: center;
+  margin-top: 1.5rem;
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.support-links a {
+  padding: 0.5rem 1rem;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.support-links a:hover {
+  border-color: var(--special-color);
 }
 
 @keyframes spin {

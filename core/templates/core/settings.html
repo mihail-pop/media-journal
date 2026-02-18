@@ -87,7 +87,7 @@
             <input type="checkbox" id="show-repeats-field" name="show_repeats_field" {% if show_repeats_field %}checked{% endif %}>
             <div class="preference-toggle-content">
               <div class="preference-toggle-text">
-                <b>Display repeats field <br>(Rewatches/Replays/Rereads)</b>
+                <b>Display repeats field</b>
               </div>
               <div class="preference-toggle-icon">
                 <svg class="repeat-icon" viewBox="0 0 512 512"><path fill="currentColor" d="M256.455 8c66.269.119 126.437 26.233 170.859 68.685l35.715-35.715C478.149 25.851 504 36.559 504 57.941V192c0 13.255-10.745 24-24 24H345.941c-21.382 0-32.09-25.851-16.971-40.971l41.75-41.75c-30.864-28.899-70.801-44.907-113.23-45.273-92.398-.798-170.283 73.977-169.484 169.442C88.764 348.009 162.184 424 256 424c41.127 0 79.997-14.678 110.629-41.556 4.743-4.161 11.906-3.908 16.368.553l39.662 39.662c4.872 4.872 4.631 12.815-.482 17.433C378.202 479.813 319.926 504 256 504 119.034 504 8.001 392.967 8 256.002 7.999 119.193 119.646 7.755 256.455 8z"></path></svg>
@@ -159,7 +159,7 @@
 
   <div class="tab-content" id="backup">
     <div class="preferences-container">
-      <div class="preferences-section" style="grid-column: 1 / -1; max-width: 700px; margin: 0 auto;">
+      <div class="preferences-section" style="grid-column: 1 / -1; max-width: 900px; margin: 0 auto;">
         <h3>Backup & Restore</h3>
         <div class="backup-actions">
           <button id="download-backup-btn" class="backup-btn">
@@ -173,8 +173,8 @@
           </button>
         </div>
         <div class="backup-info-box">
-          <p style="margin: 0 0 0.5rem 0;">During backup creation or loading you can see the remaining time. You can cancel at any time.</p>
-          <p style="margin: 0;">Keep the downloaded backup file as it is (.zip) for loading.</p>
+          <p style="margin: 0 0 0.5rem 0; font-weight: 600; font-size: 1rem;">During backup creation or loading you can see the remaining time and progress. You can cancel at any time.</p>
+          <p style="margin: 0; font-weight: 600; font-size: 1rem;">Keep the downloaded backup file as it is (.zip) for loading.</p>
         </div>
       </div>
     </div>
@@ -255,38 +255,45 @@
 
   <div class="tab-content" id="information">
     <div class="preferences-container">
-      <div class="preferences-section">
+      <div class="preferences-section info-section">
         <h3>Useful Resources</h3>
-        <div style="font-size: 0.95rem; margin-top: 1rem; text-align: left; line-height: 1.6;">
-          <p><a href="https://www.steamgriddb.com" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">SteamGridDB</a> - a site to get <a href="https://www.steamgriddb.com/heroes/all/all/all/1" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">banners</a> and <a href="https://www.steamgriddb.com/grids/600x900/all/all/1" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">covers</a> for your games.</p>
-          
-          <p>• Animated gif, png and webp files are supported, so you can get animated <a href="https://www.steamgriddb.com/profile/76561198374208390/heroes" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">banners</a> and <a href="https://www.steamgriddb.com/profile/76561198374208390/grids/1" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">covers</a>.
-          <br/>• On SteamGridDB make sure you press on the <b>Download</b> button before you <b>Save As</b> the animated files so that you get the correct file format (webp/png not webm).</p>
-          
-          <p><a href="https://wallhaven.cc" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">WallHaven</a> - a site to get banners and covers for your media.</p>
+        <div class="info-content">
+          <div class="resource-card">
+            <p><a href="https://www.steamgriddb.com" target="_blank" rel="noopener noreferrer">SteamGridDB</a> - a site to get <a href="https://www.steamgriddb.com/heroes/all/all/all/1" target="_blank" rel="noopener noreferrer">banners</a> and <a href="https://www.steamgriddb.com/grids/600x900/all/all/1" target="_blank" rel="noopener noreferrer">covers</a> for your games.</p>
+            <p>• Animated gif, png and webp files are supported, so you can get animated <a href="https://www.steamgriddb.com/profile/76561198374208390/heroes" target="_blank" rel="noopener noreferrer">banners</a> and <a href="https://www.steamgriddb.com/profile/76561198374208390/grids/1" target="_blank" rel="noopener noreferrer">covers</a>.<br/>• On SteamGridDB make sure you press on the <b>Download</b> button before you <b>Save As</b> the animated files so that you get the correct file format (webp/png not webm).</p>
+          </div>
 
-          <p>• You will most likely need to crop the images to center them properly.</p>
+          <div class="resource-card">
+            <p><a href="https://wallhaven.cc" target="_blank" rel="noopener noreferrer">WallHaven</a> - a site to get banners and covers for your media.</p>
+          </div>
 
-          <p><a href="https://hermit.chimbori.com" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">Hermit</a> - an Android app that can add any site to the <a href="https://imgur.com/a/soTMitO" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">home screen</a> and launch it in <a href="https://imgur.com/a/media-journal-fullscreen-without-browser-search-bar-bottom-bar-q0vMF8u" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">fullscreen</a>.</p>
-          <p>• In Hermit’s site settings, you can toggle browser features on or off as needed.</p>
+          <div class="resource-card">
+            <p><a href="https://hermit.chimbori.com" target="_blank" rel="noopener noreferrer">Hermit</a> - an Android app that can add any site to the <a href="https://imgur.com/a/soTMitO" target="_blank" rel="noopener noreferrer">home screen</a> and launch it in <a href="https://imgur.com/a/media-journal-fullscreen-without-browser-search-bar-bottom-bar-q0vMF8u" target="_blank" rel="noopener noreferrer">fullscreen</a>.</p>
+            <p>• In Hermit's site settings, you can toggle browser features on or off as needed.</p>
+          </div>
 
-          <p>Tip - On the home page you can see all your favorites and reorder them by clicking on any section header (e.g. Movies).</p>
-          <p>Tip - Some youtube videos show "Video unavailable, watch on youtube." because youtube blocks them from being played on numerical urls for example "http://192.168.0.173:8000". They will work on "http://localhost:8000" or if you can set a custom url for example "http://myapp.mediajournal:8000" (local DNS is required to make it work for all devices on your network).</p>
+          <div class="tips-card">
+            <p><b>Tip</b> - On the home page you can see all your favorites and reorder them by clicking on any section header (e.g. Movies).</p>
+            <p><b>Tip</b> - Some youtube videos might show "Video unavailable, watch on youtube." because youtube blocks them from being played on numerical urls (e.g. "http://192.168.0.173:8000"). They will work on "http://localhost:8000" or on a custom url (e.g."http://myapp.mediajournal:8000" and for it to work on your other devices, a local DNS is needed either on your router or on your machine).</p>
+          </div>
         </div>
-        <br/><br/><br/>
+      </div>
+
+      <div class="preferences-section info-section">
         <h3>Version Information</h3>
-        <div id="version-info" style="text-align: center; margin-bottom: 2rem;">
-          <p style=" margin: 0.5rem 0; font-weight: bold;">Your Release <span id="current-version">Loading...</span></p>
-          <p style=" margin: 0.5rem 0; font-weight: bold;">Latest Release <span id="latest-version">Loading...</span></p>
-          <p id="update-status" style="margin: 0.5rem 0; font-weight: bold;"></p>
+        <div class="version-info-content">
+          <p>Your Release <span id="current-version">Loading...</span></p>
+          <p>Latest Release <span id="latest-version">Loading...</span></p>
+          <p id="update-status"></p>
         </div>
-        <p style="font-size: 0.9rem; margin-top: 1rem; text-align: center;">
-          <br/> <a href="https://github.com/mihail-pop/media-journal/issues" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">[Report an issue]</a> <a href="https://github.com/mihail-pop/media-journal/discussions" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">[Ask a question]</a>
-        </p>
+        <div class="support-links">
+          <a href="https://github.com/mihail-pop/media-journal/issues" target="_blank" rel="noopener noreferrer">Report an issue</a>
+          <a href="https://github.com/mihail-pop/media-journal/discussions" target="_blank" rel="noopener noreferrer">Ask a question</a>
+        </div>
       </div>
     </div>
   </div>
-</div>
+
 {% endblock %}
 
 {% block script %}
