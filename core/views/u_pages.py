@@ -1,0 +1,802 @@
+from django.apps import apps
+from django.views.decorators.csrf import ensure_csrf_cookie
+from django.views.decorators.http import require_GET
+from django.db.models import Q
+from core.background import start_tmdb_background_loop, start_anilist_background_loop
+from django.shortcuts import render
+from django.utils import timezone
+from datetime import timedelta
+from collections import defaultdict
+from core.models import APIKey, MediaItem, FavoritePerson, NavItem
+from core.views.p_detail import fetch_actor_data, fetch_character_data
+from django.db.models import Sum
+from django.utils.text import slugify
+from django.urls import reverse
+from django.utils.timesince import timesince
+import logging
+
+
+logger = logging.getLogger(__name__)
+
+@ensure_csrf_cookie
+def home(request):
+    favorites = MediaItem.objects.filter(favorite=True).order_by(
+        "favorite_position", "date_added"
+    )
+    start_tmdb_background_loop()
+    start_anilist_background_loop()
+
+    limit = 25
+
+    favorite_sections = {
+        "Movies": favorites.filter(media_type="movie")[:limit],
+        "TV Shows": favorites.filter(media_type="tv")[:limit],
+        "Anime": favorites.filter(media_type="anime")[:limit],
+        "Manga": favorites.filter(media_type="manga")[:limit],
+        "Games": favorites.filter(media_type="game")[:limit],
+        "Books": favorites.filter(media_type="book")[:limit],
+        "Music": favorites.filter(media_type="music")[:limit],
+    }
+
+    all_items = MediaItem.objects.all()
+    media_counts = {
+        "Movies": all_items.filter(media_type="movie").count(),
+        "TV Shows": all_items.filter(media_type="tv").count(),
+        "Anime": all_items.filter(media_type="anime").count(),
+        "Games": all_items.filter(media_type="game").count(),
+        "Books": all_items.filter(media_type="book").count(),
+        "Manga": all_items.filter(media_type="manga").count(),
+        "Music": all_items.filter(media_type="music").count(),
+    }
+
+    total_entries = sum(media_counts.values())
+
+    media_colors = {
+        "Movies": "#F4B400",  # Yellow
+        "TV Shows": "#E53935",  # Red
+        "Anime": "#42A5F5",  # Blue
+        "Games": "#66BB6A",  # Green
+        "Books": "#EC407A",  # Pink
+        "Manga": "#AB47BC",  # Purple
+        "Music": "#FF7043",  # Orange
+    }
+
+    stats_blocks = []
+    for label, count in media_counts.items():
+        if count > 0:
+            stats_blocks.append(
+                {
+                    "label": label,
+                    "count": count,
+                    "color": media_colors[label],
+                    "percentage": round((count / total_entries) * 100, 2)
+                    if total_entries
+                    else 0,
+                }
+            )
+
+    # Sort by count and mark top 5 as visible
+    stats_blocks.sort(key=lambda x: x["count"], reverse=True)
+    for i, block in enumerate(stats_blocks):
+        block["visible"] = i < 5
+
+    stats = dict(media_counts)
+    stats["Total Entries"] = total_entries
+    stats["Favorites"] = favorites.count()
+
+    # Extra stats
+    movie_count = media_counts["Movies"]
+    tv_episodes = (
+        all_items.filter(media_type="tv").aggregate(Sum("progress_main"))[
+            "progress_main__sum"
+        ]
+        or 0
+    )
+    anime_episodes = (
+        all_items.filter(media_type="anime").aggregate(Sum("progress_main"))[
+            "progress_main__sum"
+        ]
+        or 0
+    )
+
+    total_hours = (
+        movie_count * (90 / 60) + tv_episodes * (40 / 60) + anime_episodes * (24 / 60)
+    )
+    days_watched = round(total_hours / 24, 1)
+
+    game_hours = (
+        all_items.filter(media_type="game").aggregate(Sum("progress_main"))[
+            "progress_main__sum"
+        ]
+        or 0
+    )
+    days_played = round(game_hours / 24, 1)
+
+    chapters_read = (
+        all_items.filter(media_type="manga").aggregate(Sum("progress_main"))[
+            "progress_main__sum"
+        ]
+        or 0
+    )
+
+    pages_read = (
+        all_items.filter(media_type="book").aggregate(Sum("progress_main"))[
+            "progress_main__sum"
+        ]
+        or 0
+    )
+
+    extra_stats = {}
+    if days_watched > 0:
+        extra_stats["Days Watched"] = days_watched
+    if days_played > 0:
+        extra_stats["Days Played"] = days_played
+    if pages_read > 0:
+        extra_stats["Pages Read"] = pages_read
+    if chapters_read > 0:
+        extra_stats["Chapters Read"] = chapters_read
+
+    # Activity history (167 days)
+    today = timezone.now().date()
+    start_date = today - timedelta(days=166)
+
+    activity_counts = MediaItem.objects.filter(
+        date_added__date__gte=start_date
+    ).values_list("date_added", flat=True)
+
+    count_by_day = defaultdict(int)
+    count_by_day = defaultdict(int)
+    for activity_date in activity_counts:
+        count_by_day[activity_date.date()] += 1
+
+    activity_data = []
+    for i in range(167):
+        day = start_date + timedelta(days=i)
+        formatted_date = day.strftime("%A %d %B %Y")
+        activity_data.append(
+            {
+                "date": formatted_date,
+                "count": count_by_day.get(day, 0),
+            }
+        )
+
+    columns = [activity_data[i : i + 7] for i in range(0, len(activity_data), 7)]
+
+    notifications = MediaItem.objects.filter(notification=True).order_by(
+        "-last_updated"
+    )
+
+    notifications_list = []
+    for item in notifications:
+        if item.media_type == "tv":
+            url = reverse(
+                "tmdb_detail", args=[item.media_type, item.source_id]
+            )  # adjust the name/args if needed
+        elif item.media_type in ["anime", "manga"]:
+            url = reverse("mal_detail", args=[item.media_type, item.source_id])
+        else:
+            url = "#"
+        notifications_list.append(
+            {
+                "id": item.id,
+                "title": item.title,
+                "url": url,
+                "media_type": item.media_type,
+            }
+        )
+
+    favorite_characters = FavoritePerson.objects.filter(type="character").order_by("position")[:limit]
+    favorite_actors = FavoritePerson.objects.filter(type="actor").order_by("position")[:limit]
+
+    recent_items = MediaItem.objects.order_by("-date_added")[:12]
+    recent_activity = []
+
+    for item in recent_items:
+        time_ago = timesince(item.date_added).split(",")[0] + " ago"
+        if item.status == "completed":
+            action = f"Completed {item.title}"
+        elif item.status == "planned":
+            action = f"Planned {item.title}"
+        elif item.status == "dropped":
+            action = f"Dropped {item.title}"
+        elif item.status == "ongoing":
+            action = f"Started {item.title}"
+        elif item.status == "on_hold":
+            action = f"Put {item.title} on hold"
+        else:
+            action = f"Added {item.title}"
+
+        # Generate the detail URL
+        if item.source == "tmdb" and item.media_type in ["movie", "tv"]:
+            if "_s" in item.source_id:  # it's a season
+                show_id = item.source_id.split("_s")[0]
+                season_number = item.source_id.split("_s")[1]
+                url = reverse("tmdb_season_detail", args=[show_id, season_number])
+            else:
+                url = reverse("tmdb_detail", args=[item.media_type, item.source_id])
+        elif item.source == "mal" and item.media_type in ["anime", "manga"]:
+            url = reverse("mal_detail", args=[item.media_type, item.source_id])
+        elif item.source == "igdb" and item.media_type == "game":
+            url = reverse("igdb_detail", args=[item.source_id])
+        elif item.source == "openlib" and item.media_type == "book":
+            url = reverse("openlib_detail", args=[item.source_id])
+        elif item.source == "musicbrainz" and item.media_type == "music":
+            url = reverse("musicbrainz_detail", args=[item.source_id])
+        else:
+            url = "#"
+
+        cover_url = item.cover_url or "/static/core/img/placeholder.png"
+
+        recent_activity.append(
+            {
+                "message_main": action,
+                "message_time": time_ago,
+                "media_type": item.media_type,
+                "title": item.title,
+                "url": url,
+                "cover_url": cover_url,
+            }
+        )
+
+    # Get theme mode
+    AppSettings = apps.get_model("core", "AppSettings")
+    settings = AppSettings.objects.first()
+    theme_mode = settings.theme_mode if settings else "dark"
+
+    return render(
+        request,
+        "core/home.html",
+        {
+            "favorite_sections": favorite_sections.items(),
+            "favorite_sections_dict": favorite_sections,
+            "favorite_characters": favorite_characters,
+            "favorite_actors": favorite_actors,
+            "stats": stats,
+            "stats_blocks": stats_blocks,
+            "extra_stats": extra_stats,
+            "activity_data": activity_data,
+            "activity_columns": columns,
+            "notifications": notifications_list,
+            "recent_activity": recent_activity,
+            "theme_mode": theme_mode,
+        },
+    )
+
+@ensure_csrf_cookie
+def movies(request):
+    # Get current rating mode and theme from AppSettings
+    AppSettings = apps.get_model("core", "AppSettings")
+    settings = AppSettings.objects.first()
+    rating_mode = settings.rating_mode if settings else "faces"
+    theme_mode = settings.theme_mode if settings else "dark"
+
+    # Get status counts for sidebar
+    status_counts = {
+        "all": MediaItem.objects.filter(media_type="movie").count(),
+        "ongoing": MediaItem.objects.filter(
+            media_type="movie", status="ongoing"
+        ).count(),
+        "completed": MediaItem.objects.filter(
+            media_type="movie", status="completed"
+        ).count(),
+        "on_hold": MediaItem.objects.filter(
+            media_type="movie", status="on_hold"
+        ).count(),
+        "planned": MediaItem.objects.filter(
+            media_type="movie", status="planned"
+        ).count(),
+        "dropped": MediaItem.objects.filter(
+            media_type="movie", status="dropped"
+        ).count(),
+    }
+
+    return render(
+        request,
+        "core/movies.html",
+        {
+            "page_type": "movie",
+            "rating_mode": rating_mode,
+            "theme_mode": theme_mode,
+            "status_counts": status_counts,
+        },
+    )
+
+@ensure_csrf_cookie
+def tvshows(request):
+    # Get current rating mode and theme from AppSettings
+    AppSettings = apps.get_model("core", "AppSettings")
+    settings = AppSettings.objects.first()
+    rating_mode = settings.rating_mode if settings else "faces"
+    theme_mode = settings.theme_mode if settings else "dark"
+
+    # Get status counts for sidebar
+    status_counts = {
+        "all": MediaItem.objects.filter(media_type="tv").count(),
+        "ongoing": MediaItem.objects.filter(media_type="tv", status="ongoing").count(),
+        "completed": MediaItem.objects.filter(
+            media_type="tv", status="completed"
+        ).count(),
+        "on_hold": MediaItem.objects.filter(media_type="tv", status="on_hold").count(),
+        "planned": MediaItem.objects.filter(media_type="tv", status="planned").count(),
+        "dropped": MediaItem.objects.filter(media_type="tv", status="dropped").count(),
+    }
+
+    # Check if there are any seasons in the list
+    has_seasons = (
+        MediaItem.objects.filter(media_type="tv")
+        .filter(Q(source_id__contains="_s") | Q(title__contains="Season"))
+        .exists()
+    )
+
+    return render(
+        request,
+        "core/tvshows.html",
+        {
+            "page_type": "tv",
+            "rating_mode": rating_mode,
+            "has_seasons": has_seasons,
+            "theme_mode": theme_mode,
+            "status_counts": status_counts,
+        },
+    )
+
+@ensure_csrf_cookie
+def anime(request):
+    # Get current rating mode and theme from AppSettings
+    AppSettings = apps.get_model("core", "AppSettings")
+    settings = AppSettings.objects.first()
+    rating_mode = settings.rating_mode if settings else "faces"
+    theme_mode = settings.theme_mode if settings else "dark"
+
+    # Get status counts for sidebar
+    status_counts = {
+        "all": MediaItem.objects.filter(media_type="anime").count(),
+        "ongoing": MediaItem.objects.filter(
+            media_type="anime", status="ongoing"
+        ).count(),
+        "completed": MediaItem.objects.filter(
+            media_type="anime", status="completed"
+        ).count(),
+        "on_hold": MediaItem.objects.filter(
+            media_type="anime", status="on_hold"
+        ).count(),
+        "planned": MediaItem.objects.filter(
+            media_type="anime", status="planned"
+        ).count(),
+        "dropped": MediaItem.objects.filter(
+            media_type="anime", status="dropped"
+        ).count(),
+    }
+
+    return render(
+        request,
+        "core/anime.html",
+        {
+            "page_type": "anime",
+            "rating_mode": rating_mode,
+            "theme_mode": theme_mode,
+            "status_counts": status_counts,
+        },
+    )
+
+@ensure_csrf_cookie
+def manga(request):
+    # Get current rating mode and theme from AppSettings
+    AppSettings = apps.get_model("core", "AppSettings")
+    settings = AppSettings.objects.first()
+    rating_mode = settings.rating_mode if settings else "faces"
+    theme_mode = settings.theme_mode if settings else "dark"
+
+    # Get status counts for sidebar
+    status_counts = {
+        "all": MediaItem.objects.filter(media_type="manga").count(),
+        "ongoing": MediaItem.objects.filter(
+            media_type="manga", status="ongoing"
+        ).count(),
+        "completed": MediaItem.objects.filter(
+            media_type="manga", status="completed"
+        ).count(),
+        "on_hold": MediaItem.objects.filter(
+            media_type="manga", status="on_hold"
+        ).count(),
+        "planned": MediaItem.objects.filter(
+            media_type="manga", status="planned"
+        ).count(),
+        "dropped": MediaItem.objects.filter(
+            media_type="manga", status="dropped"
+        ).count(),
+    }
+
+    return render(
+        request,
+        "core/manga.html",
+        {
+            "page_type": "manga",
+            "rating_mode": rating_mode,
+            "theme_mode": theme_mode,
+            "status_counts": status_counts,
+        },
+    )
+
+@ensure_csrf_cookie
+def games(request):
+    # Get current rating mode and theme from AppSettings
+    AppSettings = apps.get_model("core", "AppSettings")
+    settings = AppSettings.objects.first()
+    rating_mode = settings.rating_mode if settings else "faces"
+    theme_mode = settings.theme_mode if settings else "dark"
+
+    # Get status counts for sidebar
+    status_counts = {
+        "all": MediaItem.objects.filter(media_type="game").count(),
+        "ongoing": MediaItem.objects.filter(
+            media_type="game", status="ongoing"
+        ).count(),
+        "completed": MediaItem.objects.filter(
+            media_type="game", status="completed"
+        ).count(),
+        "on_hold": MediaItem.objects.filter(
+            media_type="game", status="on_hold"
+        ).count(),
+        "planned": MediaItem.objects.filter(
+            media_type="game", status="planned"
+        ).count(),
+        "dropped": MediaItem.objects.filter(
+            media_type="game", status="dropped"
+        ).count(),
+    }
+
+    return render(
+        request,
+        "core/games.html",
+        {
+            "page_type": "game",
+            "rating_mode": rating_mode,
+            "theme_mode": theme_mode,
+            "status_counts": status_counts,
+        },
+    )
+
+@ensure_csrf_cookie
+def music(request):
+    # Get current rating mode and theme from AppSettings
+    AppSettings = apps.get_model("core", "AppSettings")
+    settings = AppSettings.objects.first()
+    rating_mode = settings.rating_mode if settings else "faces"
+    theme_mode = settings.theme_mode if settings else "dark"
+
+    # Get status counts for sidebar
+    status_counts = {
+        "all": MediaItem.objects.filter(media_type="music").count(),
+        "ongoing": MediaItem.objects.filter(
+            media_type="music", status="ongoing"
+        ).count(),
+        "completed": MediaItem.objects.filter(
+            media_type="music", status="completed"
+        ).count(),
+        "on_hold": MediaItem.objects.filter(
+            media_type="music", status="on_hold"
+        ).count(),
+        "planned": MediaItem.objects.filter(
+            media_type="music", status="planned"
+        ).count(),
+        "dropped": MediaItem.objects.filter(
+            media_type="music", status="dropped"
+        ).count(),
+    }
+
+    return render(
+        request,
+        "core/music.html",
+        {
+            "page_type": "music",
+            "rating_mode": rating_mode,
+            "theme_mode": theme_mode,
+            "status_counts": status_counts,
+        },
+    )
+
+@ensure_csrf_cookie
+def books(request):
+    # Get current rating mode and theme from AppSettings
+    AppSettings = apps.get_model("core", "AppSettings")
+    settings = AppSettings.objects.first()
+    rating_mode = settings.rating_mode if settings else "faces"
+    theme_mode = settings.theme_mode if settings else "dark"
+
+    # Get status counts for sidebar
+    status_counts = {
+        "all": MediaItem.objects.filter(media_type="book").count(),
+        "ongoing": MediaItem.objects.filter(
+            media_type="book", status="ongoing"
+        ).count(),
+        "completed": MediaItem.objects.filter(
+            media_type="book", status="completed"
+        ).count(),
+        "on_hold": MediaItem.objects.filter(
+            media_type="book", status="on_hold"
+        ).count(),
+        "planned": MediaItem.objects.filter(
+            media_type="book", status="planned"
+        ).count(),
+        "dropped": MediaItem.objects.filter(
+            media_type="book", status="dropped"
+        ).count(),
+    }
+
+    return render(
+        request,
+        "core/books.html",
+        {
+            "page_type": "book",
+            "rating_mode": rating_mode,
+            "theme_mode": theme_mode,
+            "status_counts": status_counts,
+        },
+    )
+
+@ensure_csrf_cookie
+def history(request):
+    # For sidebar: calculate latest 3 years dynamically
+    current_year = timezone.now().year
+    latest_years = [current_year - i for i in range(3)]  # e.g., 2025, 2024, 2023
+
+    # Get theme mode from AppSettings
+    AppSettings = apps.get_model("core", "AppSettings")
+    settings = AppSettings.objects.first()
+    theme_mode = settings.theme_mode if settings else "dark"
+
+    return render(
+        request,
+        "core/history.html",
+        {
+            "latest_years": latest_years,
+            "theme_mode": theme_mode,
+        },
+    )
+
+@ensure_csrf_cookie
+def favorites_page(request):
+    AppSettings = apps.get_model("core", "AppSettings")
+    settings = AppSettings.objects.first()
+    theme_mode = settings.theme_mode if settings else "dark"
+
+    # Fetch favorite media items
+    favorite_media = MediaItem.objects.filter(favorite=True).order_by(
+        "favorite_position", "date_added"
+    )
+
+    # Fetch favorite people
+    favorite_characters = FavoritePerson.objects.filter(type="character").order_by(
+        "position"
+    )
+    favorite_actors = FavoritePerson.objects.filter(type="actor").order_by("position")
+
+    # Define all sections with their metadata
+    # (Display Name, Slug/Key, Type, QuerySet)
+    all_section_defs = [
+        ("Movies", "movie", "media", favorite_media.filter(media_type="movie")),
+        ("TV Shows", "tv", "media", favorite_media.filter(media_type="tv")),
+        ("Anime", "anime", "media", favorite_media.filter(media_type="anime")),
+        ("Manga", "manga", "media", favorite_media.filter(media_type="manga")),
+        ("Games", "game", "media", favorite_media.filter(media_type="game")),
+        ("Books", "book", "media", favorite_media.filter(media_type="book")),
+        ("Music", "music", "media", favorite_media.filter(media_type="music")),
+        ("Characters", "characters", "person", favorite_characters),
+        ("Actors", "actors", "person", favorite_actors),
+    ]
+
+    # Reorder based on requested section
+    requested_section = request.GET.get("section")
+    if requested_section:
+        # Find the index of the requested section
+        index = next(
+            (i for i, s in enumerate(all_section_defs) if s[0] == requested_section), -1
+        )
+        if index > 0:
+            # Move to front
+            item = all_section_defs.pop(index)
+            all_section_defs.insert(0, item)
+
+    # Build the final list of sections to render
+    sections = []
+    global_limit = 100
+    current_total = 0
+
+    for display_name, key, kind, queryset in all_section_defs:
+        count = queryset.count()
+        if count > 0:
+            # For media, key is the media_type code (e.g. 'movie')
+            # For person, key is the slug (e.g. 'characters')
+            # We need a consistent slug for the API/template
+            if kind == "media":
+                slug = slugify(display_name)
+            else:
+                slug = key
+
+            # Determine items to take based on global limit
+            remaining = global_limit - current_total
+            items_to_take = 0
+
+            if count <= remaining:
+                items_to_take = count
+            else:
+                # Take multiples of 50 that fit in remaining to align with API pages
+                items_to_take = (remaining // 50) * 50
+
+            # Normalize items for template
+            items_data = []
+            for item in queryset[:items_to_take]:
+                url = "#"
+                cover_url = ""
+                title = ""
+
+                if kind == "media":
+                    title = item.title
+                    cover_url = item.cover_url or "/static/core/img/placeholder.png"
+
+                    if item.media_type in ["movie", "tv"]:
+                        if "_s" in item.source_id:
+                            parts = item.source_id.split("_s")
+                            url = f"/tmdb/season/{parts[0]}/{parts[1]}/"
+                        else:
+                            url = reverse(
+                                "tmdb_detail", args=[item.media_type, item.source_id]
+                            )
+                    elif item.media_type in ["anime", "manga"]:
+                        url = reverse(
+                            "mal_detail", args=[item.media_type, item.source_id]
+                        )
+                    elif item.media_type == "game":
+                        url = reverse("igdb_detail", args=[item.source_id])
+                    elif item.media_type == "book":
+                        url = reverse("openlib_detail", args=[item.source_id])
+                    elif item.media_type == "music":
+                        url = reverse("musicbrainz_detail", args=[item.source_id])
+                else:
+                    # Person
+                    title = item.name
+                    cover_url = item.image_url or "/static/core/img/placeholder.png"
+                    if item.person_id:
+                        url = f"/person/{item.type}/{item.person_id}/"
+
+                items_data.append(
+                    {
+                        "id": item.id,
+                        "title": title,
+                        "cover_url": cover_url,
+                        "url": url,
+                        "media_type": key,
+                    }
+                )
+
+            current_total += items_to_take
+
+            sections.append(
+                {
+                    "category": display_name,
+                    "slug": slug,
+                    "type": kind,
+                    "items": items_data,
+                    "has_more": count > items_to_take,
+                    "page": items_to_take // 50,
+                }
+            )
+
+    return render(
+        request,
+        "core/favorites.html",
+        {
+            "theme_mode": theme_mode,
+            "sections": sections,
+        },
+    )
+
+@ensure_csrf_cookie
+@require_GET
+def person_detail(request, person_type, person_id):
+    AppSettings = apps.get_model("core", "AppSettings")
+    settings = AppSettings.objects.first()
+    theme_mode = settings.theme_mode if settings else "dark"
+
+    if person_type == "actor":
+        person_data = fetch_actor_data(person_id)
+    elif person_type == "character":
+        person_data = fetch_character_data(person_id)
+    else:
+        person_data = None
+
+    person_name = (
+        person_data.get("name")
+        if person_data
+        else f"{person_type.title()} #{person_id}"
+    )
+
+    return render(
+        request,
+        "core/person_detail.html",
+        {
+            "person_type": person_type,
+            "person_id": person_id,
+            "person_name": person_name,
+            "person_data": person_data,
+            "theme_mode": theme_mode,
+        },
+    )
+
+@ensure_csrf_cookie
+def discover_view(request):
+    # Get theme mode
+    AppSettings = apps.get_model("core", "AppSettings")
+    settings = AppSettings.objects.first()
+    theme_mode = settings.theme_mode if settings else "dark"
+
+    return render(
+        request,
+        "core/discover.html",
+        {
+            "theme_mode": theme_mode,
+        },
+    )
+
+@ensure_csrf_cookie
+def community(request):
+    firebase_url = (
+        "https://media-journal-6c8cf-default-rtdb.europe-west1.firebasedatabase.app"
+    )
+
+    # Get only the fields we need for posting
+    items = MediaItem.objects.values(
+        "id", "title", "media_type", "source", "source_id", "status"
+    ).order_by("title")
+
+    media_types = dict(MediaItem.MEDIA_TYPES)
+
+    # Get theme mode
+    AppSettings = apps.get_model("core", "AppSettings")
+    settings = AppSettings.objects.first()
+    theme_mode = settings.theme_mode if settings else "dark"
+
+    return render(
+        request,
+        "core/community.html",
+        {
+            "firebase_url": firebase_url,
+            "items": list(items),
+            "media_types": media_types,
+            "theme_mode": theme_mode,
+            "username": settings.username if settings and settings.username else "",
+        },
+    )
+
+@ensure_csrf_cookie
+def settings_page(request):
+    keys = APIKey.objects.all().order_by("name")
+    existing_names = [key.name for key in keys]
+    allowed_names = APIKey.NAME_CHOICES
+
+    AppSettings = apps.get_model("core", "AppSettings")
+    settings = AppSettings.objects.first()
+    if not settings:
+        settings = AppSettings.objects.create()  # ensure one exists
+
+    current_rating_mode = settings.rating_mode
+
+    nav_items = NavItem.objects.all().order_by("position")
+    for item in nav_items:
+        item.display_name = item.get_name_display()
+
+    return render(
+        request,
+        "core/settings.html",
+        {
+            "keys": keys,
+            "allowed_names": allowed_names,
+            "existing_names": existing_names,
+            "nav_items": nav_items,
+            "current_rating_mode": current_rating_mode,
+            "theme_mode": settings.theme_mode,
+            "show_date_field": settings.show_date_field,
+            "show_repeats_field": settings.show_repeats_field,
+        },
+    )
