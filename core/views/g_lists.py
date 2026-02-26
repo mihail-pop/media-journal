@@ -6,7 +6,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-
+# Functions for checking planned status for.......
 
 def check_planned_movie_statuses(request):
     try:

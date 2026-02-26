@@ -8,7 +8,7 @@ from django.utils import timezone
 from datetime import timedelta
 from collections import defaultdict
 from core.models import APIKey, MediaItem, FavoritePerson, NavItem
-from core.views.p_detail import fetch_actor_data, fetch_character_data
+from core.services.m_people import fetch_actor_data, fetch_character_data
 from django.db.models import Sum
 from django.utils.text import slugify
 from django.urls import reverse
