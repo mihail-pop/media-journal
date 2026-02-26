@@ -1,7 +1,7 @@
 import requests
-from .models import APIKey, MediaItem
+from ..models import APIKey, MediaItem
 from django.utils import timezone
-from core.views.u_utils import download_image
+from core.services.u_utils import download_image
 from core.views.m_anime_manga import fetch_anilist_data
 from requests.exceptions import RequestException
 

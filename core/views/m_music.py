@@ -1,14 +1,15 @@
 from django.apps import apps
 from django.views.decorators.csrf import ensure_csrf_cookie
-from django.views.decorators.http import require_GET
+from django.views.decorators.http import require_GET, require_POST
 from django.shortcuts import render
 from django.http import JsonResponse
 from core.models import MediaItem
-from core.views.u_utils import download_image
+from core.services.u_utils import download_image
 import time
 import requests
 import logging
 import datetime
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -947,3 +948,26 @@ def get_music_extra_info(recording_id, artist_id=None, album_id=None):
         f"[MUSIC] Returning tracks={len(album_tracks)}, singles={len(artist_singles)}"
     )
     return {"album_tracks": album_tracks, "artist_singles": artist_singles}
+
+
+
+# Youtube Player
+
+# API endpoint
+@ensure_csrf_cookie
+@require_POST
+def toggle_music_favorite(request):
+    try:
+        data = json.loads(request.body)
+        item_id = data.get("item_id")
+        favorite = data.get("favorite")
+
+        item = MediaItem.objects.get(id=item_id)
+        item.favorite = favorite
+        item.save()
+
+        return JsonResponse({"success": True})
+    except MediaItem.DoesNotExist:
+        return JsonResponse({"success": False, "error": "Item not found"}, status=404)
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)}, status=500)

@@ -1,4 +1,5 @@
 from django.views.decorators.http import require_GET
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.db.models import Case, When, IntegerField, Value, F
 from django.http import JsonResponse
 from core.models import MediaItem, FavoritePerson
@@ -6,6 +7,8 @@ from django.urls import reverse
 from core.views.m_anime_manga import get_anilist_discover
 from core.views.m_games import get_igdb_discover
 from core.views.m_movies_tvshows import get_tmdb_discover
+from core.services.u_utils import rating_to_display
+from django.apps import apps
 import logging
 
 logger = logging.getLogger(__name__)
@@ -890,3 +893,49 @@ def discover_api(request):
         return JsonResponse({"results": results})
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
+
+# API endpoint used by edit modal (edit_modal.js, history.js, lists.js)
+# Returns item data from DB to populate the edit form when user clicks edit button
+@ensure_csrf_cookie
+def get_item(request, item_id):
+    try:
+        item = MediaItem.objects.get(id=item_id)
+
+        AppSettings = apps.get_model("core", "AppSettings")
+        try:
+            settings = AppSettings.objects.first()
+            rating_mode = settings.rating_mode if settings else "faces"
+        except Exception:
+            rating_mode = "faces"
+
+        display_rating = rating_to_display(item.personal_rating, rating_mode)
+
+        return JsonResponse(
+            {
+                "success": True,
+                "item": {
+                    "id": item.id,
+                    "title": item.title,
+                    "media_type": item.media_type,
+                    "source_id": item.source_id,
+                    "status": item.status,
+                    "personal_rating": display_rating,
+                    "notes": item.notes,
+                    "progress_main": item.progress_main if item.progress_main else None,
+                    "total_main": item.total_main,
+                    "progress_secondary": item.progress_secondary,
+                    "total_secondary": item.total_secondary,
+                    "favorite": item.favorite,
+                    "item_status_choices": MediaItem.STATUS_CHOICES,
+                    "rating_mode": rating_mode,
+                    "repeats": item.repeats or 0,
+                    "date_added": item.date_added.isoformat()
+                    if item.date_added
+                    else None,
+                    "show_date_field": settings.show_date_field,
+                    "show_repeats_field": settings.show_repeats_field,
+                },
+            }
+        )
+    except MediaItem.DoesNotExist:
+        return JsonResponse({"success": False, "error": "Item not found"})

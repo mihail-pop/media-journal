@@ -2,7 +2,7 @@ from django.apps import apps
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET
 from django.db.models import Q
-from core.background import start_tmdb_background_loop, start_anilist_background_loop
+from core.services.background import start_tmdb_background_loop, start_anilist_background_loop
 from django.shortcuts import render
 from django.utils import timezone
 from datetime import timedelta

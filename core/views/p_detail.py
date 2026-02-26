@@ -13,8 +13,8 @@ from core.views.m_books import save_openlib_item
 from core.views.m_games import save_igdb_item, get_game_extra_info
 from core.views.m_movies_tvshows import save_tmdb_item, save_tmdb_season, get_movie_extra_info, get_tv_extra_info
 from core.views.m_music import save_musicbrainz_item, get_music_extra_info
-from core.views.u_utils import rating_to_display, display_to_rating
-from core.views.u_utils import download_image
+from core.services.u_utils import rating_to_display, display_to_rating
+from core.services.u_utils import download_image
 import time
 import json
 import requests

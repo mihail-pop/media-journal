@@ -4,7 +4,7 @@ from django.views.decorators.http import require_GET, require_POST
 from django.shortcuts import render
 from django.http import JsonResponse
 from core.models import APIKey, MediaItem
-from core.views.u_utils import download_image
+from core.services.u_utils import download_image
 import time
 import json
 import requests

@@ -4,7 +4,7 @@ from django.conf import settings
 from django.http import JsonResponse
 from core.models import FavoritePerson
 from django.utils.text import slugify
-from core.views.u_utils import download_image
+from core.services.u_utils import download_image
 from core.views.p_detail import fetch_character_data, fetch_actor_data, delete_favorite_person_and_reorder, save_favorite_actor_character
 import time
 import json

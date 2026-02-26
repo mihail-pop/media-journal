@@ -3,7 +3,7 @@ import time
 from datetime import timedelta
 from django.utils import timezone
 from core.models import MediaItem
-from core.updaters import (
+from core.services.updaters import (
     update_tmdb_seasons,
     update_mal_anime_manga,
 )
