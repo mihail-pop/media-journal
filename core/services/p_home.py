@@ -1,12 +1,12 @@
-import threading
 import time
+import threading
 from datetime import timedelta
+
 from django.utils import timezone
+
 from core.models import MediaItem
-from core.services.updaters import (
-    update_tmdb_seasons,
-    update_mal_anime_manga,
-)
+from core.services.m_anime_manga import update_mal_anime_manga
+from core.services.m_movies_tvshows import update_tmdb_seasons
 
 _started_tmdb = False
 _started_anilist = False
@@ -19,7 +19,7 @@ def start_tmdb_background_loop():
     _started_tmdb = True
 
     def loop():
-        print("✅ TMDB background update loop started")
+        print("TMDB background update loop started")
         while True:
             now = timezone.now()
             cutoff = now - timedelta(days=30)
@@ -33,7 +33,7 @@ def start_tmdb_background_loop():
                 update_tmdb_seasons(item)
                 time.sleep(60)
 
-            print("⏳ TMDB check loop finished batch. Pausing for 1 hour...")
+            print("TMDB check loop finished batch. Pausing for 1 hour...")
             time.sleep(3600)
 
     t = threading.Thread(target=loop, daemon=True)
@@ -47,7 +47,7 @@ def start_anilist_background_loop():
     _started_anilist = True
 
     def loop():
-        print("✅ AniList background update loop started")
+        print("AniList background update loop started")
         while True:
             now = timezone.now()
             cutoff = now - timedelta(days=30)
@@ -65,7 +65,7 @@ def start_anilist_background_loop():
                 update_mal_anime_manga(item)
                 time.sleep(60)
 
-            print("⏳ AniList check loop finished batch. Pausing for 1 hour...")
+            print("AniList check loop finished batch. Pausing for 1 hour...")
             time.sleep(3600)
 
     t = threading.Thread(target=loop, daemon=True)

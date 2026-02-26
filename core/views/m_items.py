@@ -1,24 +1,23 @@
+import os
+import json
+import datetime
+import datetime as dt
+
 from django.apps import apps
-from django.views.decorators.csrf import ensure_csrf_cookie
-from django.views.decorators.http import require_POST
 from django.conf import settings
 from django.http import JsonResponse
 from django.utils import timezone
+from django.views.decorators.csrf import ensure_csrf_cookie
+from django.views.decorators.http import require_GET, require_POST
+
 from core.models import MediaItem
-import datetime as dt
-from core.services.m_anime_manga import save_mal_item
+from core.services.g_utils import display_to_rating, rating_to_display
 from core.services.m_books import save_openlib_item
 from core.services.m_games import save_igdb_item
-from core.services.m_movies_tvshows import save_tmdb_item, save_tmdb_season
 from core.services.m_music import save_musicbrainz_item
-from core.services.g_utils import rating_to_display, display_to_rating
-import json
-import logging
-import os
-import datetime
+from core.services.m_anime_manga import save_anilist_item
+from core.services.m_movies_tvshows import save_tmdb_item, save_tmdb_season
 
-
-logger = logging.getLogger(__name__)
 
 @ensure_csrf_cookie
 @require_POST
@@ -47,7 +46,7 @@ def add_to_list(request):
         return save_tmdb_item(media_type, source_id)
 
     if source == "mal":
-        return save_mal_item(media_type, source_id)
+        return save_anilist_item(media_type, source_id)
 
     if source == "igdb":
         return save_igdb_item(source_id)
@@ -59,6 +58,7 @@ def add_to_list(request):
         return save_musicbrainz_item(source_id)
 
     return JsonResponse({"error": "Unsupported source"}, status=400)
+
 
 @ensure_csrf_cookie
 @require_POST
@@ -77,6 +77,7 @@ def add_season_to_list(request):
 
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
+
 
 @ensure_csrf_cookie
 def edit_item(request, item_id):
@@ -231,6 +232,7 @@ def edit_item(request, item_id):
 
     return JsonResponse({"success": False, "error": "Invalid request"})
 
+
 @ensure_csrf_cookie
 @require_POST
 def delete_item(request, item_id):
@@ -305,6 +307,7 @@ def delete_item(request, item_id):
 
         traceback.print_exc()  # Show full traceback in terminal
         return JsonResponse({"success": False, "error": str(e)})
+
 
 @ensure_csrf_cookie
 @require_POST
@@ -388,7 +391,7 @@ def refresh_item(request):
             else:
                 save_tmdb_item(media_type, source_id)
         elif source == "mal":
-            save_mal_item(media_type, source_id)
+            save_anilist_item(media_type, source_id)
         elif source == "igdb":
             save_igdb_item(source_id)
         elif source == "openlib":
@@ -444,6 +447,7 @@ def refresh_item(request):
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
 
+
 # API endpoint used by edit modal (edit_modal.js, history.js, lists.js)
 # Returns item data from DB to populate the edit form when user clicks edit button
 @ensure_csrf_cookie
@@ -489,9 +493,9 @@ def get_item(request, item_id):
         )
     except MediaItem.DoesNotExist:
         return JsonResponse({"success": False, "error": "Item not found"})
-    
 
-# Youtube Player
+
+# Youtube Player favorite/unfavorite
 @ensure_csrf_cookie
 @require_POST
 def toggle_music_favorite(request):
@@ -509,3 +513,46 @@ def toggle_music_favorite(request):
         return JsonResponse({"success": False, "error": "Item not found"}, status=404)
     except Exception as e:
         return JsonResponse({"success": False, "error": str(e)}, status=500)
+
+
+# Fetching videos for the youtube player
+@require_GET
+def favorite_music_videos(request):
+    try:
+        # Get all favorited music items
+        mode = request.GET.get("mode", "favorites")
+        status = request.GET.get("status", "all")
+
+        if mode == "all":
+            music_items = MediaItem.objects.filter(media_type="music")
+        elif mode == "status":
+            if status == "all":
+                music_items = MediaItem.objects.filter(media_type="music")
+            else:
+                music_items = MediaItem.objects.filter(
+                    media_type="music", status=status
+                )
+        else:
+            music_items = MediaItem.objects.filter(media_type="music", favorite=True)
+
+        videos = []
+        for item in music_items:
+            if item.screenshots:
+                for link in item.screenshots:
+                    if link.get("position") != 1:
+                        continue
+                    url = link.get("url", "")
+                    if "youtube.com/watch?v=" in url:
+                        video_id = url.split("watch?v=")[1].split("&")[0]
+                        videos.append(
+                            {
+                                "video_id": video_id,
+                                "item_id": item.id,
+                                "is_favorite": item.favorite,
+                                "source_id": item.source_id,
+                            }
+                        )
+
+        return JsonResponse({"videos": videos})
+    except Exception as e:
+        return JsonResponse({"videos": [], "error": str(e)})

@@ -1,19 +1,41 @@
-from django.apps import apps
-from django.views.decorators.csrf import ensure_csrf_cookie
-from django.views.decorators.http import require_GET, require_POST
-from core.services.p_settings import cleanup_old_tasks, BackupTask, BACKUP_TASKS
-from django.http import FileResponse, HttpResponseBadRequest
-from django.http import JsonResponse
-from core.models import APIKey, NavItem
-import uuid
-import json
-import requests
-import logging
 import os
+import json
+import uuid
 import datetime
 import tempfile
 
-logger = logging.getLogger(__name__)
+import requests
+from django.apps import apps
+from django.http import FileResponse, JsonResponse, HttpResponseBadRequest
+from django.views.decorators.csrf import ensure_csrf_cookie
+from django.views.decorators.http import require_GET, require_POST
+
+from core.models import APIKey, NavItem
+from core.services.p_settings import BACKUP_TASKS, BackupTask, cleanup_old_tasks
+
+
+@ensure_csrf_cookie
+@require_POST
+def update_rating_mode(request):
+    import json
+
+    try:
+        data = json.loads(request.body)
+        new_mode = data.get("rating_mode")
+        valid_modes = {"faces", "stars_5", "scale_10", "scale_100"}
+        if new_mode not in valid_modes:
+            return JsonResponse({"success": False, "error": "Invalid rating mode."})
+        AppSettings = apps.get_model("core", "AppSettings")
+        settings = AppSettings.objects.first()
+        if not settings:
+            settings = AppSettings.objects.create(rating_mode=new_mode)
+        else:
+            settings.rating_mode = new_mode
+            settings.save()
+        return JsonResponse({"success": True})
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)})
+
 
 @require_POST
 def update_preferences(request):
@@ -47,6 +69,32 @@ def update_theme(request):
     settings.save()
 
     return JsonResponse({"success": True})
+
+
+@ensure_csrf_cookie
+@require_POST
+def update_nav_items(request):
+    try:
+        data = json.loads(request.body)
+        items = data.get("items", [])
+
+        for item_data in items:
+            nav_id = item_data.get("id")
+            position = item_data.get("position")
+            visible = item_data.get("visible", True)
+
+            try:
+                nav_item = NavItem.objects.get(id=nav_id)
+                nav_item.position = position
+                nav_item.visible = visible
+                nav_item.save()
+            except NavItem.DoesNotExist:
+                continue  # Skip invalid IDs
+
+        return JsonResponse({"success": True})
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)}, status=400)
+
 
 @ensure_csrf_cookie
 @require_GET
@@ -171,28 +219,6 @@ def delete_key(request):
     except APIKey.DoesNotExist:
         return JsonResponse({"error": "Key not found."}, status=404)
 
-@ensure_csrf_cookie
-@require_POST
-def update_rating_mode(request):
-    import json
-
-    try:
-        data = json.loads(request.body)
-        new_mode = data.get("rating_mode")
-        valid_modes = {"faces", "stars_5", "scale_10", "scale_100"}
-        if new_mode not in valid_modes:
-            return JsonResponse({"success": False, "error": "Invalid rating mode."})
-        AppSettings = apps.get_model("core", "AppSettings")
-        settings = AppSettings.objects.first()
-        if not settings:
-            settings = AppSettings.objects.create(rating_mode=new_mode)
-        else:
-            settings.rating_mode = new_mode
-            settings.save()
-        return JsonResponse({"success": True})
-    except Exception as e:
-        return JsonResponse({"success": False, "error": str(e)})
-
 
 def version_info_api(request):
     from core.context_processors import version_context
@@ -211,27 +237,3 @@ def version_info_api(request):
     return JsonResponse(
         {"current_version": current_version, "latest_version": latest_version}
     )
-
-@ensure_csrf_cookie
-@require_POST
-def update_nav_items(request):
-    try:
-        data = json.loads(request.body)
-        items = data.get("items", [])
-
-        for item_data in items:
-            nav_id = item_data.get("id")
-            position = item_data.get("position")
-            visible = item_data.get("visible", True)
-
-            try:
-                nav_item = NavItem.objects.get(id=nav_id)
-                nav_item.position = position
-                nav_item.visible = visible
-                nav_item.save()
-            except NavItem.DoesNotExist:
-                continue  # Skip invalid IDs
-
-        return JsonResponse({"success": True})
-    except Exception as e:
-        return JsonResponse({"success": False, "error": str(e)}, status=400)

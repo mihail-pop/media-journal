@@ -1,12 +1,11 @@
+import json
+
+from django.db import transaction
+from django.http import JsonResponse
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_POST
-from django.http import JsonResponse
-from core.models import MediaItem, FavoritePerson
-from django.db import transaction
-import json
-import logging
 
-logger = logging.getLogger(__name__)
+from core.models import MediaItem, FavoritePerson
 
 
 @ensure_csrf_cookie

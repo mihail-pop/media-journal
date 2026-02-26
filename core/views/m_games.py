@@ -1,21 +1,21 @@
+import re
+import time
+import datetime
+import unicodedata
+
+import requests
 from django.apps import apps
+from django.http import JsonResponse
+from django.shortcuts import render
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET
-from django.shortcuts import render
-from django.http import JsonResponse
+
 from core.models import APIKey, MediaItem
 from core.services.m_games import get_igdb_token
-import time
-import requests
-import logging
-import datetime
-import re
-import unicodedata
 
 IGDB_ACCESS_TOKEN = None
 IGDB_TOKEN_EXPIRY = 0
 
-logger = logging.getLogger(__name__)
 
 @ensure_csrf_cookie
 @require_GET
@@ -171,6 +171,7 @@ def igdb_search(request):
             seen_ids.add(r["id"])
 
     return JsonResponse({"results": final_results[:30]})
+
 
 @ensure_csrf_cookie
 @require_GET
@@ -350,4 +351,3 @@ def igdb_detail(request, igdb_id):
     }
 
     return render(request, "core/detail.html", context)
-

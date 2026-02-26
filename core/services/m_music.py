@@ -1,14 +1,17 @@
-from django.http import JsonResponse
-from core.models import MediaItem
-from core.services.g_utils import download_image
 import time
-import requests
 import logging
 import datetime
+
+import requests
+from django.http import JsonResponse
+
+from core.models import MediaItem
+from core.services.g_utils import download_image
 
 logger = logging.getLogger(__name__)
 
 last_request_time = 0
+
 
 def wait_for_rate_limit():
     """
@@ -19,6 +22,7 @@ def wait_for_rate_limit():
     if elapsed < 1:
         time.sleep(1 - elapsed)
     last_request_time = time.time()
+
 
 def save_musicbrainz_item(recording_id):
     wait_for_rate_limit()
@@ -136,8 +140,8 @@ def save_musicbrainz_item(recording_id):
 
     # Simple YouTube search via scraping
     try:
-        import urllib.parse
         import unicodedata
+        import urllib.parse
 
         def normalize_text(text):
             # Remove accents and convert to lowercase
@@ -344,6 +348,7 @@ def save_musicbrainz_item(recording_id):
 
     return JsonResponse({"success": True, "message": "Song added to list"})
 
+
 def get_music_extra_info(recording_id, artist_id=None, album_id=None):
 
     print(
@@ -453,4 +458,3 @@ def get_music_extra_info(recording_id, artist_id=None, album_id=None):
         f"[MUSIC] Returning tracks={len(album_tracks)}, singles={len(artist_singles)}"
     )
     return {"album_tracks": album_tracks, "artist_singles": artist_singles}
-

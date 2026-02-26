@@ -2,7 +2,7 @@ from django.apps import apps
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET
 from django.db.models import Q
-from core.services.background import start_tmdb_background_loop, start_anilist_background_loop
+from core.services.p_home import start_tmdb_background_loop, start_anilist_background_loop
 from django.shortcuts import render
 from django.utils import timezone
 from datetime import timedelta
@@ -173,7 +173,7 @@ def home(request):
                 "tmdb_detail", args=[item.media_type, item.source_id]
             )  # adjust the name/args if needed
         elif item.media_type in ["anime", "manga"]:
-            url = reverse("mal_detail", args=[item.media_type, item.source_id])
+            url = reverse("anilist_detail", args=[item.media_type, item.source_id])
         else:
             url = "#"
         notifications_list.append(
@@ -215,7 +215,7 @@ def home(request):
             else:
                 url = reverse("tmdb_detail", args=[item.media_type, item.source_id])
         elif item.source == "mal" and item.media_type in ["anime", "manga"]:
-            url = reverse("mal_detail", args=[item.media_type, item.source_id])
+            url = reverse("anilist_detail", args=[item.media_type, item.source_id])
         elif item.source == "igdb" and item.media_type == "game":
             url = reverse("igdb_detail", args=[item.source_id])
         elif item.source == "openlib" and item.media_type == "book":
@@ -645,7 +645,7 @@ def favorites_page(request):
                             )
                     elif item.media_type in ["anime", "manga"]:
                         url = reverse(
-                            "mal_detail", args=[item.media_type, item.source_id]
+                            "anilist_detail", args=[item.media_type, item.source_id]
                         )
                     elif item.media_type == "game":
                         url = reverse("igdb_detail", args=[item.source_id])

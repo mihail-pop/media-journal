@@ -1,14 +1,15 @@
-from core.services.g_utils import download_image
-from django.http import JsonResponse
-from core.models import MediaItem
 import time
-import requests
-import logging
 import datetime
 
-logger = logging.getLogger(__name__)
+import requests
+from django.http import JsonResponse
+from django.utils import timezone
 
-def save_mal_item(media_type, mal_id):
+from core.models import MediaItem
+from core.services.g_utils import download_image
+
+
+def save_anilist_item(media_type, mal_id):
     try:
         anilist_data = fetch_anilist_data(mal_id, media_type)
 
@@ -273,6 +274,7 @@ def fetch_anilist_data(mal_id, media_type):
         "related_titles": related_titles,
         "recommendations": recommendations,
     }
+
 
 def get_anime_extra_info(mal_id):
     query = """
@@ -701,6 +703,7 @@ def get_manga_extra_info(mal_id):
         print(f"Error in get_manga_extra_info: {e}")
         return {}
 
+
 def get_anilist_discover(
     media_type,
     page,
@@ -838,3 +841,59 @@ def get_anilist_discover(
         return {"results": results, "hasMore": len(raw_media) == 20}
     except Exception:
         return {"results": [], "hasMore": False}
+
+
+def update_mal_anime_manga(item: MediaItem):
+    if item.source != "mal" or item.media_type not in ["anime", "manga"]:
+        return  # Not a MAL anime/manga, skip
+
+    try:
+        anilist_data = fetch_anilist_data(item.source_id, item.media_type)
+    except requests.exceptions.RequestException as e:
+        print(f"[AniList Update] Network error for {item.title}: {e}")
+        item.last_updated = timezone.now()  # Prevent retry storm
+        item.save()
+        return
+    except Exception as e:
+        print(f"[AniList Update] Unexpected error for {item.title}: {e}")
+        item.last_updated = timezone.now()
+        item.save()
+        return
+
+    existing = item.related_titles or []
+    existing_ids = {r["mal_id"] for r in existing if "mal_id" in r}
+
+    new_sequels = []
+    for rel in anilist_data.get("related_titles", []):
+        if rel["relation"].lower() != "sequel":
+            continue
+
+        if rel["mal_id"] in existing_ids:
+            continue  # already present
+
+        # Download image if needed
+        poster_path = rel.get("poster_path")
+        local_path = (
+            download_image(poster_path, f"related/mal_{rel['mal_id']}.jpg")
+            if poster_path
+            else ""
+        )
+
+        new_sequels.append(
+            {
+                "mal_id": rel["mal_id"],
+                "title": rel["title"],
+                "poster_path": local_path,
+                "relation": "Sequel",
+            }
+        )
+
+    if new_sequels:
+        print(
+            f"[AniList Update] Found {len(new_sequels)} new sequel(s) for {item.title}"
+        )
+        item.related_titles = existing + new_sequels
+        item.notification = True
+
+    item.last_updated = timezone.now()
+    item.save()

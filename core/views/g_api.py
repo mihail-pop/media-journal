@@ -1,13 +1,15 @@
-from django.views.decorators.http import require_GET
-from django.db.models import Case, When, IntegerField, Value, F
-from django.http import JsonResponse
-from core.models import MediaItem, FavoritePerson
-from django.urls import reverse
-from core.services.m_anime_manga import get_anilist_discover
-from core.services.m_games import get_igdb_discover
-from core.services.g_api import get_game_screenshots_data
-from core.services.m_movies_tvshows import get_tmdb_discover
 import logging
+
+from django.http import JsonResponse
+from django.urls import reverse
+from django.db.models import F, Case, When, Value, IntegerField
+from django.views.decorators.http import require_GET
+
+from core.models import MediaItem, FavoritePerson
+from core.services.g_api import get_game_screenshots_data
+from core.services.m_games import get_igdb_discover
+from core.services.m_anime_manga import get_anilist_discover
+from core.services.m_movies_tvshows import get_tmdb_discover
 
 logger = logging.getLogger(__name__)
 
@@ -810,7 +812,7 @@ def favorites_api(request):
                 else:
                     url = reverse("tmdb_detail", args=[item.media_type, item.source_id])
             elif item.media_type in ["anime", "manga"]:
-                url = reverse("mal_detail", args=[item.media_type, item.source_id])
+                url = reverse("anilist_detail", args=[item.media_type, item.source_id])
             elif item.media_type == "game":
                 url = reverse("igdb_detail", args=[item.source_id])
             elif item.media_type == "book":

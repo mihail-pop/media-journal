@@ -1,15 +1,21 @@
-from django.views.decorators.csrf import ensure_csrf_cookie
-from django.views.decorators.http import require_GET, require_POST
+import os
+import json
+import time
+import logging
+
 from django.conf import settings
 from django.http import JsonResponse
-from core.models import FavoritePerson
 from django.utils.text import slugify
+from django.views.decorators.csrf import ensure_csrf_cookie
+from django.views.decorators.http import require_GET, require_POST
+
+from core.models import FavoritePerson
+from core.services.m_people import (
+    fetch_actor_data,
+    fetch_character_data,
+    delete_favorite_person_and_reorder,
+)
 from core.services.p_person_detail import refresh_favorite_person
-from core.services.m_people import fetch_character_data, fetch_actor_data, delete_favorite_person_and_reorder, save_favorite_actor_character
-import time
-import json
-import logging
-import os
 
 logger = logging.getLogger(__name__)
 
@@ -87,6 +93,7 @@ def upload_person_image(request):
     except FavoritePerson.DoesNotExist:
         return JsonResponse({"error": "Person not found."}, status=404)
 
+
 @ensure_csrf_cookie
 @require_GET
 def actor_detail_api(request, actor_id):
@@ -128,35 +135,3 @@ def character_detail_api(request, character_id):
             f"Error in character_detail_api for character_id {character_id}: {str(e)}"
         )
         return JsonResponse({"error": "Internal server error"}, status=500)
-
-def check_favorite_person_view(request):
-    name = request.GET.get("name")
-    person_type = request.GET.get("type")
-
-    if not name or not person_type:
-        return JsonResponse({"error": "Missing parameters"}, status=400)
-
-    is_favorited = FavoritePerson.objects.filter(name=name, type=person_type).exists()
-    return JsonResponse({"is_favorited": is_favorited})
-
-
-@ensure_csrf_cookie
-def toggle_favorite_person_view(request):
-    if request.method != "POST":
-        return JsonResponse({"error": "POST request required."}, status=400)
-
-    data = json.loads(request.body)
-    name = data.get("name")
-    image_url = data.get("image_url")
-    person_type = data.get("type")
-    person_id = data.get("person_id")  # New parameter for ID
-
-    # Check if already favorited
-    existing = FavoritePerson.objects.filter(name=name, type=person_type).first()
-    if existing:
-        # Delete favorite and reorder positions
-        delete_favorite_person_and_reorder(existing.id)
-        return JsonResponse({"status": "removed"})
-    else:
-        save_favorite_actor_character(name, image_url, person_type, person_id)
-        return JsonResponse({"status": "added"})

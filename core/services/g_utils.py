@@ -1,19 +1,9 @@
 from pathlib import Path
-from django.conf import settings
-from core.models import MediaItem
+
 import requests
-import logging
+from django.conf import settings
 
 
-logger = logging.getLogger(__name__)
-
-def check_if_in_list(source, source_id):
-    return MediaItem.objects.filter(
-        source=source, source_id=str(source_id)
-    ).exists()  # useless?
-
-
-    
 def download_image(url, relative_path):
     local_path = Path(settings.MEDIA_ROOT) / relative_path
     local_path.parent.mkdir(parents=True, exist_ok=True)  # Ensure folder exists
@@ -28,6 +18,7 @@ def download_image(url, relative_path):
         print("Image download failed:", e)
 
     return ""
+
 
 def rating_to_display(rating_value: int | None, rating_mode: str) -> int | None:
     """

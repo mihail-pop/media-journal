@@ -1,22 +1,22 @@
-from django.views.decorators.csrf import ensure_csrf_cookie
-from django.views.decorators.http import require_GET, require_POST
-from django.core.files.storage import default_storage
-from django.conf import settings
-from django.http import JsonResponse
-from core.models import APIKey, MediaItem
-from core.services.m_anime_manga import get_anime_extra_info, get_manga_extra_info
-from core.services.m_games import get_game_extra_info
-from core.services.m_movies_tvshows import get_movie_extra_info, get_tv_extra_info
-from core.services.m_music import get_music_extra_info
-from core.services.g_utils import download_image
-import time
-import json
-import requests
-import logging
 import os
 import glob
+import json
+import time
 
-logger = logging.getLogger(__name__)
+import requests
+from django.conf import settings
+from django.http import JsonResponse
+from django.core.files.storage import default_storage
+from django.views.decorators.csrf import ensure_csrf_cookie
+from django.views.decorators.http import require_POST
+
+from core.models import MediaItem
+from core.services.g_utils import download_image
+from core.services.m_games import get_game_extra_info
+from core.services.m_music import get_music_extra_info
+from core.services.m_anime_manga import get_anime_extra_info, get_manga_extra_info
+from core.services.m_movies_tvshows import get_tv_extra_info, get_movie_extra_info
+
 
 @ensure_csrf_cookie
 @require_POST
@@ -141,6 +141,40 @@ def upload_cover(request):
 
     return JsonResponse({"success": True, "url": relative_url})
 
+
+def get_extra_info(request):
+    media_type = request.GET.get("media_type")
+    item_id = request.GET.get("item_id")
+
+    if not media_type or not item_id:
+        return JsonResponse({"error": "Missing parameters"}, status=400)
+
+    if media_type != "music":
+        try:
+            item_id = int(item_id)
+        except ValueError:
+            return JsonResponse({"error": "Invalid item_id"}, status=400)
+
+    if media_type == "movie":
+        data = get_movie_extra_info(item_id)
+    elif media_type == "tv":
+        data = get_tv_extra_info(item_id)
+    elif media_type == "anime":
+        data = get_anime_extra_info(item_id)
+    elif media_type == "manga":
+        data = get_manga_extra_info(item_id)
+    elif media_type == "game":
+        data = get_game_extra_info(item_id)
+    elif media_type == "music":
+        artist_id = request.GET.get("artist_id", "")
+        album_id = request.GET.get("album_id", "")
+        data = get_music_extra_info(item_id, artist_id, album_id)
+    else:
+        data = {}
+
+    return JsonResponse(data)
+
+
 # Delete, Swap, Add actions
 @ensure_csrf_cookie
 def upload_game_screenshots(request):
@@ -263,141 +297,6 @@ def upload_game_screenshots(request):
         }
     )
 
-@ensure_csrf_cookie
-@require_GET
-def load_more_cast(request):
-    source = request.GET.get("source")
-    source_id = request.GET.get("source_id")
-    media_type = request.GET.get("media_type")
-    page = int(request.GET.get("page", 1))
-
-    if not all([source, source_id, media_type]):
-        return JsonResponse({"error": "Missing parameters"}, status=400)
-
-    try:
-        if source == "tmdb":
-            api_key = APIKey.objects.get(name="tmdb").key_1
-            if media_type == "tv":
-                url = f"https://api.themoviedb.org/3/tv/{source_id}/aggregate_credits"
-            else:
-                url = f"https://api.themoviedb.org/3/movie/{source_id}/credits"
-
-            response = requests.get(url, params={"api_key": api_key})
-            if response.status_code != 200:
-                return JsonResponse({"error": "Failed to fetch cast"}, status=500)
-
-            data = response.json()
-            all_cast = data.get("cast", [])
-
-            # Paginate: page 1 = next 24 after first 8, page 2+ = 32 each
-            if page == 1:
-                start_idx = 8
-                end_idx = 32
-            else:
-                start_idx = 32 + (page - 2) * 32
-                end_idx = start_idx + 32
-            cast_page = all_cast[start_idx:end_idx]
-
-            cast_data = []
-            for actor in cast_page:
-                if media_type == "tv":
-                    character_name = (
-                        actor.get("roles", [{}])[0].get("character")
-                        if actor.get("roles")
-                        else ""
-                    )
-                else:
-                    character_name = actor.get("character")
-
-                profile_url = (
-                    f"https://image.tmdb.org/t/p/w185{actor.get('profile_path')}"
-                    if actor.get("profile_path")
-                    else ""
-                )
-                cast_data.append(
-                    {
-                        "name": actor.get("name"),
-                        "character": character_name,
-                        "profile_path": profile_url,
-                        "id": actor.get("id"),
-                        "is_full_url": True,
-                    }
-                )
-
-            has_more = end_idx < len(all_cast)
-
-        elif source == "mal":
-            # For anime/manga, use AniList API
-            query = """
-            query ($id: Int, $type: MediaType, $page: Int) {
-              Media(idMal: $id, type: $type) {
-                characters(sort: [ROLE, RELEVANCE], page: $page, perPage: 25) {
-                  pageInfo {
-                    hasNextPage
-                  }
-                  nodes {
-                    id
-                    name {
-                      full
-                    }
-                    image {
-                      large
-                    }
-                  }
-                }
-              }
-            }
-            """
-
-            # For AniList: page 1 gets remaining 17 from first page, page 2+ gets full pages
-            if page == 1:
-                anilist_page = 1
-            else:
-                anilist_page = page
-
-            variables = {
-                "id": int(source_id),
-                "type": media_type.upper(),
-                "page": anilist_page,
-            }
-
-            response = requests.post(
-                "https://graphql.anilist.co",
-                json={"query": query, "variables": variables},
-                headers={"Content-Type": "application/json"},
-            )
-
-            if response.status_code != 200:
-                return JsonResponse({"error": "Failed to fetch characters"}, status=500)
-
-            data = response.json()
-            characters_data = (
-                data.get("data", {}).get("Media", {}).get("characters", {})
-            )
-            characters = characters_data.get("nodes", [])
-            has_more = characters_data.get("pageInfo", {}).get("hasNextPage", False)
-
-            cast_data = []
-            # For page 1, skip first 8 characters (already shown)
-            start_idx = 8 if page == 1 else 0
-            for char in characters[start_idx:]:
-                cast_data.append(
-                    {
-                        "name": char.get("name", {}).get("full", ""),
-                        "character": "Character",
-                        "profile_path": char.get("image", {}).get("large", ""),
-                        "id": char.get("id"),
-                        "is_full_url": True,
-                    }
-                )
-
-        else:
-            return JsonResponse({"error": "Unsupported source"}, status=400)
-
-        return JsonResponse({"cast": cast_data, "has_more": has_more, "page": page})
-
-    except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
 
 @require_POST
 def add_music_video(request):
@@ -475,46 +374,6 @@ def delete_music_video(request):
     except Exception as e:
         return JsonResponse({"success": False, "error": str(e)})
 
-@require_GET
-def favorite_music_videos(request):
-    try:
-        # Get all favorited music items
-        mode = request.GET.get("mode", "favorites")
-        status = request.GET.get("status", "all")
-
-        if mode == "all":
-            music_items = MediaItem.objects.filter(media_type="music")
-        elif mode == "status":
-            if status == "all":
-                music_items = MediaItem.objects.filter(media_type="music")
-            else:
-                music_items = MediaItem.objects.filter(
-                    media_type="music", status=status
-                )
-        else:
-            music_items = MediaItem.objects.filter(media_type="music", favorite=True)
-
-        videos = []
-        for item in music_items:
-            if item.screenshots:
-                for link in item.screenshots:
-                    if link.get("position") != 1:
-                        continue
-                    url = link.get("url", "")
-                    if "youtube.com/watch?v=" in url:
-                        video_id = url.split("watch?v=")[1].split("&")[0]
-                        videos.append(
-                            {
-                                "video_id": video_id,
-                                "item_id": item.id,
-                                "is_favorite": item.favorite,
-                                "source_id": item.source_id,
-                            }
-                        )
-
-        return JsonResponse({"videos": videos})
-    except Exception as e:
-        return JsonResponse({"videos": [], "error": str(e)})
 
 @ensure_csrf_cookie
 @require_POST
@@ -597,84 +456,3 @@ def set_video_as_cover(request):
         return JsonResponse({"success": True})
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
-
-def get_extra_info(request):
-    media_type = request.GET.get("media_type")
-    item_id = request.GET.get("item_id")
-
-    if not media_type or not item_id:
-        return JsonResponse({"error": "Missing parameters"}, status=400)
-
-    if media_type != "music":
-        try:
-            item_id = int(item_id)
-        except ValueError:
-            return JsonResponse({"error": "Invalid item_id"}, status=400)
-
-    if media_type == "movie":
-        data = get_movie_extra_info(item_id)
-    elif media_type == "tv":
-        data = get_tv_extra_info(item_id)
-    elif media_type == "anime":
-        data = get_anime_extra_info(item_id)
-    elif media_type == "manga":
-        data = get_manga_extra_info(item_id)
-    elif media_type == "game":
-        data = get_game_extra_info(item_id)
-    elif media_type == "music":
-        artist_id = request.GET.get("artist_id", "")
-        album_id = request.GET.get("album_id", "")
-        data = get_music_extra_info(item_id, artist_id, album_id)
-    else:
-        data = {}
-
-    return JsonResponse(data)
-
-def get_season_navigation(seasons, current_season):
-    """Generate navigation data for season detail pages"""
-    nav = {}
-
-    # Sort seasons by season_number, handle specials (season 0)
-    sorted_seasons = sorted(seasons, key=lambda s: s.get("season_number", 0))
-
-    current_index = next(
-        (
-            i
-            for i, s in enumerate(sorted_seasons)
-            if s.get("season_number") == current_season
-        ),
-        None,
-    )
-    if current_index is None:
-        return nav
-
-    # Previous season
-    if current_index > 0:
-        prev_season = sorted_seasons[current_index - 1]
-        nav["prev_season"] = prev_season.get("season_number")
-        nav["prev_name"] = (
-            "Specials"
-            if prev_season.get("season_number") == 0
-            else f"Season {prev_season.get('season_number')}"
-        )
-
-    # Next season
-    if current_index < len(sorted_seasons) - 1:
-        next_season = sorted_seasons[current_index + 1]
-        nav["next_season"] = next_season.get("season_number")
-        nav["next_name"] = (
-            "Specials"
-            if next_season.get("season_number") == 0
-            else f"Season {next_season.get('season_number')}"
-        )
-
-    # Last season (if there are more than 2 seasons ahead)
-    if current_index < len(sorted_seasons) - 2:
-        last_season = sorted_seasons[-1]
-        if (
-            last_season.get("season_number") != 0
-        ):  # Don't show "Last Season" for specials
-            nav["last_season"] = last_season.get("season_number")
-            nav["last_name"] = f"Season {last_season.get('season_number')}"
-
-    return nav

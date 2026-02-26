@@ -180,7 +180,7 @@
 {% if item.media_type in 'movie,tvshow' %}
   <a href="{% if '_s' in item.source_id %}/tmdb/season/{% with parts=item.source_id|split:'_s' %}{{ parts.0 }}/{{ parts.1 }}/{% endwith %}{% else %}{% url 'tmdb_detail' media_type=item.media_type tmdb_id=item.source_id %}{% endif %}" class="card-link">
 {% elif item.media_type == 'anime' or item.media_type == 'manga' %}
-  <a href="{% url 'mal_detail' media_type=item.media_type mal_id=item.source_id %}">
+  <a href="{% url 'anilist_detail' media_type=item.media_type mal_id=item.source_id %}">
 {% elif item.media_type == 'game' %}
   <a href="{% url 'igdb_detail' igdb_id=item.source_id %}">
 {% elif item.media_type == 'book' %}

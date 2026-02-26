@@ -1,20 +1,19 @@
-from django.apps import apps
-from core.services.m_anime_manga import fetch_anilist_data
-from django.views.decorators.csrf import ensure_csrf_cookie
-from django.views.decorators.http import require_GET
-from django.shortcuts import render
-from django.http import JsonResponse
-from core.models import MediaItem
-import requests
-import logging
 import datetime
 
-logger = logging.getLogger(__name__)
+import requests
+from django.apps import apps
+from django.http import JsonResponse
+from django.shortcuts import render
+from django.views.decorators.csrf import ensure_csrf_cookie
+from django.views.decorators.http import require_GET
+
+from core.models import MediaItem
+from core.services.m_anime_manga import fetch_anilist_data
 
 
 @ensure_csrf_cookie
 @require_GET
-def mal_search(request):
+def anilist_search(request):
     query_str = request.GET.get("q", "").strip()
     search_type = request.GET.get("type", "anime").lower()
 
@@ -88,9 +87,10 @@ def mal_search(request):
     except Exception as e:
         return JsonResponse({"error": f"AniList parse error: {str(e)}"}, status=500)
 
+
 @ensure_csrf_cookie
 @require_GET
-def mal_detail(request, media_type, mal_id):
+def anilist_detail(request, media_type, mal_id):
     if media_type not in ("anime", "manga"):
         return JsonResponse({"error": "Invalid media type."}, status=400)
 

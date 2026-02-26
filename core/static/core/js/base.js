@@ -41,8 +41,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const apiEndpoints = {
     movie: "/api/tmdb_search/",
     tv: "/api/tmdb_search/",
-    anime: "/api/mal_search/",
-    manga: "/api/mal_search/",
+    anime: "/api/anilist_search/",
+    manga: "/api/anilist_search/",
     game: "/api/igdb_search/",
     book: "/api/openlib_search/",
     music: "/api/musicbrainz_search/",

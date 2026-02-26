@@ -1,15 +1,18 @@
-from django.apps import apps
-from django.views.decorators.csrf import ensure_csrf_cookie
-from django.views.decorators.http import require_GET
-from django.shortcuts import render
-from django.http import JsonResponse
-from core.models import MediaItem
-from core.services.m_music import wait_for_rate_limit
-import requests
 import logging
 import datetime
 
+import requests
+from django.apps import apps
+from django.http import JsonResponse
+from django.shortcuts import render
+from django.views.decorators.csrf import ensure_csrf_cookie
+from django.views.decorators.http import require_GET
+
+from core.models import MediaItem
+from core.services.m_music import wait_for_rate_limit
+
 logger = logging.getLogger(__name__)
+
 
 @ensure_csrf_cookie
 @require_GET
@@ -129,6 +132,7 @@ def musicbrainz_search(request):
         )
 
     return JsonResponse({"results": results})
+
 
 @ensure_csrf_cookie
 @require_GET
@@ -286,8 +290,8 @@ def musicbrainz_detail(request, recording_id):
 
     # Simple YouTube search via scraping (no API key needed)
     try:
-        import urllib.parse
         import unicodedata
+        import urllib.parse
 
         def normalize_text(text):
             # Remove accents and convert to lowercase

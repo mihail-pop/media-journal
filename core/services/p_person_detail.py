@@ -1,12 +1,15 @@
-from django.conf import settings
-from core.models import FavoritePerson
-from django.utils.text import slugify
-from core.services.g_utils import download_image
-from core.services.m_people import fetch_character_data, fetch_actor_data
-import logging
 import os
+import logging
+
+from django.conf import settings
+from django.utils.text import slugify
+
+from core.models import FavoritePerson
+from core.services.g_utils import download_image
+from core.services.m_people import fetch_actor_data, fetch_character_data
 
 logger = logging.getLogger(__name__)
+
 
 def refresh_favorite_person(person_id):
     try:

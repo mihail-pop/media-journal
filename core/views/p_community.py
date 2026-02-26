@@ -1,10 +1,9 @@
-from django.apps import apps
-from django.views.decorators.http import require_POST
-from django.http import JsonResponse
 import json
-import logging
 
-logger = logging.getLogger(__name__)
+from django.apps import apps
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+
 
 @require_POST
 def save_username(request):

@@ -1,19 +1,21 @@
-from django.core.serializers import deserialize
-from django.core.serializers import serialize
-from django.conf import settings
-from core.models import APIKey, MediaItem, FavoritePerson, NavItem, AppSettings
-import uuid
-import time
 import os
-import tempfile
-import zipfile
-import threading
+import time
+import uuid
 import logging
+import zipfile
+import tempfile
+import threading
+
+from django.conf import settings
+from django.core.serializers import serialize, deserialize
+
+from core.models import APIKey, NavItem, MediaItem, AppSettings, FavoritePerson
 
 logger = logging.getLogger(__name__)
 
 # Global dictionary to store backup tasks (in-memory for simplicity)
 BACKUP_TASKS = {}
+
 
 class BackupTask(threading.Thread):
     def __init__(self, task_id, task_type, upload_path=None):

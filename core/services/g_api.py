@@ -1,12 +1,11 @@
+import requests
+
 from core.models import APIKey, MediaItem
 from core.services.m_games import get_igdb_token
-import requests
-import logging
 
 IGDB_ACCESS_TOKEN = None
 IGDB_TOKEN_EXPIRY = 0
 
-logger = logging.getLogger(__name__)
 
 # Helper for game screenshots API
 def get_game_screenshots_data(igdb_id):

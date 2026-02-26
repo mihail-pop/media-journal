@@ -1,15 +1,47 @@
-from django.conf import settings
-from core.models import APIKey, FavoritePerson
-from django.utils.text import slugify
-from core.services.g_utils import download_image
-import requests
-import logging
 import os
-import datetime
 import re
+import logging
+import datetime
 
+import requests
+from django.conf import settings
+from django.utils.text import slugify
+
+from core.models import APIKey, FavoritePerson
+from core.services.g_utils import download_image
 
 logger = logging.getLogger(__name__)
+
+
+def actor_search(query):
+    url = "https://api.themoviedb.org/3/search/person"
+    params = {
+        "api_key": APIKey.objects.get(name="tmdb").key_1,
+        "query": query,
+        "include_adult": False,
+        "language": "en-US",
+        "page": 1,
+    }
+
+    response = requests.get(url, params=params)
+
+    if response.status_code == 200:
+        data = response.json()
+        results = []
+        for person in data.get("results", [])[:10]:
+            results.append(
+                {
+                    "id": person["id"],
+                    "name": person["name"],
+                    "image": f"https://image.tmdb.org/t/p/w185{person['profile_path']}"
+                    if person.get("profile_path")
+                    else None,
+                }
+            )
+        return results
+    else:
+        return []
+
 
 def character_search(query):
     url = "https://graphql.anilist.co"
@@ -46,36 +78,6 @@ def character_search(query):
                     "id": char["id"],
                     "name": char["name"]["full"],
                     "image": char["image"]["large"],
-                }
-            )
-        return results
-    else:
-        return []
-
-
-def actor_search(query):
-    url = "https://api.themoviedb.org/3/search/person"
-    params = {
-        "api_key": APIKey.objects.get(name="tmdb").key_1,
-        "query": query,
-        "include_adult": False,
-        "language": "en-US",
-        "page": 1,
-    }
-
-    response = requests.get(url, params=params)
-
-    if response.status_code == 200:
-        data = response.json()
-        results = []
-        for person in data.get("results", [])[:10]:
-            results.append(
-                {
-                    "id": person["id"],
-                    "name": person["name"],
-                    "image": f"https://image.tmdb.org/t/p/w185{person['profile_path']}"
-                    if person.get("profile_path")
-                    else None,
                 }
             )
         return results

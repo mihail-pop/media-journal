@@ -1,12 +1,14 @@
+import datetime
+
+import requests
 from django.apps import apps
+from django.http import JsonResponse
+from django.shortcuts import render
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET
-from django.shortcuts import render
-from django.http import JsonResponse
+
 from core.models import APIKey, MediaItem
-from core.views.p_detail import get_season_navigation
-import requests
-import datetime
+
 
 @ensure_csrf_cookie
 @require_GET
@@ -57,6 +59,7 @@ def tmdb_search(request):
     ]
 
     return JsonResponse({"results": results})
+
 
 @ensure_csrf_cookie
 @require_GET
@@ -284,6 +287,7 @@ def tmdb_detail(request, media_type, tmdb_id):
             "theme_mode": theme_mode,
         },
     )
+
 
 @ensure_csrf_cookie
 @require_GET
@@ -519,3 +523,53 @@ def tmdb_season_detail(request, tmdb_id, season_number):
             "theme_mode": theme_mode,
         },
     )
+
+
+def get_season_navigation(seasons, current_season):
+    """Generate navigation data for season detail pages"""
+    nav = {}
+
+    # Sort seasons by season_number, handle specials (season 0)
+    sorted_seasons = sorted(seasons, key=lambda s: s.get("season_number", 0))
+
+    current_index = next(
+        (
+            i
+            for i, s in enumerate(sorted_seasons)
+            if s.get("season_number") == current_season
+        ),
+        None,
+    )
+    if current_index is None:
+        return nav
+
+    # Previous season
+    if current_index > 0:
+        prev_season = sorted_seasons[current_index - 1]
+        nav["prev_season"] = prev_season.get("season_number")
+        nav["prev_name"] = (
+            "Specials"
+            if prev_season.get("season_number") == 0
+            else f"Season {prev_season.get('season_number')}"
+        )
+
+    # Next season
+    if current_index < len(sorted_seasons) - 1:
+        next_season = sorted_seasons[current_index + 1]
+        nav["next_season"] = next_season.get("season_number")
+        nav["next_name"] = (
+            "Specials"
+            if next_season.get("season_number") == 0
+            else f"Season {next_season.get('season_number')}"
+        )
+
+    # Last season (if there are more than 2 seasons ahead)
+    if current_index < len(sorted_seasons) - 2:
+        last_season = sorted_seasons[-1]
+        if (
+            last_season.get("season_number") != 0
+        ):  # Don't show "Last Season" for specials
+            nav["last_season"] = last_season.get("season_number")
+            nav["last_name"] = f"Season {last_season.get('season_number')}"
+
+    return nav

@@ -1,16 +1,15 @@
+import re
+import datetime
+
+import requests
 from django.apps import apps
+from django.http import JsonResponse
+from django.shortcuts import render
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET
-from django.shortcuts import render
-from django.http import JsonResponse
+
 from core.models import MediaItem
-import requests
-import logging
-import datetime
-import re
 
-
-logger = logging.getLogger(__name__)
 
 @ensure_csrf_cookie
 @require_GET
@@ -70,6 +69,7 @@ def openlib_search(request):
         )
 
     return JsonResponse({"results": results})
+
 
 @ensure_csrf_cookie
 @require_GET
@@ -239,4 +239,3 @@ def openlib_detail(request, work_id):
             "theme_mode": theme_mode,
         },
     )
-

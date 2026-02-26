@@ -1,15 +1,13 @@
+import time
+
+import requests
 from django.http import JsonResponse
+
 from core.models import APIKey, MediaItem
 from core.services.g_utils import download_image
-import time
-import requests
-import logging
 
 IGDB_ACCESS_TOKEN = None
 IGDB_TOKEN_EXPIRY = 0
-
-logger = logging.getLogger(__name__)
-
 
 
 def save_igdb_item(igdb_id):
@@ -143,6 +141,7 @@ def save_igdb_item(igdb_id):
 
     return JsonResponse({"success": True, "message": "Game added to list"})
 
+
 def get_igdb_token():
     global IGDB_ACCESS_TOKEN, IGDB_TOKEN_EXPIRY
 
@@ -169,6 +168,7 @@ def get_igdb_token():
     IGDB_ACCESS_TOKEN = token_data["access_token"]
     IGDB_TOKEN_EXPIRY = time.time() + token_data["expires_in"] - 60
     return IGDB_ACCESS_TOKEN
+
 
 def get_game_extra_info(game_id):
     token = get_igdb_token()
@@ -293,6 +293,7 @@ def get_game_extra_info(game_id):
 
     except Exception:
         return {}
+
 
 def get_igdb_discover(
     page, query="", sort="popularity", genre="", platform="", year=""

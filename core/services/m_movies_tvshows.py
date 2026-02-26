@@ -1,8 +1,12 @@
+import time
+
+import requests
 from django.http import JsonResponse
+from django.utils import timezone
+from requests.exceptions import RequestException
+
 from core.models import APIKey, MediaItem
 from core.services.g_utils import download_image
-import time
-import requests
 
 TMDB_MOVIE_GENRES = {
     28: "Action",
@@ -44,6 +48,7 @@ TMDB_TV_GENRES = {
     10768: "War & Politics",
     37: "Western",
 }
+
 
 def save_tmdb_item(media_type, tmdb_id):
     try:
@@ -171,6 +176,7 @@ def save_tmdb_item(media_type, tmdb_id):
     except Exception as e:
         return JsonResponse({"error": f"Failed to save: {str(e)}"})
 
+
 def save_tmdb_season(tmdb_id, season_number):
     try:
         api_key = APIKey.objects.get(name="tmdb").key_1
@@ -297,6 +303,7 @@ def save_tmdb_season(tmdb_id, season_number):
 
     except Exception as e:
         return JsonResponse({"error": f"Failed to save season: {str(e)}"})
+
 
 def get_movie_extra_info(tmdb_id):
     try:
@@ -485,6 +492,7 @@ def get_tv_extra_info(tmdb_id):
         print("TV API error:", e)
         return {}
 
+
 def get_tmdb_discover(media_type, page, query="", sort="popularity.desc", year=""):
     try:
         api_key = APIKey.objects.get(name="tmdb").key_1
@@ -566,3 +574,83 @@ def get_tmdb_discover(media_type, page, query="", sort="popularity.desc", year="
     except Exception:
         return []
 
+
+def update_tmdb_seasons(media_item):
+    """
+    Check if the TMDB TV series has new seasons.
+    If so, update the MediaItem and set a notification.
+    """
+    if media_item.media_type != "tv" or media_item.source != "tmdb":
+        return False  # Skip if not a TMDB TV show
+
+    try:
+        api_key = APIKey.objects.get(name="tmdb").key_1
+    except APIKey.DoesNotExist:
+        print("TMDB API key not found.")
+        return False
+
+    url = f"https://api.themoviedb.org/3/tv/{media_item.source_id}"
+    params = {"api_key": api_key}
+    response = requests.get(url, params=params)
+
+    try:
+        # ... your TMDB API call
+        response = requests.get(url, params=params, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        # proceed with update if valid
+    except RequestException as e:
+        print(
+            f"🌐 TMDB update skipped for {media_item.title} — no connection or error: {e}"
+        )
+    except Exception as e:
+        print(f"⚠️ Unexpected error while updating {media_item.title}: {e}")
+
+    if response.status_code != 200:
+        print(f"TMDB fetch failed for ID {media_item.source_id}")
+        return False
+
+    data = response.json()
+    fetched_seasons = data.get("seasons", [])
+
+    # Compare with existing
+    existing_seasons = media_item.seasons or []
+    existing_numbers = {s["season_number"] for s in existing_seasons}
+
+    new_seasons = []
+    for i, season in enumerate(fetched_seasons):
+        season_number = season.get("season_number")
+        if season_number in existing_numbers:
+            continue  # already saved
+
+        # New season found
+        poster_path = season.get("poster_path")
+        local_poster = ""
+        if poster_path:
+            full_url = f"https://image.tmdb.org/t/p/w300{poster_path}"
+            local_poster = download_image(
+                full_url, f"seasons/tmdb_{media_item.source_id}_s{season_number}.jpg"
+            )
+
+        new_seasons.append(
+            {
+                "season_number": season_number,
+                "name": season.get("name"),
+                "episode_count": season.get("episode_count"),
+                "poster_path": local_poster,
+                "air_date": season.get("air_date"),
+            }
+        )
+
+    if new_seasons:
+        media_item.seasons = existing_seasons + new_seasons
+        media_item.notification = True
+        media_item.last_updated = timezone.now()
+        media_item.save()
+        print(f"[TMDB] Updated: {media_item.title} – {len(new_seasons)} new season(s).")
+        return True
+
+    # No new seasons
+    media_item.last_updated = timezone.now()
+    media_item.save()
+    return False

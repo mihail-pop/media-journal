@@ -1,9 +1,10 @@
-from django.views.decorators.csrf import ensure_csrf_cookie
-from django.views.decorators.http import require_POST
-from django.http import JsonResponse
-from core.models import MediaItem
 import logging
 
+from django.http import JsonResponse
+from django.views.decorators.csrf import ensure_csrf_cookie
+from django.views.decorators.http import require_POST
+
+from core.models import MediaItem
 
 logger = logging.getLogger(__name__)
 

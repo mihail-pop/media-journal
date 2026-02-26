@@ -1,9 +1,12 @@
-from django.views.decorators.http import require_GET
-from django.http import JsonResponse
-from core.models import MediaItem
 import logging
 
+from django.http import JsonResponse
+from django.views.decorators.http import require_GET
+
+from core.models import MediaItem
+
 logger = logging.getLogger(__name__)
+
 
 @require_GET
 def check_in_list(request):

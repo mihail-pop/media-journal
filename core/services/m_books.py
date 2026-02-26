@@ -1,14 +1,12 @@
+import re
+import time
+import datetime
+
+import requests
 from django.http import JsonResponse
+
 from core.models import MediaItem
 from core.services.g_utils import download_image
-import time
-import requests
-import logging
-import datetime
-import re
-
-
-logger = logging.getLogger(__name__)
 
 
 def save_openlib_item(work_id):
