@@ -25,8 +25,8 @@
   --text-title: #0b507e;
   --border-color: #DCECF8;
   --hover-bg: #cfe8f7;
-  --special-color: #E846C4;
-  --special-color-hover: #a82a8d;
+  --special-color: #00bfff;
+  --special-color-hover: #57d5ff;
 }
 
 [data-theme="brown"] {

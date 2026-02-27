@@ -180,7 +180,7 @@ html.modal-open {
 @keyframes modalPop {
   0% {
     opacity: 0;
-    transform: translate(-50%, -50%) scale(0.95);
+    transform: translate(-50%, -50%);
   }
 
   60% {
@@ -188,7 +188,7 @@ html.modal-open {
   }
 
   100% {
-    transform: translate(-50%, -50%) scale(1);
+    transform: translate(-50%, -50%);
   }
 }
 
@@ -288,7 +288,7 @@ html.modal-open {
   left: 170px;
   /* To the right of the 120px wide cover + spacing */
   z-index: 10;
-  max-width: 520px;
+  max-width: 420px;
   color: rgb(224, 223, 223);
 }
 

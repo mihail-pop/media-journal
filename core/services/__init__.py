@@ -12,5 +12,5 @@ from .m_people import *  # noqa: F403
 
 # Pages (p_) - View functions that handle logic for specific pages
 from .p_home import *  # noqa: F403
-from .p_person_detail import *  # noqa: F403
+from .p_person_details import *  # noqa: F403
 from .p_settings import *  # noqa: F403

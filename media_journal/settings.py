@@ -160,3 +160,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 DATA_UPLOAD_MAX_MEMORY_SIZE = 104857600  # 100MB (default is 2.5MB)
 FILE_UPLOAD_MAX_MEMORY_SIZE = 104857600  # 100MB
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000  # Increase field limit for multiple files
+
+# Firebase Configuration
+FIREBASE_URL = "https://media-journal-6c8cf-default-rtdb.europe-west1.firebasedatabase.app"

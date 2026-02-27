@@ -34,8 +34,24 @@
               <button class="tab-btn" data-tab="preview">Preview</button>
             </div>
             <div class="post-tabs-right">
+              <button id="post-image-btn" class="image-btn" title="Insert image">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="pointer-events: none;">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                  <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                  <polyline points="21 15 16 10 5 21"></polyline>
+                </svg>
+              </button>
               <button id="post-link-btn" class="link-btn">Link</button>
               <button id="insert-media-btn">Insert Media</button>
+            </div>
+          </div>
+          
+          <!-- Image Upload Section (hidden by default) -->
+          <div id="post-image-box" style="display:none;">
+            <p>Upload the image on <a href="https://imgur.com" target="_blank">Imgur</a> and copy the url here:</p>
+            <div style="display: flex; gap: 8px;">
+              <input type="text" id="post-image-input" placeholder="url" style="flex: 1;">
+              <button id="post-image-send-btn" type="button" style="padding: 8px 16px; background: var(--border); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.9rem;">Send</button>
             </div>
           </div>
           
@@ -54,15 +70,15 @@
           
           <div class="tab-content active" id="write-tab">
             <textarea id="post-text" placeholder="Anything interesting?"></textarea>
-            
-            <div class="post-actions">
-              <button id="post-emoji-btn" class="emoji-btn">😊</button>
-              <div id="post-emoji-picker" class="emoji-picker"></div>
-              <button id="send-post-btn">Post</button>
-            </div>
           </div>
           <div class="tab-content" id="preview-tab">
             <div id="post-preview"></div>
+          </div>
+          
+          <div class="post-actions">
+            <button id="post-emoji-btn" class="emoji-btn">😊</button>
+            <div id="post-emoji-picker" class="emoji-picker"></div>
+            <button id="send-post-btn">Post</button>
           </div>
         </div>
 

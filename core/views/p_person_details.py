@@ -15,7 +15,7 @@ from core.services.m_people import (
     fetch_character_data,
     delete_favorite_person_and_reorder,
 )
-from core.services.p_person_detail import refresh_favorite_person
+from core.services.p_person_details import refresh_favorite_person
 
 logger = logging.getLogger(__name__)
 

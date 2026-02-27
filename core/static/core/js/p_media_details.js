@@ -239,9 +239,20 @@ function updateScreenshot(index, autoScroll = true) {
   img.style.opacity = 1;
   if (overlayImg) overlayImg.style.opacity = 1;
   
-  const activeThumbnail = document.querySelector('.thumbnail.active-thumbnail');
-  if (activeThumbnail && autoScroll) {
-    activeThumbnail.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  if (autoScroll) {
+    const activeThumbnail = document.querySelector('.thumbnail.active-thumbnail');
+    const listContainer = document.querySelector('.screenshots-list');
+    if (activeThumbnail && listContainer) {
+      const thumbTop = activeThumbnail.offsetTop;
+      const containerScrollTop = listContainer.scrollTop;
+      const containerHeight = listContainer.clientHeight;
+      const thumbHeight = activeThumbnail.offsetHeight;
+      
+      if (thumbTop < containerScrollTop || thumbTop + thumbHeight > containerScrollTop + containerHeight) {
+        const remInPx = parseFloat(getComputedStyle(document.documentElement).fontSize);
+        listContainer.scrollTop = thumbTop + thumbHeight - containerHeight + remInPx;
+      }
+    }
   }
 }
 

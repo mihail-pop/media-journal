@@ -5,6 +5,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const usernameField = document.getElementById('username-field');
   const postText = document.getElementById('post-text');
+  const MAX_CHARACTERS = 2200;
+  
+  // Character limit enforcement
+  postText.addEventListener('input', () => {
+    if (postText.value.length > MAX_CHARACTERS) {
+      postText.value = postText.value.substring(0, MAX_CHARACTERS);
+    }
+  });
+  
+  postText.addEventListener('keydown', (e) => {
+    if (postText.value.length >= MAX_CHARACTERS && e.key !== 'Backspace' && e.key !== 'Delete' && e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') {
+      e.preventDefault();
+    }
+  });
   const insertMediaBtn = document.getElementById('insert-media-btn');
   const sendPostBtn = document.getElementById('send-post-btn');
   const mediaTypeButtons = document.getElementById('media-type-buttons');
@@ -15,6 +29,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const writeTab = document.getElementById('write-tab');
   const previewTab = document.getElementById('preview-tab');
   const postPreview = document.getElementById('post-preview');
+  const postImageBtn = document.getElementById('post-image-btn');
+  const postImageBox = document.getElementById('post-image-box');
+  const postImageInput = document.getElementById('post-image-input');
+  const postImageSendBtn = document.getElementById('post-image-send-btn');
+
+  // Pagination state
+  let currentPage = 1;
+  let hasMore = true;
+  let isLoadingPosts = false;
 
   // Save username function
   function showNotification(message) {
@@ -98,7 +121,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // Post emoji picker
   const postEmojiBtn = document.getElementById('post-emoji-btn');
   const postEmojiPicker = document.getElementById('post-emoji-picker');
-  const emojis = ['😀','😁','😂','🤣','😃','😄','😅','😆','😉','😊','😍','😘','😜','🤔','😎','😢','😭','😡','👍','👎','🙏','🔥','🎉','💯','🥳','😇','🤩','😏','😬','😴','🤗','😱','🥺','😤','😈','💖','💔','💙','⭐','🌟','✨','⚡','🍶','🍺','🍻','🥂','🍷','🧂'];
+  
+  const emojis = ['😊', '😁', '😉', '😋', '😍', '🫨', '😜', '🤨', '🤔', '🧐', '😎', '😢', '🥹', '😭', '😡', '🥳', '😇', '🤩', '😏', '😴', '🤗', '😱', '🥺', '🤓', '🙂‍↕️', '🙂‍↔️', '🫠', '😮‍💨', '😤', '😈', '💀', '👀', '👍', '👎', '👏', '🔥', '🎉', '💯', '⭐', '🌟', '✨', '❤️', '🍻', '🧂'];
   emojis.forEach(e => {
     const emojiSpan = document.createElement('span');
     emojiSpan.textContent = e;
@@ -115,21 +139,133 @@ document.addEventListener('DOMContentLoaded', () => {
     postEmojiPicker.style.display = isHidden ? 'block' : 'none';
   });
   document.addEventListener('click', (e) => {
-    if (!postEmojiPicker.contains(e.target) && e.target !== postEmojiBtn) {
+    if (!postEmojiPicker.contains(e.target) && e.target !== postEmojiBtn && !postEmojiBtn.contains(e.target)) {
       postEmojiPicker.style.display = 'none';
     }
   });
 
+  // Set SVG for post emoji button
+  postEmojiBtn.innerHTML = '<svg class="rating-svg-icon" width="24" height="24" viewBox="0 0 496 512"><path fill="currentColor" d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zm0 448c-110.3 0-200-89.7-200-200S137.7 56 248 56s200 89.7 200 200-89.7 200-200 200zm-80-216c17.7 0 32-14.3 32-32s-14.3-32-32-32-32 14.3-32 32 14.3 32 32 32zm160 0c17.7 0 32-14.3 32-32s-14.3-32-32-32-32 14.3-32 32 14.3 32 32 32zm4 72.6c-20.8 25-51.5 39.4-84 39.4s-63.2-14.3-84-39.4c-8.5-10.2-23.7-11.5-33.8-3.1-10.2 8.5-11.5 23.6-3.1 33.8 30 36 74.1 56.6 120.9 56.6s90.9-20.6 120.9-56.6c8.5-10.2 7.1-25.3-3.1-33.8-10.1-8.4-25.3-7.1-33.8 3.1z"></path></svg>';
+
   // Post link button
   const postLinkBtn = document.getElementById('post-link-btn');
+  
+  // Create link input box
+  const postLinkBox = document.createElement('div');
+  postLinkBox.id = 'post-link-box';
+  postLinkBox.classList.add('hidden');
+  
+  const postLinkTextInput = document.createElement('input');
+  postLinkTextInput.type = 'text';
+  postLinkTextInput.placeholder = 'text';
+  postLinkTextInput.className = 'post-link-input';
+  
+  const postLinkUrlInput = document.createElement('input');
+  postLinkUrlInput.type = 'text';
+  postLinkUrlInput.placeholder = 'url';
+  postLinkUrlInput.className = 'post-link-input';
+  
+  const postLinkInputWrapper = document.createElement('div');
+  postLinkInputWrapper.className = 'post-link-input-wrapper';
+  postLinkInputWrapper.appendChild(postLinkTextInput);
+  
+  const postLinkUrlWrapper = document.createElement('div');
+  postLinkUrlWrapper.className = 'post-link-url-wrapper';
+  
+  const postLinkUrlInputFull = document.createElement('input');
+  postLinkUrlInputFull.type = 'text';
+  postLinkUrlInputFull.placeholder = 'url';
+  postLinkUrlInputFull.className = 'post-link-input';
+  postLinkUrlInputFull.style.flex = '1';
+  
+  const postLinkSendBtn = document.createElement('button');
+  postLinkSendBtn.id = 'post-link-send-btn';
+  postLinkSendBtn.textContent = 'Send';
+  postLinkSendBtn.type = 'button';
+  
+  postLinkUrlWrapper.appendChild(postLinkUrlInputFull);
+  postLinkUrlWrapper.appendChild(postLinkSendBtn);
+  
+  postLinkBox.appendChild(postLinkTextInput);
+  postLinkBox.appendChild(postLinkUrlWrapper);
+  
+  // Insert after post image box
+  postImageBox.parentNode.insertBefore(postLinkBox, postImageBox.nextSibling);
+  
   postLinkBtn.addEventListener('click', () => {
-    const link = `[text](url)`;
+    const isHidden = postLinkBox.classList.contains('hidden');
+    postLinkBox.classList.toggle('hidden');
+    // Clear and hide image box and media buttons
+    postImageBox.style.display = 'none';
+    postImageInput.value = '';
+    const imgError = postImageBox.querySelector('.image-error-message');
+    if (imgError) imgError.style.display = 'none';
+    mediaTypeButtons.style.display = 'none';
+    mediaSearchBox.style.display = 'none';
+    // Clear link error when opening
+    const linkError = postLinkBox.querySelector('.link-error-message');
+    if (isHidden && linkError) linkError.style.display = 'none';
+    if (isHidden) {
+      postLinkTextInput.focus();
+    }
+  });
+  
+  const insertPostLink = () => {
+    const text = postLinkTextInput.value.trim();
+    const url = postLinkUrlInputFull.value.trim();
+    
+    // Get or create error message display
+    let errorDisplay = postLinkBox.querySelector('.link-error-message');
+    if (!errorDisplay) {
+      errorDisplay = document.createElement('div');
+      errorDisplay.className = 'link-error-message';
+      errorDisplay.style.color = '#ff9800';
+      errorDisplay.style.background = 'rgba(255, 152, 0, 0.1)';
+      errorDisplay.style.padding = '12px';
+      errorDisplay.style.borderRadius = '4px';
+      errorDisplay.style.marginBottom = '8px';
+      errorDisplay.style.border = '1px solid #ff9800';
+      errorDisplay.style.display = 'none';
+      postLinkBox.insertBefore(errorDisplay, postLinkBox.firstChild);
+    }
+
+    if (!text || !url) {
+      return;
+    }
+
+    if (!isValidUrl(url)) {
+      errorDisplay.textContent = 'Please insert a valid url';
+      errorDisplay.style.display = 'block';
+      return;
+    }
+
+    errorDisplay.style.display = 'none';
+    
+    const linkTag = `[${text}](${url})`;
     const cursorPos = postText.selectionStart;
     const textBefore = postText.value.substring(0, cursorPos);
     const textAfter = postText.value.substring(cursorPos);
-    postText.value = textBefore + link + textAfter;
+    postText.value = textBefore + linkTag + textAfter;
     postText.focus();
-    postText.selectionStart = postText.selectionEnd = cursorPos + link.length;
+    postText.selectionStart = postText.selectionEnd = cursorPos + linkTag.length;
+    postLinkTextInput.value = '';
+    postLinkUrlInputFull.value = '';
+    postLinkBox.classList.add('hidden');
+    updatePreview();
+  };
+  
+  postLinkSendBtn.addEventListener('click', insertPostLink);
+  postLinkTextInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      postLinkUrlInputFull.focus();
+    }
+  });
+  postLinkUrlInputFull.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      insertPostLink();
+    }
   });
 
   // Tab switching
@@ -140,22 +276,138 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.classList.add('active');
       if (btn.dataset.tab === 'write') {
         writeTab.classList.add('active');
+        // Show interactive buttons in write mode
+        postImageBtn.style.display = '';
+        postLinkBtn.style.display = '';
+        insertMediaBtn.style.display = '';
+        postEmojiBtn.style.display = '';
       } else {
         previewTab.classList.add('active');
         updatePreview();
+        // Hide interactive buttons in preview mode but keep send button
+        postImageBtn.style.display = 'none';
+        postLinkBtn.style.display = 'none';
+        insertMediaBtn.style.display = 'none';
+        postEmojiBtn.style.display = 'none';
+        // Close any open pop-ups and clear them
+        postImageBox.style.display = 'none';
+        postImageInput.value = '';
+        const imgError = postImageBox.querySelector('.image-error-message');
+        if (imgError) imgError.style.display = 'none';
+        if (postLinkBox) {
+          postLinkBox.classList.add('hidden');
+          postLinkTextInput.value = '';
+          postLinkUrlInputFull.value = '';
+          const linkError = postLinkBox.querySelector('.link-error-message');
+          if (linkError) linkError.style.display = 'none';
+        }
+        mediaTypeButtons.style.display = 'none';
+        mediaSearchBox.style.display = 'none';
       }
     });
   });
 
   // Insert Media button
   insertMediaBtn.addEventListener('click', () => {
-    if (mediaTypeButtons.style.display === 'none' && mediaSearchBox.style.display === 'none') {
+    const linkBoxVisible = postLinkBox && !postLinkBox.classList.contains('hidden');
+    if (mediaTypeButtons.style.display === 'none' && mediaSearchBox.style.display === 'none' && postImageBox.style.display === 'none' && !linkBoxVisible) {
       mediaTypeButtons.style.display = 'flex';
     } else {
       mediaTypeButtons.style.display = 'none';
       mediaSearchBox.style.display = 'none';
+      // Clear and hide image box
+      postImageBox.style.display = 'none';
+      postImageInput.value = '';
+      const imgError = postImageBox.querySelector('.image-error-message');
+      if (imgError) imgError.style.display = 'none';
+      // Clear and hide link box
+      if (postLinkBox) {
+        postLinkBox.classList.add('hidden');
+        postLinkTextInput.value = '';
+        postLinkUrlInputFull.value = '';
+        const linkError = postLinkBox.querySelector('.link-error-message');
+        if (linkError) linkError.style.display = 'none';
+      }
     }
   });
+
+  // Image button for posts
+  postImageBtn.addEventListener('click', () => {
+    const isHidden = postImageBox.style.display === 'none';
+    postImageBox.style.display = isHidden ? 'block' : 'none';
+    // Clear and hide link box and media buttons
+    if (postLinkBox) {
+      postLinkBox.classList.add('hidden');
+      postLinkTextInput.value = '';
+      postLinkUrlInputFull.value = '';
+      const linkError = postLinkBox.querySelector('.link-error-message');
+      if (linkError) linkError.style.display = 'none';
+    }
+    mediaTypeButtons.style.display = 'none';
+    mediaSearchBox.style.display = 'none';
+    // Clear image error when opening
+    const imgError = postImageBox.querySelector('.image-error-message');
+    if (isHidden && imgError) imgError.style.display = 'none';
+    if (isHidden) {
+      postImageInput.focus();
+    }
+  });
+
+  // Helper function to insert image tag in post
+  function insertPostImage() {
+    const urlValue = postImageInput.value.trim();
+    if (!urlValue) return;
+
+    // Validate and parse imgur URL
+    const result = parseImgur(urlValue);
+    
+    // Get or create error message display
+    let errorDisplay = postImageBox.querySelector('.image-error-message');
+    if (!errorDisplay) {
+      errorDisplay = document.createElement('div');
+      errorDisplay.className = 'image-error-message';
+      errorDisplay.style.color = '#ff9800';
+      errorDisplay.style.background = 'rgba(255, 152, 0, 0.1)';
+      errorDisplay.style.padding = '12px';
+      errorDisplay.style.borderRadius = '4px';
+      errorDisplay.style.marginBottom = '8px';
+      errorDisplay.style.border = '1px solid #ff9800';
+      errorDisplay.style.display = 'none';
+      postImageBox.insertBefore(errorDisplay, postImageBox.querySelector('div'));
+    }
+
+    if (result.error) {
+      errorDisplay.textContent = result.message;
+      errorDisplay.style.display = 'block';
+      postImageInput.value = '';
+      return;
+    }
+
+    errorDisplay.style.display = 'none';
+    
+    // Insert the image tag
+    const imgTag = `[IMG:${result.url}]`;
+    const cursorPos = postText.selectionStart;
+    const textBefore = postText.value.substring(0, cursorPos);
+    const textAfter = postText.value.substring(cursorPos);
+    postText.value = textBefore + imgTag + textAfter;
+    postText.focus();
+    postText.selectionStart = postText.selectionEnd = cursorPos + imgTag.length;
+    postImageInput.value = '';
+    postImageBox.style.display = 'none';
+    updatePreview();
+  }
+
+  // Handle image URL input - Enter key
+  postImageInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      insertPostImage();
+    }
+  });
+
+  // Handle image send button click
+  postImageSendBtn.addEventListener('click', insertPostImage);
 
   // Media type selection
   document.querySelectorAll('.media-type-btn').forEach(btn => {
@@ -207,12 +459,76 @@ document.addEventListener('DOMContentLoaded', () => {
     postText.selectionStart = postText.selectionEnd = cursorPos + tag.length;
   }
 
+  function parseImgur(url) {
+    // Check if it's an album URL - these won't work
+    if (url.includes('/a/')) {
+      return { error: true, message: 'Album url won\'t work, copy the url of the image with the copy link button or right click' };
+    }
+
+    // Check if it's a gallery URL - these won't work
+    if (url.includes('/gallery/')) {
+      return { error: true, message: 'Gallery url won\'t work, copy the url of the image with the copy link button or right click' };
+    }
+
+    // Check if it contains imgur at all
+    if (!url.includes('imgur.com')) {
+      return { error: true, message: 'Please insert an imgur link' };
+    }
+
+    // 1. If it's already a direct i.imgur.com link, validate format
+    if (url.includes('i.imgur.com')) {
+      // Should be like https://i.imgur.com/TB5kDiG.png
+      return { url: url };
+    }
+
+    // 2. Check if it's imgur.com/[ID] format (no /a/ or /gallery/)
+    if (url.includes('imgur.com')) {
+      // Remove trailing slashes and protocol
+      let cleanUrl = url.replace(/\/$/, "");
+      
+      // Get the last part of the URL (the ID)
+      let parts = cleanUrl.split('/');
+      let lastPart = parts[parts.length - 1];
+
+      // Check for invalid imgur URL patterns
+      if (lastPart.includes('gallery') || lastPart === 'a' || lastPart === '') {
+        return { error: true, message: 'Gallery url won\'t work, copy the url of the image with the copy link button or right click' };
+      }
+
+      // Return the direct link format
+      return { url: `https://i.imgur.com/${lastPart}.png` };
+    }
+    
+    return { error: true, message: 'Please insert an imgur link' };
+  }
+
+  function isValidUrl(urlString) {
+    try {
+      new URL(urlString);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
   function processYouTubeLinks(text) {
     const youtubeRegex = /https?:\/\/(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)([^\s]*)/g;
-    return text.replace(youtubeRegex, (match, www, urlType, videoId, params) => {
+    let replacementIndex = 0;
+    const youtubeRegex2 = /https?:\/\/(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)([^\s]*)/g;
+    
+    return text.replace(youtubeRegex2, (match, www, urlType, videoId, params) => {
       const timeMatch = params.match(/[&?]t=(\d+)/);
       const startTime = timeMatch ? `?start=${timeMatch[1]}` : '';
-      return `<br><iframe width=100% height=450px src="https://www.youtube.com/embed/${videoId}${startTime}" frameborder="0" allowfullscreen referrerpolicy="origin-when-cross-origin"></iframe>`;
+      
+      replacementIndex++;
+      
+      if (replacementIndex <= 2) {
+        // Embed first 2 videos
+        return `<br><iframe width=100% height=450px src="https://www.youtube.com/embed/${videoId}${startTime}" frameborder="0" allowfullscreen referrerpolicy="origin-when-cross-origin"></iframe>`;
+      } else {
+        // Rest as links
+        return `<br><a href="${match}" target="_blank">Video ${replacementIndex}</a>`;
+      }
     });
   }
 
@@ -220,7 +536,95 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!text) return '';
     let html = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
     
-    // Parse media tags first (match everything except ] in title to avoid capturing markdown links)
+    // Parse image tags first - collect all images
+    const imgRegex = /\[IMG:([^\]]+)\]/g;
+    const images = [];
+    let match;
+    let lastIndex = 0;
+    const textParts = [];
+    
+    // Collect all images
+    const imgRegex2 = /\[IMG:([^\]]+)\]/g;
+    while ((match = imgRegex2.exec(html)) !== null) {
+      images.push(match[1]);
+    }
+    
+    // Replace image tags - create slider if multiple images
+    let imageIndex = 0;
+    html = html.replace(imgRegex, (match, url) => {
+      imageIndex++;
+      const result = parseImgur(url);
+      
+      if (result.error) {
+        return `<br><div style="color: #ff9800; background: rgba(255, 152, 0, 0.1); padding: 12px; border-radius: 4px; margin-top: 8px; border-left: 3px solid #ff9800;">${result.message}</div>`;
+      }
+      
+      // If this is the first image and there are multiple, show slider
+      if (imageIndex === 1 && images.length > 1) {
+        const sliderId = 'slider_' + Math.random().toString(36).substr(2, 9);
+        let sliderHTML = `<br><div class="slider-container" id="${sliderId}_container" style="position: relative; max-width: 100%; margin-top: 8px; border-radius: 4px; overflow: hidden; aspect-ratio: 1920/1080; background: #000;">`;
+        sliderHTML += `<img id="${sliderId}" src="${result.url}" alt="image" style="width: 100%; height: 100%; object-fit: contain; border-radius: 4px; display: block;">`;
+        sliderHTML += `<div class="slider-nav-left" id="${sliderId}_left" style="position: absolute; top: 50%; left: 10px; transform: translateY(-50%); z-index: 10; opacity: 0; transition: opacity 0.3s ease;">`;
+        sliderHTML += `<button onclick="document.getElementById('${sliderId}').previousImage?.(); event.stopPropagation();" style="background: rgba(0,0,0,0.6); color: white; border: none; padding: 0; width: 40px; height: 40px; cursor: pointer; border-radius: 4px; transition: background 0.2s; display: flex; align-items: center; justify-content: center;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>`;
+        sliderHTML += `</div>`;
+        sliderHTML += `<div class="slider-nav-right" id="${sliderId}_right" style="position: absolute; top: 50%; right: 10px; transform: translateY(-50%); z-index: 10; opacity: 0; transition: opacity 0.3s ease;">`;
+        sliderHTML += `<button onclick="document.getElementById('${sliderId}').nextImage?.(); event.stopPropagation();" style="background: rgba(0,0,0,0.6); color: white; border: none; padding: 0; width: 40px; height: 40px; cursor: pointer; border-radius: 4px; transition: background 0.2s; display: flex; align-items: center; justify-content: center;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>`;
+        sliderHTML += `</div>`;
+        sliderHTML += `<div style="position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7); color: white; padding: 6px 12px; border-radius: 4px; font-size: 12px; z-index: 10; font-weight: 500;">`;
+        sliderHTML += `<span id="${sliderId}_counter">1</span> / ${images.length}`;
+        sliderHTML += `</div></div>`;
+        
+        // Store image data on element
+        const parsed = images.map(img => {
+          const res = parseImgur(img);
+          return res.error ? null : res.url;
+        }).filter(u => u);
+        
+        setTimeout(() => {
+          const imgElement = document.getElementById(sliderId);
+          const container = document.getElementById(sliderId + '_container');
+          const leftNav = document.getElementById(sliderId + '_left');
+          const rightNav = document.getElementById(sliderId + '_right');
+          
+          if (imgElement && container) {
+            let currentIndex = 0;
+            const validImages = parsed;
+            
+            imgElement.nextImage = () => {
+              currentIndex = (currentIndex + 1) % validImages.length;
+              imgElement.src = validImages[currentIndex];
+              document.getElementById(sliderId + '_counter').textContent = currentIndex + 1;
+            };
+            
+            imgElement.previousImage = () => {
+              currentIndex = (currentIndex - 1 + validImages.length) % validImages.length;
+              imgElement.src = validImages[currentIndex];
+              document.getElementById(sliderId + '_counter').textContent = currentIndex + 1;
+            };
+            
+            // Add hover listeners to show/hide buttons
+            container.addEventListener('mouseenter', () => {
+              if (leftNav) leftNav.style.opacity = '1';
+              if (rightNav) rightNav.style.opacity = '1';
+            });
+            
+            container.addEventListener('mouseleave', () => {
+              if (leftNav) leftNav.style.opacity = '0';
+              if (rightNav) rightNav.style.opacity = '0';
+            });
+          }
+        }, 0);
+        
+        return sliderHTML;
+      } else if (imageIndex > 1) {
+        // Skip additional images when slider is shown
+        return '';
+      }
+      
+      return `<br><div style="position: relative; max-width: 100%; margin-top: 8px; border-radius: 4px; overflow: hidden; aspect-ratio: 1920/1080; background: #000;"><img src="${result.url}" alt="image" style="width: 100%; height: 100%; object-fit: contain; border-radius: 4px; display: block;"></div>`;
+    });
+    
+    // Parse media tags (match everything except ] in title to avoid capturing markdown links)
     const mediaRegex = /\[MEDIA:([^:]+):([^:]+):([^:]+):([^\]]+?):([^:\]]+)\]/g;
     html = html.replace(mediaRegex, (match, mediaType, source, sourceId, title, status) => {
       const decodedTitle = title.replace(/&#58;/g, ':');
@@ -275,7 +679,10 @@ document.addEventListener('DOMContentLoaded', () => {
       postText.value = '';
       mediaTypeButtons.style.display = 'none';
       mediaSearchBox.style.display = 'none';
-      loadPosts();
+      // Reset pagination and reload
+      currentPage = 1;
+      hasMore = true;
+      loadPosts(1, false);
     } catch (err) {
       console.error(err);
       alert('Error sending post');
@@ -335,17 +742,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Likes UI
     const likesRow = document.createElement('div');
     likesRow.className = 'likes-row';
-    likesRow.style.display = 'flex';
-    likesRow.style.alignItems = 'center';
-    likesRow.style.gap = '16px';
 
     const heart = document.createElement('span');
-    heart.className = 'like-heart';
-    heart.innerHTML = '❤';
-    heart.style.cursor = 'pointer';
-    heart.style.color = '#e25555';
-    heart.style.fontSize = '1.6em';
-    heart.style.userSelect = 'none';
+    heart.className = 'like-heart like-heart-icon';
+    heart.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>';
 
     const likesCount = document.createElement('span');
     likesCount.className = 'likes-count';
@@ -379,12 +779,19 @@ document.addEventListener('DOMContentLoaded', () => {
     likesRow.appendChild(likesCount);
 
     // Comments UI
-    const commentIcon = document.createElement('span');
+    const commentIcon = document.createElement('button');
     commentIcon.className = 'comment-icon';
-    commentIcon.innerHTML = '💭';
+    commentIcon.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>';
     commentIcon.style.cursor = 'pointer';
-    commentIcon.style.fontSize = '1.5em';
+    commentIcon.style.fontSize = '1em';
     commentIcon.style.userSelect = 'none';
+    commentIcon.style.background = 'none';
+    commentIcon.style.border = 'none';
+    commentIcon.style.color = 'var(--text-secondary)';
+    commentIcon.style.display = 'flex';
+    commentIcon.style.alignItems = 'center';
+    commentIcon.style.justifyContent = 'center';
+    commentIcon.style.padding = '0px';
 
     const commentsCount = document.createElement('span');
     commentsCount.className = 'comments-count';
@@ -460,19 +867,146 @@ document.addEventListener('DOMContentLoaded', () => {
       const commentTabsRight = document.createElement('div');
       commentTabsRight.className = 'comment-tabs-right';
       
+      const commentImageBtn = document.createElement('button');
+      commentImageBtn.className = 'image-btn';
+      commentImageBtn.title = 'Insert image';
+      commentImageBtn.innerHTML = `
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="pointer-events: none;">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+          <circle cx="8.5" cy="8.5" r="1.5"></circle>
+          <polyline points="21 15 16 10 5 21"></polyline>
+        </svg>
+      `;
+      
       const commentLinkBtn = document.createElement('button');
       commentLinkBtn.textContent = 'Link';
       commentLinkBtn.className = 'link-btn';
+      
+      const commentLinkBox = document.createElement('div');
+      commentLinkBox.style.display = 'none';
+      commentLinkBox.style.padding = '12px 12px 8px 12px';
+      commentLinkBox.style.background = 'var(--overlay-bg)';
+      commentLinkBox.style.borderRadius = '6px';
+      commentLinkBox.style.marginTop = '8px';
+      commentLinkBox.style.border = '1px solid var(--border-color)';
+      
+      const commentLinkTextInput = document.createElement('input');
+      commentLinkTextInput.type = 'text';
+      commentLinkTextInput.placeholder = 'text';
+      commentLinkTextInput.style.width = '100%';
+      commentLinkTextInput.style.padding = '8px 12px';
+      commentLinkTextInput.style.background = 'var(--bg-tertiary)';
+      commentLinkTextInput.style.color = 'var(--text-secondary)';
+      commentLinkTextInput.style.border = '1px solid var(--border-color)';
+      commentLinkTextInput.style.borderRadius = '4px';
+      commentLinkTextInput.style.fontSize = '0.95rem';
+      commentLinkTextInput.style.boxSizing = 'border-box';
+      commentLinkTextInput.style.marginBottom = '8px';
+      
+      const commentLinkUrlWrapper = document.createElement('div');
+      commentLinkUrlWrapper.style.display = 'flex';
+      commentLinkUrlWrapper.style.gap = '8px';
+      
+      const commentLinkUrlInput = document.createElement('input');
+      commentLinkUrlInput.type = 'text';
+      commentLinkUrlInput.placeholder = 'url';
+      commentLinkUrlInput.style.flex = '1';
+      commentLinkUrlInput.style.padding = '8px 12px';
+      commentLinkUrlInput.style.background = 'var(--bg-tertiary)';
+      commentLinkUrlInput.style.color = 'var(--text-secondary)';
+      commentLinkUrlInput.style.border = '1px solid var(--border-color)';
+      commentLinkUrlInput.style.borderRadius = '4px';
+      commentLinkUrlInput.style.fontSize = '0.95rem';
+      commentLinkUrlInput.style.boxSizing = 'border-box';
+      
+      const commentLinkSendBtn = document.createElement('button');
+      commentLinkSendBtn.textContent = 'Send';
+      commentLinkSendBtn.type = 'button';
+      commentLinkSendBtn.style.padding = '8px 16px';
+      commentLinkSendBtn.style.background = 'var(--border)';
+      commentLinkSendBtn.style.color = 'white';
+      commentLinkSendBtn.style.border = 'none';
+      commentLinkSendBtn.style.borderRadius = '4px';
+      commentLinkSendBtn.style.cursor = 'pointer';
+      commentLinkSendBtn.style.fontWeight = 'bold';
+      commentLinkSendBtn.style.fontSize = '0.9rem';
+      commentLinkSendBtn.style.whiteSpace = 'nowrap';
+      
+      commentLinkUrlWrapper.appendChild(commentLinkUrlInput);
+      commentLinkUrlWrapper.appendChild(commentLinkSendBtn);
+      
+      commentLinkBox.appendChild(commentLinkTextInput);
+      commentLinkBox.appendChild(commentLinkUrlWrapper);
+      
       commentLinkBtn.addEventListener('click', () => {
-        const link = `[text](url)`;
+        const isHidden = commentLinkBox.style.display === 'none';
+        commentLinkBox.style.display = isHidden ? 'block' : 'none';
+        commentImageBox.style.display = 'none';
+        commentMediaButtons.style.display = 'none';
+        commentMediaSearch.style.display = 'none';
+        if (isHidden) {
+          commentLinkTextInput.focus();
+        }
+      });
+      
+      const insertCommentLink = () => {
+        const text = commentLinkTextInput.value.trim();
+        const url = commentLinkUrlInput.value.trim();
+        
+        // Get or create error message display
+        let errorDisplay = commentLinkBox.querySelector('.link-error-message');
+        if (!errorDisplay) {
+          errorDisplay = document.createElement('div');
+          errorDisplay.className = 'link-error-message';
+          errorDisplay.style.color = '#ff9800';
+          errorDisplay.style.background = 'rgba(255, 152, 0, 0.1)';
+          errorDisplay.style.padding = '12px';
+          errorDisplay.style.borderRadius = '4px';
+          errorDisplay.style.marginBottom = '8px';
+          errorDisplay.style.border = '1px solid #ff9800';
+          errorDisplay.style.display = 'none';
+          commentLinkBox.insertBefore(errorDisplay, commentLinkBox.firstChild);
+        }
+
+        if (!text || !url) {
+          return;
+        }
+
+        if (!isValidUrl(url)) {
+          errorDisplay.textContent = 'Please insert a valid url';
+          errorDisplay.style.display = 'block';
+          return;
+        }
+
+        errorDisplay.style.display = 'none';
+        
+        const linkTag = `[${text}](${url})`;
         const cursorPos = commentInput.selectionStart;
         const textBefore = commentInput.value.substring(0, cursorPos);
         const textAfter = commentInput.value.substring(cursorPos);
-        commentInput.value = textBefore + link + textAfter;
+        commentInput.value = textBefore + linkTag + textAfter;
         commentInput.focus();
-        commentInput.selectionStart = commentInput.selectionEnd = cursorPos + link.length;
+        commentInput.selectionStart = commentInput.selectionEnd = cursorPos + linkTag.length;
+        commentLinkTextInput.value = '';
+        commentLinkUrlInput.value = '';
+        commentLinkBox.style.display = 'none';
+      };
+      
+      commentLinkSendBtn.addEventListener('click', insertCommentLink);
+      commentLinkTextInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          commentLinkUrlInput.focus();
+        }
+      });
+      commentLinkUrlInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          insertCommentLink();
+        }
       });
       
+      commentTabsRight.appendChild(commentImageBtn);
       commentTabsRight.appendChild(commentLinkBtn);
       commentTabsRight.appendChild(commentInsertBtn);
       
@@ -512,15 +1046,129 @@ document.addEventListener('DOMContentLoaded', () => {
       commentMediaSearch.appendChild(commentSearchInput);
       commentMediaSearch.appendChild(commentSearchResults);
 
+      const commentImageBox = document.createElement('div');
+      commentImageBox.style.display = 'none';
+      commentImageBox.style.padding = '12px 12px 8px 12px';
+      commentImageBox.style.background = 'var(--overlay-bg)';
+      commentImageBox.style.borderRadius = '6px';
+      commentImageBox.style.marginTop = '8px';
+      commentImageBox.style.border = '1px solid var(--border-color)';
+      
+      const commentImageBoxText = document.createElement('p');
+      commentImageBoxText.style.margin = '0 0 8px 0';
+      commentImageBoxText.style.color = 'var(--text-secondary)';
+      commentImageBoxText.style.fontSize = '0.95rem';
+      commentImageBoxText.innerHTML = 'Upload the image on <a href="https://imgur.com" target="_blank" style="color: var(--special-color); text-decoration: none;">Imgur</a> and copy the url here:';
+      
+      const commentImageInput = document.createElement('input');
+      commentImageInput.type = 'text';
+      commentImageInput.placeholder = 'Paste imgur url here...';
+      commentImageInput.style.width = '100%';
+      commentImageInput.style.padding = '8px 12px';
+      commentImageInput.style.background = 'var(--bg-tertiary)';
+      commentImageInput.style.color = 'var(--text-secondary)';
+      commentImageInput.style.border = '1px solid var(--border-color)';
+      commentImageInput.style.borderRadius = '4px';
+      commentImageInput.style.fontSize = '0.95rem';
+      commentImageInput.style.boxSizing = 'border-box';
+      commentImageInput.style.flex = '1';
+      
+      const commentImageSendBtn = document.createElement('button');
+      commentImageSendBtn.textContent = 'Send';
+      commentImageSendBtn.type = 'button';
+      commentImageSendBtn.style.padding = '8px 16px';
+      commentImageSendBtn.style.background = 'var(--border)';
+      commentImageSendBtn.style.color = 'white';
+      commentImageSendBtn.style.border = 'none';
+      commentImageSendBtn.style.borderRadius = '4px';
+      commentImageSendBtn.style.cursor = 'pointer';
+      commentImageSendBtn.style.fontWeight = 'bold';
+      commentImageSendBtn.style.fontSize = '0.9rem';
+      commentImageSendBtn.style.whiteSpace = 'nowrap';
+
+      const commentImageInputWrapper = document.createElement('div');
+      commentImageInputWrapper.style.display = 'flex';
+      commentImageInputWrapper.style.gap = '8px';
+      commentImageInputWrapper.appendChild(commentImageInput);
+      commentImageInputWrapper.appendChild(commentImageSendBtn);
+      
+      commentImageBox.appendChild(commentImageBoxText);
+      commentImageBox.appendChild(commentImageInputWrapper);
+
+      commentImageBtn.addEventListener('click', () => {
+        const isHidden = commentImageBox.style.display === 'none';
+        commentImageBox.style.display = isHidden ? 'block' : 'none';
+        commentMediaButtons.style.display = 'none';
+        commentMediaSearch.style.display = 'none';
+        commentLinkBox.style.display = 'none';
+        if (isHidden) {
+          commentImageInput.focus();
+        }
+      });
+
+      commentImageInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          insertCommentImage();
+        }
+      });
+
+      commentImageSendBtn.addEventListener('click', insertCommentImage);
+
+      function insertCommentImage() {
+        const urlValue = commentImageInput.value.trim();
+        if (!urlValue) return;
+
+        // Validate and parse imgur URL
+        const result = parseImgur(urlValue);
+        
+        // Get or create error message display
+        let errorDisplay = commentImageBox.querySelector('.image-error-message');
+        if (!errorDisplay) {
+          errorDisplay = document.createElement('div');
+          errorDisplay.className = 'image-error-message';
+          errorDisplay.style.color = '#ff9800';
+          errorDisplay.style.background = 'rgba(255, 152, 0, 0.1)';
+          errorDisplay.style.padding = '12px';
+          errorDisplay.style.borderRadius = '4px';
+          errorDisplay.style.marginBottom = '8px';
+          errorDisplay.style.border = '1px solid #ff9800';
+          errorDisplay.style.display = 'none';
+          commentImageBox.insertBefore(errorDisplay, commentImageBox.querySelector('p').nextSibling);
+        }
+
+        if (result.error) {
+          errorDisplay.textContent = result.message;
+          errorDisplay.style.display = 'block';
+          commentImageInput.value = '';
+          return;
+        }
+
+        errorDisplay.style.display = 'none';
+        
+        // Insert the image tag
+        const imgTag = `[IMG:${result.url}]`;
+        const cursorPos = commentInput.selectionStart;
+        const textBefore = commentInput.value.substring(0, cursorPos);
+        const textAfter = commentInput.value.substring(cursorPos);
+        commentInput.value = textBefore + imgTag + textAfter;
+        commentInput.focus();
+        commentInput.selectionStart = commentInput.selectionEnd = cursorPos + imgTag.length;
+        commentImageInput.value = '';
+        commentImageBox.style.display = 'none';
+      }
+
       let commentSelectedType = null;
 
       commentInsertBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        if (commentMediaButtons.style.display === 'none' && commentMediaSearch.style.display === 'none') {
+        if (commentMediaButtons.style.display === 'none' && commentMediaSearch.style.display === 'none' && commentImageBox.style.display === 'none' && commentLinkBox.style.display === 'none') {
           commentMediaButtons.style.display = 'flex';
         } else {
           commentMediaButtons.style.display = 'none';
           commentMediaSearch.style.display = 'none';
+          commentImageBox.style.display = 'none';
+          commentLinkBox.style.display = 'none';
         }
       });
 
@@ -596,24 +1244,50 @@ document.addEventListener('DOMContentLoaded', () => {
           if (btn.dataset.tab === 'write') {
             commentWriteTab.style.display = 'block';
             commentPreviewTab.style.display = 'none';
+            // Show interactive buttons in write mode
+            commentImageBtn.style.display = '';
+            commentLinkBtn.style.display = '';
+            commentInsertBtn.style.display = '';
+            svgWrapper.style.display = '';
           } else {
             commentWriteTab.style.display = 'none';
             commentPreviewTab.style.display = 'block';
             commentPreviewTab.innerHTML = parsePostText(commentInput.value) || '<em>Nothing to preview</em>';
+            // Hide interactive buttons and pop-ups in preview mode
+            commentImageBtn.style.display = 'none';
+            commentLinkBtn.style.display = 'none';
+            commentInsertBtn.style.display = 'none';
+            svgWrapper.style.display = 'none';
+            // Close any open pop-ups
+            commentImageBox.style.display = 'none';
+            commentLinkBox.style.display = 'none';
+            commentMediaButtons.style.display = 'none';
+            commentMediaSearch.style.display = 'none';
           }
         });
       });
 
-      const emojiBtn = document.createElement('button');
-      emojiBtn.type = 'button';
-      emojiBtn.className = 'emoji-btn';
-      emojiBtn.textContent = '😊';
+      const likeBtn = document.createElement('button');
+      likeBtn.type = 'button';
+      likeBtn.style.background = 'none';
+      likeBtn.style.border = 'none';
+      likeBtn.style.cursor = 'pointer';
+      likeBtn.style.padding = '6px';
+      likeBtn.style.display = 'flex';
+      likeBtn.style.alignItems = 'center';
+      likeBtn.style.justifyContent = 'center';
+      likeBtn.style.color = 'var(--text-secondary)';
+      likeBtn.style.transition = 'color 0.2s';
+      likeBtn.innerHTML = '<svg class="rating-svg-icon" width="20" height="20" viewBox="0 0 496 512"><path fill="currentColor" d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zm0 448c-110.3 0-200-89.7-200-200S137.7 56 248 56s200 89.7 200 200-89.7 200-200 200zm-80-216c17.7 0 32-14.3 32-32s-14.3-32-32-32-32 14.3-32 32 14.3 32 32 32zm160 0c17.7 0 32-14.3 32-32s-14.3-32-32-32-32 14.3-32 32 14.3 32 32 32zm4 72.6c-20.8 25-51.5 39.4-84 39.4s-63.2-14.3-84-39.4c-8.5-10.2-23.7-11.5-33.8-3.1-10.2 8.5-11.5 23.6-3.1 33.8 30 36 74.1 56.6 120.9 56.6s90.9-20.6 120.9-56.6c8.5-10.2 7.1-25.3-3.1-33.8-10.1-8.4-25.3-7.1-33.8 3.1z"></path></svg>';
+      likeBtn.addEventListener('mouseenter', () => likeBtn.style.color = 'var(--special-color)');
+      likeBtn.addEventListener('mouseleave', () => likeBtn.style.color = 'var(--text-secondary)');
 
       const emojiPicker = document.createElement('div');
       emojiPicker.className = 'emoji-picker';
+      emojiPicker.style.display = 'none';
 
-      const emojis = ['😀','😁','😂','🤣','😃','😄','😅','😆','😉','😊','😍','😘','😜','🤔','😎','😢','😭','😡','👍','👎','🙏','🔥','🎉','💯','🥳','😇','🤩','😏','😬','😴','🤗','😱','🥺','😤','😈','💖','💔','💙','⭐','🌟','✨','⚡','🍶','🍺','🍻','🥂','🍷','🧂'];
-      emojis.forEach(e => {
+      const commentEmojis = ['😀','😁','😂','🤣','😃','😄','😅','😆','😉','😊','😍','😘','😜','🤔','😎','😢','😭','😡','👍','👎','🙏','🔥','🎉','💯','🥳','😇','🤩','😏','😬','😴','🤗','😱','🥺','😤','😈','💖','💔','💙','⭐','🌟','✨','⚡','🍶','🍺','🍻','🥂','🍷','🧂'];
+      commentEmojis.forEach(e => {
         const emojiSpan = document.createElement('span');
         emojiSpan.textContent = e;
         emojiSpan.addEventListener('click', () => {
@@ -623,16 +1297,26 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         emojiPicker.appendChild(emojiSpan);
       });
-      emojiBtn.addEventListener('click', (e) => {
+
+      likeBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         const isHidden = emojiPicker.style.display === 'none' || emojiPicker.style.display === '';
         emojiPicker.style.display = isHidden ? 'block' : 'none';
       });
+      
       document.addEventListener('click', (e) => {
-        if (!emojiPicker.contains(e.target) && e.target !== emojiBtn) {
+        if (!emojiPicker.contains(e.target) && e.target !== likeBtn && !likeBtn.contains(e.target)) {
           emojiPicker.style.display = 'none';
         }
       });
+
+      const svgWrapper = document.createElement('div');
+      svgWrapper.style.display = 'flex';
+      svgWrapper.style.gap = '8px';
+      svgWrapper.style.alignItems = 'center';
+      svgWrapper.style.position = 'relative';
+      svgWrapper.appendChild(likeBtn);
+      svgWrapper.appendChild(emojiPicker);
 
       const sendBtn = document.createElement('button');
       sendBtn.textContent = 'Send';
@@ -692,63 +1376,101 @@ document.addEventListener('DOMContentLoaded', () => {
       commentBoxWrapper.style.alignItems = 'flex-end';
       commentBoxWrapper.style.justifyContent = 'flex-end';
       commentBoxWrapper.style.gap = '10px';
+      commentBoxWrapper.style.marginTop = '12px';
 
-      const emojiWrapper = document.createElement('div');
-      emojiWrapper.style.position = 'relative';
-      emojiWrapper.style.display = 'inline-block';
-      emojiWrapper.appendChild(emojiBtn);
-      emojiWrapper.appendChild(emojiPicker);
-
-      commentBoxWrapper.appendChild(emojiWrapper);
+      commentBoxWrapper.appendChild(svgWrapper);
       commentBoxWrapper.appendChild(sendBtn);
 
       const commentMediaContainer = document.createElement('div');
       commentMediaContainer.appendChild(commentMediaButtons);
       commentMediaContainer.appendChild(commentMediaSearch);
+      commentMediaContainer.appendChild(commentImageBox);
+      commentMediaContainer.appendChild(commentLinkBox);
 
       commentWriteTab.appendChild(commentInput);
-      commentWriteTab.appendChild(commentBoxWrapper);
 
       commentsSection.appendChild(commentTabs);
       commentsSection.appendChild(commentMediaContainer);
       commentsSection.appendChild(commentWriteTab);
       commentsSection.appendChild(commentPreviewTab);
+      commentsSection.appendChild(commentBoxWrapper);
       div.appendChild(commentsSection);
     });
 
     return div;
   }
 
-  async function loadPosts() {
-    if (!postsContainer) return;
-    const loadingTimeout = setTimeout(() => {
+  async function loadPosts(page = 1, append = false) {
+    if (isLoadingPosts || (!append && !hasMore)) return;
+    if (!append && page === 1) isLoadingPosts = true; // Only set loading for initial load
+    
+    const shouldShowLoading = !append && page === 1;
+    const loadingTimeout = shouldShowLoading ? setTimeout(() => {
       postsContainer.innerHTML = '<p class="empty-message">Loading posts...</p>';
-    }, 2000);
+    }, 2000) : null;
+
     try {
-      const response = await fetch(`${FIREBASE_URL}/posts.json?orderBy="timestamp"&limitToLast=25`);
+      const response = await fetch(`/community/posts/?page=${page}`);
       if (!response.ok) throw new Error('Failed to load posts');
+      
       const data = await response.json();
-      clearTimeout(loadingTimeout);
-      postsContainer.innerHTML = '';
-      if (!data) {
-        postsContainer.innerHTML = '<p class="empty-message">No posts yet.</p>';
-      } else {
-        const posts = Object.entries(data).sort((a, b) => b[1].timestamp - a[1].timestamp);
-        posts.forEach(([postId, post]) => {
-          if (post) {
-            const postDiv = renderPost(post, postId);
-            postsContainer.appendChild(postDiv);
-          }
-        });
+      
+      if (loadingTimeout) clearTimeout(loadingTimeout);
+      
+      // Only clear container on initial load
+      if (!append && page === 1) {
+        postsContainer.innerHTML = '';
       }
+      
+      if (!data.items || data.items.length === 0) {
+        if (!append && page === 1) {
+          postsContainer.innerHTML = '<p class="empty-message">No posts yet.</p>';
+        }
+        hasMore = false;
+      } else {
+        // Render posts
+        data.items.forEach(post => {
+          const postDiv = renderPost(post, post.id);
+          postsContainer.appendChild(postDiv);
+        });
+        
+        hasMore = data.has_more;
+        currentPage = page;
+      }
+      
       root.classList.add('loaded');
     } catch (err) {
-      clearTimeout(loadingTimeout);
+      if (loadingTimeout) clearTimeout(loadingTimeout);
       console.error('Error loading posts:', err);
-      postsContainer.innerHTML = '<p class="empty-message">Error loading posts.</p>';
+      if (!append && page === 1) {
+        postsContainer.innerHTML = '<p class="empty-message">Error loading posts.</p>';
+      }
       root.classList.add('loaded');
+    } finally {
+      isLoadingPosts = false;
     }
   }
 
-  loadPosts();
+  // Infinite scroll detection
+  function setupInfiniteScroll() {
+    let scrollTimeout;
+    window.addEventListener('scroll', () => {
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(() => {
+        // Check if user is near bottom
+        const scrollPosition = window.innerHeight + window.scrollY;
+        const documentHeight = document.documentElement.scrollHeight;
+        
+        // Trigger load when user is within 800px of bottom
+        if (scrollPosition >= documentHeight - 800 && hasMore && !isLoadingPosts) {
+          isLoadingPosts = true;
+          loadPosts(currentPage + 1, true);
+        }
+      }, 100);
+    });
+  }
+
+  // Initial load and setup
+  loadPosts(1, false);
+  setupInfiniteScroll();
 });
