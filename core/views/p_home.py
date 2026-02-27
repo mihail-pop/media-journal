@@ -19,3 +19,4 @@ def dismiss_notification(request, item_id):
         return JsonResponse({"success": True})
     except MediaItem.DoesNotExist:
         return JsonResponse({"error": "Item not found"}, status=404)
+    

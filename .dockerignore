@@ -6,6 +6,15 @@ __pycache__/
 .env
 *.log
 
+.vscode/
+/staticfiles/
+.git/
+.github/
+.vscode/
+.venv/
+venv/
+*.swp
+
 # Ignore all media files (large)
 media/**
 

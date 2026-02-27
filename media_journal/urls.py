@@ -1,8 +1,9 @@
-from django.contrib import admin
-from django.urls import path
-from core import views
 from django.conf import settings
-from django.conf.urls.static import static
+from django.urls import path, re_path
+from django.contrib import admin
+from django.views.static import serve
+
+from core import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -96,4 +97,5 @@ urlpatterns = [
     path('api/toggle-music-favorite/', views.toggle_music_favorite, name='toggle_music_favorite'),
     path('api/reorder-music-videos/', views.reorder_music_videos, name='reorder_music_videos'),
     path('api/set-video-as-cover/', views.set_video_as_cover, name='set_video_as_cover'),
-]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    re_path(r'^media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT}),
+]

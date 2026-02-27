@@ -1112,7 +1112,7 @@ updateSortButtons();
       .then(data => {
         if (!data.success) return alert("Failed to load item");
         
-        // Use the populateForm function from edit_modal.js
+        // Use the populateForm function from g_edit_modal.js
         if (window.populateEditForm) {
           window.populateEditForm(form, data.item);
         }

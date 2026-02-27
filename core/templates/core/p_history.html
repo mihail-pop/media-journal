@@ -1,12 +1,12 @@
-{% extends 'core/base.html' %}
+{% extends 'core/g_base.html' %}
 {% load static %}
 {% load custom_filters %}
 
 {% block head %}
 {{ block.super }}
 <title>History - Media Journal</title>
-<link rel="stylesheet" href="{% static 'core/css/history.css' %}?v={{ version }}">
-<link rel="stylesheet" href="{% static 'core/css/modal.css' %}?v={{ version }}">
+<link rel="stylesheet" href="{% static 'core/css/p_history.css' %}">
+<link rel="stylesheet" href="{% static 'core/css/g_edit_modal.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -87,7 +87,7 @@
   </div>
 </section>
 </div>
-{% include 'core/partials/edit_modal.html' %}
+{% include 'core/g_edit_modal.html' %}
 {% endblock %}
 
 {% block script %}
@@ -95,6 +95,6 @@
 <script>
   document.body.setAttribute('data-theme', '{{ theme_mode }}');
 </script>
-<script src="{% static 'core/js/edit_modal.js' %}?v={{ version }}"></script>
-<script src="{% static 'core/js/history.js' %}?v={{ version }}"></script>
+<script src="{% static 'core/js/g_edit_modal.js' %}"></script>
+<script src="{% static 'core/js/p_history.js' %}"></script>
 {% endblock %}

@@ -4,14 +4,14 @@
 {% block head %}
 <head>
   <meta charset="UTF-8" />
-  <link rel="stylesheet" href="{% static 'core/css/header.css' %}?v={{ version }}" />
-  <link rel="stylesheet" href="{% static 'core/css/search.css' %}?v={{ version }}" />
+  <link rel="stylesheet" href="{% static 'core/css/g_header.css' %}" />
+  <link rel="stylesheet" href="{% static 'core/css/g_search.css' %}" />
   <link rel="icon" href="/static/core/icons/favicon.ico" type="image/x-icon">
 </head>
 {% endblock %}
 
 <body data-page-type="{{ page_type }}">
-  {% include "core/header.html" %}
+  {% include "core/g_header.html" %}
 
   <main>
     {% block content %}{% endblock %}
@@ -70,12 +70,8 @@
 
 
 {% block script %}
-  <script src="{% static 'core/js/music.js' %}?v={{ version }}"></script>
-  <script src="{% static 'core/js/base.js' %}?v={{ version }}"></script>
-
-<!-- <link rel="stylesheet" href="{% static 'core/js/rain.css' %}?v={{ version }}"> -->
-<!-- <script src="{% static 'core/js/rain.js' %}?v={{ version }}"></script> -->
- 
+  <script src="{% static 'core/js/g_music.js' %}"></script>
+  <script src="{% static 'core/js/g_base.js' %}"></script> 
 {% endblock %}
 </body>
 </html>

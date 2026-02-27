@@ -139,7 +139,7 @@ def tmdb_detail(request, media_type, tmdb_id):
 
         return render(
             request,
-            "core/detail.html",
+            "core/p_media_details.html",
             {
                 "item": item,
                 "item_id": item.id,
@@ -266,7 +266,7 @@ def tmdb_detail(request, media_type, tmdb_id):
 
     return render(
         request,
-        "core/detail.html",
+        "core/p_media_details.html",
         {
             "item": None,
             "item_id": None,
@@ -371,7 +371,7 @@ def tmdb_season_detail(request, tmdb_id, season_number):
 
         return render(
             request,
-            "core/season_detail.html",
+            "core/p_season_details.html",
             {
                 "item": item,
                 "item_id": item.id,
@@ -501,7 +501,7 @@ def tmdb_season_detail(request, tmdb_id, season_number):
 
     return render(
         request,
-        "core/season_detail.html",
+        "core/p_season_details.html",
         {
             "item": None,
             "item_id": None,

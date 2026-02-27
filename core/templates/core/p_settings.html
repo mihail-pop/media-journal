@@ -1,9 +1,9 @@
-{% extends 'core/base.html' %}
+{% extends 'core/g_base.html' %}
 {% load static %}
 {% block head %}
 {{ block.super }}
 <title>Settings - Media Journal</title>
-<link rel="stylesheet" href="/static/core/css/settings.css?v={{ version }}">
+<link rel="stylesheet" href="/static/core/css/p_settings.css">
 {% endblock %}
 
 {% block content %}
@@ -298,5 +298,5 @@
 
 {% block script %}
 {{ block.super }}
-<script src="{% static 'core/js/settings.js' %}?v={{ version }}"></script>
+<script src="{% static 'core/js/p_settings.js' %}"></script>
 {% endblock %}

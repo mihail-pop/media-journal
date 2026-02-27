@@ -1,16 +1,16 @@
-{% extends 'core/base.html' %}
+{% extends 'core/g_base.html' %}
 {% load static %}
 {% load custom_filters %}
 
 {% block head %}
 {{ block.super }}
-<title>Music - Media Journal</title>
-<link rel="stylesheet" href="{% static 'core/css/lists.css' %}?v={{ version }}">
-<link rel="stylesheet" href="{% static 'core/css/modal.css' %}?v={{ version }}">
+<title>Manga - Media Journal</title>
+<link rel="stylesheet" href="{% static 'core/css/m_lists.css' %}">
+<link rel="stylesheet" href="{% static 'core/css/g_edit_modal.css' %}">
 {% endblock %}
 
 {% block content %}
-<body data-media-type="music"></body>
+<body data-media-type="manga"></body>
 <!-- Top Banner Rotator -->
 <div class="banner-rotator">
   <img id="rotating-banner" src="{% static 'core/img/placeholder.png' %}" alt="Banner">
@@ -19,7 +19,6 @@
   </div>
 </div>
 
-<!-- Separator Bar -->
 <div class="separator-bar"></div>
 
 <!-- Main Section: Sidebar + List Area -->
@@ -28,15 +27,7 @@
   <aside class="sidebar">
     <input type="text" id="search-input" placeholder="Filter" autocomplete="off">
 <div class="filter-buttons-wrapper">
-  <div style="display: flex; align-items: center; justify-content: space-between;">
-    <h3>Lists</h3>
-    <label class="music-player-btn">
-      <input type="checkbox" id="music-player-toggle" data-mode="status">
-      <svg class="music-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img">
-        <path fill="currentColor" d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
-      </svg>
-    </label>
-  </div>
+  <h3>Lists</h3>
   <div class="filter-buttons">
     <button class="filter-btn" data-filter="all">
       <span class="btn-text">All</span>
@@ -44,7 +35,7 @@
     </button>
     {% if status_counts.ongoing > 0 %}
     <button class="filter-btn" data-filter="ongoing">
-      <span class="btn-text">Listening</span>
+      <span class="btn-text">Reading</span>
       <span class="btn-count">{{ status_counts.ongoing }}</span>
     </button>
     {% endif %}
@@ -93,6 +84,16 @@
         </span>
       </button>
     </div>
+
+<div class="check-status-container" id="check-status-container">
+  <h3>Status Overview</h3>
+  <button id="check-status-btn" class="toggle-btn">Get Status</button>
+  <div class="status-legend">
+    <div><span class="legend-dot green"></span> Finished</div>
+    <div><span class="legend-dot orange"></span> Releasing</div>
+    <div><span class="legend-dot red"></span> Not yet released</div>
+  </div>
+</div>
   </aside>
 
   <!-- Content Area -->
@@ -112,7 +113,7 @@
     </div>
   </section>
 
-  {% include 'core/partials/edit_modal.html' %}
+  {% include 'core/g_edit_modal.html' %}
 {% endblock %}
 
 {% block script %}
@@ -121,6 +122,6 @@
   document.body.setAttribute('data-theme', '{{ theme_mode }}');
   document.body.setAttribute('data-rating-mode', '{{ rating_mode }}');
 </script>
-<script src="{% static 'core/js/edit_modal.js' %}?v={{ version }}"></script>
-<script src="{% static 'core/js/lists.js' %}?v={{ version }}"></script>
+<script src="{% static 'core/js/g_edit_modal.js' %}"></script>
+<script src="{% static 'core/js/m_lists.js' %}"></script>
 {% endblock %}

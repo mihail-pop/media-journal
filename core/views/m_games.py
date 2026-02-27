@@ -226,7 +226,7 @@ def igdb_detail(request, igdb_id):
             "page_type": "game",
             "theme_mode": theme_mode,
         }
-        return render(request, "core/detail.html", context)
+        return render(request, "core/p_media_details.html", context)
 
     # Not in DB, fetch from IGDB API but DO NOT save to DB
     token = get_igdb_token()
@@ -350,4 +350,4 @@ def igdb_detail(request, igdb_id):
         "theme_mode": theme_mode,
     }
 
-    return render(request, "core/detail.html", context)
+    return render(request, "core/p_media_details.html", context)

@@ -94,7 +94,7 @@ def openlib_detail(request, work_id):
 
         return render(
             request,
-            "core/detail.html",
+            "core/p_media_details.html",
             {
                 "item": item,
                 "item_id": item.id,
@@ -218,7 +218,7 @@ def openlib_detail(request, work_id):
 
     return render(
         request,
-        "core/detail.html",
+        "core/p_media_details.html",
         {
             "item": None,
             "item_id": None,

@@ -34,7 +34,7 @@ This is the self-hosted media tracker app I always wanted to have. From now on I
 
 2. Open a terminal in the project folder and start the app with:
     ```sh
-    docker-compose up
+    docker-compose up -d
     ```
   The application will be available at [http://localhost:8090](http://localhost:8090).
   
@@ -80,17 +80,23 @@ The application can be configured using environment variables.
    ```sh
    python manage.py migrate
    ```
-6. Start the app:
+
+6. Generate static files (required after every update):
+   ```sh
+   python manage.py collectstatic --noinput
+   ```
+
+7. Start the app:
    ```sh
    python manage.py runserver --noreload
    ```
-7. Open the app in your browser at: http://localhost:8000
-8. Inside the app navigate to **Settings → API Keys**.
+
+8. Open the app in your browser at: http://localhost:8000
+
+9. Inside the app navigate to **Settings → API Keys**.
    You will need to add your own API keys. In that section there are instructions on how to obtain them.
 
 ### Optional Tips
-
-- To easily start the app in the future, you can create a `.bat` file that runs the `runserver` command and a `.vbs` file in the shell:startup folder to start that bat file at startup.
 
 - To access the app from your phone or other devices on the same network, run the server using this command:
 
@@ -98,4 +104,26 @@ The application can be configured using environment variables.
   python manage.py runserver 0.0.0.0:8000 --noreload
   ```
    Then on your other devices you can access it using your machine's IPv4 address. You can find your IPv4 address by running `ipconfig` in the terminal.
+
+- For windows, to automatically start the app, you can create a `.bat` file that runs the `runserver` command and a `.vbs` file in the shell:startup folder to start that bat file at startup.
+
+Example `.bat` file:
+
+   ```sh
+   @echo off
+   cd /d "C:\***path to your folder***\media-journal"
+   set PY="C:\***path to your python***\Python\Python313\python.exe"
+   %PY% manage.py migrate
+   %PY% manage.py collectstatic --noinput
+   %PY% manage.py runserver 0.0.0.0:8000 --noreload
+   ```
+
+Example `.vbs` file:
+
+   ```sh
+   Set WshShell = CreateObject("WScript.Shell")
+   WshShell.Run """C:\***path to your bat file***\run_journal.bat""", 0
+   Set WshShell = Nothing
+   ```
+
 - Some YouTube videos (especially music) may show “Video unavailable, watch on YouTube” if you use a numeric URL (e.g., `http://127.0.0.1:8000`). Those videos work on `http://localhost:8000` or a custom URL (e.g., `http://myapp.mediajournal:8000`). To use a custom URL across devices, you need local DNS, which many routers don’t support. The other option is hosting a local DNS app on your machine, but it would always have to be turned on.

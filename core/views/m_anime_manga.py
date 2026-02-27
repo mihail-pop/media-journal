@@ -215,4 +215,4 @@ def anilist_detail(request, media_type, mal_id):
         "theme_mode": theme_mode,
     }
 
-    return render(request, "core/detail.html", context)
+    return render(request, "core/p_media_details.html", context)

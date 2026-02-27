@@ -245,7 +245,7 @@ def home(request):
 
     return render(
         request,
-        "core/home.html",
+        "core/p_home.html",
         {
             "favorite_sections": favorite_sections.items(),
             "favorite_sections_dict": favorite_sections,
@@ -292,7 +292,7 @@ def movies(request):
 
     return render(
         request,
-        "core/movies.html",
+        "core/m_movies.html",
         {
             "page_type": "movie",
             "rating_mode": rating_mode,
@@ -330,7 +330,7 @@ def tvshows(request):
 
     return render(
         request,
-        "core/tvshows.html",
+        "core/m_tvshows.html",
         {
             "page_type": "tv",
             "rating_mode": rating_mode,
@@ -370,7 +370,7 @@ def anime(request):
 
     return render(
         request,
-        "core/anime.html",
+        "core/m_anime.html",
         {
             "page_type": "anime",
             "rating_mode": rating_mode,
@@ -409,7 +409,7 @@ def manga(request):
 
     return render(
         request,
-        "core/manga.html",
+        "core/m_manga.html",
         {
             "page_type": "manga",
             "rating_mode": rating_mode,
@@ -448,7 +448,7 @@ def games(request):
 
     return render(
         request,
-        "core/games.html",
+        "core/m_games.html",
         {
             "page_type": "game",
             "rating_mode": rating_mode,
@@ -487,7 +487,7 @@ def music(request):
 
     return render(
         request,
-        "core/music.html",
+        "core/m_music.html",
         {
             "page_type": "music",
             "rating_mode": rating_mode,
@@ -526,7 +526,7 @@ def books(request):
 
     return render(
         request,
-        "core/books.html",
+        "core/m_books.html",
         {
             "page_type": "book",
             "rating_mode": rating_mode,
@@ -548,7 +548,7 @@ def history(request):
 
     return render(
         request,
-        "core/history.html",
+        "core/p_history.html",
         {
             "latest_years": latest_years,
             "theme_mode": theme_mode,
@@ -685,7 +685,7 @@ def favorites_page(request):
 
     return render(
         request,
-        "core/favorites.html",
+        "core/p_favorites.html",
         {
             "theme_mode": theme_mode,
             "sections": sections,
@@ -714,7 +714,7 @@ def person_detail(request, person_type, person_id):
 
     return render(
         request,
-        "core/person_detail.html",
+        "core/p_person_details.html",
         {
             "person_type": person_type,
             "person_id": person_id,
@@ -733,7 +733,7 @@ def discover_view(request):
 
     return render(
         request,
-        "core/discover.html",
+        "core/p_discover.html",
         {
             "theme_mode": theme_mode,
         },
@@ -759,7 +759,7 @@ def community(request):
 
     return render(
         request,
-        "core/community.html",
+        "core/p_community.html",
         {
             "firebase_url": firebase_url,
             "items": list(items),
@@ -788,7 +788,7 @@ def settings_page(request):
 
     return render(
         request,
-        "core/settings.html",
+        "core/p_settings.html",
         {
             "keys": keys,
             "allowed_names": allowed_names,

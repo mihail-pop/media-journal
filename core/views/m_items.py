@@ -448,7 +448,7 @@ def refresh_item(request):
         return JsonResponse({"error": str(e)}, status=500)
 
 
-# API endpoint used by edit modal (edit_modal.js, history.js, lists.js)
+# API endpoint used by edit modal (g_edit_modal.js, p_history.js, m_lists.js)
 # Returns item data from DB to populate the edit form when user clicks edit button
 @ensure_csrf_cookie
 def get_item(request, item_id):

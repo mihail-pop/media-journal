@@ -1,11 +1,11 @@
-{% extends "core/base.html" %}
+{% extends "core/g_base.html" %}
 {% load static %}
 
 {% block head %}
   {{ block.super }}
   <title>{{ title }} - Media Journal</title>
-  <link rel="stylesheet" href="{% static 'core/css/detail.css' %}?v={{ version }}" />
-  <link rel="stylesheet" href="{% static 'core/css/modal.css' %}?v={{ version }}" />
+  <link rel="stylesheet" href="{% static 'core/css/p_details.css' %}" />
+  <link rel="stylesheet" href="{% static 'core/css/g_edit_modal.css' %}" />
 {% endblock %}
 
 {% block content %}
@@ -91,7 +91,7 @@
   </div>
 </div>
 
-{% include "core/partials/edit_modal.html" with media_type=media_type item_id=item_id status=item.status personal_rating=item.personal_rating notes=item.notes progress_main=item.progress_main total_main=item.total_main progress_secondary=item.progress_secondary total_secondary=item.total_secondary favorite=item.favorite %}
+{% include "core/g_edit_modal.html" with media_type=media_type item_id=item_id status=item.status personal_rating=item.personal_rating notes=item.notes progress_main=item.progress_main total_main=item.total_main progress_secondary=item.progress_secondary total_secondary=item.total_secondary favorite=item.favorite %}
 
 <div class="main-colored-section">
   <div class="detail-container">
@@ -207,6 +207,6 @@
 
 {% block script %}
   {{ block.super }}
-  <script src="{% static 'core/js/edit_modal.js' %}?v={{ version }}"></script>
-  <script src="{% static 'core/js/season_detail.js' %}?v={{ version }}"></script>
+  <script src="{% static 'core/js/g_edit_modal.js' %}"></script>
+  <script src="{% static 'core/js/p_season_details.js' %}"></script>
 {% endblock %}

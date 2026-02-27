@@ -4,6 +4,9 @@ __pycache__/
 .env
 *.log
 
+/staticfiles/
+.vscode/
+
 # Ignore all files in media and its subfolders
 /media/*
 /media/**/*

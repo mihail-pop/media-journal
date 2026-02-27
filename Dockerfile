@@ -18,6 +18,9 @@ COPY . /app/
 RUN pip install --upgrade pip && \
     pip install -r requirements.txt
 
+# For whitenoise
+RUN python manage.py collectstatic --noinput
+
 # Expose the port Django runs on
 EXPOSE 8000
 
