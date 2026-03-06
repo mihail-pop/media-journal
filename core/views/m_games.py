@@ -267,14 +267,14 @@ def igdb_detail(request, igdb_id):
 
     poster_url = None
     if "cover" in game and game["cover"]:
-        poster_url = "https:" + game["cover"]["url"].replace(
-            "t_thumb", "t_cover_big_2x"
-        )
+        raw_url = game["cover"]["url"].replace("t_thumb", "t_cover_big_2x")
+        poster_url = raw_url if raw_url.startswith("https:") else "https:" + raw_url
 
     screenshots = []
     for ss in game.get("screenshots", []):
         if ss and "url" in ss:
-            url = "https:" + ss["url"].replace("t_thumb", "t_1080p")
+            raw_url = ss["url"].replace("t_thumb", "t_1080p")
+            url = raw_url if raw_url.startswith("https:") else "https:" + raw_url
             screenshots.append({"url": url, "is_full_url": True})
 
     banner_url = None
@@ -282,11 +282,12 @@ def igdb_detail(request, igdb_id):
     if "artworks" in game and game["artworks"]:
         first_artwork = game["artworks"][0]
         if first_artwork and "url" in first_artwork:
-            banner_url = "https:" + first_artwork["url"].replace("t_thumb", "t_1080p")
+            raw_url = first_artwork["url"].replace("t_thumb", "t_1080p")
+            banner_url = raw_url if raw_url.startswith("https:") else "https:" + raw_url
 
     # Fallback to screenshot if no artwork is present
     if not banner_url and screenshots:
-        banner_url = "https:" + screenshots[0]["url"].replace("t_thumb", "t_1080p")
+        banner_url = screenshots[0]["url"]
         screenshots = screenshots[1:] if len(screenshots) > 1 else []
 
     # Slice screenshots for initial load

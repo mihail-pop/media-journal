@@ -180,7 +180,7 @@ document.addEventListener('DOMContentLoaded', () => {
   
   const postLinkSendBtn = document.createElement('button');
   postLinkSendBtn.id = 'post-link-send-btn';
-  postLinkSendBtn.textContent = 'Send';
+  postLinkSendBtn.textContent = 'Insert';
   postLinkSendBtn.type = 'button';
   
   postLinkUrlWrapper.appendChild(postLinkUrlInputFull);
@@ -524,10 +524,10 @@ document.addEventListener('DOMContentLoaded', () => {
       
       if (replacementIndex <= 2) {
         // Embed first 2 videos
-        return `<br><iframe width=100% height=450px src="https://www.youtube.com/embed/${videoId}${startTime}" frameborder="0" allowfullscreen referrerpolicy="origin-when-cross-origin"></iframe>`;
+        return `<iframe width=100% height=450px src="https://www.youtube.com/embed/${videoId}${startTime}" frameborder="0" allowfullscreen referrerpolicy="origin-when-cross-origin"></iframe>`;
       } else {
         // Rest as links
-        return `<br><a href="${match}" target="_blank">Video ${replacementIndex}</a>`;
+        return `<a href="${match}" target="_blank">Video ${replacementIndex}</a>`;
       }
     });
   }
@@ -556,13 +556,13 @@ document.addEventListener('DOMContentLoaded', () => {
       const result = parseImgur(url);
       
       if (result.error) {
-        return `<br><div style="color: #ff9800; background: rgba(255, 152, 0, 0.1); padding: 12px; border-radius: 4px; margin-top: 8px; border-left: 3px solid #ff9800;">${result.message}</div>`;
+        return `<div style="color: #ff9800; background: rgba(255, 152, 0, 0.1); padding: 12px; border-radius: 4px; margin-top: 8px; border-left: 3px solid #ff9800;">${result.message}</div>`;
       }
       
       // If this is the first image and there are multiple, show slider
       if (imageIndex === 1 && images.length > 1) {
         const sliderId = 'slider_' + Math.random().toString(36).substr(2, 9);
-        let sliderHTML = `<br><div class="slider-container" id="${sliderId}_container" style="position: relative; max-width: 100%; margin-top: 8px; border-radius: 4px; overflow: hidden; aspect-ratio: 1920/1080; background: #000;">`;
+        let sliderHTML = `<div class="slider-container" id="${sliderId}_container" style="position: relative; max-width: 100%; margin-top:-4px; border-radius: 4px; overflow: hidden; aspect-ratio: 1920/1080; background: #000;">`;
         sliderHTML += `<img id="${sliderId}" src="${result.url}" alt="image" style="width: 100%; height: 100%; object-fit: contain; border-radius: 4px; display: block;">`;
         sliderHTML += `<div class="slider-nav-left" id="${sliderId}_left" style="position: absolute; top: 50%; left: 10px; transform: translateY(-50%); z-index: 10; opacity: 0; transition: opacity 0.3s ease;">`;
         sliderHTML += `<button onclick="document.getElementById('${sliderId}').previousImage?.(); event.stopPropagation();" style="background: rgba(0,0,0,0.6); color: white; border: none; padding: 0; width: 40px; height: 40px; cursor: pointer; border-radius: 4px; transition: background 0.2s; display: flex; align-items: center; justify-content: center;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>`;
@@ -621,7 +621,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return '';
       }
       
-      return `<br><div style="position: relative; max-width: 100%; margin-top: 8px; border-radius: 4px; overflow: hidden; aspect-ratio: 1920/1080; background: #000;"><img src="${result.url}" alt="image" style="width: 100%; height: 100%; object-fit: contain; border-radius: 4px; display: block;"></div>`;
+      return `<div style="position: relative; max-width: 100%; margin-top: 2px; border-radius: 4px; overflow: hidden; aspect-ratio: 1920/1080; background: #000;"><img src="${result.url}" alt="image" style="width: 100%; height: 100%; object-fit: contain; border-radius: 4px; display: block;"></div>`;
     });
     
     // Parse media tags (match everything except ] in title to avoid capturing markdown links)
@@ -677,6 +677,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       
       postText.value = '';
+      postPreview.innerHTML = '';
       mediaTypeButtons.style.display = 'none';
       mediaSearchBox.style.display = 'none';
       // Reset pagination and reload
@@ -920,7 +921,7 @@ document.addEventListener('DOMContentLoaded', () => {
       commentLinkUrlInput.style.boxSizing = 'border-box';
       
       const commentLinkSendBtn = document.createElement('button');
-      commentLinkSendBtn.textContent = 'Send';
+      commentLinkSendBtn.textContent = 'Insert';
       commentLinkSendBtn.type = 'button';
       commentLinkSendBtn.style.padding = '8px 16px';
       commentLinkSendBtn.style.background = 'var(--border)';
@@ -1074,7 +1075,7 @@ document.addEventListener('DOMContentLoaded', () => {
       commentImageInput.style.flex = '1';
       
       const commentImageSendBtn = document.createElement('button');
-      commentImageSendBtn.textContent = 'Send';
+      commentImageSendBtn.textContent = 'Insert';
       commentImageSendBtn.type = 'button';
       commentImageSendBtn.style.padding = '8px 16px';
       commentImageSendBtn.style.background = 'var(--border)';
@@ -1364,6 +1365,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         commentInput.value = '';
+        commentPreviewTab.innerHTML = '';
         sendBtn.disabled = false;
 
         commentsCount.textContent = newCount;

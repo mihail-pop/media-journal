@@ -105,7 +105,7 @@
     <section class="recommendations-section double-recs">
       {% if prequels %}
       <div class="rec-block">
-        <h2>Prequel</h2>
+        <h2>Prequel{{ prequels|length|pluralize }}</h2>
         <div class="recommendations-list">
           {% for rec in prequels %}
           <a href="/mal/{{ media_type }}/{{ rec.id }}/" class="rec-card" title="{{ rec.title }}">
@@ -122,7 +122,7 @@
 
       {% if sequels %}
       <div class="rec-block">
-        <h2>Sequel</h2>
+        <h2>Sequel{{ sequels|length|pluralize }}</h2>
         <div class="recommendations-list">
           {% for rec in sequels %}
           <a href="/mal/{{ media_type }}/{{ rec.id }}/" class="rec-card" title="{{ rec.title }}">
@@ -141,7 +141,7 @@
 
     {% if seasons %}
     <section class="seasons-section">
-      <h2>Seasons</h2>
+      <h2>Season{{ seasons|length|pluralize }}</h2>
       <div class="seasons-list">
         {% for season in seasons %}
         <a href="/tmdb/season/{{ source_id }}/{{ season.season_number }}/" class="season-card">
@@ -319,9 +319,9 @@
     {% if media_type == "tv" or media_type == "movie" %}
     <h2>Cast</h2>
     {% elif media_type == "manga" or media_type == "anime" %}
-    <h2>Characters</h2>
+    <h2>Character{{ cast|length|pluralize }}</h2>
     {% elif media_type == "book" %}
-    <h2>Authors</h2>
+    <h2>Author{{ cast|length|pluralize }}</h2>
     {% else %}
     <h2>Cast</h2>
     {% endif %}

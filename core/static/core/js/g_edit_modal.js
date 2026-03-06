@@ -100,11 +100,11 @@ function updateTotalDisplays(item) {
 
   // Define units for main and secondary progress per media type
   const units = {
-    tv: { main: "episodes", secondary: "seasons" },
-    anime: { main: "episodes", secondary: "" },
-    game: { main: "hours", secondary: "years" },
-    manga: { main: "chapters", secondary: "volumes" },
-    book: { main: "pages", secondary: "" },
+    tv: { main: "episode", secondary: "season" },
+    anime: { main: "episode", secondary: "" },
+    game: { main: "hour", secondary: "year" },
+    manga: { main: "chapter", secondary: "volume" },
+    book: { main: "page", secondary: "" },
   };
 
   const mediaType = item.media_type;
@@ -113,7 +113,8 @@ function updateTotalDisplays(item) {
 
   if (mainTotalDisplay) {
     if (item.total_main !== null && item.total_main !== undefined && item.total_main !== "") {
-      mainTotalDisplay.textContent = `/ ${item.total_main} ${mainUnit}`;
+      const pluralMain = item.total_main == 1 ? mainUnit : mainUnit + "s";
+      mainTotalDisplay.textContent = `/ ${item.total_main} ${pluralMain}`;
     } else {
       mainTotalDisplay.textContent = "";
     }
@@ -121,7 +122,8 @@ function updateTotalDisplays(item) {
 
   if (secondaryTotalDisplay) {
     if (item.total_secondary !== null && item.total_secondary !== undefined && item.total_secondary !== "") {
-      secondaryTotalDisplay.textContent = `/ ${item.total_secondary} ${secondaryUnit}`;
+      const pluralSecondary = item.total_secondary == 1 ? secondaryUnit : secondaryUnit + "s";
+      secondaryTotalDisplay.textContent = `/ ${item.total_secondary} ${pluralSecondary}`;
     } else {
       secondaryTotalDisplay.textContent = "";
     }

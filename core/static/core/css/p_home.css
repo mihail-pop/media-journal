@@ -42,6 +42,11 @@
 }
 
 /* --- Global Styles --- */
+
+html {
+  overflow-y: scroll;
+}
+
 body {
   background-color: var(--bg-primary);
   margin: 0;

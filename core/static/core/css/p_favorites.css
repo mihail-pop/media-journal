@@ -26,6 +26,10 @@
   --border-color: #fffffe;
 }
 
+html {
+  overflow-y: scroll;
+}
+
 body {
   background-color: var(--bg-primary);
   color: var(--text-primary);

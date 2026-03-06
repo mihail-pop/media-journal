@@ -84,6 +84,8 @@ def save_anilist_item(media_type, mal_id):
             cast=cast,
             seasons=None,
             related_titles=related_titles,
+            total_main=anilist_data.get("total_main"),
+            total_secondary=anilist_data.get("total_secondary"),
         )
 
         return JsonResponse({"message": "Saved to your list."})
@@ -107,6 +109,9 @@ def fetch_anilist_data(mal_id, media_type):
           month
           day
         }
+        episodes
+        chapters
+        volumes
         bannerImage
         coverImage {
           extraLarge
@@ -273,6 +278,8 @@ def fetch_anilist_data(mal_id, media_type):
         "cast": cast,
         "related_titles": related_titles,
         "recommendations": recommendations,
+        "total_main": media.get("episodes") or media.get("chapters"),
+        "total_secondary": media.get("volumes"),
     }
 
 

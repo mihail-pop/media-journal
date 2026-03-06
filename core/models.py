@@ -55,10 +55,10 @@ class MediaItem(models.Model):
 
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="planned")
     
-    progress_main = models.PositiveIntegerField(default=0)
+    progress_main = models.PositiveIntegerField(default=0) # User progress out of the total
     progress_secondary = models.PositiveIntegerField(null=True, blank=True)
 
-    total_main = models.PositiveIntegerField(null=True, blank=True)
+    total_main = models.PositiveIntegerField(null=True, blank=True) # Total of episodes/chapters received from the api
     total_secondary = models.PositiveIntegerField(null=True, blank=True)
 
     # Before:

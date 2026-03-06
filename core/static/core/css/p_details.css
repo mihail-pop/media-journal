@@ -44,6 +44,10 @@
   --special-color-hover: #dd866e;
 }
 
+html {
+  overflow-y: scroll;
+}
+
 body {
   background-color: var(--bg-primary);
   color: var(--text-title);
@@ -442,8 +446,7 @@ body[data-media-type="music"] .poster {
 }
 
 .double-recs .rec-block {
-  flex: 1;
-  min-width: 280px;
+  min-width: 5rem;
 }
 
 /* Container for the inline search */

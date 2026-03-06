@@ -133,8 +133,18 @@ def save_tmdb_item(media_type, tmdb_id):
 
         # Seasons (only for TV shows)
         seasons = []
+        total_episodes = 0
+        total_seasons = 0
         if media_type == "tv":
             for i, season in enumerate(data.get("seasons", [])):
+                season_number = season.get("season_number")
+                episode_count = season.get("episode_count", 0)
+                
+                # Count episodes and seasons (excluding specials)
+                if season_number != 0:
+                    total_episodes += episode_count
+                    total_seasons += 1
+                
                 season_poster_url = (
                     f"https://image.tmdb.org/t/p/w300{season.get('poster_path')}"
                     if season.get("poster_path")
@@ -150,9 +160,9 @@ def save_tmdb_item(media_type, tmdb_id):
 
                 seasons.append(
                     {
-                        "season_number": season.get("season_number"),
+                        "season_number": season_number,
                         "name": season.get("name"),
-                        "episode_count": season.get("episode_count"),
+                        "episode_count": episode_count,
                         "poster_path": local_season_poster,
                         "air_date": season.get("air_date"),
                     }
@@ -169,6 +179,8 @@ def save_tmdb_item(media_type, tmdb_id):
             release_date=data.get("release_date") or data.get("first_air_date") or "",
             cast=cast_data,
             seasons=seasons,
+            total_main=total_episodes if media_type == "tv" else None,
+            total_secondary=total_seasons if media_type == "tv" else None,
         )
 
         return JsonResponse({"message": "Added to your list."})
