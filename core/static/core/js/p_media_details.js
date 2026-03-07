@@ -1524,8 +1524,9 @@ const coverImg = rel.poster
   }).join(", ");
 
   safeHTML.push(`
-    <span class="label">Relations:</span>
-    <span class="relation-list">${relationItems}</span>
+    <span class="relation-list">
+      <span class="label">Relations:</span> ${relationItems}
+    </span>
   `);
 }
 
@@ -1732,15 +1733,15 @@ if (data.next_airing && data.next_episode) {
 }
 
 if (data.format) {
-  let format = data.format;
+  let formatText = data.format;
 
   // Formats to keep as-is
   const specialFormats = ["TV", "OVA", "ONA"];
-  if (specialFormats.includes(format)) {
+  if (specialFormats.includes(formatText)) {
     // leave as-is
   } else {
     // Replace underscores with spaces, capitalize every word
-    format = format
+    formatText = formatText
       .toLowerCase()
       .split("_")
       .map(w => w.charAt(0).toUpperCase() + w.slice(1))
@@ -1748,9 +1749,40 @@ if (data.format) {
   }
 
   // Also handle MOVIE specifically if you want it as 'Movie'
-  if (format.toLowerCase() === "movie") format = "Movie";
+  if (formatText.toLowerCase() === "movie") formatText = "Movie";
 
-  safeHTML.push(`<p><span class="label">Format:</span> ${format}</p>`);
+  // Add episode count and duration for anime
+  if (mediaType === 'anime') {
+    const parts = [];
+    if (data.episodes) {
+      const episodeWord = data.episodes === 1 ? 'episode' : 'episodes';
+      parts.push(`${data.episodes} ${episodeWord}`);
+    }
+    if (data.duration) {
+      parts.push(`${data.duration} minutes`);
+    }
+    if (parts.length > 0) {
+      formatText += ` (${parts.join(' - ')})`;
+    }
+  }
+
+  // Add chapter and volume count for manga
+  if (mediaType === 'manga') {
+    const parts = [];
+    if (data.chapters) {
+      const chapterWord = data.chapters === 1 ? 'chapter' : 'chapters';
+      parts.push(`${data.chapters} ${chapterWord}`);
+    }
+    if (data.volumes) {
+      const volumeWord = data.volumes === 1 ? 'volume' : 'volumes';
+      parts.push(`${data.volumes} ${volumeWord}`);
+    }
+    if (parts.length > 0) {
+      formatText += ` (${parts.join(' - ')})`;
+    }
+  }
+
+  safeHTML.push(`<p><span class="label">Format:</span> ${formatText}</p>`);
 }
 
     if (data.studios?.length) {
@@ -1828,8 +1860,9 @@ const coverOverlay = rel.cover
   }).join(", ");
 
   safeHTML.push(`
-    <span class="label">Relations:</span>
-    <span class="relation-list">${relationItems}</span>
+    <span class="relation-list">
+      <span class="label">Relations:</span> ${relationItems}
+    </span>
   `);
 }
 
@@ -1898,16 +1931,37 @@ if (data.trailers?.length) {
       `);
     }
 
-    if (data.platforms?.length) {
-      safeHTML.push(`<p><span class="label">Platforms:</span> ${data.platforms.join(", ")}</p>`);
+    if (data.time_to_beat && Object.keys(data.time_to_beat).length > 0) {
+      const ttb = data.time_to_beat;
+      const parts = [];
+      if (ttb.main_story) {
+        const hourWord = ttb.main_story === 1 ? 'hour' : 'hours';
+        parts.push(`Main Story - ${ttb.main_story} ${hourWord}`);
+      }
+      if (ttb.main_extras) {
+        const hourWord = ttb.main_extras === 1 ? 'hour' : 'hours';
+        parts.push(`Main Story + Extras - ${ttb.main_extras} ${hourWord}`);
+      }
+      if (ttb.completionist) {
+        const hourWord = ttb.completionist === 1 ? 'hour' : 'hours';
+        parts.push(`Completionist - ${ttb.completionist} ${hourWord}`);
+      }
+      if (parts.length > 0) {
+        safeHTML.push(`<p><span class="label">Time to beat:</span> ${parts.join(' / ')}</p>`);
+      }
+    }
+
+    if (data.involved_companies?.length) {
+      const label = data.involved_companies.length === 1 ? 'Developer:' : 'Developers:';
+      safeHTML.push(`<p><span class="label">${label}</span> ${data.involved_companies.join(", ")}</p>`);
     }
 
     if (data.genres?.length) {
       safeHTML.push(`<p><span class="label">Genres:</span> ${data.genres.join(", ")}</p>`);
     }
 
-    if (data.involved_companies?.length) {
-      safeHTML.push(`<p><span class="label">Involved companies:</span> ${data.involved_companies.join(", ")}</p>`);
+    if (data.platforms?.length) {
+      safeHTML.push(`<p><span class="label">Platforms:</span> ${data.platforms.join(", ")}</p>`);
     }
 
 if (data.trailers?.length) {
@@ -1965,6 +2019,46 @@ if (data.websites?.length) {
     .join(", ");
 
   safeHTML.push(`<p><span class="label">External Links:</span> ${websiteLinks}</p>`);
+}
+
+if (data.expansions?.length) {
+  const expansionItems = data.expansions.map(exp => {
+    const coverOverlay = exp.cover
+      ? `<div class="relation-hover-img-container"><img src="${exp.cover}" class="relation-hover-img" /></div>`
+      : "";
+    
+    const linkHTML = exp.id
+      ? `<a href="/igdb/game/${exp.id}/" target="_blank" rel="noopener noreferrer">${exp.name}</a>`
+      : exp.name;
+    
+    return `<span class="relation-item">${linkHTML}${coverOverlay}</span>`;
+  }).join(", ");
+  
+  safeHTML.push(`
+    <span class="relation-list">
+      <span class="label">Expansions:</span> ${expansionItems}
+    </span>
+  `);
+}
+
+if (data.dlcs?.length) {
+  const dlcItems = data.dlcs.map(dlc => {
+    const coverOverlay = dlc.cover
+      ? `<div class="relation-hover-img-container"><img src="${dlc.cover}" class="relation-hover-img" /></div>`
+      : "";
+    
+    const linkHTML = dlc.id
+      ? `<a href="/igdb/game/${dlc.id}/" target="_blank" rel="noopener noreferrer">${dlc.name}</a>`
+      : dlc.name;
+    
+    return `<span class="relation-item">${linkHTML}${coverOverlay}</span>`;
+  }).join(", ");
+  
+  safeHTML.push(`
+    <span class="relation-list">
+      <span class="label">DLCs:</span> ${dlcItems}
+    </span>
+  `);
 }
 
 // Render recommendations if available

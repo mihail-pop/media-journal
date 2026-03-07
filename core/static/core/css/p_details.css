@@ -410,6 +410,13 @@ body[data-media-type="music"] .poster {
   font-size: 0.85rem;
   margin: 0;
   line-height: 1.2;
+
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: normal;
 }
 
 .actor-name,
@@ -1525,6 +1532,12 @@ body[data-media-type="music"] .poster {
 .relation-item {
   position: relative;
   display: inline-block;
+}
+
+#extra-info-container > span.relation-list {
+  display: block;
+  margin: 0.4rem 0;
+  line-height: 1.4;
 }
 
 .relation-hover-img-container {

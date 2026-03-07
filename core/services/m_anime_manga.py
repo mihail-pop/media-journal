@@ -1,5 +1,5 @@
 import time
-import datetime
+from datetime import datetime
 
 import requests
 from django.http import JsonResponse
@@ -290,6 +290,8 @@ def get_anime_extra_info(mal_id):
         status
         averageScore
         format
+        episodes
+        duration
         genres
         nextAiringEpisode {
           episode
@@ -489,6 +491,8 @@ def get_anime_extra_info(mal_id):
             if data.get("averageScore") is not None
             else None,
             "format": data.get("format"),
+            "episodes": data.get("episodes"),
+            "duration": data.get("duration"),
             "genres": data.get("genres", []),
             "studios": [
                 studio["name"] for studio in data.get("studios", {}).get("nodes", [])
@@ -513,6 +517,8 @@ def get_manga_extra_info(mal_id):
         status
         averageScore
         format
+        chapters
+        volumes
         genres
         studios(isMain: true) {
           nodes {
@@ -696,6 +702,8 @@ def get_manga_extra_info(mal_id):
             if data.get("averageScore") is not None
             else None,
             "format": data.get("format"),
+            "chapters": data.get("chapters"),
+            "volumes": data.get("volumes"),
             "genres": data.get("genres", []),
             "studios": [
                 studio["name"] for studio in data.get("studios", {}).get("nodes", [])
@@ -822,7 +830,6 @@ def get_anilist_discover(
             next_airing = None
             next_episode = media.get("nextAiringEpisode")
             if next_episode and next_episode.get("airingAt"):
-                from datetime import datetime
 
                 next_airing = datetime.fromtimestamp(next_episode["airingAt"]).strftime(
                     "%d %b %Y"

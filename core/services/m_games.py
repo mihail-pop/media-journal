@@ -1,4 +1,5 @@
 import time
+from datetime import datetime
 
 import requests
 from django.http import JsonResponse
@@ -185,16 +186,25 @@ def get_game_extra_info(game_id):
         "Authorization": f"Bearer {token}",
     }
 
-    # Request fields we want for extra info, now including videos
+    # Request fields we want for extra info
     body = f"""
         fields
             platforms.name,
             genres.name,
             involved_companies.company.name,
+            involved_companies.developer,
             rating,
             websites.url,
             videos.video_id,
-            videos.name;
+            videos.name,
+            expansions.id,
+            expansions.name,
+            expansions.cover.url,
+            dlcs.id,
+            dlcs.name,
+            dlcs.cover.url,
+            similar_games.name,
+            similar_games.cover.url;
         where id = {game_id};
     """
 
@@ -235,39 +245,77 @@ def get_game_extra_info(game_id):
                 for v in combined[:3]
             ]
 
-        # Fetch similar games (recommendations)
-        similar_body = f"""
-            fields
-                similar_games.name,
-                similar_games.cover.url;
-            where id = {game_id};
-        """
+        # Process expansions
+        expansions = []
+        if game.get("expansions"):
+            for exp in game["expansions"]:
+                if exp.get("cover") and exp["cover"].get("url"):
+                    raw_url = exp["cover"]["url"].replace("t_thumb", "t_cover_big")
+                    cover_url = raw_url if raw_url.startswith("https:") else "https:" + raw_url
+                    expansions.append(
+                        {
+                            "id": exp.get("id"),
+                            "name": exp.get("name"),
+                            "cover": cover_url,
+                        }
+                    )
 
-        recommendations = []
+        # Process DLCs
+        dlcs = []
+        if game.get("dlcs"):
+            for dlc in game["dlcs"]:
+                if dlc.get("cover") and dlc["cover"].get("url"):
+                    raw_url = dlc["cover"]["url"].replace("t_thumb", "t_cover_big")
+                    cover_url = raw_url if raw_url.startswith("https:") else "https:" + raw_url
+                    dlcs.append(
+                        {
+                            "id": dlc.get("id"),
+                            "name": dlc.get("name"),
+                            "cover": cover_url,
+                        }
+                    )
+
+        # Process time to beat - separate query filtering by game_id
+        time_to_beat = {}
+        ttb_body = f"fields hastily, normally, completely; where game_id = {game_id};"
         try:
-            similar_response = requests.post(
-                "https://api.igdb.com/v4/games", headers=headers, data=similar_body
+            ttb_response = requests.post(
+                "https://api.igdb.com/v4/game_time_to_beats", headers=headers, data=ttb_body
             )
-            if similar_response.status_code == 200:
-                similar_data = similar_response.json()
-                if similar_data and similar_data[0].get("similar_games"):
-                    for similar in similar_data[0]["similar_games"][:16]:
-                        cover_url = None
-                        if similar.get("cover") and similar["cover"].get("url"):
-                            cover_url = "https:" + similar["cover"]["url"].replace(
-                                "t_thumb", "t_cover_big"
-                            )
-                        recommendations.append(
-                            {
-                                "id": similar.get("id"),
-                                "title": similar.get("name"),
-                                "poster_path": cover_url,
-                            }
-                        )
+            if ttb_response.status_code == 200:
+                ttb_data = ttb_response.json()
+                if ttb_data:
+                    ttb = ttb_data[0]
+                    hastily = round(ttb["hastily"] / 3600) if ttb.get("hastily") else None
+                    normally = round(ttb["normally"] / 3600) if ttb.get("normally") else None
+                    completely = round(ttb["completely"] / 3600) if ttb.get("completely") else None
+                    
+                    if hastily and hastily < 1000:
+                        time_to_beat["main_story"] = hastily
+                    if normally and normally < 1000:
+                        time_to_beat["main_extras"] = normally
+                    if completely and completely < 1000:
+                        time_to_beat["completionist"] = completely
         except Exception:
             pass
 
-        return {
+        # Process similar games from main query
+        recommendations = []
+        if game.get("similar_games"):
+            for similar in game["similar_games"][:16]:
+                cover_url = None
+                if similar.get("cover") and similar["cover"].get("url"):
+                    raw_url = similar["cover"]["url"].replace("t_thumb", "t_cover_big")
+                    cover_url = raw_url if raw_url.startswith("https:") else "https:" + raw_url
+                recommendations.append(
+                    {
+                        "id": similar.get("id"),
+                        "title": similar.get("name"),
+                        "poster_path": cover_url,
+                    }
+                )
+
+        result = {
             "platforms": [p.get("name") for p in game.get("platforms", [])]
             if game.get("platforms")
             else [],
@@ -277,7 +325,7 @@ def get_game_extra_info(game_id):
             "involved_companies": [
                 c.get("company", {}).get("name")
                 for c in game.get("involved_companies", [])
-                if c.get("company")
+                if c.get("company") and c.get("developer")
             ]
             if game.get("involved_companies")
             else [],
@@ -289,9 +337,13 @@ def get_game_extra_info(game_id):
             else [],
             "trailers": trailers,
             "recommendations": recommendations,
+            "expansions": expansions,
+            "dlcs": dlcs,
+            "time_to_beat": time_to_beat,
         }
+        return result
 
-    except Exception:
+    except Exception as e:
         return {}
 
 
@@ -355,7 +407,6 @@ def get_igdb_discover(
             # Format release date
             release_date = ""
             if item.get("first_release_date"):
-                from datetime import datetime
 
                 release_date = datetime.fromtimestamp(
                     item["first_release_date"]

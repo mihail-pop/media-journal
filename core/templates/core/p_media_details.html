@@ -231,7 +231,7 @@
 </section>
 {% endif %}
 
-{% if media_type == 'game' %}
+{% if media_type == 'game' and screenshots or media_type == 'game' and not recommendations %}
 <section class="screenshots-section">
   <div class="screenshots-header">
   <h2>Screenshots</h2>
