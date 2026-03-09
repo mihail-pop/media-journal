@@ -13,7 +13,59 @@ function getCookie(name) {
   return cookieValue;
 }
 
+// Flags to prevent multiple concurrent requests
+let isRefreshing = false;
+let isUploading = false;
+
+function showNotification(message, type, duration = null) {
+  // Remove any existing notification first
+  const existingNotification = document.querySelector('[data-notification="true"]');
+  if (existingNotification) {
+    existingNotification.remove();
+  }
+  
+  const notification = document.createElement("div");
+  notification.textContent = message;
+  notification.setAttribute('data-notification', 'true');
+  const isMobile = window.matchMedia("(orientation: portrait)").matches;
+  const bgColor = type === "warning" ? "#FF9800" : "#4CAF50";
+  notification.style.cssText = `
+    position: fixed;
+    top: ${isMobile ? '5rem' : '4rem'};
+    left: 50%;
+    transform: translateX(-50%);
+    background: ${bgColor};
+    color: white;
+    padding: ${isMobile ? '20px 40px' : '12px 24px'};
+    border-radius: ${isMobile ? '12px' : '6px'};
+    z-index: 9999;
+    font-weight: 500;
+    font-size: ${isMobile ? '2.5rem' : '1rem'};
+    width: ${isMobile ? '90%' : 'auto'};
+    max-width: ${isMobile ? '90%' : 'auto'};
+    text-align: center;
+    box-sizing: border-box;
+  `;
+  document.body.appendChild(notification);
+  
+  const timeoutDuration = duration !== null ? duration : (type === "warning" ? 20000 : 2000);
+  if (timeoutDuration > 0) {
+    setTimeout(() => notification.remove(), timeoutDuration);
+  }
+  return notification;
+}
+
 document.addEventListener('DOMContentLoaded', function() {
+    // Check for success notifications after reload
+    if (sessionStorage.getItem("personRefreshSuccess") === "1") {
+        showNotification('Refresh completed successfully!', 'success');
+        sessionStorage.removeItem("personRefreshSuccess");
+    }
+    if (sessionStorage.getItem("personUploadSuccess") === "1") {
+        showNotification('Image uploaded successfully!', 'success');
+        sessionStorage.removeItem("personUploadSuccess");
+    }
+    
     document.querySelectorAll('.overview-container').forEach(container => {
         const overview = container.querySelector('.overview');
         const btn = container.querySelector('.read-more-btn');
@@ -103,12 +155,20 @@ document.addEventListener('DOMContentLoaded', function() {
         checkbox.addEventListener('change', updateRefreshButton);
         
         refreshBtn.addEventListener('click', function() {
+            // Prevent multiple concurrent refresh requests
+            if (isRefreshing) return;
+            isRefreshing = true;
+            
             const personId = favForm.dataset.personId;
             const personType = favForm.dataset.personType;
-            if (!personId || !personType) return;
+            if (!personId || !personType) {
+                isRefreshing = false;
+                return;
+            }
             
             refreshBtn.disabled = true;
             refreshBtn.style.opacity = '0.5';
+            showNotification('Refreshing...', 'warning');
             
             fetch('/api/refresh_favorite_person/', {
                 method: 'POST',
@@ -121,15 +181,20 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
+                    sessionStorage.setItem('personRefreshSuccess', '1');
                     location.reload();
                 } else {
+                    isRefreshing = false;
                     refreshBtn.disabled = false;
                     refreshBtn.style.opacity = '1';
+                    showNotification('Refresh failed.', 'warning');
                 }
             })
             .catch(() => {
+                isRefreshing = false;
                 refreshBtn.disabled = false;
                 refreshBtn.style.opacity = '1';
+                showNotification('Refresh failed.', 'warning');
             });
         });
     }
@@ -149,6 +214,10 @@ document.addEventListener('DOMContentLoaded', function() {
         checkbox.addEventListener('change', updateUploadButton);
         
         uploadBtn.addEventListener('click', function() {
+            // Prevent multiple concurrent upload requests
+            if (isUploading) return;
+            isUploading = true;
+            
             const input = document.createElement('input');
             input.type = 'file';
             input.accept = '.jpg,.jpeg,.png,.webp,.gif';
@@ -156,10 +225,17 @@ document.addEventListener('DOMContentLoaded', function() {
             
             input.onchange = () => {
                 const file = input.files[0];
-                if (!file) return;
+                if (!file) {
+                    isUploading = false;
+                    return;
+                }
                 
                 const personId = favForm.dataset.personId;
                 const personType = favForm.dataset.personType;
+                
+                uploadBtn.disabled = true;
+                uploadBtn.style.opacity = '0.5';
+                showNotification('Uploading image...', 'warning');
                 
                 const formData = new FormData();
                 formData.append('image', file);
@@ -176,10 +252,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 .then(res => res.json())
                 .then(data => {
                     if (data.success) {
+                        sessionStorage.setItem('personUploadSuccess', '1');
                         location.reload();
                     } else {
-                        alert(data.error || 'Failed to upload image.');
+                        isUploading = false;
+                        uploadBtn.disabled = false;
+                        uploadBtn.style.opacity = '1';
+                        showNotification(data.error || 'Failed to upload image.', 'warning');
                     }
+                })
+                .catch(() => {
+                    isUploading = false;
+                    uploadBtn.disabled = false;
+                    uploadBtn.style.opacity = '1';
+                    showNotification('Upload failed.', 'warning');
                 });
             };
             
@@ -193,6 +279,30 @@ document.addEventListener('DOMContentLoaded', function() {
     document.addEventListener('click', function(e) {
         if (e.target.classList.contains('spoiler')) {
             e.target.classList.toggle('revealed');
+        }
+    });
+    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        // Don't trigger if user is typing in input/textarea
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+        
+        if (e.shiftKey) {
+            if (e.key === 'R' || e.key === 'r') {
+                e.preventDefault();
+                // Refresh data - SHIFT + R
+                const refreshBtn = document.getElementById('refresh-person-btn');
+                if (refreshBtn && refreshBtn.style.display !== 'none') {
+                    refreshBtn.click();
+                }
+            } else if (e.key === 'C' || e.key === 'c') {
+                e.preventDefault();
+                // Upload image - SHIFT + C
+                const uploadBtn = document.getElementById('upload-person-image-btn');
+                if (uploadBtn && uploadBtn.style.display !== 'none') {
+                    uploadBtn.click();
+                }
+            }
         }
     });
 });

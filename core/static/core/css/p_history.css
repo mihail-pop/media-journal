@@ -222,11 +222,6 @@ html {
   gap: 0.5rem;
 }
 
-
-.btn-text {
-  /* left side - default alignment */
-}
-
 .btn-count {
   opacity: 0;
   transition: opacity 0.3s ease;

@@ -55,10 +55,10 @@
           </svg>
         </button>
         <div class="settings-dropdown" id="settingsDropdown">
-          <button onclick="openBannerUpload('{{ source }}', '{{ source_id }}')" class="dropdown-item">Change Banner</button>
-          <button onclick="openCoverUpload('{{ source }}', '{{ source_id }}')" class="dropdown-item">Change Cover</button>
-          <button onclick="refreshItem('{{ item_id }}', 'data')" class="dropdown-item" title="Only data (not the cover, banner, screenshots, or videos).">Refresh Data</button>
-          <button onclick="refreshItem('{{ item_id }}', 'all')" class="dropdown-item" title="Only data, cover, and banner (not screenshots or videos).">Refresh Data & Images</button>
+          <button onclick="openBannerUpload('{{ source }}', '{{ source_id }}')" class="dropdown-item">Change Banner (Shift + B)</button>
+          <button onclick="openCoverUpload('{{ source }}', '{{ source_id }}')" class="dropdown-item">Change Cover (Shift + C)</button>
+          <button onclick="refreshItem('{{ item_id }}', 'data')" class="dropdown-item" title="Only data; not the cover, banner, screenshots, or videos.">Refresh Data (Shift + R)</button>
+          <button onclick="refreshItem('{{ item_id }}', 'all')" class="dropdown-item" title="Only data, cover, and banner; not screenshots or videos. (Shift + D)">Refresh Data & Images</button>
           <button onclick="refreshItem('{{ item_id }}', 'banner')" class="dropdown-item" title="Only the banner.">Refresh Banner</button>
           <button onclick="refreshItem('{{ item_id }}', 'cover')" class="dropdown-item" title="Only the cover.">Refresh Cover</button>
         </div>
@@ -364,20 +364,24 @@
       {% else %}
         <div class="cast-member">
       {% endif %}
+        {% if media_type != "book" %}
         <img src="{% if member.is_full_url %}{{ member.profile_path }}{% else %}https://image.tmdb.org/t/p/w185{{ member.profile_path }}{% endif %}"
              alt="{{ member.name }}"
              data-placeholder="{% static 'core/img/placeholder.png' %}"
              onerror="this.onerror=null;this.src=this.dataset.placeholder;" />
+        {% endif %}
         {% if media_type == 'anime' or media_type == 'manga' %}
           <p class="actor-name">{{ member.name }}</p>
         {% else %}
           <p class="actor-name">{{ member.name }}</p>
           <p class="character-name">{{ member.character }}</p>
         {% endif %}
+        {% if media_type != "book" %}
         <label class="cast-favorite" data-name="{{ member.name }}" data-img="{% if member.is_full_url %}{{ member.profile_path }}{% else %}https://image.tmdb.org/t/p/w185{{ member.profile_path }}{% endif %}" data-type="{% if media_type == 'anime' or media_type == 'manga' %}character{% else %}actor{% endif %}" data-id="{{ member.id|default:'' }}">
           <input type="checkbox">
           <span class="heart"></span>
         </label>
+        {% endif %}
       {% if media_type == "tv" or media_type == "movie" or media_type == "manga" or media_type == "anime" %}
         </a>
       {% else %}
@@ -385,16 +389,20 @@
       {% endif %}
     {% else %}
       <div class="cast-member">
+        {% if media_type != "book" %}
         <img src="{% if member.is_full_url %}{{ member.profile_path }}{% else %}https://image.tmdb.org/t/p/w185{{ member.profile_path }}{% endif %}"
              alt="{{ member.name }}"
              data-placeholder="{% static 'core/img/placeholder.png' %}"
              onerror="this.onerror=null;this.src=this.dataset.placeholder;" />
+        {% endif %}
         <p class="actor-name">{{ member.name }}</p>
         <p class="character-name">{{ member.character }}</p>
+        {% if media_type != "book" %}
         <label class="cast-favorite" data-name="{{ member.name }}" data-img="{% if member.is_full_url %}{{ member.profile_path }}{% else %}https://image.tmdb.org/t/p/w185{{ member.profile_path }}{% endif %}" data-type="{% if media_type == 'anime' or media_type == 'manga' %}character{% else %}actor{% endif %}" data-id="">
           <input type="checkbox">
           <span class="heart"></span>
         </label>
+        {% endif %}
       </div>
     {% endif %}
     {% endfor %}

@@ -193,6 +193,8 @@ def get_game_extra_info(game_id):
             genres.name,
             involved_companies.company.name,
             involved_companies.developer,
+            status,
+            first_release_date,
             rating,
             websites.url,
             videos.video_id,
@@ -315,7 +317,34 @@ def get_game_extra_info(game_id):
                     }
                 )
 
+        STATUS_MAP = {
+            0: "Released",
+            2: "Alpha",
+            3: "Beta",
+            4: "Early Access",
+            5: "Offline",
+            6: "Cancelled",
+            7: "Rumored",
+            8: "Delisted"
+        }
+
+        raw_status = game.get("status")
+
+        # If IGDB gives us a specific status (like Early Access or Cancelled), use it.
+        if raw_status is not None:
+            mapped_status = STATUS_MAP.get(raw_status)
+        else:
+            # If status is blank, we check the release date against the current time
+            release_date = game.get("first_release_date")
+            current_time = int(time.time())
+            
+            if release_date is None or release_date > current_time:
+                mapped_status = "In development"
+            else:
+                mapped_status = "Released"
+
         result = {
+            "status": mapped_status,
             "platforms": [p.get("name") for p in game.get("platforms", [])]
             if game.get("platforms")
             else [],
@@ -343,7 +372,7 @@ def get_game_extra_info(game_id):
         }
         return result
 
-    except Exception as e:
+    except Exception:
         return {}
 
 

@@ -198,6 +198,18 @@ def fetch_actor_data(actor_id):
                 key=lambda x: x.get("release_date") or "0000-00-00", reverse=True
             )
 
+        # Filter media: remove entries without poster and deduplicate by title
+        filtered_media = []
+        seen_titles = set()
+        for media in related_media:
+            if not media.get("poster_path"):
+                continue
+            title = media.get("title", "")
+            if title in seen_titles:
+                continue
+            seen_titles.add(title)
+            filtered_media.append(media)
+
         # Format dates
         formatted_birthday = ""
         if person_data.get("birthday"):
@@ -228,7 +240,7 @@ def fetch_actor_data(actor_id):
             "image": f"https://image.tmdb.org/t/p/original{person_data.get('profile_path')}"
             if person_data.get("profile_path")
             else None,
-            "related_media": related_media,
+            "related_media": filtered_media,
         }
 
     except Exception as e:

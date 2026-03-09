@@ -13,9 +13,22 @@ function getCookie(name) {
   return cookieValue;
 }
 
+// Flag to prevent multiple concurrent refresh requests
+let isRefreshing = false;
+
 function refreshItem(itemId, refreshType = 'all') {
+  // Prevent multiple concurrent refresh requests
+  if (isRefreshing) return;
+  isRefreshing = true;
+  
   const dropdown = document.getElementById('settingsDropdown');
   if (dropdown) dropdown.style.display = 'none';
+  
+  // Disable all refresh-related buttons
+  const settingsBtn = document.querySelector('.settings-cogwheel-btn');
+  const refreshBtns = document.querySelectorAll('.dropdown-item');
+  if (settingsBtn) settingsBtn.disabled = true;
+  refreshBtns.forEach(btn => btn.disabled = true);
   
   showNotification('Refreshing...', 'warning');
   
@@ -30,6 +43,13 @@ function refreshItem(itemId, refreshType = 'all') {
     .then((res) => {
       sessionStorage.setItem("refreshSuccess", "1");
       setTimeout(() => window.location.reload(true));
+    })
+    .catch((error) => {
+      // Re-enable buttons if request fails
+      isRefreshing = false;
+      if (settingsBtn) settingsBtn.disabled = false;
+      refreshBtns.forEach(btn => btn.disabled = false);
+      console.error('Refresh error:', error);
     });
 }
 
@@ -1403,6 +1423,50 @@ swapBtn?.addEventListener("click", function () {
       }
     });
   }
+
+  // Keyboard shortcuts
+  document.addEventListener('keydown', function(e) {
+    // Don't trigger if user is typing in input/textarea
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    
+    if (e.shiftKey) {
+      if (e.key === 'B' || e.key === 'b') {
+        e.preventDefault();
+        // Change banner - SHIFT + B
+        const addBtn = document.getElementById('add-to-list-button');
+        const source = addBtn?.dataset.source || document.querySelector('[data-source]')?.dataset.source;
+        const sourceId = document.body.dataset.itemId;
+        if (source && sourceId) {
+          openBannerUpload(source, sourceId);
+        }
+      } else if (e.key === 'C' || e.key === 'c') {
+        e.preventDefault();
+        // Change cover - SHIFT + C
+        const addBtn = document.getElementById('add-to-list-button');
+        const source = addBtn?.dataset.source || document.querySelector('[data-source]')?.dataset.source;
+        const sourceId = document.body.dataset.itemId;
+        if (source && sourceId) {
+          openCoverUpload(source, sourceId);
+        }
+      } else if (e.key === 'R' || e.key === 'r') {
+        e.preventDefault();
+        // Refresh data - SHIFT + R
+        const editBtn = document.getElementById('edit-button');
+        const itemId = editBtn?.dataset.id;
+        if (itemId) {
+          refreshItem(itemId, 'data');
+        }
+      } else if (e.key === 'D' || e.key === 'd') {
+        e.preventDefault();
+        // Refresh data & images - SHIFT + D
+        const editBtn = document.getElementById('edit-button');
+        const itemId = editBtn?.dataset.id;
+        if (itemId) {
+          refreshItem(itemId, 'all');
+        }
+      }
+    }
+  });
 });
 
 document.getElementById("more-info-btn").addEventListener("click", async function() {
@@ -1544,7 +1608,7 @@ if (data.trailers?.length) {
   const container = document.getElementById("trailer-container");
   if (container) {
     container.innerHTML = `
-      <h2>Trailers</h2>
+      <h2>${data.trailers.length === 1 ? 'Trailer' : 'Trailers'}</h2>
       <div class="trailer-grid">${trailerEmbeds}</div>
     `;
   }
@@ -1670,7 +1734,7 @@ if (data.trailers?.length) {
   const container = document.getElementById("trailer-container");
   if (container) {
     container.innerHTML = `
-      <h2>Trailers</h2>
+      <h2>${data.trailers.length === 1 ? 'Trailer' : 'Trailers'}</h2>
       <div class="trailer-grid">${trailerEmbeds}</div>
     `;
   }
@@ -1724,7 +1788,8 @@ if (data.recommendations?.length) {
     }
 
 if (data.status) {
-  const formattedStatus = data.status.charAt(0) + data.status.slice(1).toLowerCase();
+  const cleanStatus = data.status.replace(/_/g, ' ');
+  const formattedStatus = cleanStatus.charAt(0).toUpperCase() + cleanStatus.slice(1).toLowerCase();
   safeHTML.push(`<p><span class="label">Status:</span> ${formattedStatus}</p>`);
 }
 
@@ -1880,7 +1945,7 @@ if (data.trailers?.length) {
   const container = document.getElementById("trailer-container");
   if (container) {
     container.innerHTML = `
-      <h2>Trailers</h2>
+      <h2>${data.trailers.length === 1 ? 'Trailer' : 'Trailers'}</h2>
       <div class="trailer-grid">${trailerEmbeds}</div>
     `;
   }
@@ -1931,6 +1996,10 @@ if (data.trailers?.length) {
       `);
     }
 
+    if (data.status) {
+      safeHTML.push(`<p><span class="label">Status: </span> ${data.status}</p>`);
+    }
+
     if (data.time_to_beat && Object.keys(data.time_to_beat).length > 0) {
       const ttb = data.time_to_beat;
       const parts = [];
@@ -1978,7 +2047,7 @@ if (data.trailers?.length) {
   const container = document.getElementById("trailer-container");
   if (container) {
     container.innerHTML = `
-      <h2>Trailers</h2>
+      <h2>${data.trailers.length === 1 ? 'Trailer' : 'Trailers'}</h2>
       <div class="trailer-grid">${trailerEmbeds}</div>
     `;
   }
