@@ -503,6 +503,7 @@ h2 {
 }
 
 .stats-block-count {
+  display: block;
   font-size: 2rem;
   font-weight: 700;
   color: var(--text-primary);
@@ -510,6 +511,7 @@ h2 {
 }
 
 .stats-block-label {
+  display: block;
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--text-secondary);
@@ -539,6 +541,7 @@ h2 {
 }
 
 .extra-stat-value {
+  display: block;
   font-size: 2rem;
   font-weight: 700;
   color: var(--text-primary);
@@ -546,6 +549,7 @@ h2 {
 }
 
 .extra-stat-label {
+  display: block;
   font-size: 0.75rem;
   font-weight: 600;
   color: var(--text-secondary);

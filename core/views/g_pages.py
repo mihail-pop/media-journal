@@ -103,6 +103,8 @@ def home(request):
         movie_count * (90 / 60) + tv_episodes * (40 / 60) + anime_episodes * (24 / 60)
     )
     days_watched = round(total_hours / 24, 1)
+    if days_watched.is_integer():
+        days_watched = int(days_watched)
 
     game_hours = (
         all_items.filter(media_type="game").aggregate(Sum("progress_main"))[
@@ -111,6 +113,8 @@ def home(request):
         or 0
     )
     days_played = round(game_hours / 24, 1)
+    if days_played.is_integer():
+        days_played = int(days_played)
 
     chapters_read = (
         all_items.filter(media_type="manga").aggregate(Sum("progress_main"))[

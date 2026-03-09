@@ -2,6 +2,7 @@ import os
 import re
 import logging
 import datetime
+import time
 
 import requests
 from django.conf import settings
@@ -538,12 +539,13 @@ def save_favorite_actor_character(name, image_url, type, person_id=None):
     existing_count = FavoritePerson.objects.filter(type=type).count()
     position = existing_count + 1
 
+    timestamp = int(time.time() * 1000)
     # Prepare local path
     slug_name = slugify(name)
     ext = image_url.split(".")[-1].split("?")[
         0
     ]  # crude extension extract, e.g. jpg, png
-    relative_path = f"favorites/{type}s/{slug_name}.{ext}"
+    relative_path = f"favorites/{type}s/{slug_name}_{timestamp}.{ext}"
 
     local_url = download_image(image_url, relative_path)
     # fallback to original url if download failed

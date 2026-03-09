@@ -1,5 +1,6 @@
 import os
 import logging
+import time
 
 from django.conf import settings
 from django.utils.text import slugify
@@ -58,11 +59,13 @@ def refresh_favorite_person(person_id):
                     "voice_actors": character_data.get("voice_actors"),
                 }
 
+        timestamp = int(time.time() * 1000)
+
         # Download fresh image
         if fresh_image_url:
             slug_name = slugify(name)
             ext = fresh_image_url.split(".")[-1].split("?")[0]
-            relative_path = f"favorites/{person_type}s/{slug_name}.{ext}"
+            relative_path = f"favorites/{person_type}s/{slug_name}_{timestamp}.{ext}"
             local_url = download_image(fresh_image_url, relative_path)
             final_image_url = local_url if local_url else fresh_image_url
         else:
