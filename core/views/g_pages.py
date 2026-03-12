@@ -85,7 +85,7 @@ def home(request):
     stats["Favorites"] = favorites.count()
 
     # Extra stats
-    movie_count = media_counts["Movies"]
+    movie_count = all_items.filter(media_type="movie", status="completed").count()
     tv_episodes = (
         all_items.filter(media_type="tv").aggregate(Sum("progress_main"))[
             "progress_main__sum"

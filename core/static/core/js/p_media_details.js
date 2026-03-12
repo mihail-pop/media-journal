@@ -16,7 +16,7 @@ function getCookie(name) {
 // Flag to prevent multiple concurrent refresh requests
 let isRefreshing = false;
 
-function refreshItem(itemId, refreshType = 'all') {
+function refreshItem(sourceId, refreshType = 'all') {
   // Prevent multiple concurrent refresh requests
   if (isRefreshing) return;
   isRefreshing = true;
@@ -38,7 +38,7 @@ function refreshItem(itemId, refreshType = 'all') {
       "Content-Type": "application/json",
       "X-CSRFToken": getCookie("csrftoken"),
     },
-    body: JSON.stringify({ id: itemId, refresh_type: refreshType }),
+    body: JSON.stringify({ id: sourceId, refresh_type: refreshType }),
   })
     .then((res) => {
       sessionStorage.setItem("refreshSuccess", "1");
@@ -546,11 +546,11 @@ document.addEventListener("DOMContentLoaded", function () {
       // Get the item_id from the refresh button or edit button
       const refreshBtn = document.querySelector('.refresh-btn');
       const editBtn = document.querySelector('#edit-button');
-      const itemId = refreshBtn ? refreshBtn.getAttribute('onclick').match(/'([^']+)'/)[1] : 
+      const sourceId = refreshBtn ? refreshBtn.getAttribute('onclick').match(/'([^']+)'/)[1] : 
                     editBtn ? editBtn.dataset.id : null;
       
-      if (itemId) {
-        refreshItem(itemId);
+      if (sourceId) {
+        refreshItem(sourceId);
         return;
       }
     }
@@ -911,12 +911,12 @@ swapBtn?.addEventListener("click", function () {
   const favForm = document.getElementById("favorite-form");
   if (favForm) {
     const favInput = favForm.querySelector('input[name="favorite"]');
-    const itemId = favForm.dataset.itemId;
+    const sourceId = favForm.dataset.sourceId;
 
     favInput?.addEventListener("change", function () {
       const newStatus = favInput.checked;
 
-      fetch(`/edit-item/${itemId}/`, {
+      fetch(`/edit-item/${sourceId}/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1273,7 +1273,7 @@ swapBtn?.addEventListener("click", function () {
       const url = document.getElementById('music-youtube-url').value.trim();
       if (!url) return;
 
-      const sourceId = document.body.dataset.itemId;
+      const sourceId = document.body.dataset.sourceId;
       
       fetch('/api/add-music-video/', {
         method: 'POST',
@@ -1299,7 +1299,7 @@ swapBtn?.addEventListener("click", function () {
   // Reorder and set cover functionality
   if (musicVideosContainer) {
     musicVideosContainer.addEventListener('click', function(e) {
-      const sourceId = document.body.dataset.itemId;
+      const sourceId = document.body.dataset.sourceId;
       
       // Set as cover
       if (e.target.classList.contains('music-cover-btn')) {
@@ -1398,7 +1398,7 @@ swapBtn?.addEventListener("click", function () {
     musicVideosContainer.addEventListener('click', function(e) {
       if (e.target.classList.contains('music-delete-btn')) {
         const position = parseInt(e.target.dataset.position);
-        const sourceId = document.body.dataset.itemId;
+        const sourceId = document.body.dataset.sourceId;
 
         if (confirm('Delete this video?')) {
           fetch('/api/delete-music-video/', {
@@ -1424,62 +1424,59 @@ swapBtn?.addEventListener("click", function () {
     });
   }
 
-  // Keyboard shortcuts
-  document.addEventListener('keydown', function(e) {
-    // Don't trigger if user is typing in input/textarea
-    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+// Keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+  // Don't trigger if user is typing in input/textarea
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  
+  if (e.shiftKey) {
+    const key = e.key.toLowerCase();
     
-    if (e.shiftKey) {
-      if (e.key === 'B' || e.key === 'b') {
-        e.preventDefault();
-        // Change banner - SHIFT + B
-        const addBtn = document.getElementById('add-to-list-button');
-        const source = addBtn?.dataset.source || document.querySelector('[data-source]')?.dataset.source;
-        const sourceId = document.body.dataset.itemId;
-        if (source && sourceId) {
-          openBannerUpload(source, sourceId);
-        }
-      } else if (e.key === 'C' || e.key === 'c') {
-        e.preventDefault();
-        // Change cover - SHIFT + C
-        const addBtn = document.getElementById('add-to-list-button');
-        const source = addBtn?.dataset.source || document.querySelector('[data-source]')?.dataset.source;
-        const sourceId = document.body.dataset.itemId;
-        if (source && sourceId) {
-          openCoverUpload(source, sourceId);
-        }
-      } else if (e.key === 'R' || e.key === 'r') {
-        e.preventDefault();
-        // Refresh data - SHIFT + R
-        const editBtn = document.getElementById('edit-button');
-        const itemId = editBtn?.dataset.id;
-        if (itemId) {
-          refreshItem(itemId, 'data');
-        }
-      } else if (e.key === 'D' || e.key === 'd') {
-        e.preventDefault();
-        // Refresh data & images - SHIFT + D
-        const editBtn = document.getElementById('edit-button');
-        const itemId = editBtn?.dataset.id;
-        if (itemId) {
-          refreshItem(itemId, 'all');
-        }
+    // Grab everything from the body dataset (the Master Record)
+    const source = document.body.dataset.source;
+    const sourceId = document.body.dataset.sourceId;
+    const dbId = document.body.dataset.dbId;
+
+    if (key === 'b') {
+      e.preventDefault();
+      // Change banner - SHIFT + B
+      if (source && sourceId) {
+        openBannerUpload(source, sourceId);
+      }
+    } else if (key === 'c') {
+      e.preventDefault();
+      // Change cover - SHIFT + C
+      if (source && sourceId) {
+        openCoverUpload(source, sourceId);
+      }
+    } else if (key === 'r') {
+      e.preventDefault();
+      // Refresh data - SHIFT + R
+      if (dbId) {
+        refreshItem(dbId, 'data');
+      }
+    } else if (key === 'd') {
+      e.preventDefault();
+      // Refresh data & images - SHIFT + D
+      if (dbId) {
+        refreshItem(dbId, 'all');
       }
     }
-  });
+  }
+});
 });
 
 document.getElementById("more-info-btn").addEventListener("click", async function() {
   const btn = this;
   const container = document.getElementById("extra-info-container");
   const mediaType = document.body.dataset.mediaType; // e.g., "movie", "tv", "anime"
-  const itemId = document.body.dataset.itemId;
+  const sourceId = document.body.dataset.sourceId;
 
   btn.disabled = true;
   btn.textContent = "Loading...";
 
   try {
-    let url = `/api/get-extra-info/?media_type=${mediaType}&item_id=${itemId}`;
+    let url = `/api/get-extra-info/?media_type=${mediaType}&item_id=${sourceId}`;
     
     // For music, add artist_id and album_id if available
     if (mediaType === 'music') {

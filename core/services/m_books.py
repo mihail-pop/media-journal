@@ -10,16 +10,33 @@ from core.services.g_utils import download_image
 
 
 def save_openlib_item(work_id):
-    # Fetch from Open Library API
+    # Fetch main Work details (Title, Description, Covers)
     detail_url = f"https://openlibrary.org/works/{work_id}.json"
-    detail_response = requests.get(detail_url)
+    detail_response = requests.get(detail_url, timeout=10)
 
     if detail_response.status_code != 200:
         raise Exception("Failed to fetch book details from Open Library.")
 
     detail_data = detail_response.json()
 
-    # Title and description
+    # Get Authors and Pages in ONE request with the search index
+    author_names = []
+    total_pages = None
+    search_url = f"https://openlibrary.org/search.json?q=key:/works/{work_id}&fields=author_name,number_of_pages_median"
+    
+    try:
+        search_response = requests.get(search_url, timeout=10)
+        if search_response.status_code == 200:
+            search_data = search_response.json()
+            if search_data.get("docs"):
+                doc = search_data["docs"][0]
+                author_names = doc.get("author_name", [])
+                total_pages = doc.get("number_of_pages_median")
+    except Exception:
+        # if search fails, the script continues without authors/pages
+        pass
+
+    # Title and description logic
     title = detail_data.get("title", "Untitled")
     description_raw = detail_data.get("description", "")
     if isinstance(description_raw, dict):
@@ -27,38 +44,20 @@ def save_openlib_item(work_id):
     else:
         description = description_raw or ""
 
-    description = re.sub(
-        r"- \[.*?\]\(https?://[^\)]+\)", "", description
-    )  # Remove list of markdown links
-    description = re.sub(
-        r"\[.*?\]:\s+https?://\S+", "", description
-    )  # Remove link footnotes if present
-    description = re.sub(r"-{2,}", "", description)  # Remove long dashed lines
-    description = re.sub(r"See:\s*$", "", description)  # Remove dangling 'See:' if left
+    # Your regex cleaning
+    description = re.sub(r"- \[.*?\]\(https?://[^\)]+\)", "", description)
+    description = re.sub(r"\[.*?\]:\s+https?://\S+", "", description)
+    description = re.sub(r"-{2,}", "", description)
+    description = re.sub(r"See:\s*$", "", description)
     description = re.sub(r"\(\[.*?\]\[\d+\]\)", "", description)
-    description = re.sub(r"\[.*?\]\[\d+\]", "", description)  # Remove [Source][1]
+    description = re.sub(r"\[.*?\]\[\d+\]", "", description)
     description = re.sub(r"\[.*?\]\(https?://[^\)]+\)", "", description)
     description = description.strip()
 
-    # Authors
-    author_names = []
-    for a in detail_data.get("authors", []):
-        author_key = a.get("author", {}).get("key", "")
-        if author_key:
-            author_response = requests.get(f"https://openlibrary.org{author_key}.json")
-            if author_response.status_code == 200:
-                author_data = author_response.json()
-                name = author_data.get("name")
-                if name:
-                    author_names.append(name)
-
-    # Best available cover (pick last instead of first if possible)
+    # Cover logic
     cover_ids = detail_data.get("covers", [])
     cover_id = cover_ids[0] if cover_ids else None
-
-    poster_url = (
-        f"https://covers.openlibrary.org/b/id/{cover_id}-L.jpg" if cover_id else None
-    )
+    poster_url = f"https://covers.openlibrary.org/b/id/{cover_id}-L.jpg" if cover_id else None
 
     cache_bust = int(time.time() * 1000)
     local_poster = (
@@ -70,10 +69,7 @@ def save_openlib_item(work_id):
     if local_poster.startswith("media/"):
         local_poster = local_poster[len("media/") :]
 
-    # No banner art available for books
-    local_banner = ""
-
-    # Format release date (from `created`)
+    # Release date
     release_date = None
     raw_date = detail_data.get("created", {}).get("value", "")
     try:
@@ -90,13 +86,14 @@ def save_openlib_item(work_id):
         source="openlib",
         source_id=work_id,
         cover_url=local_poster,
-        banner_url=local_banner,
+        banner_url="",
         overview=description,
         release_date=release_date,
         cast=[{"name": name, "character": ""} for name in author_names],
         seasons=None,
         related_titles=[],
         screenshots=[],
+        total_main=total_pages,
     )
 
     return JsonResponse({"success": True, "message": "Book added to list"})

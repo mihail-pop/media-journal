@@ -13,7 +13,9 @@
 <script>
   document.body.dataset.theme = '{{ theme_mode }}';
   document.body.dataset.mediaType = '{{ media_type }}';
-  document.body.dataset.itemId = '{{ source_id }}';
+  document.body.dataset.source = '{{ source }}';
+  document.body.dataset.sourceId = '{{ source_id }}';
+  document.body.dataset.dbId = '{{ item_id }}';
   {% if media_type == 'music' %}
   document.body.dataset.artistId = '{{ artist_id|default:"" }}';
   document.body.dataset.albumId = '{{ album_id|default:"" }}';
