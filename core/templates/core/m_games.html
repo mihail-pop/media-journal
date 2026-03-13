@@ -13,9 +13,17 @@
 <body data-media-type="games"></body>
 <!-- Top Banner Rotator -->
 <div class="banner-rotator">
-  <img id="rotating-banner" src="{% static 'core/img/placeholder.png' %}" alt="Banner">
+  <!-- If Django passes a starting banner, use it immediately. Otherwise fallback to placeholder -->
+  <img id="rotating-banner" 
+       src="{% if initial_banner %}{{ initial_banner.url }}{% else %}{% static 'core/img/placeholder.png' %}{% endif %}" 
+       alt="Banner" 
+       fetchpriority="high">
+       
   <div class="banner-overlay">
-    <div class="banner-quote"></div>
+    <!-- Load the initial quote immediately too -->
+    <div class="banner-quote" {% if initial_banner.notes %}style="display: block; opacity: 1;"{% else %}style="display: none;"{% endif %}>
+      {% if initial_banner.notes %}“{{ initial_banner.notes }}”<br><br>~You{% endif %}
+    </div>
   </div>
 </div>
 

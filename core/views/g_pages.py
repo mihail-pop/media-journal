@@ -1,20 +1,23 @@
+import logging
+from datetime import timedelta, date
+from collections import defaultdict
+
 from django.apps import apps
+from django.urls import reverse
+from django.utils import timezone
+from django.db.models import Q, Sum
+from django.shortcuts import render
+from django.utils.text import slugify
+from django.utils.timesince import timesince
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET
-from django.db.models import Q
-from core.services.p_home import start_tmdb_background_loop, start_anilist_background_loop
-from django.shortcuts import render
-from django.utils import timezone
-from datetime import timedelta
-from collections import defaultdict
-from core.models import APIKey, MediaItem, FavoritePerson, NavItem
-from core.services.m_people import fetch_actor_data, fetch_character_data
-from django.db.models import Sum
-from django.utils.text import slugify
-from django.urls import reverse
-from django.utils.timesince import timesince
-import logging
 
+from core.models import APIKey, NavItem, MediaItem, FavoritePerson
+from core.services.p_home import (
+    start_tmdb_background_loop,
+    start_anilist_background_loop,
+)
+from core.services.m_people import fetch_actor_data, fetch_character_data
 
 logger = logging.getLogger(__name__)
 
@@ -140,26 +143,25 @@ def home(request):
     if chapters_read > 0:
         extra_stats["Chapters Read"] = chapters_read
 
-    # Activity history (167 days)
-    today = timezone.now().date()
-    start_date = today - timedelta(days=166)
+    today = date.today()
+    raw_start = today - timedelta(days=161) # Roughly 23 weeks ago
+    start_date = raw_start - timedelta(days=raw_start.weekday()) 
+    num_days = (today - start_date).days + 1 
 
     activity_counts = MediaItem.objects.filter(
         date_added__date__gte=start_date
     ).values_list("date_added", flat=True)
 
     count_by_day = defaultdict(int)
-    count_by_day = defaultdict(int)
     for activity_date in activity_counts:
         count_by_day[activity_date.date()] += 1
 
     activity_data = []
-    for i in range(167):
+    for i in range(num_days):
         day = start_date + timedelta(days=i)
-        formatted_date = day.strftime("%A %d %B %Y")
         activity_data.append(
             {
-                "date": formatted_date,
+                "date": day.strftime("%A %d %B %Y"),
                 "count": count_by_day.get(day, 0),
             }
         )
@@ -242,6 +244,21 @@ def home(request):
             }
         )
 
+    favorite_banners = MediaItem.objects.filter(
+        favorite=True
+    ).exclude(banner_url="") 
+
+    initial_banner = None
+    
+    # 2. Pick a random one if any exist
+    if favorite_banners.exists():
+        random_item = favorite_banners.order_by("?").first()
+        
+        initial_banner = {
+            "url": random_item.banner_url,
+            "notes": random_item.notes
+        }
+
     # Get theme mode
     AppSettings = apps.get_model("core", "AppSettings")
     settings = AppSettings.objects.first()
@@ -263,6 +280,7 @@ def home(request):
             "notifications": notifications_list,
             "recent_activity": recent_activity,
             "theme_mode": theme_mode,
+            "initial_banner": initial_banner,
         },
     )
 
@@ -294,6 +312,19 @@ def movies(request):
         ).count(),
     }
 
+    items_with_banners = MediaItem.objects.filter(
+        media_type="movie"
+    ).exclude(banner_url="") 
+
+    initial_banner = None
+    if items_with_banners.exists():
+        random_item = items_with_banners.order_by("?").first()
+        
+        initial_banner = {
+            "url": random_item.banner_url,
+            "notes": random_item.notes
+        }
+
     return render(
         request,
         "core/m_movies.html",
@@ -302,6 +333,7 @@ def movies(request):
             "rating_mode": rating_mode,
             "theme_mode": theme_mode,
             "status_counts": status_counts,
+            "initial_banner": initial_banner,
         },
     )
 
@@ -332,6 +364,19 @@ def tvshows(request):
         .exists()
     )
 
+    items_with_banners = MediaItem.objects.filter(
+        media_type="tv"
+    ).exclude(banner_url="") 
+
+    initial_banner = None
+    if items_with_banners.exists():
+        random_item = items_with_banners.order_by("?").first()
+        
+        initial_banner = {
+            "url": random_item.banner_url,
+            "notes": random_item.notes
+        }
+
     return render(
         request,
         "core/m_tvshows.html",
@@ -341,6 +386,7 @@ def tvshows(request):
             "has_seasons": has_seasons,
             "theme_mode": theme_mode,
             "status_counts": status_counts,
+            "initial_banner": initial_banner,
         },
     )
 
@@ -372,6 +418,19 @@ def anime(request):
         ).count(),
     }
 
+    items_with_banners = MediaItem.objects.filter(
+        media_type="anime"
+    ).exclude(banner_url="") 
+
+    initial_banner = None
+    if items_with_banners.exists():
+        random_item = items_with_banners.order_by("?").first()
+        
+        initial_banner = {
+            "url": random_item.banner_url,
+            "notes": random_item.notes
+        }
+
     return render(
         request,
         "core/m_anime.html",
@@ -380,6 +439,7 @@ def anime(request):
             "rating_mode": rating_mode,
             "theme_mode": theme_mode,
             "status_counts": status_counts,
+            "initial_banner": initial_banner,
         },
     )
 
@@ -411,6 +471,19 @@ def manga(request):
         ).count(),
     }
 
+    items_with_banners = MediaItem.objects.filter(
+        media_type="manga"
+    ).exclude(banner_url="") 
+
+    initial_banner = None
+    if items_with_banners.exists():
+        random_item = items_with_banners.order_by("?").first()
+        
+        initial_banner = {
+            "url": random_item.banner_url,
+            "notes": random_item.notes
+        }
+
     return render(
         request,
         "core/m_manga.html",
@@ -419,6 +492,7 @@ def manga(request):
             "rating_mode": rating_mode,
             "theme_mode": theme_mode,
             "status_counts": status_counts,
+            "initial_banner": initial_banner,
         },
     )
 
@@ -450,6 +524,19 @@ def games(request):
         ).count(),
     }
 
+    items_with_banners = MediaItem.objects.filter(
+        media_type="game"
+    ).exclude(banner_url="") 
+
+    initial_banner = None
+    if items_with_banners.exists():
+        random_item = items_with_banners.order_by("?").first()
+        
+        initial_banner = {
+            "url": random_item.banner_url,
+            "notes": random_item.notes
+        }
+
     return render(
         request,
         "core/m_games.html",
@@ -458,6 +545,7 @@ def games(request):
             "rating_mode": rating_mode,
             "theme_mode": theme_mode,
             "status_counts": status_counts,
+            "initial_banner": initial_banner,
         },
     )
 
@@ -489,6 +577,19 @@ def music(request):
         ).count(),
     }
 
+    items_with_banners = MediaItem.objects.filter(
+        media_type="music"
+    ).exclude(banner_url="") 
+
+    initial_banner = None
+    if items_with_banners.exists():
+        random_item = items_with_banners.order_by("?").first()
+        
+        initial_banner = {
+            "url": random_item.banner_url,
+            "notes": random_item.notes
+        }
+
     return render(
         request,
         "core/m_music.html",
@@ -497,6 +598,7 @@ def music(request):
             "rating_mode": rating_mode,
             "theme_mode": theme_mode,
             "status_counts": status_counts,
+            "initial_banner": initial_banner,
         },
     )
 
@@ -528,6 +630,19 @@ def books(request):
         ).count(),
     }
 
+    items_with_banners = MediaItem.objects.filter(
+        media_type="book"
+    ).exclude(banner_url="") 
+
+    initial_banner = None
+    if items_with_banners.exists():
+        random_item = items_with_banners.order_by("?").first()
+        
+        initial_banner = {
+            "url": random_item.banner_url,
+            "notes": random_item.notes
+        }
+
     return render(
         request,
         "core/m_books.html",
@@ -536,6 +651,7 @@ def books(request):
             "rating_mode": rating_mode,
             "theme_mode": theme_mode,
             "status_counts": status_counts,
+            "initial_banner": initial_banner,
         },
     )
 

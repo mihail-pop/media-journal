@@ -22,6 +22,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (bannerPool.length === 0) return;
 
+    const currentSrc = bannerImg.getAttribute("src");
+    if (firstLoad && currentSrc && !currentSrc.includes("placeholder.png")) {
+        firstLoad = false; 
+        // Start the timer for the NEXT rotation, but don't call updateBanner() now
+        setInterval(updateBanner, 30000); 
+        return; 
+    }
+
     updateBanner();
     setInterval(updateBanner, 30000); // rotate every 30 seconds
   }

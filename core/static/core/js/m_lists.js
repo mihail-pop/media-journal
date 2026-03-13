@@ -1283,14 +1283,24 @@ updateSortButtons();
   let bannerInterval;
   let lastBannerIndex = -1;
 
-  function initBannerRotator() {
+ function initBannerRotator() {
     if (bannerPool.length === 0) return;
     
+    // If the HTML already loaded an image, skip replacing it on the very first tick
+    const currentSrc = bannerImg.getAttribute("src");
+    if (firstLoad && !currentSrc.includes("placeholder.png")) {
+        firstLoad = false;
+        // Just start the 30-second timer for the NEXT image
+        bannerInterval = setInterval(updateBanner, 30000);
+        return;
+    }
+
+    // Otherwise, run normally
     updateBanner();
     if (bannerInterval) clearInterval(bannerInterval);
     bannerInterval = setInterval(updateBanner, 30000);
   }
-
+  
   function updateBanner() {
     if (bannerPool.length === 0) return;
     
