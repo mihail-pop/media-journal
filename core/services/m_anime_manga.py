@@ -388,8 +388,10 @@ def get_anime_extra_info(mal_id):
 
                 # Build countdown string (e.g., "5d 15h 10m")
                 parts = []
-                if days > 0: parts.append(f"{days}d")
-                if hours > 0: parts.append(f"{hours}h")
+                if days > 0:
+                    parts.append(f"{days}d")
+                if hours > 0: 
+                    parts.append(f"{hours}h")
                 parts.append(f"{minutes}m")
                 countdown = " ".join(parts)
 
