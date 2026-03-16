@@ -1790,10 +1790,6 @@ if (data.status) {
   safeHTML.push(`<p><span class="label">Status:</span> ${formattedStatus}</p>`);
 }
 
-if (data.next_airing && data.next_episode) {
-  safeHTML.push(`<p><span class="label">Next episode to air: </span> Episode ${data.next_episode} on ${data.next_airing}</p>`);
-}
-
 if (data.format) {
   let formatText = data.format;
 
@@ -1824,7 +1820,7 @@ if (data.format) {
       parts.push(`${data.duration} minutes`);
     }
     if (parts.length > 0) {
-      formatText += ` (${parts.join(' - ')})`;
+      formatText += ` (${parts.join(' × ')})`;
     }
   }
 
@@ -1840,11 +1836,15 @@ if (data.format) {
       parts.push(`${data.volumes} ${volumeWord}`);
     }
     if (parts.length > 0) {
-      formatText += ` (${parts.join(' - ')})`;
+      formatText += ` (${parts.join(' × ')})`;
     }
   }
 
   safeHTML.push(`<p><span class="label">Format:</span> ${formatText}</p>`);
+}
+
+if (data.next_airing && data.next_episode) {
+  safeHTML.push(`<p><span class="label">Next episode: </span> Episode ${data.next_episode} airing on ${data.next_airing}</p>`);
 }
 
     if (data.studios?.length) {

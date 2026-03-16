@@ -281,7 +281,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     if (item.next_airing) {
-      content += `<div class="tooltip-next">Next: ${item.next_airing}</div>`;
+      content += `<div class="tooltip-next">Episode ${item.next_episode.episode} airing on ${item.next_airing}</div>`;
     }
     
     if (item.overview) {

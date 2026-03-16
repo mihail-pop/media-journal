@@ -237,10 +237,10 @@ body[data-media-type="music"] .poster {
   bottom: 0;
   left: 50%;
   transform: translateX(-50%);
-  background: linear-gradient(to top, var(--bg-tertiary) 60%, transparent);
+  background: var(--bg-tertiary);
   border: none;
   color: var(--text-primary);
-  padding: 1rem 2rem 0.5rem;
+  padding: 0.5rem 1.5rem 0.5rem;
   cursor: pointer;
   font-size: 0.9rem;
   opacity: 0;

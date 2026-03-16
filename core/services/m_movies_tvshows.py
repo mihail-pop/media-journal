@@ -119,7 +119,7 @@ def save_tmdb_item(media_type, tmdb_id):
             local_profile = ""
             if profile_url:
                 # Use actor ID instead of index to prevent mismatches
-                filename = f"cast/tmdb_{media_type}_{tmdb_id}_{actor_id}.jpg"
+                filename = f"cast/tmdb_{media_type}_{tmdb_id}_{actor_id}_{cache_bust}.jpg"
                 local_profile = download_image(profile_url, filename)
 
             cast_data.append(
@@ -152,7 +152,7 @@ def save_tmdb_item(media_type, tmdb_id):
                 )
                 local_season_poster = (
                     download_image(
-                        season_poster_url, f"seasons/tmdb_tv_{tmdb_id}_s{i}.jpg"
+                        season_poster_url, f"seasons/tmdb_tv_{tmdb_id}_s{i}_{cache_bust}.jpg"
                     )
                     if season_poster_url
                     else ""
@@ -255,7 +255,7 @@ def save_tmdb_season(tmdb_id, season_number):
             local_profile = ""
             if profile_url:
                 # Use actor ID instead of index to prevent mismatches
-                filename = f"cast/tmdb_{season_source_id}_{actor_id}.jpg"
+                filename = f"cast/tmdb_{season_source_id}_{actor_id}_{cache_bust}.jpg"
                 local_profile = download_image(profile_url, filename)
 
             cast_data.append(
@@ -278,7 +278,7 @@ def save_tmdb_season(tmdb_id, season_number):
             local_still = (
                 download_image(
                     still_url,
-                    f"episodes/tmdb_{season_source_id}_e{episode.get('episode_number', 0)}.jpg",
+                    f"episodes/tmdb_{season_source_id}_e{episode.get('episode_number', 0)}_{cache_bust}.jpg",
                 )
                 if still_url
                 else ""

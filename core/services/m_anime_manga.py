@@ -1,5 +1,5 @@
 import time
-from datetime import datetime
+from datetime import datetime, date
 
 import requests
 from django.http import JsonResponse
@@ -40,7 +40,7 @@ def save_anilist_item(media_type, mal_id):
             local_path = ""
             if profile_url:
                 # Use character ID instead of index to prevent mismatches
-                filename = f"cast/mal_{media_type}_{mal_id}_{character_id}.jpg"
+                filename = f"cast/mal_{media_type}_{mal_id}_{character_id}_{cache_bust}.jpg"
                 local_path = download_image(profile_url, filename)
 
             cast.append(
@@ -57,7 +57,7 @@ def save_anilist_item(media_type, mal_id):
             r_id = related["mal_id"]
             poster_path = related["poster_path"]
             local_related_poster = (
-                download_image(poster_path, f"related/mal_{media_type}_{r_id}.jpg")
+                download_image(poster_path, f"related/mal_{media_type}_{r_id}_{cache_bust}.jpg")
                 if poster_path
                 else ""
             )
@@ -377,10 +377,28 @@ def get_anime_extra_info(mal_id):
         # Next airing
         next_airing_data = data.get("nextAiringEpisode")
         if next_airing_data and next_airing_data.get("airingAt"):
-            next_airing_timestamp = next_airing_data["airingAt"]
-            next_airing = datetime.fromtimestamp(next_airing_timestamp).strftime(
-                "%A %d %B %Y"
-            )
+            airing_dt = datetime.fromtimestamp(next_airing_data["airingAt"])
+            diff = airing_dt - datetime.now()
+
+            if diff.total_seconds() > 0:
+                # Calculate days, hours, minutes
+                days = diff.days
+                hours, remainder = divmod(diff.seconds, 3600)
+                minutes, _ = divmod(remainder, 60)
+
+                # Build countdown string (e.g., "5d 15h 10m")
+                parts = []
+                if days > 0: parts.append(f"{days}d")
+                if hours > 0: parts.append(f"{hours}h")
+                parts.append(f"{minutes}m")
+                countdown = " ".join(parts)
+
+                # Format: Sunday (5d 15h 10m)
+                day_of_week = airing_dt.strftime("%A")
+                next_airing = f"{day_of_week} ({countdown})"
+            else:
+                next_airing = "Aired"
+
             next_episode = next_airing_data.get("episode")
         else:
             next_airing = None
@@ -831,9 +849,23 @@ def get_anilist_discover(
             next_episode = media.get("nextAiringEpisode")
             if next_episode and next_episode.get("airingAt"):
 
-                next_airing = datetime.fromtimestamp(next_episode["airingAt"]).strftime(
-                    "%d %b %Y"
-                )
+                airing_datetime = datetime.fromtimestamp(next_episode["airingAt"])
+                today_date = date.today()
+                airing_date = airing_datetime.date()
+
+                # Calculate the difference in days
+                delta = (airing_date - today_date).days
+                
+                day_of_week = airing_datetime.strftime("%A")
+
+                if delta > 1:
+                    next_airing = f"{day_of_week} (in {delta} days)"
+                elif delta == 1:
+                    next_airing = f"{day_of_week} (tomorrow)"
+                elif delta == 0:
+                    next_airing = f"{day_of_week} (today)"
+                else:
+                    next_airing = "Aired"
 
             results.append(
                 {
@@ -847,6 +879,7 @@ def get_anilist_discover(
                     "release_date": release_date,
                     "genres": media.get("genres", []),
                     "next_airing": next_airing,
+                    "next_episode": next_episode,
                     "status": media.get("status"),
                 }
             )
