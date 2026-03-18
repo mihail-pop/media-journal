@@ -199,10 +199,17 @@ document.addEventListener('DOMContentLoaded', () => {
     card.className = 'card';
     
     let linkUrl = '#';
+
+    const sourcePrefix = item.source || (
+      item.media_type === 'game' ? 'igdb' :
+      item.media_type === 'movie' || item.media_type === 'tv' ? 'tmdb' : // Default for movies/tv if source not explicitly returned
+      'mal' // Default for anime/manga if source not explicitly returned (should be "anilist" now)
+    );
+    
     if (item.media_type === 'movie' || item.media_type === 'tv') {
       linkUrl = `/tmdb/${item.media_type}/${item.id}/`;
     } else if (item.media_type === 'anime' || item.media_type === 'manga') {
-      linkUrl = `/mal/${item.media_type}/${item.id}/`;
+      linkUrl = `/${sourcePrefix}/${item.media_type}/${item.id}/`;
     } else if (item.media_type === 'game') {
       linkUrl = `/igdb/game/${item.id}/`;
     }
@@ -220,11 +227,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // Add hover events
     card.addEventListener('mouseenter', async (e) => {
       const btn = card.querySelector('.add-to-list-btn');
-      const source = getSourceFromMediaType(item.media_type);
+      const source = item.source;
+      const source_id = item.id;
+      const mal_id = item.mal_id;
       
       // Check if item is in list
       try {
-        const response = await fetch(`/api/check_in_list/?source=${source}&source_id=${item.id}`);
+        let url = `/api/check_in_list/?source=${source}&source_id=${source_id}`;
+        if (mal_id) {
+          url += `&mal_id=${mal_id}`;
+        }
+        const response = await fetch(url);
         const data = await response.json();
         
         if (!data.in_list) {
@@ -451,13 +464,22 @@ document.addEventListener('DOMContentLoaded', () => {
       e.stopPropagation();
       
       const btn = e.target;
-      const itemData = {
-        source_id: btn.dataset.id,
-        media_type: btn.dataset.type,
-        source: getSourceFromMediaType(btn.dataset.type)
-      };
       
-      addToList(itemData, btn);
+      const rawItem = JSON.parse(decodeURIComponent(btn.dataset.item));
+      
+      const payload = {
+        source: rawItem.source,
+        source_id: rawItem.id,
+        media_type: rawItem.media_type,
+        title: rawItem.title,
+        cover_url: rawItem.poster_path
+      };
+
+      if (rawItem.mal_id) {
+        payload.mal_id = rawItem.mal_id;
+      }
+      
+      addToList(payload, btn);
     }
   });
   
@@ -573,9 +595,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const itemData = JSON.parse(decodeURIComponent(btn.dataset.item));
         
         card.addEventListener('mouseenter', async (e) => {
-          const source = getSourceFromMediaType(itemData.media_type);
+          const source = itemData.source;
+          const source_id = itemData.id;
+          const mal_id = itemData.mal_id;
           try {
-            const response = await fetch(`/api/check_in_list/?source=${source}&source_id=${itemData.id}`);
+            let url = `/api/check_in_list/?source=${source}&source_id=${source_id}`;
+            if (mal_id) {
+              url += `&mal_id=${mal_id}`;
+            }
+            const response = await fetch(url);
             const data = await response.json();
             if (!data.in_list) btn.style.display = 'block';
           } catch {

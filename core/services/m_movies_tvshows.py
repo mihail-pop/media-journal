@@ -172,7 +172,7 @@ def save_tmdb_item(media_type, tmdb_id):
             title=data.get("title") or data.get("name"),
             media_type=media_type,
             source="tmdb",
-            source_id=tmdb_id,
+            provider_ids={"tmdb": str(tmdb_id)},
             cover_url=local_poster,
             banner_url=local_banner,
             overview=data.get("overview", ""),
@@ -300,7 +300,7 @@ def save_tmdb_season(tmdb_id, season_number):
             title=season_title,
             media_type="tv",
             source="tmdb",
-            source_id=season_source_id,
+            provider_ids={"tmdb": str(season_source_id)},
             cover_url=local_poster,
             banner_url=local_banner,
             overview=season_data.get("overview", ""),
@@ -570,6 +570,7 @@ def get_tmdb_discover(media_type, page, query="", sort="popularity.desc", year="
 
             results.append(
                 {
+                    "source": "tmdb",
                     "id": str(item["id"]),
                     "title": item.get("title") or item.get("name", "Untitled"),
                     "poster_path": poster_url,

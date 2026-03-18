@@ -250,7 +250,6 @@ def fetch_actor_data(actor_id):
 
 
 def fetch_character_data(character_id):
-    """Fetch character data from database or AniList API"""
     logger.info(
         f"fetch_character_data called with character_id: {character_id} (type: {type(character_id)})"
     )
@@ -259,15 +258,8 @@ def fetch_character_data(character_id):
         logger.error("character_id is None")
         return None
 
-    # Debug: Print the exact value and type
-    logger.info(
-        f"DEBUG: character_id value = '{character_id}', type = {type(character_id)}, repr = {repr(character_id)}"
-    )
-
-    # Convert to string and validate
     try:
         character_id_str = str(character_id)
-        logger.info(f"DEBUG: character_id_str = '{character_id_str}'")
         if not character_id_str or character_id_str == "None":
             logger.error(f"Invalid character_id: {character_id}")
             return None
@@ -282,16 +274,25 @@ def fetch_character_data(character_id):
         character = FavoritePerson.objects.get(
             person_id=character_id_str, type="character"
         )
-        # Ensure database stored media has the required fields
         media_appearances = character.media_appearances or []
         for media in media_appearances:
+            # Use dynamically fetched source if available, otherwise default to mal
+            media_type = media.get("type", "").lower()
+            m_anilist_id = media.get("anilist_id")
+            m_mal_id = media.get("mal_id")
+
             if "url" not in media:
-                media_type = media.get("type", "").lower()
-                if media_type in ["anime", "manga"] and media.get("id"):
-                    # For AniList data, we need to find the MAL ID or use AniList ID
-                    media["url"] = f"/mal/{media_type}/{media.get('id')}/"
+                if media_type in ["anime", "manga"]:
+                    if m_anilist_id:
+                        media["url"] = f"/anilist/{media_type}/{m_anilist_id}/"
+                    elif m_mal_id:
+                        media["url"] = f"/mal/{media_type}/{m_mal_id}/"
+                    else:
+                        media["url"] = "#" # Fallback if no ID is found
                 else:
                     media["url"] = "#"
+            
+            # This logic remains the same
             if "type_display" not in media:
                 media["type_display"] = (
                     media.get("format") or media.get("type", "").title()
@@ -331,7 +332,7 @@ def fetch_character_data(character_id):
             }
             description
             age
-            media {
+            media(sort: [START_DATE_DESC], perPage: 24) { # Fetch latest 24
               edges {
                 characterRole
                 node {
@@ -369,7 +370,6 @@ def fetch_character_data(character_id):
         """
 
         try:
-            # Use the validated character_id_str and convert to int
             if not character_id_str or character_id_str == "None":
                 logger.error(f"Character ID is None or empty: {character_id}")
                 return None
@@ -377,7 +377,7 @@ def fetch_character_data(character_id):
             if character_id_int <= 0:
                 logger.error(f"Character ID must be positive: {character_id_int}")
                 return None
-            variables = {"id": character_id_int}
+            variables = {"id": character_id_int} # Use generic 'id' for AniList API
         except (ValueError, TypeError) as e:
             logger.error(
                 f"Invalid character_id cannot be converted to int: {character_id} - {str(e)}"
@@ -405,7 +405,6 @@ def fetch_character_data(character_id):
         data = response.json()
         logger.info(f"AniList response data: {data}")
 
-        # Check for GraphQL errors
         if "errors" in data:
             logger.error(
                 f"GraphQL errors for character {character_id}: {data['errors']}"
@@ -421,16 +420,13 @@ def fetch_character_data(character_id):
             )
             return None
 
-        # Process media appearances
         media_appearances = []
         voice_actors = []
 
-        for edge in character_data.get("media", {}).get("edges", [])[
-            :24
-        ]:  # Limit to 10
+        # No need for [:24] slicing here, as GraphQL query handles it
+        for edge in character_data.get("media", {}).get("edges", []):
             node = edge.get("node", {})
 
-            # Get start date and format it
             start_date = node.get("startDate", {})
             release_date = ""
             formatted_date = ""
@@ -448,26 +444,30 @@ def fetch_character_data(character_id):
             media_type = node.get("type", "").lower()
             media_format = node.get("format", "")
 
-            # Create URL based on media type
+            # Create URL based on both AniList and MAL IDs
             url = "#"
-            if media_type in ["anime", "manga"] and node.get("idMal"):
-                url = f"/mal/{media_type}/{node.get('idMal')}/"
+            node_anilist_id = node.get("id")
+            node_mal_id = node.get("idMal")
 
-            media_appearances.append(
-                {
-                    "id": node.get("id"),
-                    "title": node.get("title", {}).get("english")
-                    or node.get("title", {}).get("romaji"),
-                    "type": node.get("type"),
-                    "format": media_format,
-                    "type_display": media_format or media_type.title(),
-                    "image": node.get("coverImage", {}).get("large"),
-                    "character_role": edge.get("characterRole"),
-                    "release_date": release_date,
-                    "formatted_date": formatted_date,
-                    "url": url,
-                }
-            )
+            if media_type in ["anime", "manga"]:
+                if node_anilist_id:
+                    url = f"/anilist/{media_type}/{node_anilist_id}/"
+                elif node_mal_id:
+                    url = f"/mal/{media_type}/{node_mal_id}/"
+            
+            media_appearances.append({
+                "id": node_anilist_id, # Use AniList ID as primary ID for appearances
+                "mal_id": node_mal_id, # Also store MAL ID
+                "title": node.get("title", {}).get("english") or node.get("title", {}).get("romaji"),
+                "type": node.get("type"),
+                "format": media_format,
+                "type_display": media_format or media_type.title(),
+                "image": node.get("coverImage", {}).get("large"),
+                "character_role": edge.get("characterRole"),
+                "release_date": release_date,
+                "formatted_date": formatted_date,
+                "url": url,
+            })
 
             # Add voice actors from this media
             for va in edge.get("voiceActors", []):
@@ -484,41 +484,23 @@ def fetch_character_data(character_id):
                         }
                     )
 
-        # Sort by release date (latest first)
-        media_appearances.sort(
-            key=lambda x: x.get("release_date") or "0000-00-00", reverse=True
-        )
-
-        # Process description to format markdown-style text
         description = character_data.get("description", "")
         if description:
-            # Convert __text__ to <strong>text</strong> (first occurrence without br, rest with br)
+            # Markdown processing (unchanged)
             parts = description.split("__")
             result = []
             for i, part in enumerate(parts):
-                if i % 2 == 1:  # This is inside __ __
-                    if i == 1:  # First bold text
-                        result.append(f"<strong>{part}</strong> ")
-                    else:
-                        result.append(f"<br><strong>{part}</strong> ")
+                if i % 2 == 1:
+                    result.append(f"<strong>{part}</strong> ") if i == 1 else result.append(f"<br><strong>{part}</strong> ")
                 else:
                     result.append(part)
             description = "".join(result)
-            # Convert spoiler tags ~!text!~ to spoiler spans
-            description = re.sub(
-                r"~!([^!]+)!~", r'<span class="spoiler">\1</span>', description
-            )
-            # Convert markdown links [text](url) to HTML links
-            description = re.sub(
-                r"\[([^\]]+)\]\(([^\)]+)\)",
-                r'<a href="\2" target="_blank">\1</a>',
-                description,
-            )
+            description = re.sub(r"~!([^!]+)!~", r'<span class="spoiler">\1</span>', description)
+            description = re.sub(r"\[([^\]]+)\]\(([^\)]+)\)", r'<a href="\2" target="_blank">\1</a>', description)
 
-        # Process age to remove trailing dash if single age
         age = character_data.get("age")
         if age and isinstance(age, str) and age.endswith("-") and "-" not in age[:-1]:
-            age = age[:-1]  # Remove trailing dash for single ages
+            age = age[:-1]
 
         return {
             "id": str(character_data.get("id")),

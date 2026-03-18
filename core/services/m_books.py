@@ -84,7 +84,7 @@ def save_openlib_item(work_id):
         title=title,
         media_type="book",
         source="openlib",
-        source_id=work_id,
+        provider_ids={"openlib": str(work_id)},
         cover_url=local_poster,
         banner_url="",
         overview=description,

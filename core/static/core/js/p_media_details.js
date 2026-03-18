@@ -911,12 +911,12 @@ swapBtn?.addEventListener("click", function () {
   const favForm = document.getElementById("favorite-form");
   if (favForm) {
     const favInput = favForm.querySelector('input[name="favorite"]');
-    const sourceId = favForm.dataset.sourceId;
+    const itemId = favForm.dataset.itemId;
 
     favInput?.addEventListener("change", function () {
       const newStatus = favInput.checked;
 
-      fetch(`/edit-item/${sourceId}/`, {
+      fetch(`/edit-item/${itemId}/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1472,11 +1472,13 @@ document.getElementById("more-info-btn").addEventListener("click", async functio
   const mediaType = document.body.dataset.mediaType; // e.g., "movie", "tv", "anime"
   const sourceId = document.body.dataset.sourceId;
 
+  const source = document.body.dataset.source || 'mal'; 
+
   btn.disabled = true;
   btn.textContent = "Loading...";
 
   try {
-    let url = `/api/get-extra-info/?media_type=${mediaType}&item_id=${sourceId}`;
+    let url = `/api/get-extra-info/?media_type=${mediaType}&item_id=${sourceId}&source=${source}`;
     
     // For music, add artist_id and album_id if available
     if (mediaType === 'music') {
@@ -1576,7 +1578,7 @@ const coverImg = rel.poster
   : "";
 
     const linkHTML = rel.id
-      ? `<a href="/tmdb/movie/${rel.id}/" target="_blank" rel="noopener noreferrer">
+      ? `<a href="/tmdb/movie/${rel.id}/" target="_blank" rel="noopener">
            ${titleWithYear}
          </a>`
       : titleWithYear;
@@ -1913,7 +1915,7 @@ const coverOverlay = rel.cover
     const titleWithType = `${rel.title} (${rel.display_relation_type})`;
 
     const linkHTML = rel.id
-      ? `<a href="/mal/${rel.type.toLowerCase()}/${rel.id}/" target="_blank" rel="noopener noreferrer">
+      ? `<a href="/anilist/${rel.type.toLowerCase()}/${rel.id}/" target="_blank" rel="noopener">
            ${titleWithType}
          </a>`
       : titleWithType;
@@ -1960,7 +1962,7 @@ if (data.trailers?.length) {
               <div class="recommendations-list">
                 ${data.recommendations.map(rec => `
                   <div class="recommendation">
-                    <a href="/mal/${mediaType}/${rec.id}/" title="${rec.title}">
+                    <a href="/anilist/${mediaType}/${rec.id}/" title="${rec.title}">
                       <img src="${rec.poster_path}" 
                            alt="${rec.title}" 
                            data-placeholder="/static/core/img/placeholder.png" 

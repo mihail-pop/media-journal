@@ -84,12 +84,12 @@ document.addEventListener("DOMContentLoaded", () => {
           poster = item.poster_path;
         }
 
-  const prefix =
-    pageType === "anime" || pageType === "manga" ? "mal" :
-    pageType === "game" ? "igdb" :
-    pageType === "book" ? "openlib" :
-    pageType === "music" ? "musicbrainz" :
-    "tmdb";
+        const prefix = item.source || (
+          pageType === "game" ? "igdb" :
+          pageType === "book" ? "openlib" :
+          pageType === "music" ? "musicbrainz" :
+          "tmdb"
+        );
 
         return `
           <div class="search-card">

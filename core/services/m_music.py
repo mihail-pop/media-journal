@@ -335,7 +335,7 @@ def save_musicbrainz_item(recording_id):
         title=title,
         media_type="music",
         source="musicbrainz",
-        source_id=recording_id,
+        provider_ids={"musicbrainz": str(recording_id)},
         cover_url=local_poster,
         banner_url=local_banner if "local_banner" in locals() else "",
         overview=overview,
@@ -357,7 +357,7 @@ def get_music_extra_info(recording_id, artist_id=None, album_id=None):
 
     cast_data = {}
     try:
-        item = MediaItem.objects.get(source="musicbrainz", source_id=recording_id)
+        item = MediaItem.objects.get(provider_ids__musicbrainz=str(recording_id))
         cast_data = item.cast or {}
         if not artist_id:
             artist_id = (

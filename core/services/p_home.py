@@ -5,7 +5,7 @@ from datetime import timedelta
 from django.utils import timezone
 
 from core.models import MediaItem
-from core.services.m_anime_manga import update_mal_anime_manga
+from core.services.m_anime_manga import update_anilist_anime_manga
 from core.services.m_movies_tvshows import update_tmdb_seasons
 
 _started_tmdb = False
@@ -25,7 +25,7 @@ def start_tmdb_background_loop():
             cutoff = now - timedelta(days=30)
 
             items = MediaItem.objects.filter(media_type="tv", source="tmdb").exclude(
-                source_id__contains="_s"
+                provider_ids__icontains='"_s'
             )
             eligible = [item for item in items if item.last_updated < cutoff]
 
@@ -53,7 +53,7 @@ def start_anilist_background_loop():
             cutoff = now - timedelta(days=30)
 
             items = MediaItem.objects.filter(
-                media_type__in=["anime", "manga"], source="mal"
+                media_type__in=["anime", "manga"]
             )
             eligible = [
                 item
@@ -62,7 +62,7 @@ def start_anilist_background_loop():
             ]
 
             for item in eligible[:30]:
-                update_mal_anime_manga(item)
+                update_anilist_anime_manga(item)
                 time.sleep(60)
 
             print("AniList check loop finished batch. Pausing for 1 hour...")

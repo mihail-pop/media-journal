@@ -76,7 +76,7 @@ def openlib_search(request):
 def openlib_detail(request, work_id):
     item = None
     try:
-        item = MediaItem.objects.get(source="openlib", source_id=work_id)
+        item = MediaItem.objects.get(provider_ids__openlib=str(work_id))
 
         raw_date = item.release_date or ""
         formatted_release_date = ""

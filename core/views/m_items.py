@@ -35,9 +35,12 @@ def add_to_list(request):
     source_id = str(data["source_id"])
     media_type = data["media_type"]
 
+    lookup_key = f"provider_ids__{source}"
+
     # Prevent duplicate entries
     if MediaItem.objects.filter(
-        source=source, source_id=source_id, media_type=media_type
+        media_type=media_type,
+        **{lookup_key: source_id}
     ).exists():
         return JsonResponse({"error": "Item already in list"}, status=400)
 
@@ -45,8 +48,12 @@ def add_to_list(request):
     if source == "tmdb":
         return save_tmdb_item(media_type, source_id)
 
-    if source == "mal":
-        return save_anilist_item(media_type, source_id)
+    if source in ["anilist", "mal"]:
+        return save_anilist_item(
+            media_type, 
+            anilist_id=source_id if source == "anilist" else None,
+            mal_id=source_id if source == "mal" else None
+        )
 
     if source == "igdb":
         return save_igdb_item(source_id)
@@ -321,6 +328,10 @@ def refresh_item(request):
 
         # Get the item first
         item = MediaItem.objects.get(id=item_id)
+
+        anilist_id = item.provider_ids.get("anilist")
+        mal_id = item.provider_ids.get("mal")
+
         source = item.source
         source_id = item.source_id
         media_type = item.media_type
@@ -390,8 +401,12 @@ def refresh_item(request):
                 save_tmdb_season(tmdb_id, season_number)
             else:
                 save_tmdb_item(media_type, source_id)
-        elif source == "mal":
-            save_anilist_item(media_type, source_id)
+        elif source in ["mal", "anilist"]:
+            save_anilist_item(
+                media_type, 
+                anilist_id=anilist_id,
+                mal_id=mal_id
+            )
         elif source == "igdb":
             save_igdb_item(source_id)
         elif source == "openlib":
@@ -402,8 +417,10 @@ def refresh_item(request):
             return JsonResponse({"error": "Unsupported source."}, status=400)
 
         # Restore user data
+        lookup_key = f"provider_ids__{source}"
         new_item = MediaItem.objects.get(
-            source=source, source_id=source_id, media_type=media_type
+            media_type=media_type,
+            **{lookup_key: str(source_id)}
         )
         for field, value in user_data.items():
             setattr(new_item, field, value)

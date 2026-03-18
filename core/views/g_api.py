@@ -140,9 +140,9 @@ def tvshows_api(request):
 
     # Type filtering for TV shows vs seasons
     if type_filter == "shows":
-        queryset = queryset.exclude(source_id__contains="_s")
+        queryset = queryset.exclude(provider_ids__tmdb__contains="_s")
     elif type_filter == "seasons":
-        queryset = queryset.filter(source_id__contains="_s")
+        queryset = queryset.exclude(provider_ids__tmdb__contains="_s")
     # 'both' shows everything
 
     queryset = queryset.annotate(
@@ -274,7 +274,9 @@ def anime_api(request):
                 "cover_url": item.cover_url or "/static/core/img/placeholder.png",
                 "banner_url": item.banner_url or "/static/core/img/placeholder.png",
                 "notes": item.notes or "",
+                "source": item.source,
                 "source_id": item.source_id,
+                "provider_ids": item.provider_ids,
                 "get_status_display": item.get_status_display(),
                 "progress_main": item.progress_main,
                 "total_main": item.total_main,
@@ -367,7 +369,9 @@ def manga_api(request):
                 "cover_url": item.cover_url or "/static/core/img/placeholder.png",
                 "banner_url": item.banner_url or "/static/core/img/placeholder.png",
                 "notes": item.notes or "",
+                "source": item.source,
                 "source_id": item.source_id,
+                "provider_ids": item.provider_ids,
                 "get_status_display": item.get_status_display(),
                 "progress_main": item.progress_main,
                 "total_main": item.total_main,
@@ -738,8 +742,8 @@ def history_api(request):
                 url = f"/tmdb/season/{show_id}/{season_number}/"
             else:
                 url = f"/tmdb/{item.media_type}/{item.source_id}/"
-        elif item.source == "mal" and item.media_type in ["anime", "manga"]:
-            url = f"/mal/{item.media_type}/{item.source_id}/"
+        elif item.media_type in ["anime", "manga"]:
+            url = f"/{item.source}/{item.media_type}/{item.source_id}/"
         elif item.source == "igdb" and item.media_type == "game":
             url = f"/igdb/game/{item.source_id}/"
         elif item.source == "openlib" and item.media_type == "book":
@@ -812,7 +816,7 @@ def favorites_api(request):
                 else:
                     url = reverse("tmdb_detail", args=[item.media_type, item.source_id])
             elif item.media_type in ["anime", "manga"]:
-                url = reverse("anilist_detail", args=[item.media_type, item.source_id])
+                url = reverse("anilist_detail", args=[item.source, item.media_type, item.source_id])
             elif item.media_type == "game":
                 url = reverse("igdb_detail", args=[item.source_id])
             elif item.media_type == "book":

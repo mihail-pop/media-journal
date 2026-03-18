@@ -19,7 +19,6 @@ urlpatterns = [
     path("delete-item/<int:item_id>/", views.delete_item, name="delete_item"),
     path('tmdb/<str:media_type>/<int:tmdb_id>/', views.tmdb_detail, name='tmdb_detail'),
     path('tmdb/season/<int:tmdb_id>/<int:season_number>/', views.tmdb_season_detail, name='tmdb_season_detail'),
-    path('mal/<str:media_type>/<int:mal_id>/', views.anilist_detail, name='anilist_detail'),
     path('igdb/game/<int:igdb_id>/', views.igdb_detail, name='igdb_detail'),
     path('openlib/book/<str:work_id>/', views.openlib_detail, name='openlib_detail'),
     path('musicbrainz/music/<str:recording_id>/', views.musicbrainz_detail, name='musicbrainz_detail'),
@@ -98,5 +97,6 @@ urlpatterns = [
     path('api/toggle-music-favorite/', views.toggle_music_favorite, name='toggle_music_favorite'),
     path('api/reorder-music-videos/', views.reorder_music_videos, name='reorder_music_videos'),
     path('api/set-video-as-cover/', views.set_video_as_cover, name='set_video_as_cover'),
+    path('<str:source>/<str:media_type>/<str:source_id>/', views.anilist_detail, name='anilist_detail'), # greedy! needs to be at the bottom :D
     re_path(r'^media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT}),
 ]

@@ -38,20 +38,22 @@ class MediaItem(models.Model):
 
     title = models.CharField(max_length=300)
     media_type = models.CharField(max_length=20, choices=MEDIA_TYPES)
-    source = models.CharField(max_length=50)              
-    source_id = models.CharField(max_length=100)          
+
+    source = models.CharField(max_length=50) # old              
+    # source_id = models.CharField(max_length=100) # old
+
+    provider_ids = models.JSONField(default=dict, blank=True) # new source and source_id to support multiple apis     
 
     cover_url = models.URLField(blank=True, null=True)               
-    banner_url = models.URLField(blank=True, null=True)              # New: wide image (e.g. backdrop, screenshot)
+    banner_url = models.URLField(blank=True, null=True)
 
-    release_date = models.CharField(max_length=20, blank=True, null=True)  # Stored as string to unify format
-    overview = models.TextField(blank=True, null=True)               # Description/synopsis
-
-    cast = models.JSONField(blank=True, null=True)        # Extra data for Music
+    release_date = models.CharField(max_length=20, blank=True, null=True)
+    overview = models.TextField(blank=True, null=True)    # Description
+    cast = models.JSONField(blank=True, null=True)        # Actors&Characters for anime&manga / Extra data for Music
     seasons = models.JSONField(blank=True, null=True)     # Only for TV series
     episodes = models.JSONField(blank=True, null=True)    # Episode details for seasons
     related_titles = models.JSONField(blank=True, null=True)  # Prequels/Sequels for anime/manga
-    screenshots = models.JSONField(blank=True, null=True) # Youtube Links + Position for Music
+    screenshots = models.JSONField(blank=True, null=True) # Screenshots for games / Youtube Links + Position for Music
 
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="planned")
     
@@ -61,14 +63,7 @@ class MediaItem(models.Model):
     total_main = models.PositiveIntegerField(null=True, blank=True) # Total of episodes/chapters received from the api
     total_secondary = models.PositiveIntegerField(null=True, blank=True)
 
-    # Before:
-    # personal_rating = models.PositiveIntegerField(choices=RATING_CHOICES, null=True, blank=True)
-
-    # After:
-    personal_rating = models.PositiveSmallIntegerField(
-        null=True,
-        blank=True
-    )  # No choices, stores values from 1–100
+    personal_rating = models.PositiveSmallIntegerField(null=True,blank=True)  # Stores values from 1–100
     favorite = models.BooleanField(default=False)
     favorite_position = models.PositiveIntegerField(null=True, blank=True)
 
@@ -82,8 +77,13 @@ class MediaItem(models.Model):
     def __str__(self):
         return f"{self.title} ({self.media_type})"
     
-    class Meta:
-        unique_together = ("source", "source_id", "media_type")
+    @property
+    def source_id(self):
+        return self.provider_ids.get(self.source)
+    
+    @source_id.setter
+    def source_id(self, value):
+        self.provider_ids[self.source] = str(value)
     
 
 class FavoritePerson(models.Model):
@@ -125,7 +125,7 @@ class NavItem(models.Model):
         ("music", "Music"),
     ]
 
-    name = models.CharField(max_length=20, choices=CATEGORY_CHOICES) # Removed unique=True to allow update_or_create to work safely if duplicates exist in backup
+    name = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
     visible = models.BooleanField(default=True)
     position = models.PositiveIntegerField(default=1)
 

@@ -129,7 +129,7 @@ def save_igdb_item(igdb_id):
         title=title,
         media_type="game",
         source="igdb",
-        source_id=str(igdb_id),
+        provider_ids={"igdb": str(igdb_id)},
         cover_url=local_poster,
         banner_url=local_banner,
         overview=overview,
@@ -443,6 +443,7 @@ def get_igdb_discover(
 
             results.append(
                 {
+                    "source": "igdb",
                     "id": str(item["id"]),
                     "title": item.get("name", "Untitled"),
                     "poster_path": cover_url,

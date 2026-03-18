@@ -70,7 +70,8 @@ def tmdb_detail(request, media_type, tmdb_id):
     item = None
     try:
         item = MediaItem.objects.get(
-            source="tmdb", source_id=tmdb_id, media_type=media_type
+            media_type=media_type, 
+            provider_ids__tmdb=str(tmdb_id)
         )
 
         # Handle cast (add is_full_url for image path rendering)
@@ -297,7 +298,7 @@ def tmdb_season_detail(request, tmdb_id, season_number):
     item = None
     try:
         item = MediaItem.objects.get(
-            source="tmdb", source_id=season_source_id, media_type="tv"
+            provider_ids__tmdb=str(season_source_id), media_type="tv"
         )
 
         # Format episode data for display
@@ -344,7 +345,7 @@ def tmdb_season_detail(request, tmdb_id, season_number):
         # Get navigation data from main show
         try:
             main_show = MediaItem.objects.get(
-                source="tmdb", source_id=tmdb_id, media_type="tv"
+                provider_ids__tmdb=str(tmdb_id), media_type="tv"
             )
             all_seasons = main_show.seasons or []
             season_nav = get_season_navigation(all_seasons, int(season_number))

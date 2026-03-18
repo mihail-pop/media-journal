@@ -177,7 +177,7 @@ def igdb_search(request):
 @require_GET
 def igdb_detail(request, igdb_id):
     try:
-        item = MediaItem.objects.get(source="igdb", source_id=str(igdb_id))
+        item = MediaItem.objects.get(provider_ids__igdb=str(igdb_id))
         in_my_list = True
     except MediaItem.DoesNotExist:
         in_my_list = False

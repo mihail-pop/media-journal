@@ -110,7 +110,7 @@
         <h2>Prequel{{ prequels|length|pluralize }}</h2>
         <div class="recommendations-list">
           {% for rec in prequels %}
-          <a href="/mal/{{ media_type }}/{{ rec.id }}/" class="rec-card" title="{{ rec.title }}">
+          <a href="{% url 'anilist_detail' source=rec.source media_type=media_type source_id=rec.id %}" class="rec-card" title="{{ rec.title }}">
             <img src="{{ rec.poster_path }}"
      alt="{{ rec.title }}"
      data-placeholder="{% static 'core/img/placeholder.png' %}"
@@ -127,7 +127,7 @@
         <h2>Sequel{{ sequels|length|pluralize }}</h2>
         <div class="recommendations-list">
           {% for rec in sequels %}
-          <a href="/mal/{{ media_type }}/{{ rec.id }}/" class="rec-card" title="{{ rec.title }}">
+          <a href="{% url 'anilist_detail' source=rec.source media_type=media_type source_id=rec.id %}" class="rec-card" title="{{ rec.title }}">
             <img src="{{ rec.poster_path }}" 
      alt="{{ rec.title }}" 
      data-placeholder="{% static 'core/img/placeholder.png' %}" 
@@ -422,13 +422,17 @@
     <div class="recommendation">
     <a href="
       {% if media_type == 'game' %}
-        /igdb/game/{{ rec.id }}/
+        {% url 'igdb_detail' igdb_id=rec.id %}
       {% elif media_type == 'anime' or media_type == 'manga' %}
-        /mal/{{ media_type }}/{{ rec.id }}/
+        {% if rec.anilist_id %}
+          {% url 'anilist_detail' source='anilist' media_type=media_type source_id=rec.anilist_id %}
+        {% else %}
+          {% url 'anilist_detail' source='mal' media_type=media_type source_id=rec.mal_id|default:rec.id %}
+        {% endif %}
       {% elif media_type == 'book' %}
-        /openlib/book/{{ rec.id }}/
+        {% url 'openlib_detail' work_id=rec.id %}
       {% else %}
-        /tmdb/{{ media_type }}/{{ rec.id }}/
+        {% url 'tmdb_detail' media_type=media_type tmdb_id=rec.id %}
       {% endif %}
     " title="{{ rec.title }}">
       
@@ -457,7 +461,6 @@
   </div>
 </section>
 {% endif %}
-
 
   </div>
 </div>

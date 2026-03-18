@@ -450,7 +450,10 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   function insertMediaTag(item) {
-    const tag = `[MEDIA:${item.media_type}:${item.source}:${item.source_id}:${item.title.replace(/:/g, '&#58;')}:${item.status}]`;
+    const source_id = item.provider_ids[item.source] || Object.values(item.provider_ids)[0];
+    const source_name = item.provider_ids[item.source] ? item.source : Object.keys(item.provider_ids)[0];
+
+    const tag = `[MEDIA:${item.media_type}:${source_name}:${source_id}:${item.title.replace(/:/g, '&#58;')}:${item.status}]`;
     const cursorPos = postText.selectionStart;
     const textBefore = postText.value.substring(0, cursorPos);
     const textAfter = postText.value.substring(cursorPos);
@@ -732,7 +735,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const parts = item.source_id.split('_s');
         url = `http://${window.location.hostname}:8000/tmdb/season/${parts[0]}/${parts[1]}/`;
       } else {
-        url = `http://${window.location.hostname}:8000/${item.source}/${item.mediatype}/${item.source_id}/`;
+        url = `http://${window.location.hostname}:8000/${item.source}/${item.media_type}/${item.source_id}/`;
       }
       message = `${post.action} <a href="${url}" target="_blank">${item.title}</a>`;
     } else {
@@ -1204,7 +1207,9 @@ document.addEventListener('DOMContentLoaded', () => {
           div.style.borderBottom = '1px solid var(--border-color)';
           div.textContent = item.title;
           div.addEventListener('click', () => {
-            const tag = `[MEDIA:${item.media_type}:${item.source}:${item.source_id}:${item.title}:${item.status}]`;
+            const source_id = item.provider_ids[item.source] || Object.values(item.provider_ids)[0];
+            const source_name = item.provider_ids[item.source] ? item.source : Object.keys(item.provider_ids)[0];
+            const tag = `[MEDIA:${item.media_type}:${source_name}:${source_id}:${item.title}:${item.status}]`;
             const cursorPos = commentInput.selectionStart;
             const textBefore = commentInput.value.substring(0, cursorPos);
             const textAfter = commentInput.value.substring(cursorPos);

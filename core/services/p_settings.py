@@ -206,10 +206,11 @@ class BackupTask(threading.Thread):
                     try:
                         # Smart Merge Logic
                         if isinstance(obj, MediaItem):
+                            lookup_key = f"provider_ids__{obj.source}"
                             MediaItem.objects.update_or_create(
                                 source=obj.source,
-                                source_id=obj.source_id,
                                 media_type=obj.media_type,
+                                **{lookup_key: str(obj.source_id)},
                                 defaults={
                                     field.name: getattr(obj, field.name)
                                     for field in MediaItem._meta.fields

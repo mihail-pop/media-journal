@@ -71,7 +71,8 @@ def upload_banner(request):
 
     # Update MediaItem
     try:
-        item = MediaItem.objects.get(source=source, source_id=source_id)
+        lookup_key = f"provider_ids__{source}"
+        item = MediaItem.objects.get(**{lookup_key: str(source_id)})
         item.banner_url = relative_url
         item.save(update_fields=["banner_url"])
     except MediaItem.DoesNotExist:
@@ -133,7 +134,8 @@ def upload_cover(request):
 
     # Update MediaItem
     try:
-        item = MediaItem.objects.get(source=source, source_id=source_id)
+        lookup_key = f"provider_ids__{source}"
+        item = MediaItem.objects.get(**{lookup_key: str(source_id)})
         item.cover_url = relative_url
         item.save(update_fields=["cover_url"])
     except MediaItem.DoesNotExist:
@@ -145,13 +147,15 @@ def upload_cover(request):
 def get_extra_info(request):
     media_type = request.GET.get("media_type")
     item_id = request.GET.get("item_id")
+    source = request.GET.get("source", "mal") # Default to mal for legacy/compatibility
 
     if not media_type or not item_id:
         return JsonResponse({"error": "Missing parameters"}, status=400)
 
     if media_type != "music":
         try:
-            item_id = int(item_id)
+            # We check if it's a valid integer string, but keep it for routing
+            int(item_id)
         except ValueError:
             return JsonResponse({"error": "Invalid item_id"}, status=400)
 
@@ -160,9 +164,17 @@ def get_extra_info(request):
     elif media_type == "tv":
         data = get_tv_extra_info(item_id)
     elif media_type == "anime":
-        data = get_anime_extra_info(item_id)
+        # Check source to decide which parameter to use
+        if source == "anilist":
+            data = get_anime_extra_info(media_type, anilist_id=item_id)
+        else:
+            data = get_anime_extra_info(media_type, mal_id=item_id)
     elif media_type == "manga":
-        data = get_manga_extra_info(item_id)
+        # Check source to decide which parameter to use
+        if source == "anilist":
+            data = get_manga_extra_info(media_type, anilist_id=item_id)
+        else:
+            data = get_manga_extra_info(media_type, mal_id=item_id)
     elif media_type == "game":
         data = get_game_extra_info(item_id)
     elif media_type == "music":
@@ -191,7 +203,7 @@ def upload_game_screenshots(request):
 
     try:
         media_item = MediaItem.objects.get(
-            media_type="game", source="igdb", source_id=str(igdb_id)
+            media_type="game", provider_ids__igdb=str(igdb_id)
         )
     except MediaItem.DoesNotExist:
         return JsonResponse(
@@ -316,8 +328,8 @@ def add_music_video(request):
         if "youtu.be/" in url:
             video_id = url.split("youtu.be/")[1].split("?")[0]
             url = f"https://www.youtube.com/watch?v={video_id}"
-
-        item = MediaItem.objects.get(source_id=source_id, media_type="music")
+        
+        item = MediaItem.objects.get(provider_ids__musicbrainz=str(source_id), media_type="music")
 
         # Get current screenshots/youtube_links
         screenshots = item.screenshots or []
@@ -352,7 +364,7 @@ def delete_music_video(request):
         if not source_id or position is None:
             return JsonResponse({"success": False, "error": "Missing data"})
 
-        item = MediaItem.objects.get(source_id=source_id, media_type="music")
+        item = MediaItem.objects.get(provider_ids__musicbrainz=str(source_id), media_type="music")
 
         # Get current screenshots/youtube_links
         screenshots = item.screenshots or []
@@ -383,7 +395,7 @@ def reorder_music_videos(request):
         source_id = data.get("source_id")
         new_order = data.get("order")  # List of positions in new order
 
-        item = MediaItem.objects.get(source="musicbrainz", source_id=source_id)
+        item = MediaItem.objects.get(provider_ids__musicbrainz=str(source_id))
         youtube_links = item.screenshots or []
 
         # Reorder based on new_order list
@@ -411,7 +423,7 @@ def set_video_as_cover(request):
         source_id = data.get("source_id")
         position = data.get("position")
 
-        item = MediaItem.objects.get(source="musicbrainz", source_id=source_id)
+        item = MediaItem.objects.get(provider_ids__musicbrainz=str(source_id))
         youtube_links = item.screenshots or []
 
         # Find video at position

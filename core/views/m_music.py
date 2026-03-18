@@ -139,7 +139,7 @@ def musicbrainz_search(request):
 def musicbrainz_detail(request, recording_id):
     item = None
     try:
-        item = MediaItem.objects.get(source="musicbrainz", source_id=recording_id)
+        item = MediaItem.objects.get(provider_ids__musicbrainz=str(recording_id))
 
         # Get YouTube links from screenshots field
         youtube_links = item.screenshots or []

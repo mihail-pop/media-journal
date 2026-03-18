@@ -11,7 +11,7 @@ IGDB_TOKEN_EXPIRY = 0
 def get_game_screenshots_data(igdb_id):
     # Try DB first
     try:
-        item = MediaItem.objects.get(source="igdb", source_id=str(igdb_id))
+        item = MediaItem.objects.get(provider_ids__igdb=str(igdb_id))
         return item.screenshots or []
     except MediaItem.DoesNotExist:
         pass

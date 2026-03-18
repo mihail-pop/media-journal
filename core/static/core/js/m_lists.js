@@ -483,22 +483,25 @@ const statusLabelsMap = {
     }
   }
 
-  function getLinkUrl(item) {
-    if (item.media_type === 'tv' && item.source_id.includes('_s')) {
-      const parts = item.source_id.split('_s');
+ function getLinkUrl(item) {
+    const source_id = item.source_id || (item.provider_ids ? item.provider_ids[item.source] : null);
+    
+    if (item.media_type === 'tv' && source_id && source_id.includes('_s')) {
+      const parts = source_id.split('_s');
       return `/tmdb/season/${parts[0]}/${parts[1]}/`;
     } else if (item.media_type === 'anime' || item.media_type === 'manga') {
-      return `/mal/${item.media_type}/${item.source_id}/`;
+      return `/${item.source}/${item.media_type}/${source_id}/`;
     } else if (item.media_type === 'game') {
-      return `/igdb/game/${item.source_id}/`;
+      return `/igdb/game/${source_id}/`;
     } else if (item.media_type === 'book') {
-      return `/openlib/book/${item.source_id}/`;
+      return `/openlib/book/${source_id}/`;
     } else if (item.media_type === 'music') {
-      return `/musicbrainz/music/${item.source_id}/`;
+      return `/musicbrainz/music/${source_id}/`;
     } else {
-      return `/tmdb/${item.media_type}/${item.source_id}/`;
+      const prefix = item.source || 'tmdb';
+      return `/${prefix}/${item.media_type}/${source_id}/`;
     }
-  }
+  } 
 
   async function loadAllBanners() {
     try {

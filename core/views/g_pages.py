@@ -179,7 +179,7 @@ def home(request):
                 "tmdb_detail", args=[item.media_type, item.source_id]
             )  # adjust the name/args if needed
         elif item.media_type in ["anime", "manga"]:
-            url = reverse("anilist_detail", args=[item.media_type, item.source_id])
+            url = reverse("anilist_detail", args=[item.source, item.media_type, item.source_id])
         else:
             url = "#"
         notifications_list.append(
@@ -220,8 +220,8 @@ def home(request):
                 url = reverse("tmdb_season_detail", args=[show_id, season_number])
             else:
                 url = reverse("tmdb_detail", args=[item.media_type, item.source_id])
-        elif item.source == "mal" and item.media_type in ["anime", "manga"]:
-            url = reverse("anilist_detail", args=[item.media_type, item.source_id])
+        elif item.media_type in ["anime", "manga"]:
+            url = reverse("anilist_detail", args=[item.source, item.media_type, item.source_id])
         elif item.source == "igdb" and item.media_type == "game":
             url = reverse("igdb_detail", args=[item.source_id])
         elif item.source == "openlib" and item.media_type == "book":
@@ -360,7 +360,7 @@ def tvshows(request):
     # Check if there are any seasons in the list
     has_seasons = (
         MediaItem.objects.filter(media_type="tv")
-        .filter(Q(source_id__contains="_s") | Q(title__contains="Season"))
+        .filter(Q(provider_ids__icontains='"_s') | Q(title__contains="Season"))
         .exists()
     )
 
@@ -765,7 +765,7 @@ def favorites_page(request):
                             )
                     elif item.media_type in ["anime", "manga"]:
                         url = reverse(
-                            "anilist_detail", args=[item.media_type, item.source_id]
+                            "anilist_detail", args=[item.source, item.media_type, item.source_id]
                         )
                     elif item.media_type == "game":
                         url = reverse("igdb_detail", args=[item.source_id])
@@ -867,7 +867,7 @@ def community(request):
 
     # Get only the fields we need for posting
     items = MediaItem.objects.values(
-        "id", "title", "media_type", "source", "source_id", "status"
+        "id", "title", "media_type", "source", "provider_ids", "status"
     ).order_by("title")
 
     media_types = dict(MediaItem.MEDIA_TYPES)
