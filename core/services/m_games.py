@@ -395,16 +395,28 @@ def get_igdb_discover(
 
     offset = (page - 1) * 20
 
-    fields_to_request = "id, name, cover.url, summary, rating, genres.name, first_release_date, artworks.url, screenshots.url"
+    fields_to_request = "id, name, cover.url, summary, rating, genres.name, first_release_date, artworks.url, screenshots.url, hypes"
 
     if query:
         data = f'search "{query}"; fields {fields_to_request}; limit 20; offset {offset};'
     else:
-        conditions = [
-            "cover != null",
-            "(artworks != null | screenshots != null)",
-            "rating_count > 50"
-        ]
+        if sort == 'hypes':
+            current_time = int(time.time())
+            conditions = [
+                "cover != null",
+                "(artworks != null | screenshots != null)",
+                f"first_release_date > {current_time}",
+                "hypes > 0"
+            ]
+            sort_clause = "sort hypes desc"
+        else:
+            conditions = [
+                "cover != null",
+                "(artworks != null | screenshots != null)",
+                "rating_count > 50"
+            ]
+            sort_clause = f"sort {sort} desc" if sort else "sort total_rating desc"
+
         if genre:
             conditions.append(f"genres = ({genre})")
         if platform:
@@ -412,8 +424,6 @@ def get_igdb_discover(
 
         where_clause = " & ".join(conditions)
         
-        sort_clause = f"sort {sort} desc" if sort else "sort total_rating desc"
-
         data = f"fields {fields_to_request}; where {where_clause}; {sort_clause}; limit 20; offset {offset};"
 
     try:

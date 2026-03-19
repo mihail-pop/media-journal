@@ -1,5 +1,6 @@
 :root {
   /* Dark theme (default) */
+  --modal-bg-rgb: 21, 31, 46;
   --bg-primary: #0b1622;
   --text-tertiary: #9fadbd;
   --text-light: #e0e0e0;
@@ -18,6 +19,7 @@
 }
 
 [data-theme="light"] {
+  --modal-bg-rgb: 220, 236, 248;
   --bg-primary: #e7f0f8;
   --text-tertiary: #0b5f97;
   --text-light: #ffffff;
@@ -36,6 +38,7 @@
 }
 
 [data-theme="brown"] {
+  --modal-bg-rgb: 85, 66, 61;
   --bg-primary: #271c19;
   --text-tertiary: #faeee7;
   --text-light: #faeee7;
@@ -175,6 +178,7 @@ html.modal-open {
   padding: 0;
   animation: modalPop 0.25s ease-in-out;
   transform-origin: center center;
+  background-color: transparent;
 }
 
 @keyframes modalPop {
@@ -202,18 +206,28 @@ html.modal-open {
 
 /* Banner at top of modal */
 .modal-banner {
-  width: 100%;
+  width: 820px;
   height: 200px;
   overflow: hidden;
   position: relative;
 }
 
-.modal-banner {
+.modal-banner img{
   width: 100%;
-  height: 200px;
-  background-size: cover;
-  background-position: center;
-  position: relative;
+  position: absolute;
+  top: 75%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: block;
+}
+
+.modal-banner img[alt="anime"]{
+  top:50%;
+  width: 120%;
+}
+
+.modal-banner.no-banner::before {
+  background-color: rgba(var(--modal-bg-rgb), 0.5);
 }
 
 .modal-banner .banner-overlay {
@@ -237,28 +251,25 @@ html.modal-open {
 .modal-cover {
   position: absolute;
   top: 70px;
-  /* Adjust to overlap banner and body */
   left: 30px;
-  /* Move to left side */
   width: 120px;
-  height: 170px;
+  max-height: 170px;
   border-radius: 4px;
   overflow: hidden;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
   z-index: 10;
+  background: none;
 }
 
 .modal-cover img {
   width: 100%;
-  height: 100%;
-
+  display: block;
   overflow: hidden;
 }
 
 /* Special case for music */
 .modal-cover[data-media-type="music"] {
   width: 140px;
-  /* container stays same */
   height: 140px;
   /* square for music */
   overflow: hidden;
@@ -304,6 +315,7 @@ html.modal-open {
 /* Body below banner */
 .modal-body {
   padding: 1.5rem 2rem 2rem 2rem;
+  background: var(--modal-bg);
 }
 
 /* Form group with label and input */
@@ -732,6 +744,7 @@ input[type="number"] {
     left: 30px;
     width: 191px;
     height: 270px;
+    max-height: 270px;
   }
 
   .modal-title-block {

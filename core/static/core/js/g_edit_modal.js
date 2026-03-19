@@ -461,9 +461,25 @@ choicesSorted.forEach(choice => {
       }
 
       if (banner && bannerUrl) {
-        banner.dataset.banner = bannerUrl;
-        banner.style.backgroundImage = `url("${bannerUrl}")`;
+        banner.innerHTML = ''; 
+
+        const imgElement = document.createElement('img');
+        imgElement.src = bannerUrl;
+        imgElement.alt = mediaType;
+        imgElement.classList.add('modal-banner-image');
+
+        const overlayElement = document.createElement('div');
+        overlayElement.classList.add('banner-overlay');
+
+        banner.appendChild(imgElement);
+        banner.appendChild(overlayElement);
+
+        banner.classList.remove('no-banner');
+      } else if (banner) {
+        banner.innerHTML = '';
+        banner.classList.add('no-banner');
       }
+
       
       fetch(`/get-item/${itemId}/`)
         .then(res => res.json())

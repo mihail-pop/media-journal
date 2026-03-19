@@ -132,27 +132,30 @@ def edit_item(request, item_id):
                 item.date_added = dt.datetime.now()
 
             # Update progress fields if present (manual input)
-            if "progress_main" in data and data["progress_main"] not in [None, ""]:
-                progress_main = int(data["progress_main"])
-                if item.total_main is not None and progress_main > item.total_main:
-                    progress_main = item.total_main
-                item.progress_main = progress_main
+            if "progress_main" in data:
+                if data["progress_main"] in [None, ""]:
+                    item.progress_main = 0
+                else:
+                    progress_main = int(data["progress_main"])
+                    if item.media_type != "book" and item.total_main is not None and progress_main > item.total_main:
+                        progress_main = item.total_main
+                    item.progress_main = progress_main
 
-            if "progress_secondary" in data and data["progress_secondary"] not in [
-                None,
-                "",
-            ]:
-                progress_secondary = int(data["progress_secondary"])
-                if (
-                    item.total_secondary is not None
-                    and progress_secondary > item.total_secondary
-                ):
-                    progress_secondary = item.total_secondary
-                item.progress_secondary = progress_secondary
+            if "progress_secondary" in data:
+                if data["progress_secondary"] in [None, ""]:
+                    item.progress_secondary = 0
+                else:
+                    progress_secondary = int(data["progress_secondary"])
+                    if (
+                        item.total_secondary is not None
+                        and progress_secondary > item.total_secondary
+                    ):
+                        progress_secondary = item.total_secondary
+                    item.progress_secondary = progress_secondary
 
             # If status changed TO "completed", override progress with totals
             if old_status != "completed" and new_status == "completed":
-                if item.total_main is not None:
+                if item.progress_main < item.total_main and item.total_main is not None:
                     item.progress_main = item.total_main
                 if item.total_secondary is not None:
                     item.progress_secondary = item.total_secondary

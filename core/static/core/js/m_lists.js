@@ -453,7 +453,7 @@ const statusLabelsMap = {
   function getProgressHtml(item) {
     if (!item.progress_main) return '';
     
-    if (item.progress_main === item.total_main) {
+    if (item.progress_main === item.total_main || item.progress_main > item.total_main) {
       return `<div class="card-progress">${item.progress_main}</div>`;
     } else {
       const total = item.total_main ? `/${item.total_main}` : '';
@@ -1100,11 +1100,6 @@ updateSortButtons();
 
     if (cover && coverUrl) {
       cover.src = coverUrl;
-    }
-
-    if (banner && bannerUrl) {
-      banner.dataset.banner = bannerUrl;
-      banner.style.backgroundImage = `url("${bannerUrl}")`;
     }
 
     const form = document.getElementById("edit-form");
