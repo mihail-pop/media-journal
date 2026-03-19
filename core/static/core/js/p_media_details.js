@@ -1522,40 +1522,25 @@ function renderExtraInfo(mediaType, data) {
         <div class="tmdb-score-container" style="display: flex; align-items: center; gap: 12px; margin: 12px 0; padding: 8px; background: rgba(245, 197, 24, 0.1); max-width: 12rem; border-radius: 8px; border-right: 4px solid #f5c518; border-left: 4px solid #f5c518;">
           <span style="font-weight: bold; color: #f5c518; font-size: 14px;">TMDB</span>
           <div style="background: #333; border-radius: 10px; width: 120px; height: 8px; overflow: hidden;">
-            <div style="background: linear-gradient(90deg, #ff4444 0%, #ffaa00 50%, #00ff00 100%); height: 100%; width: ${percentage}%; transition: width 0.3s;"></div>
+            <div style="background: linear-gradient(90deg, #8b700d 0%, #f3ce48 50%, #f8e59e 100%); height: 100%; width: ${percentage}%; transition: width 0.3s;"></div>
           </div>
-          <span style="font-weight: bold; color: white; font-size: 16px;">${score}/10</span>
+          <span style="font-weight: bold; color: #f8e59e; font-size: 16px;">${score}/10</span>
         </div>
       `);
-    }
-
-    if (runtime) {
-      const hours = Math.floor(runtime / 60);
-      const minutes = runtime % 60;
-      const runtimeFormatted = `${hours} hour${hours !== 1 ? 's' : ''} ${minutes} minute${minutes !== 1 ? 's' : ''}`;
-      safeHTML.push(`<p> ${runtimeFormatted}</p>`);
     }
 
     if (data.status) {
       safeHTML.push(`<p><span class="label">Status: </span> ${data.status}</p>`);
     }
 
-if (data.homepage) {
-  try {
-    const urlObj = new URL(data.homepage);
-    let hostname = urlObj.hostname.replace(/^www\./, ''); // remove 'www.'
-    let label = hostname.split('.')[0]; // get the first part (e.g., sonypictures)
+    if (runtime) {
+      const hours = Math.floor(runtime / 60);
+      const minutes = runtime % 60;
+      const runtimeFormatted = `${hours} hour${hours !== 1 ? 's' : ''} ${minutes} minute${minutes !== 1 ? 's' : ''}`;
+      safeHTML.push(`<p><span class="label">Runtime: </span> ${runtimeFormatted}</p>`);
+    }
 
-    safeHTML.push(
-      `<p><span class="label">Available on: </span> <a href="${data.homepage}" target="_blank">${label}</a></p>`
-    );
-  } catch (e) {
-    // fallback in case URL parsing fails
-    safeHTML.push(
-      `<p><span class="label">Available on: </span> <a href="${data.homepage}" target="_blank">${data.homepage}</a></p>`
-    );
-  }
-}
+
 
   if (data.genres?.length) {
     safeHTML.push(`<p><span class="label">Genres: </span> ${data.genres.join(", ")}</p>`);
@@ -1654,9 +1639,9 @@ if (data.recommendations?.length) {
         <div class="tmdb-score-container" style="display: flex; align-items: center; gap: 12px; margin: 12px 0; padding: 8px; background: rgba(245, 197, 24, 0.1); max-width: 12rem; border-right: 4px solid #f5c518; border-radius: 8px; border-left: 4px solid #f5c518;">
           <span style="font-weight: bold; color: #f5c518; font-size: 14px;">TMDB</span>
           <div style="background: #333; border-radius: 10px; width: 120px; height: 8px; overflow: hidden;">
-            <div style="background: linear-gradient(90deg, #ff4444 0%, #ffaa00 50%, #00ff00 100%); height: 100%; width: ${percentage}%; transition: width 0.3s;"></div>
+            <div style="background: linear-gradient(90deg, #8b700d 0%, #f3ce48 50%, #f8e59e 100%); height: 100%; width: ${percentage}%; transition: width 0.3s;"></div>
           </div>
-          <span style="font-weight: bold; color: white; font-size: 16px;">${score}/10</span>
+          <span style="font-weight: bold; color: #f8e59e; font-size: 16px;">${score}/10</span>
         </div>
       `);
     }
@@ -1664,33 +1649,68 @@ if (data.recommendations?.length) {
     if (data.status) {
       safeHTML.push(`<p><span class="label">Status: </span> ${data.status}</p>`);
     }
+
+    const parts = [];
+    if (data.total_episodes) {
+      const episodeWord = data.total_episodes === 1 ? 'episode' : 'episodes';
+      parts.push(`${data.total_episodes} ${episodeWord}`);
+    }
+    if (data.episode_runtime) {
+      parts.push(`${data.episode_runtime} minutes`);
+    }
     
-if (data.next_episode_to_air) {
-  const nextDate = new Date(data.next_episode_to_air).toLocaleDateString("en-GB", {
-    weekday: "long",
-    day: "2-digit",
-    month: "long",
+    let formatText = "";
+    if (parts.length > 0) {
+      formatText += ` ${parts.join(' × ')}`;
+    }
+    safeHTML.push(`<p><span class="label">Format: </span> ${formatText}</p>`);
+    
+if (data.next_episode_data && data.next_episode_data.date) {
+  const dateObj = new Date(data.next_episode_data.date);
+  const weekday = dateObj.toLocaleDateString("en-GB", { weekday: "long" });
+  const fullDate = dateObj.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
     year: "numeric",
   });
-  safeHTML.push(`<p><span class="label">Next episode to air: </span> ${nextDate}</p>`);
+
+  // Create the season prefix if the season number exists
+  let seasonPrefix = '';
+  if (data.next_episode_data.season) {
+    seasonPrefix = `(S${data.next_episode_data.season}) `;
+  }
+  
+  safeHTML.push(
+    `<p><span class="label">Next episode: </span> ${seasonPrefix}Episode ${data.next_episode_data.number} airs ${weekday} (${fullDate})</p>`
+  );
 }
 
-if (data.last_air_date) {
-  const lastDate = new Date(data.last_air_date).toLocaleDateString("en-GB", {
-    weekday: "long",
-    day: "2-digit",
-    month: "long",
+if (data.last_episode_data && data.last_episode_data.date) {
+  const dateObj = new Date(data.last_episode_data.date);
+  const weekday = dateObj.toLocaleDateString("en-GB", { weekday: "long" });
+  const fullDate = dateObj.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
     year: "numeric",
   });
-  safeHTML.push(`<p><span class="label">Last air date: </span> ${lastDate}</p>`);
+
+  // Create the season prefix if the season number exists
+  let seasonPrefix = '';
+  if (data.last_episode_data.season) {
+    seasonPrefix = `(S${data.last_episode_data.season}) `;
+  }
+  
+  safeHTML.push(
+    `<p><span class="label">Last episode: </span> ${seasonPrefix}Episode ${data.last_episode_data.number} aired ${weekday} (${fullDate})</p>`
+  );
 }
 
     if (data.type) {
       safeHTML.push(`<p><span class="label">Type: </span> ${data.type}</p>`);
     }
 
-    if (data.networks?.length) {
-      safeHTML.push(`<p><span class="label">Network: </span> ${data.networks.join(", ")}</p>`);
+    if (data.genres?.length) {
+      safeHTML.push(`<p><span class="label">Genres:</span> ${data.genres.join(", ")}</p>`);
     }
 
 if (data.homepage) {
@@ -1700,19 +1720,15 @@ if (data.homepage) {
     let label = hostname.split('.')[0]; // get the first part (e.g., sonypictures)
 
     safeHTML.push(
-      `<p><span class="label">Available on: </span> <a href="${data.homepage}" target="_blank">${label}</a></p>`
+      `<p><span class="label">Available on: </span> <a href="${data.homepage}" target="_blank">${label}</a> (${data.networks.join(", ")})</p>`
     );
   } catch (e) {
     // fallback in case URL parsing fails
     safeHTML.push(
-      `<p><span class="label">Available on: </span> <a href="${data.homepage}" target="_blank">${data.homepage}</a></p>`
+      `<p><span class="label">Available on: </span> <a href="${data.homepage}" target="_blank">${data.homepage}</a> (${data.networks.join(", ")})</p>`
     );
   }
 }
-
-    if (data.genres?.length) {
-      safeHTML.push(`<p><span class="label">Genres:</span> ${data.genres.join(", ")}</p>`);
-    }
 
 if (data.staff?.length) {
   const staffHTML = data.staff.map(s => `<span class="staff-member">${s}</span>`).join(", ");
@@ -1779,9 +1795,9 @@ if (data.recommendations?.length) {
         <div class="anilist-score-container" style="display: flex; align-items: center; gap: 12px; margin: 12px 0; padding: 8px; background: rgba(2, 169, 255, 0.1); border-radius: 8px; max-width: 12rem; border-right: 4px solid #02a9ff; border-left: 4px solid #02a9ff;">
           <span style="font-weight: bold; color: #02a9ff; font-size: 14px;">AniList</span>
           <div style="background: #333; border-radius: 10px; width: 120px; height: 8px; overflow: hidden;">
-            <div style="background: linear-gradient(90deg, #ff4444 0%, #ffaa00 50%, #00ff00 100%); height: 100%; width: ${percentage}%; transition: width 0.3s;"></div>
+            <div style="background: linear-gradient(90deg, #015d8b 0%, #02a9ff 50%, #98ddff 100%); height: 100%; width: ${percentage}%; transition: width 0.3s;"></div>
           </div>
-          <span style="font-weight: bold; color: white; font-size: 16px;">${data.averageScore}/10</span>
+          <span style="font-weight: bold; color: #98ddff; font-size: 16px;">${data.averageScore}/10</span>
         </div>
       `);
     }
@@ -1846,15 +1862,15 @@ if (data.format) {
 }
 
 if (data.next_airing && data.next_episode) {
-  safeHTML.push(`<p><span class="label">Next episode: </span> Episode ${data.next_episode} airing on ${data.next_airing}</p>`);
+  safeHTML.push(`<p><span class="label">Next episode: </span> Episode ${data.next_episode} airs ${data.next_airing}</p>`);
 }
 
-    if (data.studios?.length) {
-      safeHTML.push(`<p><span class="label">Studio:</span> ${data.studios.join(", ")}</p>`);
-    }
-    
 if (data.genres?.length) {
   safeHTML.push(`<p><span class="label">Genres: </span> ${data.genres.join(", ")}</p>`);
+}
+
+if (data.studios?.length) {
+  safeHTML.push(`<p><span class="label">Studio:</span> ${data.studios.join(", ")}</p>`);
 }
 
 if (data.staff?.length) {
@@ -1988,9 +2004,9 @@ if (data.trailers?.length) {
         <div class="igdb-score-container" style="display: flex; align-items: center; gap: 12px; margin: 12px 0; padding: 8px; background: rgba(145, 71, 255, 0.1); border-radius: 8px; max-width: 12rem; border-right: 4px solid #9147ff; border-left: 4px solid #9147ff;">
           <span style="font-weight: bold; color: #9147ff; font-size: 14px;">IGDB</span>
           <div style="background: #333; border-radius: 10px; width: 120px; height: 8px; overflow: hidden;">
-            <div style="background: linear-gradient(90deg, #ff4444 0%, #ffaa00 50%, #00ff00 100%); height: 100%; width: ${percentage}%; transition: width 0.3s;"></div>
+            <div style="background: linear-gradient(90deg, #4b12a0 0%, #9147ff 50%, #c9a6ff 100%); height: 100%; width: ${percentage}%; transition: width 0.3s;"></div>
           </div>
-          <span style="font-weight: bold; color: white; font-size: 16px;">${data.rating}/10</span>
+          <span style="font-weight: bold; color: #c9a6ff; font-size: 16px;">${data.rating}/10</span>
         </div>
       `);
     }
@@ -2004,28 +2020,28 @@ if (data.trailers?.length) {
       const parts = [];
       if (ttb.main_story) {
         const hourWord = ttb.main_story === 1 ? 'hour' : 'hours';
-        parts.push(`Main Story - ${ttb.main_story} ${hourWord}`);
+        parts.push(`${ttb.main_story}h (Main)`);
       }
       if (ttb.main_extras) {
         const hourWord = ttb.main_extras === 1 ? 'hour' : 'hours';
-        parts.push(`Main Story + Extras - ${ttb.main_extras} ${hourWord}`);
+        parts.push(`${ttb.main_extras}h (+Extras)`);
       }
       if (ttb.completionist) {
         const hourWord = ttb.completionist === 1 ? 'hour' : 'hours';
-        parts.push(`Completionist - ${ttb.completionist} ${hourWord}`);
+        parts.push(`${ttb.completionist}h (100%)`);
       }
       if (parts.length > 0) {
-        safeHTML.push(`<p><span class="label">Time to beat:</span> ${parts.join(' / ')}</p>`);
+        safeHTML.push(`<p><span class="label">Time to beat:</span> ${parts.join(' | ')}</p>`);
       }
+    }
+
+    if (data.genres?.length) {
+      safeHTML.push(`<p><span class="label">Genres:</span> ${data.genres.join(", ")}</p>`);
     }
 
     if (data.involved_companies?.length) {
       const label = data.involved_companies.length === 1 ? 'Developer:' : 'Developers:';
       safeHTML.push(`<p><span class="label">${label}</span> ${data.involved_companies.join(", ")}</p>`);
-    }
-
-    if (data.genres?.length) {
-      safeHTML.push(`<p><span class="label">Genres:</span> ${data.genres.join(", ")}</p>`);
     }
 
     if (data.platforms?.length) {
@@ -2170,7 +2186,7 @@ if (data.recommendations?.length) {
           : track.title;
         return `<span class="relation-item">${linkHTML}</span>`;
       }).join(", ");
-      safeHTML.push(`<span class="relation-list">${trackItems}</span><br><br>`);
+      safeHTML.push(`<span class="relation-list">${trackItems}</span><br>`);
     }
 
     if (data.artist_singles?.length) {

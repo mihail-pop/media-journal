@@ -1,9 +1,11 @@
 import time
 
+import concurrent.futures
 import requests
 from django.http import JsonResponse
 from django.utils import timezone
 from requests.exceptions import RequestException
+from datetime import datetime
 
 from core.models import APIKey, MediaItem
 from core.services.g_utils import download_image
@@ -441,8 +443,19 @@ def get_tv_extra_info(tmdb_id):
         data = response.json()
 
         # Handle optional fields safely
-        next_episode = data.get("next_episode_to_air")
-        next_episode_air_date = next_episode.get("air_date") if next_episode else None
+        next_ep_raw = data.get("next_episode_to_air")
+        next_episode_data = {
+            "number": next_ep_raw.get("episode_number"),
+            "date": next_ep_raw.get("air_date"),
+            "season": next_ep_raw.get("season_number")  # Add this line
+        } if next_ep_raw else None
+
+        last_ep_raw = data.get("last_episode_to_air")
+        last_episode_data = {
+            "number": last_ep_raw.get("episode_number"),
+            "date": last_ep_raw.get("air_date"),
+            "season": last_ep_raw.get("season_number")  # And this line
+        } if last_ep_raw else None
 
         # Process videos/trailers
         videos = data.get("videos", {}).get("results", [])
@@ -487,10 +500,31 @@ def get_tv_extra_info(tmdb_id):
             for rec in recs
         ]
 
+        seasons = data.get("seasons", [])
+        total_episodes = sum(
+            s.get("episode_count", 0) for s in seasons if s.get("season_number") != 0
+        )
+
+        run_times = data.get("episode_run_time", [])
+        episode_runtime = run_times[0] if run_times else None
+
+        # 2. FALLBACK: If the list is empty, check the last episode's runtime
+        if not episode_runtime:
+            last_ep = data.get("last_episode_to_air")
+            if last_ep:
+                # This field is often populated even when the main list isn't
+                episode_runtime = last_ep.get("runtime")
+
+        # 3. SECOND FALLBACK: Check the first episode (if available)
+        if not episode_runtime:
+            first_ep = data.get("next_episode_to_air")
+            if first_ep:
+                episode_runtime = first_ep.get("runtime")
+
         return {
             "status": data.get("status"),
-            "next_episode_to_air": next_episode_air_date,
-            "last_air_date": data.get("last_air_date"),
+            "next_episode_data": next_episode_data,
+            "last_episode_data": last_episode_data,
             "networks": [n.get("name") for n in data.get("networks", [])],
             "vote_average": round(data.get("vote_average", 0), 1),
             "homepage": data.get("homepage"),
@@ -498,6 +532,8 @@ def get_tv_extra_info(tmdb_id):
             "trailers": trailers,
             "staff": staff_list,
             "recommendations": recommendations,
+            "total_episodes": total_episodes,
+            "episode_runtime": episode_runtime,
         }
 
     except Exception as e:
@@ -509,17 +545,15 @@ def get_tmdb_discover(media_type, page, query="", sort="popularity.desc", year="
     try:
         api_key = APIKey.objects.get(name="tmdb").key_1
     except APIKey.DoesNotExist:
-        return []
+        return[]
 
     if query:
         url = f"https://api.themoviedb.org/3/search/{media_type}"
         params = {"api_key": api_key, "query": query, "page": page}
     elif sort == "trending":
-        # Trending endpoint
         url = f"https://api.themoviedb.org/3/trending/{media_type}/week"
         params = {"api_key": api_key, "page": page}
     else:
-        # Discover endpoint
         url = f"https://api.themoviedb.org/3/discover/{media_type}"
         params = {
             "api_key": api_key,
@@ -529,7 +563,6 @@ def get_tmdb_discover(media_type, page, query="", sort="popularity.desc", year="
             "vote_count.gte": 100,
         }
 
-        # Add year filter if provided
         if year:
             if media_type == "movie":
                 params["primary_release_date.gte"] = f"{year}-01-01"
@@ -541,51 +574,103 @@ def get_tmdb_discover(media_type, page, query="", sort="popularity.desc", year="
     try:
         response = requests.get(url, params=params)
         if response.status_code != 200:
-            return []
+            return[]
 
         data = response.json()
-        results = []
+        raw_results = data.get("results", [])
+        results =[]
 
-        for item in data.get("results", []):
+        # --- Fetch Next Episode Data for TV Shows Concurrently ---
+        next_ep_data_map = {}
+        if media_type == "tv" and raw_results:
+            def fetch_tv_details(tv_id):
+                try:
+                    detail_url = f"https://api.themoviedb.org/3/tv/{tv_id}"
+                    # We only need basic details, no append_to_response needed to keep it lightning fast
+                    resp = requests.get(detail_url, params={"api_key": api_key}, timeout=3)
+                    if resp.status_code == 200:
+                        return tv_id, resp.json().get("next_episode_to_air")
+                except Exception:
+                    pass
+                return tv_id, None
+
+            # max_workers=20 ensures all items on the page are fetched in one single, parallel burst
+            with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
+                futures = {executor.submit(fetch_tv_details, item["id"]): item["id"] for item in raw_results}
+                for future in concurrent.futures.as_completed(futures):
+                    tv_id, next_ep = future.result()
+                    if next_ep:
+                        next_ep_data_map[tv_id] = next_ep
+
+        # Get today's date for math
+        today = datetime.now().date()
+
+        for item in raw_results:
+            item_id = str(item["id"])
             poster = item.get("poster_path")
             poster_url = f"https://image.tmdb.org/t/p/w342{poster}" if poster else None
 
             backdrop = item.get("backdrop_path")
-            backdrop_url = (
-                f"https://image.tmdb.org/t/p/w780{backdrop}" if backdrop else None
-            )
+            backdrop_url = f"https://image.tmdb.org/t/p/w780{backdrop}" if backdrop else None
 
-            # Convert score to 1-10 scale
             score = item.get("vote_average")
             if score:
                 score = round(score, 1)
 
-            # Get release date
             release_date = item.get("release_date") or item.get("first_air_date", "")
 
-            # Map genre IDs to names
             genre_map = TMDB_MOVIE_GENRES if media_type == "movie" else TMDB_TV_GENRES
-            genres = [genre_map.get(gid, "") for gid in item.get("genre_ids", [])]
-            genres = [g for g in genres if g]  # Remove empty strings
+            genres =[genre_map.get(gid, "") for gid in item.get("genre_ids", [])]
+            genres = [g for g in genres if g]
 
-            results.append(
-                {
-                    "source": "tmdb",
-                    "id": str(item["id"]),
-                    "title": item.get("title") or item.get("name", "Untitled"),
-                    "poster_path": poster_url,
-                    "backdrop_path": backdrop_url,
-                    "media_type": media_type,
-                    "overview": item.get("overview", ""),
-                    "score": score,
-                    "release_date": release_date,
-                    "genres": genres,
-                }
-            )
+            result_dict = {
+                "source": "tmdb",
+                "id": item_id,
+                "title": item.get("title") or item.get("name", "Untitled"),
+                "poster_path": poster_url,
+                "backdrop_path": backdrop_url,
+                "media_type": media_type,
+                "overview": item.get("overview", ""),
+                "score": score,
+                "release_date": release_date,
+                "genres": genres,
+            }
+
+            # --- Process the Next Episode Data if it exists ---
+            if media_type == "tv" and int(item_id) in next_ep_data_map:
+                next_ep = next_ep_data_map[int(item_id)]
+                air_date_str = next_ep.get("air_date")
+                
+                if air_date_str:
+                    try:
+                        air_date = datetime.strptime(air_date_str, "%Y-%m-%d").date()
+                        delta_days = (air_date - today).days
+
+                        # Only show if the episode hasn't already aired before today
+                        if delta_days >= 0:
+                            weekday = air_date.strftime("%A") 
+                            
+                            if delta_days == 0:
+                                time_str = f"{weekday} (today)"
+                            elif delta_days == 1:
+                                time_str = f"{weekday} (tomorrow)"
+                            else:
+                                time_str = f"{weekday} (in {delta_days} days)"
+
+                            result_dict["next_airing"] = time_str
+                            result_dict["next_episode"] = {
+                                "episode": next_ep.get("episode_number"),
+                                "season": next_ep.get("season_number")
+                            }
+                    except Exception:
+                        pass
+
+            results.append(result_dict)
 
         return results
-    except Exception:
-        return []
+    except Exception as e:
+        print(f"Discover Error: {e}")
+        return
 
 
 def update_tmdb_seasons(media_item):

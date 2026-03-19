@@ -103,6 +103,7 @@ def check_planned_tvseries_statuses(request):
 
 def check_planned_anime_manga_statuses(request):
     import requests
+    import time
     from django.http import JsonResponse, HttpResponseBadRequest
 
     ANILIST_API_URL = "https://graphql.anilist.co"
@@ -121,12 +122,25 @@ def check_planned_anime_manga_statuses(request):
         for i in range(0, len(lst), size):
             yield lst[i : i + size]
 
-    # Prepare list of (mal_id, item)
-    item_list = [
-        (item.source_id, item)
-        for item in planned_items
-        if item.source_id and item.source_id.isdigit()
-    ]
+    # Prepare list of (frontend_id, query_param)
+    item_list =[]
+    for item in planned_items:
+        frontend_id = item.source_id
+        if not frontend_id:
+            continue
+            
+        a_id = item.provider_ids.get("anilist")
+        m_id = item.provider_ids.get("mal")
+        
+        # Determine which ID to query AniList with
+        if a_id and str(a_id).isdigit():
+            query_param = f"id: {a_id}"
+        elif m_id and str(m_id).isdigit():
+            query_param = f"idMal: {m_id}"
+        else:
+            continue
+            
+        item_list.append((frontend_id, query_param))
 
     request_count = 0
 
@@ -138,10 +152,10 @@ def check_planned_anime_manga_statuses(request):
         else:
             time.sleep(0.1)
 
-        aliases = []
-        for i, (mal_id, _) in enumerate(batch):
+        aliases =[]
+        for i, (frontend_id, query_param) in enumerate(batch):
             aliases.append(
-                f"i{i}: Media(idMal: {mal_id}, type: {media_type.upper()}) {{ status }}"
+                f"i{i}: Media({query_param}, type: {media_type.upper()}) {{ status }}"
             )
 
         query = f"query {{\n  {'\n  '.join(aliases)}\n}}"
@@ -152,29 +166,29 @@ def check_planned_anime_manga_statuses(request):
             )
 
             if response.status_code != 200:
-                for mal_id, _ in batch:
-                    status_map[mal_id] = "Error"
+                for frontend_id, _ in batch:
+                    status_map[frontend_id] = "Error"
                 continue
 
             data = response.json().get("data", {})
-            for i, (mal_id, _) in enumerate(batch):
+            for i, (frontend_id, _) in enumerate(batch):
                 entry = data.get(f"i{i}")
                 if not entry:
-                    status_map[mal_id] = "Unknown"
+                    status_map[frontend_id] = "Unknown"
                     continue
 
                 raw_status = entry.get("status")
                 if raw_status == "FINISHED":
-                    status_map[mal_id] = "Finished"
+                    status_map[frontend_id] = "Finished"
                 elif raw_status == "RELEASING":
-                    status_map[mal_id] = "Releasing"
+                    status_map[frontend_id] = "Releasing"
                 elif raw_status == "NOT_YET_RELEASED":
-                    status_map[mal_id] = "Not yet released"
+                    status_map[frontend_id] = "Not yet released"
                 else:
-                    status_map[mal_id] = raw_status or "Unknown"
+                    status_map[frontend_id] = raw_status or "Unknown"
 
         except Exception:
-            for mal_id, _ in batch:
-                status_map[mal_id] = "Error"
+            for frontend_id, _ in batch:
+                status_map[frontend_id] = "Error"
 
     return JsonResponse(status_map)

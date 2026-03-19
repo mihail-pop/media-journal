@@ -49,9 +49,6 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (currentType === 'game') {
       const activeSort = document.querySelector('#igdb-filters .sort-btn.active');
       if (activeSort) filters.sort = activeSort.dataset.sort;
-      
-      const gameYearInput = document.getElementById('game-year-input');
-      if (gameYearInput.value) filters.year = gameYearInput.value;
     }
     
     return filters;
@@ -150,9 +147,6 @@ document.addEventListener('DOMContentLoaded', () => {
           btn.classList.toggle('active', btn.dataset.sort === sort);
         });
       }
-      
-      const year = params.get('year');
-      if (year) document.getElementById('game-year-input').value = year;
     }
   }
   
@@ -160,8 +154,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Reset all filter buttons to default state
     document.querySelectorAll('.sort-btn').forEach(btn => {
       btn.classList.remove('active');
-      if (btn.dataset.sort === 'trending' || btn.dataset.sort === 'TRENDING_DESC' || btn.dataset.sort === 'popularity') {
-        btn.classList.add('active');
+      if (btn.dataset.sort === 'trending' || btn.dataset.sort === 'TRENDING_DESC' || btn.dataset.sort === 'rating') {
+         btn.classList.add('active');
       }
     });
     
@@ -171,7 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     // Clear all year inputs
-    document.querySelectorAll('#season-year-input, #game-year-input, #tmdb-year-input').forEach(input => {
+    document.querySelectorAll('#season-year-input, #tmdb-year-input').forEach(input => {
       input.value = '';
     });
     
@@ -294,7 +288,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     if (item.next_airing) {
-      content += `<div class="tooltip-next">Episode ${item.next_episode.episode} airing on ${item.next_airing}</div>`;
+      // Create a prefix for the season number, default to empty string
+      let seasonPrefix = '';
+  
+      // Check if a season number exists in the data (TMDb TV shows will have this, AniList anime won't)
+      if (item.next_episode && item.next_episode.season) {
+        seasonPrefix = `(S${item.next_episode.season}) `;
+      }
+  
+      content += `<div class="tooltip-next">${seasonPrefix}Episode ${item.next_episode.episode} airs ${item.next_airing}</div>`;
     }
     
     if (item.overview) {
@@ -490,7 +492,7 @@ document.addEventListener('DOMContentLoaded', () => {
     searchTimeout = setTimeout(() => loadContent(true), 500);
   });
   
-  document.querySelectorAll('#season-year-input, #game-year-input, #tmdb-year-input').forEach(input => {
+  document.querySelectorAll('#season-year-input, #tmdb-year-input').forEach(input => {
     input.addEventListener('input', () => {
       clearTimeout(searchTimeout);
       searchTimeout = setTimeout(() => loadContent(true), 500);

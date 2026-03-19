@@ -377,7 +377,7 @@ def get_game_extra_info(game_id):
 
 
 def get_igdb_discover(
-    page, query="", sort="popularity", genre="", platform="", year=""
+    page, query="", sort="rating", genre="", platform=""
 ):
     token = get_igdb_token()
     if not token:
@@ -395,27 +395,33 @@ def get_igdb_discover(
 
     offset = (page - 1) * 20
 
+    fields_to_request = "id, name, cover.url, summary, rating, genres.name, first_release_date, artworks.url, screenshots.url"
+
     if query:
-        data = f'search "{query}"; fields id, name, cover.url, summary, rating, genres.name, first_release_date; limit 20; offset {offset};'
+        data = f'search "{query}"; fields {fields_to_request}; limit 20; offset {offset};'
     else:
-        conditions = ["cover != null"]
+        conditions = [
+            "cover != null",
+            "(artworks != null | screenshots != null)",
+            "rating_count > 50"
+        ]
         if genre:
-            conditions.append(f"genres = [{genre}]")
+            conditions.append(f"genres = ({genre})")
         if platform:
-            conditions.append(f"platforms = [{platform}]")
-        if year:
-            conditions.append(f"release_dates.y = {year}")
+            conditions.append(f"platforms = ({platform})")
 
         where_clause = " & ".join(conditions)
-        sort_clause = f"sort {sort} desc" if sort else "sort popularity desc"
+        
+        sort_clause = f"sort {sort} desc" if sort else "sort total_rating desc"
 
-        data = f"fields id, name, cover.url, summary, rating, genres.name, first_release_date; where {where_clause}; {sort_clause}; limit 20; offset {offset};"
+        data = f"fields {fields_to_request}; where {where_clause}; {sort_clause}; limit 20; offset {offset};"
 
     try:
         response = requests.post(
-            "https://api.igdb.com/v4/games", headers=headers, data=data
+            "https://api.igdb.com/v4/games", headers=headers, data=data.encode('utf-8')
         )
         if response.status_code != 200:
+            print(f"IGDB API Error: {response.status_code} - {response.text}")
             return []
 
         results_raw = response.json()
@@ -428,15 +434,23 @@ def get_igdb_discover(
                     "t_thumb", "t_cover_big"
                 )
 
-            # Convert score to 1-10 scale
+            banner_url = None
+            if "artworks" in item and item["artworks"]:
+                raw_url = item["artworks"][0].get("url")
+                if raw_url:
+                    banner_url = "https:" + raw_url.replace("t_thumb", "t_screenshot_med")
+            
+            if not banner_url and "screenshots" in item and item["screenshots"]:
+                raw_url = item["screenshots"][0].get("url")
+                if raw_url:
+                    banner_url = "https:" + raw_url.replace("t_thumb", "t_screenshot_med")
+
             score = item.get("rating")
             if score:
                 score = round(score / 10, 1)
 
-            # Format release date
             release_date = ""
             if item.get("first_release_date"):
-
                 release_date = datetime.fromtimestamp(
                     item["first_release_date"]
                 ).strftime("%Y-%m-%d")
@@ -447,6 +461,7 @@ def get_igdb_discover(
                     "id": str(item["id"]),
                     "title": item.get("name", "Untitled"),
                     "poster_path": cover_url,
+                    "backdrop_path": banner_url,
                     "media_type": "game",
                     "overview": item.get("summary", ""),
                     "score": score,
@@ -458,5 +473,6 @@ def get_igdb_discover(
             )
 
         return results
-    except Exception:
+    except Exception as e:
+        print(f"IGDB Discover function error: {e}")
         return []

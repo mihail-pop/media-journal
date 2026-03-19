@@ -890,7 +890,7 @@ def discover_api(request):
         elif media_type in ["movie", "tv"]:
             results = get_tmdb_discover(media_type, page, query, sort, year)
         elif media_type == "game":
-            results = get_igdb_discover(page, query, sort, genre, platform, year)
+            results = get_igdb_discover(page, query, sort, genre, platform)
         else:
             results = []
 
