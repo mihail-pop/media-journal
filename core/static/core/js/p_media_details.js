@@ -1386,33 +1386,89 @@ swapBtn?.addEventListener("click", function () {
     });
   }
   
+  let musicDeleteConfirm = false;
+  let isDeletingMusic = false;
+  let musicDeleteTimeout = null;
+
+  function handleDeleteMusicVideo(btn) {
+    if (isDeletingMusic || btn.disabled) return;
+  
+    const position = parseInt(btn.dataset.position);
+    const sourceId = document.body.dataset.sourceId;
+  
+    if (!musicDeleteConfirm) {
+      btn.classList.add('delete-confirm');
+      btn.title = "Are you sure?";
+      musicDeleteConfirm = true;
+  
+      if (musicDeleteTimeout) clearTimeout(musicDeleteTimeout);
+  
+      musicDeleteTimeout = setTimeout(() => {
+        if (!isDeletingMusic) {
+          musicDeleteConfirm = false;
+          const allDeleteBtns = document.querySelectorAll(".music-delete-btn");
+          allDeleteBtns.forEach(b => {
+            b.classList.remove('delete-confirm');
+            b.title = "Delete Video";
+          });
+        }
+      }, 2000);
+    } else {
+      if (musicDeleteTimeout) {
+        clearTimeout(musicDeleteTimeout);
+        musicDeleteTimeout = null;
+      }
+      isDeletingMusic = true;
+      const allDeleteBtns = document.querySelectorAll(".music-delete-btn");
+      allDeleteBtns.forEach(b => {
+        b.disabled = true;
+        b.style.opacity = "0.5";
+        b.style.cursor = "wait";
+      });
+  
+      fetch('/api/delete-music-video/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken'),
+        },
+        body: JSON.stringify({ source_id: sourceId, position: position }),
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          sessionStorage.setItem('refreshSuccess', '1');
+          location.reload();
+        } else {
+          alert(data.error || 'Failed to delete video');
+          resetDeleteState();
+        }
+      })
+      .catch(() => {
+        alert('Error deleting video');
+        resetDeleteState();
+      });
+    }
+  }
+
+  function resetDeleteState() {
+    isDeletingMusic = false;
+    musicDeleteConfirm = false;
+    const allDeleteBtns = document.querySelectorAll(".music-delete-btn");
+    allDeleteBtns.forEach(b => {
+      b.disabled = false;
+      b.classList.remove('delete-confirm');
+      b.title = "Delete Video";
+      b.style.opacity = "";
+      b.style.cursor = "";
+    });
+  }
+  
   // Delete video functionality
   if (musicVideosContainer) {
     musicVideosContainer.addEventListener('click', function(e) {
       if (e.target.classList.contains('music-delete-btn')) {
-        const position = parseInt(e.target.dataset.position);
-        const sourceId = document.body.dataset.sourceId;
-
-        if (confirm('Delete this video?')) {
-          fetch('/api/delete-music-video/', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-CSRFToken': getCookie('csrftoken'),
-            },
-            body: JSON.stringify({ source_id: sourceId, position: position }),
-          })
-          .then(res => res.json())
-          .then(data => {
-            if (data.success) {
-              sessionStorage.setItem('refreshSuccess', '1');
-              location.reload();
-            } else {
-              alert(data.error || 'Failed to delete video');
-            }
-          })
-          .catch(() => alert('Error deleting video'));
-        }
+        handleDeleteMusicVideo(e.target);
       }
     });
   }

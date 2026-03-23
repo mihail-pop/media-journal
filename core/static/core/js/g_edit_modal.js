@@ -201,7 +201,7 @@ const repeatsLabel = repeatsGroup?.querySelector('label');
 if (repeatsGroup && repeatsInput && repeatsLabel) {
     if (item.show_repeats_field) {
         repeatsGroup.style.display = "block";
-        repeatsInput.value = item.repeats ?? 0;
+        repeatsInput.value = item.repeats ?? "";
 
         // Set label based on media type
         switch (item.media_type) {

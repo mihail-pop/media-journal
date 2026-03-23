@@ -58,7 +58,7 @@
 
 .rating-stars {
   display: flex;
-  gap: 8px;
+  gap: 8.5px;
   align-items: center;
   background-color: var(--bg-primary);
   border-radius: 6px;
@@ -88,7 +88,7 @@
 }
 
 .rating-number input[type="number"] {
-  width: 70px;
+  width: 131px !important;
   font-size: 1.1rem;
   padding: 0.2rem 0.5rem;
   border-radius: 6px;
@@ -615,7 +615,7 @@ textarea[name="notes"] {
   flex: none;
   min-height: 50px;
   /* less tall */
-  width: 100%;
+  width: 101%;
   /* full width */
   height: auto;
   max-width: 600px;
@@ -652,6 +652,7 @@ textarea[name="notes"]::-webkit-scrollbar {
   transition: border-color 0.3s ease;
   position: relative;
   overflow: hidden;
+  margin-bottom: 1px;
 }
 
 /* Sad face */
@@ -703,9 +704,9 @@ textarea[name="notes"]::-webkit-scrollbar {
 
 .rating-faces {
   display: flex;
-  gap: 25px;
+  gap: 23px;
   padding: 4px 7px;
-  border-radius: 10px;
+  border-radius: 6px;
   justify-content: center;
   border: 0;
   background-color: var(--bg-primary);

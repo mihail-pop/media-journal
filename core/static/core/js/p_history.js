@@ -455,13 +455,10 @@ document.addEventListener("DOMContentLoaded", () => {
   // === GLOBAL EDIT MODAL FUNCTION ===
   window.openEditModal = function(element) {
     const itemId = element.dataset.id;
-    const mediaType = element.dataset.mediaType;
     const coverUrl = element.dataset.coverUrl;
-    const bannerUrl = element.dataset.bannerUrl;
     const title = element.dataset.title;
 
     const modal = document.getElementById('edit-modal');
-    const banner = modal.querySelector('.modal-banner');
     const cover = modal.querySelector('.modal-cover img');
     const titleElement = modal.querySelector('.modal-title');
     const overlay = document.getElementById('edit-overlay');
@@ -472,11 +469,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (cover && coverUrl) {
       cover.src = coverUrl;
-    }
-
-    if (banner && bannerUrl) {
-      banner.dataset.banner = bannerUrl;
-      banner.style.backgroundImage = `url("${bannerUrl}")`;
     }
 
     const form = document.getElementById("edit-form");

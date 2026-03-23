@@ -1550,6 +1550,11 @@ body[data-media-type="music"] .poster {
   color: var(--text-title);
 }
 
+.music-delete-btn.delete-confirm {
+  background-color: #ff3b38;
+  color: white;
+}
+
 .relation-list {
   display: inline;
   /* keeps items on the same line */
@@ -2181,6 +2186,10 @@ body[data-page-type="person-detail"] .overview {
   .screenshot-overlay .rotator-btn {
     font-size: 7rem;
     height: 150px;
+  }
+
+  .relation-item:hover .relation-hover-img-container {
+    display: none;
   }
 
 }

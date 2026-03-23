@@ -497,12 +497,12 @@ def get_item(request, item_id):
                     "notes": item.notes,
                     "progress_main": item.progress_main if item.progress_main else None,
                     "total_main": item.total_main,
-                    "progress_secondary": item.progress_secondary,
+                    "progress_secondary": item.progress_secondary if item.progress_secondary else None,
                     "total_secondary": item.total_secondary,
                     "favorite": item.favorite,
                     "item_status_choices": MediaItem.STATUS_CHOICES,
                     "rating_mode": rating_mode,
-                    "repeats": item.repeats or 0,
+                    "repeats": item.repeats if item.repeats else None,
                     "date_added": item.date_added.isoformat()
                     if item.date_added
                     else None,
