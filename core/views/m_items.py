@@ -155,7 +155,7 @@ def edit_item(request, item_id):
 
             # If status changed TO "completed", override progress with totals
             if old_status != "completed" and new_status == "completed":
-                if item.progress_main < item.total_main and item.total_main is not None:
+                if item.total_main is not None and item.progress_main < item.total_main:
                     item.progress_main = item.total_main
                 if item.total_secondary is not None:
                     item.progress_secondary = item.total_secondary

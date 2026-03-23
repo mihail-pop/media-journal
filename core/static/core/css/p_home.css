@@ -62,15 +62,30 @@ body {
   overflow: hidden;
 }
 
-.banner-rotator img {
+.banner-rotator img[alt="movie"],
+.banner-rotator img[alt="tv"],
+.banner-rotator img[alt="music"],
+.banner-rotator img[alt="book"] {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+  position: absolute;
+  top: 110%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   display: block;
-  object-position: center 15%;
   transition: opacity 1s ease-in-out;
   opacity: 1;
 }
+
+.banner-rotator img[alt="anime"],
+.banner-rotator img[alt="manga"],
+.banner-rotator img[alt="game"]{
+  width: 100%;
+  height: 100%; 
+  object-fit: cover; 
+  object-position: center 15%; 
+  display: block;
+}
+
 
 .banner-overlay {
   position: absolute;

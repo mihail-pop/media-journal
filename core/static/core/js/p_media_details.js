@@ -714,13 +714,6 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
-  // Banner background
-  const banner = document.querySelector(".banner-section");
-  if (banner) {
-    const url = banner.dataset.banner;
-    banner.style.backgroundImage = `url("${url}")`;
-  }
-
 
   // Swap confirmation
 const swapBtn = document.getElementById("swap-btn");

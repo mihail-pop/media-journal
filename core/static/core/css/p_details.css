@@ -102,12 +102,33 @@ a:hover {
   position: relative;
   height: 400px;
   width: 100%;
-  background-size: cover;
-  background-position: center 15%;
-  background-repeat: no-repeat;
   margin-top: -60px;
   z-index: 0;
+  overflow: hidden;
 }
+
+.banner-section img[alt="movie"],
+.banner-section img[alt="tv"],
+.banner-section img[alt="music"],
+.banner-section img[alt="book"]{
+  width: 100%;
+  position: absolute;
+  top: 110%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: block;
+}
+
+.banner-section img[alt="anime"],
+.banner-section img[alt="manga"],
+.banner-section img[alt="game"]{
+  width: 100%;
+  height: 100%; 
+  object-fit: cover; 
+  object-position: center 15%;
+  display: block
+}
+
 
 .banner-section.no-banner {
   height: 270px;
@@ -120,7 +141,7 @@ a:hover {
   left: 0;
   height: 100%;
   width: 100%;
-  background: linear-gradient(180deg, rgba(6, 13, 34, 0) 40%, rgba(6, 13, 34, 0.6) 100%);
+  background: rgba(6, 13, 34, 0.15);
   z-index: 1;
 }
 

@@ -2,10 +2,7 @@
 <div id="edit-modal" class="modal modal-hidden">
   <div class="modal-content">
 
-<!-- Banner with background image -->
-<div class="modal-banner" data-banner="{{ item.banner_url }}">
-  <div class="banner-overlay"></div>
-</div>
+<div class="modal-banner"></div>
 
 
 
@@ -106,13 +103,3 @@
 </div>
 
 <div id="edit-overlay" class="modal-overlay modal-hidden"></div>
-
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const modalBanner = document.querySelector("#edit-modal .modal-banner");
-    if (modalBanner) {
-      const url = modalBanner.dataset.banner;
-      modalBanner.style.backgroundImage = `url("${url}")`;
-    }
-  });
-</script>

@@ -256,7 +256,8 @@ def home(request):
         
         initial_banner = {
             "url": random_item.banner_url,
-            "notes": random_item.notes
+            "notes": random_item.notes,
+            "media_type":random_item.media_type
         }
 
     # Get theme mode

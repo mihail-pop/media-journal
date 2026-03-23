@@ -14,8 +14,9 @@ document.addEventListener("DOMContentLoaded", function () {
       .map(card => {
         const bannerUrl = card.dataset.bannerUrl;
         const notes = card.dataset.notes?.trim();
+        const media_type = card.dataset.mediaType;
         return bannerUrl && !bannerUrl.includes("placeholder")
-          ? { bannerUrl, notes: notes === "None" ? "" : notes }
+          ? { media_type,bannerUrl, notes: notes === "None" ? "" : notes }
           : null;
       })
       .filter(Boolean);
@@ -47,12 +48,13 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     lastBannerIndex = random;
 
-    const { bannerUrl, notes } = bannerPool[random];
+    const { media_type, bannerUrl, notes } = bannerPool[random];
 
     if (firstLoad) {
       // Show banner immediately without fade
       bannerImg.src = bannerUrl;
       bannerImg.style.opacity = 1;
+      bannerImg.alt = media_type;
 
       if (quoteBox) {
         if (notes) {
@@ -76,7 +78,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
     setTimeout(() => {
       bannerImg.src = bannerUrl;
-
+      bannerImg.alt = media_type;
+      
       if (quoteBox) {
         if (notes) {
           quoteBox.innerText = `“${notes}”\n\n~You`;
@@ -94,39 +97,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
   initBannerRotator();
 });
-
-function openFavoritesOverlay(category) {
-  const id = `overlay-${slugify(category)}`;
-  const overlay = document.getElementById(id);
-  overlay?.classList.remove('hidden');
-  document.body.style.overflow = 'hidden';
-  
-  // Redirect scroll events to overlay
-  const overlayContent = overlay?.querySelector('.overlay-content');
-  if (overlayContent) {
-    document.addEventListener('wheel', redirectScrollToOverlay);
-    window.currentOverlayContent = overlayContent;
-  }
-  
-  // Close on outside click
-  overlay?.addEventListener('click', (e) => {
-    if (e.target === overlay) {
-      closeFavoritesOverlay(slugify(category));
-    }
-  });
-}
-
-function closeFavoritesOverlay(categorySlug) {
-  const id = `overlay-${categorySlug}`;
-  document.getElementById(id)?.classList.add('hidden');
-  document.body.style.overflow = '';
-  
-  // Remove scroll redirection
-  document.removeEventListener('wheel', redirectScrollToOverlay);
-  window.currentOverlayContent = null;
-  
-  location.reload();
-}
 
 // Helper to match Django's slugify (simplified version)
 function slugify(text) {
@@ -192,75 +162,6 @@ function slugify(text) {
     return cookieValue;
   }
 
-
-
-  // Handle reorder button clicks inside a container (.card-grid)
-function setupReorderButtons(containerId) {
-  const container = document.getElementById(containerId);
-  if (!container) return;
-
-  container.querySelectorAll('.card').forEach(card => {
-const upBtn = card.querySelector('.move-up-btn');
-const downBtn = card.querySelector('.move-down-btn');
-
-    upBtn?.addEventListener('click', () => moveCard(card, container, -1));
-    downBtn?.addEventListener('click', () => moveCard(card, container, 1));
-  });
-}
-
-function moveCard(card, container, direction) {
-  const cards = Array.from(container.children);
-  const index = cards.indexOf(card);
-  const newIndex = index + direction;
-
-  if (newIndex < 0 || newIndex >= cards.length) return; // Can't move out of bounds
-
-  // Swap card with the one in newIndex position
-  container.insertBefore(card, direction === 1 ? cards[newIndex].nextSibling : cards[newIndex]);
-
-  // After reorder, send updated order to backend
-  saveNewOrder(container);
-}
-
-function saveNewOrder(container) {
-  const ids = Array.from(container.children).map(card => card.dataset.id);
-  const isPersonContainer = container.id.includes('actors') || container.id.includes('characters');
-  const endpoint = isPersonContainer ? '/api/favorite-persons/reorder/' : '/api/favorite-media/reorder/';
-  
-  fetch(endpoint, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-CSRFToken': getCookie('csrftoken'),
-    },
-    body: JSON.stringify({ order: ids }),
-  })
-    .then(response => {
-      if (!response.ok) throw new Error('Failed to save order');
-      return response.json();
-    })
-    .catch(error => {
-      console.error('Error saving order:', error);
-      alert('Error saving new order. Please try again.');
-    });
-}
-
-
-
-// Initialize reorder buttons on page load for all favorite sections
-document.addEventListener('DOMContentLoaded', () => {
-  setupReorderButtons('actors-card-grid');
-  setupReorderButtons('characters-card-grid');
-  setupReorderButtons('movies-card-grid');
-  setupReorderButtons('tv-shows-card-grid');
-  setupReorderButtons('anime-card-grid');
-  setupReorderButtons('manga-card-grid');
-  setupReorderButtons('games-card-grid');
-  setupReorderButtons('books-card-grid');
-  setupReorderButtons('music-card-grid');
-});
-
-
 const toggleBtn = document.getElementById("toggle-activity-btn");
 const advancedBtn = document.getElementById("advanced-activity-btn");
 const hiddenActivities = document.querySelectorAll("#recent-activity-list .recent-activity-hidden");
@@ -280,36 +181,3 @@ toggleBtn?.addEventListener("click", () => {
 advancedBtn?.addEventListener("click", () => {
   window.location.href = "/history/";
 });
-
-document.querySelectorAll('.delete-person-btn').forEach(button => {
-  button.addEventListener('click', function (e) {
-    e.preventDefault();
-    const card = this.closest('.card');
-    const personId = card.dataset.id;
-    const csrftoken = getCookie('csrftoken');
-
-    if (confirm("Remove this person from favorites?")) {
-      fetch(`/api/delete_favorite_person/${personId}/`, {
-        method: 'DELETE',
-        headers: {
-          'X-CSRFToken': csrftoken,
-        },
-      })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          card.remove();
-        } else {
-          alert("Failed to delete.");
-        }
-      });
-    }
-  });
-});
-
-function redirectScrollToOverlay(e) {
-  if (window.currentOverlayContent) {
-    e.preventDefault();
-    window.currentOverlayContent.scrollTop += e.deltaY * 0.5;
-  }
-}

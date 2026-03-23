@@ -109,42 +109,48 @@ html {
 /* --- Banner Rotator --- */
 .banner-rotator {
   position: relative;
-  /* Needed to contain the overlay */
   width: 100%;
   height: 330px;
   overflow: hidden;
 }
 
-.banner-rotator img {
+.banner-rotator img[alt="movie"],
+.banner-rotator img[alt="tv"],
+.banner-rotator img[alt="music"],
+.banner-rotator img[alt="book"] {
   width: 100%;
-  height: auto;
   border-radius: 0;
-
   position: absolute;
-  top: 75%;
+  top: 110%;
   left: 50%;
   transform: translate(-50%, -50%);
-
-  
+  display: block;
   transition: opacity 1s ease-in-out;
   opacity: 1;
+}
+
+.banner-rotator img[alt="anime"],
+.banner-rotator img[alt="manga"],
+.banner-rotator img[alt="game"]{
+  width: 100%;
+  height: 100%; 
+  object-fit: cover; 
+  object-position: center 15%;
+  display: block;
 }
 
 /* The overlay that covers the whole image */
 .banner-overlay {
   position: absolute;
-  /* sits over the image */
   top: 0;
   left: 0;
   height: 100%;
   width: 100%;
-  background: linear-gradient(180deg, rgba(6, 13, 34, 0) 40%, rgba(6, 13, 34, 0.6) 100%);
+  background: rgba(6, 13, 34, 0.15);
   z-index: 1;
   pointer-events: none;
-  /* let clicks pass through */
   display: flex;
   justify-content: flex-end;
-  /* align quote container to right */
   align-items: stretch;
   padding-right: 2rem;
   box-sizing: border-box;

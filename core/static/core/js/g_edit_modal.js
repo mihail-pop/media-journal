@@ -3,6 +3,31 @@ document.addEventListener("DOMContentLoaded", function () {
   const overlay = document.getElementById("edit-overlay");
   let scrollY = 0;
 
+  function setModalBanner(bannerUrl, mediaType) {
+    const modal = document.getElementById('edit-modal');
+    const banner = modal.querySelector('.modal-banner');
+    
+    if (banner && bannerUrl) {
+      banner.innerHTML = ''; 
+  
+      const imgElement = document.createElement('img');
+      imgElement.src = bannerUrl;
+      imgElement.alt = mediaType;
+      imgElement.classList.add('modal-banner-image');
+  
+      const overlayElement = document.createElement('div');
+      overlayElement.classList.add('banner-overlay');
+  
+      banner.appendChild(imgElement);
+      banner.appendChild(overlayElement);
+  
+      banner.classList.remove('no-banner');
+    } else if (banner) {
+      banner.innerHTML = '';
+      banner.classList.add('no-banner');
+    }
+  }
+
 const statusLabelsMap = {
   movie: {
     ongoing: "Watching",
@@ -439,8 +464,9 @@ choicesSorted.forEach(choice => {
       const bannerUrl = card.dataset.bannerUrl;
       const sourceId = card.dataset.sourceId;
 
+      setModalBanner(bannerUrl, mediaType);
+
       const modal = document.getElementById('edit-modal');
-      const banner = modal.querySelector('.modal-banner');
       const cover = modal.querySelector('.modal-cover img');
       const coverContainer = modal.querySelector('.modal-cover');
       const title = card.dataset.title;
@@ -458,26 +484,6 @@ choicesSorted.forEach(choice => {
       }
       if (coverContainer && mediaType) {
         coverContainer.dataset.mediaType = mediaType;
-      }
-
-      if (banner && bannerUrl) {
-        banner.innerHTML = ''; 
-
-        const imgElement = document.createElement('img');
-        imgElement.src = bannerUrl;
-        imgElement.alt = mediaType;
-        imgElement.classList.add('modal-banner-image');
-
-        const overlayElement = document.createElement('div');
-        overlayElement.classList.add('banner-overlay');
-
-        banner.appendChild(imgElement);
-        banner.appendChild(overlayElement);
-
-        banner.classList.remove('no-banner');
-      } else if (banner) {
-        banner.innerHTML = '';
-        banner.classList.add('no-banner');
       }
 
       
@@ -507,9 +513,15 @@ choicesSorted.forEach(choice => {
   if (detailEditBtn) {
     detailEditBtn.addEventListener("click", function () {
       const itemId = detailEditBtn.dataset.id;
+      const mediaType = detailEditBtn.dataset.mediaType;
+
+      const mainBannerImage = document.querySelector('.banner-section img');
+      const bannerUrl = mainBannerImage ? mainBannerImage.src : null;
 
       const form = document.getElementById("edit-form");
       if (!form) return console.error("Edit form not found");
+
+      setModalBanner(bannerUrl, mediaType);
 
       fetch(`/get-item/${itemId}/`)
         .then(res => res.json())

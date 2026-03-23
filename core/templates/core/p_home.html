@@ -17,7 +17,7 @@
 <div class="banner-rotator">
   <img id="rotating-banner" 
        src="{% if initial_banner %}{{ initial_banner.url }}{% else %}{% static 'core/img/placeholder.png' %}{% endif %}" 
-       alt="Banner" 
+       alt="{{ initial_banner.media_type }}" 
        fetchpriority="high">
        
   <div class="banner-overlay">

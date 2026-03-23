@@ -23,8 +23,12 @@
 </script>
 
 {% with banner=banner_url|default_if_none:'' %}
-  <div class="banner-section {% if not banner %}no-banner{% endif %}"
-       {% if banner %}data-banner="{{ banner_url}}"{% endif %}>
+  <div class="banner-section {% if not banner %}no-banner{% endif %}">
+    
+    {% if banner %}
+      <img src="{{ banner }}" alt="{{ media_type }}">
+    {% endif %}
+
     <div class="banner-overlay"></div>
   </div>
 {% endwith %}
