@@ -114,6 +114,17 @@ html {
   overflow: hidden;
 }
 
+.banner-rotator img[alt=""],
+.banner-rotator img:not([alt]){
+  width: 100%;
+  height: 100%; 
+  object-fit: cover; 
+  object-position: center 15%;
+  display: block;
+  transition: opacity 1s ease-in-out;
+  opacity: 1;
+}
+
 .banner-rotator img[alt="movie"],
 .banner-rotator img[alt="tv"],
 .banner-rotator img[alt="music"],
