@@ -361,7 +361,7 @@ def tvshows(request):
     # Check if there are any seasons in the list
     has_seasons = (
         MediaItem.objects.filter(media_type="tv")
-        .filter(Q(provider_ids__icontains='"_s') | Q(title__contains="Season"))
+        .filter(Q(provider_ids__tmdb__icontains="_s") | Q(title__icontains="Season"))
         .exists()
     )
 

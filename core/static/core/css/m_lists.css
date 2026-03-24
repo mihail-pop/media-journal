@@ -756,7 +756,38 @@ label.music-player-btn:hover .music-icon path {
   display: none;
 }
 
+@media (pointer: coarse) and (hover: none) {
+
+.banner-rotator img[alt="movie"],
+.banner-rotator img[alt="tv"],
+.banner-rotator img[alt="music"],
+.banner-rotator img[alt="book"] {
+    top: 80%;
+}
+
+.list-content {
+    width: 90%;
+}
+
+.sidebar {
+  width: unset;
+}
+
+.list-page-container {
+padding: 0 5rem 2rem
+}
+
+}
+
 @media(orientation: portrait) {
+
+.banner-rotator img[alt="movie"],
+.banner-rotator img[alt="tv"],
+.banner-rotator img[alt="music"],
+.banner-rotator img[alt="book"] {
+  top: 60%;
+}
+
 
   .separator-bar {
     margin-bottom: 0.1rem;
@@ -990,6 +1021,7 @@ label.music-player-btn:hover .music-icon path {
 
   .type-filter-btn {
     font-size: 2.5rem;
+    justify-content: center;
   }
 
   .toggle-btn {

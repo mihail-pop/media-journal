@@ -140,9 +140,9 @@ def tvshows_api(request):
 
     # Type filtering for TV shows vs seasons
     if type_filter == "shows":
-        queryset = queryset.exclude(provider_ids__tmdb__contains="_s")
+        queryset = queryset.exclude(provider_ids__tmdb__icontains="_s")
     elif type_filter == "seasons":
-        queryset = queryset.exclude(provider_ids__tmdb__contains="_s")
+        queryset = queryset.filter(provider_ids__tmdb__icontains="_s")
     # 'both' shows everything
 
     queryset = queryset.annotate(
@@ -890,7 +890,7 @@ def discover_api(request):
         elif media_type in ["movie", "tv"]:
             results = get_tmdb_discover(media_type, page, query, sort, year)
         elif media_type == "game":
-            results = get_igdb_discover(page, query, sort, genre, platform)
+            results = get_igdb_discover(page, query, sort, genre, platform, year)
         else:
             results = []
 

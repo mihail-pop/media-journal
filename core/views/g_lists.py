@@ -192,3 +192,91 @@ def check_planned_anime_manga_statuses(request):
                 status_map[frontend_id] = "Error"
 
     return JsonResponse(status_map)
+
+def check_planned_game_statuses(request):
+    import time
+    from django.http import JsonResponse
+    from core.models import APIKey, MediaItem
+    import requests
+
+    try:
+        igdb_keys = APIKey.objects.get(name="igdb")
+    except APIKey.DoesNotExist:
+        return JsonResponse({"error": "IGDB API keys not found."}, status=500)
+
+    # Generate token (inline to avoid circular imports, or import get_igdb_token from your services)
+    url = "https://id.twitch.tv/oauth2/token"
+    params = {
+        "client_id": igdb_keys.key_1,
+        "client_secret": igdb_keys.key_2,
+        "grant_type": "client_credentials",
+    }
+    resp = requests.post(url, params=params)
+    if resp.status_code != 200:
+        return JsonResponse({"error": "Failed to get IGDB token"}, status=500)
+    
+    token = resp.json()["access_token"]
+    headers = {
+        "Client-ID": igdb_keys.key_1,
+        "Authorization": f"Bearer {token}",
+    }
+
+    planned_games = MediaItem.objects.filter(media_type="game", status="planned")
+    status_map = {}
+    
+    # Extract IDs
+    game_ids =[item.source_id for item in planned_games if item.source_id]
+    if not game_ids:
+        return JsonResponse({})
+
+    # Helper to chunk list to avoid hitting URI/Body limits
+    def chunks(lst, size):
+        for i in range(0, len(lst), size):
+            yield lst[i : i + size]
+
+    STATUS_MAP = {
+        0: "Released",
+        2: "Alpha",
+        3: "Beta",
+        4: "Early Access",
+        5: "Offline",
+        6: "Cancelled",
+        7: "Rumored",
+        8: "Delisted"
+    }
+    
+    current_time = int(time.time())
+
+    # IGDB allows querying up to 500 items at a time via body
+    for batch in chunks(game_ids, 100):
+        id_list_str = ",".join(str(gid) for gid in batch)
+        body = f"fields id, status, first_release_date; where id = ({id_list_str}); limit 500;"
+        
+        try:
+            response = requests.post("https://api.igdb.com/v4/games", headers=headers, data=body)
+            if response.status_code == 200:
+                data = response.json()
+                for game in data:
+                    gid = str(game["id"])
+                    raw_status = game.get("status")
+                    
+                    if raw_status is not None:
+                        mapped_status = STATUS_MAP.get(raw_status, "Unknown")
+                    else:
+                        release_date = game.get("first_release_date")
+                        if release_date is None or release_date > current_time:
+                            mapped_status = "In development"
+                        else:
+                            mapped_status = "Released"
+                            
+                    status_map[gid] = mapped_status
+            else:
+                for gid in batch:
+                    status_map[str(gid)] = "Error"
+        except Exception:
+            for gid in batch:
+                status_map[str(gid)] = "Error"
+                
+        time.sleep(0.26) # IGDB rate limit safety (4 requests per second)
+
+    return JsonResponse(status_map)

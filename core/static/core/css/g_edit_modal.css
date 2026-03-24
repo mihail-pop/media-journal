@@ -615,7 +615,7 @@ textarea[name="notes"] {
   flex: none;
   min-height: 50px;
   /* less tall */
-  width: 101%;
+  width: 100.5%;
   /* full width */
   height: auto;
   max-width: 600px;
@@ -742,7 +742,29 @@ input[type="number"] {
   /* removes focus outline */
 }
 
+@media (pointer: coarse) and (hover: none) {
+
+.modal-banner img[alt="movie"],
+.modal-banner img[alt="tv"],
+.modal-banner img[alt="music"],
+.modal-banner img[alt="book"]{
+    top: 80%;
+}
+
+  #date_added{
+    max-width: 134px;
+  }
+
+}
+
 @media (orientation: portrait) {
+
+.modal-banner img[alt="movie"],
+.modal-banner img[alt="tv"],
+.modal-banner img[alt="music"],
+.modal-banner img[alt="book"]{
+  top: 60%;
+}
 
   .modal-banner {
     height: 20rem;

@@ -750,6 +750,14 @@ html {
   display: none;
 }
 
+@media (pointer: coarse) and (hover: none) {
+
+.sidebar {
+    width: 22%;
+}
+
+}
+
 @media (orientation: portrait) {
 
   .edit-card-btn {

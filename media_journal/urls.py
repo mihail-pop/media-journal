@@ -88,6 +88,7 @@ urlpatterns = [
     path("api/check_planned_movie_statuses/", views.check_planned_movie_statuses, name="check_planned_movie_statuses"),
     path("api/check_planned_tvseries_statuses/", views.check_planned_tvseries_statuses, name="check_planned_tvseries_statuses"),
     path("api/check_planned_anime_manga_statuses/", views.check_planned_anime_manga_statuses, name="check_planned_anime_manga_statuses"),
+    path("api/check_planned_game_statuses/", views.check_planned_game_statuses, name="check_planned_game_statuses"),
     path('person/<str:person_type>/<int:person_id>/', views.person_detail, name='person_detail'),
     path('api/actor/<int:actor_id>/', views.actor_detail_api, name='actor_detail_api'),
     path('api/character/<int:character_id>/', views.character_detail_api, name='character_detail_api'),

@@ -141,7 +141,7 @@ body {
 
 #year-input,
 #season-year-input,
-#game-year-input,
+#igdb-year-input,
 #tmdb-year-input {
   width: 100%;
   padding: 0.5rem;
@@ -164,8 +164,8 @@ body {
 #year-input::-webkit-inner-spin-button,
 #season-year-input::-webkit-outer-spin-button,
 #season-year-input::-webkit-inner-spin-button,
-#game-year-input::-webkit-outer-spin-button,
-#game-year-input::-webkit-inner-spin-button,
+#igdb-year-input::-webkit-outer-spin-button,
+#igdb-year-input::-webkit-inner-spin-button,
 #tmdb-year-input::-webkit-outer-spin-button,
 #tmdb-year-input::-webkit-inner-spin-button {
   -webkit-appearance: none;
@@ -174,7 +174,7 @@ body {
 
 #year-input::placeholder,
 #season-year-input::placeholder,
-#game-year-input::placeholder,
+#igdb-year-input::placeholder,
 #tmdb-year-input::placeholder {
   color: var(--text-primary);
   opacity: 1;
@@ -378,6 +378,13 @@ body {
   display: none;
 }
 
+@media (pointer: coarse) and (hover: none) {
+.list-page-container {
+  padding: 0 7rem 2rem;
+}
+
+}
+
 @media (orientation: portrait) {
   .hover-tooltip {
     display: none !important;
@@ -488,7 +495,7 @@ body {
   #search-input,
   #tmdb-year-input,
   #season-year-input,
-  #game-year-input,
+  #igdb-year-input,
   #year-input {
     font-size: 2.5rem;
   }

@@ -854,15 +854,31 @@ h2 {
   background-color: var(--bg-quaternary);
 }
 
-@media (hover: none),
-(pointer: coarse) {
+@media (pointer: coarse) and (hover: none) {
+
+.banner-rotator img[alt="movie"],
+.banner-rotator img[alt="tv"],
+.banner-rotator img[alt="music"],
+.banner-rotator img[alt="book"] {
+    top: 80%;
+}
+
   .activity-thumbnail {
     display: none !important;
   }
+
+
 }
 
 /* --- Responsive --- */
 @media (orientation: portrait) {
+
+.banner-rotator img[alt="movie"],
+.banner-rotator img[alt="tv"],
+.banner-rotator img[alt="music"],
+.banner-rotator img[alt="book"] {
+  top: 60%;
+}
 
   .hover-title-overlay {
     display: none;

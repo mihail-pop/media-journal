@@ -1207,6 +1207,9 @@ updateSortButtons();
         case "manga":
           apiUrl = `/api/check_planned_anime_manga_statuses/?media_type=${mediaType}`;
           break;
+        case "games":
+          apiUrl = "/api/check_planned_game_statuses/";
+          break;
         default:
           console.warn("Unknown media type for status check");
           return;
@@ -1235,6 +1238,10 @@ updateSortButtons();
                 else if (status === "Releasing") dot.style.backgroundColor = "orange";
                 else if (status === "Not yet released") dot.style.backgroundColor = "red";
                 else dot.style.backgroundColor = "gray";
+              } else if (mediaType === "games") {
+                if (status === "Released") dot.style.backgroundColor = "green";
+                else if (["Alpha", "Beta", "Early Access"].includes(status)) dot.style.backgroundColor = "orange";
+                else dot.style.backgroundColor = "red";
               }
 
               card.appendChild(dot);

@@ -377,7 +377,7 @@ def get_game_extra_info(game_id):
 
 
 def get_igdb_discover(
-    page, query="", sort="rating", genre="", platform=""
+    page, query="", sort="rating", genre="", platform="", year=""
 ):
     token = get_igdb_token()
     if not token:
@@ -410,11 +410,22 @@ def get_igdb_discover(
             ]
             sort_clause = "sort hypes desc"
         else:
-            conditions = [
+            conditions =[
                 "cover != null",
                 "(artworks != null | screenshots != null)",
                 "rating_count > 50"
             ]
+            
+            if year:
+                try:
+                    year_int = int(year)
+                    start_time = int(datetime(year_int, 1, 1).timestamp())
+                    end_time = int(datetime(year_int, 12, 31, 23, 59, 59).timestamp())
+                    conditions.append(f"first_release_date >= {start_time}")
+                    conditions.append(f"first_release_date <= {end_time}")
+                except ValueError:
+                    pass
+                    
             sort_clause = f"sort {sort} desc" if sort else "sort total_rating desc"
 
         if genre:

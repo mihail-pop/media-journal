@@ -49,6 +49,9 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (currentType === 'game') {
       const activeSort = document.querySelector('#igdb-filters .sort-btn.active');
       if (activeSort) filters.sort = activeSort.dataset.sort;
+      
+      const igdbYearInput = document.getElementById('igdb-year-input');
+      if (igdbYearInput && igdbYearInput.value) filters.year = igdbYearInput.value;
     }
     
     return filters;
@@ -147,6 +150,20 @@ document.addEventListener('DOMContentLoaded', () => {
           btn.classList.toggle('active', btn.dataset.sort === sort);
         });
       }
+      
+      const year = params.get('year');
+      if (year) {
+        const yearInput = document.getElementById('igdb-year-input');
+        if (yearInput) yearInput.value = year;
+      }
+      
+      const activeSort = document.querySelector('#igdb-filters .sort-btn.active');
+      const yearGroup = document.getElementById('igdb-year-group');
+      if (activeSort && activeSort.dataset.sort === 'rating') {
+        if (yearGroup) yearGroup.style.display = 'block';
+      } else {
+        if (yearGroup) yearGroup.style.display = 'none';
+      }
     }
   }
   
@@ -165,13 +182,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     // Clear all year inputs
-    document.querySelectorAll('#season-year-input, #tmdb-year-input').forEach(input => {
+    document.querySelectorAll('#season-year-input, #tmdb-year-input, #igdb-year-input').forEach(input => {
       input.value = '';
     });
     
     // Hide year filter groups
     const tmdbYearGroup = document.getElementById('tmdb-year-input')?.closest('.filter-group');
     if (tmdbYearGroup) tmdbYearGroup.style.display = 'none';
+    
+    const igdbYearGroup = document.getElementById('igdb-year-group');
+    if (igdbYearGroup) igdbYearGroup.style.display = 'block';
   }
   
   function showFilterSection(type) {
@@ -411,6 +431,9 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.classList.add('active');
       currentType = btn.dataset.type;
       
+      // Clear search input on section change
+      searchInput.value = '';
+      
       // Reset all filters when switching media types
       resetFilters();
       
@@ -425,15 +448,21 @@ document.addEventListener('DOMContentLoaded', () => {
       if (isLoading) return; // Prevent clicking while loading
       
       console.log('Filter button clicked:', e.target.className, e.target.dataset);
+      const isActive = e.target.classList.contains('active');
       const group = e.target.closest('.filter-group');
       group.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-      e.target.classList.add('active');
+      
+      if (e.target.matches('.season-btn, .status-btn') && isActive) {
+        // If it was active, leave it deselected
+      } else {
+        e.target.classList.add('active');
+      }
       
       // Load content first to ensure it always happens
       loadContent(true);
       
       // Hide year filter when "Upcoming" status is selected
-      if (e.target.matches('.status-btn') && e.target.dataset.status === 'NOT_YET_RELEASED') {
+      if (e.target.matches('.status-btn') && e.target.dataset.status === 'NOT_YET_RELEASED' && !isActive) {
         const yearInput = document.getElementById('season-year-input');
         if (yearInput && yearInput.closest('.filter-group')) {
           yearInput.value = '';
@@ -458,7 +487,22 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
       }
+      
+      // Show/hide year filter for IGDB based on sort selection
+      if (e.target.matches('.sort-btn') && e.target.closest('#igdb-filters')) {
+        const yearGroup = document.getElementById('igdb-year-group');
+        if (yearGroup) {
+          if (e.target.dataset.sort === 'rating') {
+            yearGroup.style.display = 'block';
+          } else {
+            const yearInput = document.getElementById('igdb-year-input');
+            if (yearInput) yearInput.value = '';
+            yearGroup.style.display = 'none';
+          }
+        }
+      }
     }
+
     
     // Add to list button handler
     if (e.target.matches('.add-to-list-btn')) {
@@ -492,12 +536,13 @@ document.addEventListener('DOMContentLoaded', () => {
     searchTimeout = setTimeout(() => loadContent(true), 500);
   });
   
-  document.querySelectorAll('#season-year-input, #tmdb-year-input').forEach(input => {
+  document.querySelectorAll('#season-year-input, #tmdb-year-input, #igdb-year-input').forEach(input => {
     input.addEventListener('input', () => {
       clearTimeout(searchTimeout);
       searchTimeout = setTimeout(() => loadContent(true), 500);
     });
   });
+
   
 
   

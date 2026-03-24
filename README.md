@@ -107,23 +107,23 @@ The application can be configured using environment variables.
 
 - For windows, to automatically start the app, you can create a `.bat` file that runs the `runserver` command and a `.vbs` file in the shell:startup folder to start that bat file at startup.
 
-Example `.bat` file:
+  Example `.bat` file:
 
-   ```sh
-   @echo off
-   cd /d "C:\***path to your folder***\media-journal"
-   set PY="C:\***path to your python***\Python\Python313\python.exe"
-   %PY% manage.py migrate
-   %PY% manage.py collectstatic --noinput
-   %PY% manage.py runserver 0.0.0.0:8000 --noreload
-   ```
+  ```sh
+  @echo off
+  cd /d "C:\***path to your folder***\media-journal"
+  set PY="C:\***path to your python***\Python\Python313\python.exe"
+  %PY% manage.py migrate
+  %PY% manage.py collectstatic --noinput
+  %PY% manage.py runserver 0.0.0.0:8000 --noreload
+  ```
 
-Example `.vbs` file:
+  Example `.vbs` file:
 
-   ```sh
-   Set WshShell = CreateObject("WScript.Shell")
-   WshShell.Run """C:\***path to your bat file***\run_journal.bat""", 0
-   Set WshShell = Nothing
-   ```
+  ```sh
+  Set WshShell = CreateObject("WScript.Shell")
+  WshShell.Run """C:\***path to your bat file***\run_journal.bat""", 0
+  Set WshShell = Nothing
+  ```
 
 - Some YouTube videos (especially music) may show “Video unavailable, watch on YouTube” if you use a numeric URL (e.g., `http://127.0.0.1:8000`). Those videos work on `http://localhost:8000` or a custom URL (e.g., `http://myapp.mediajournal:8000`). To use a custom URL across devices, you need local DNS, which many routers don’t support. The other option is hosting a local DNS app on your machine, but it would always have to be turned on.

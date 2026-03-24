@@ -1829,7 +1829,25 @@ body[data-page-type="person-detail"] .overview {
   letter-spacing: normal;
 }
 
+@media (pointer: coarse) and (hover: none) {
+
+  .banner-section img[alt="movie"],
+  .banner-section img[alt="tv"],
+  .banner-section img[alt="music"],
+  .banner-section img[alt="book"]{
+    top: 80%;
+  }
+
+}
+
 @media (orientation: portrait) {
+
+.banner-section img[alt="movie"],
+.banner-section img[alt="tv"],
+.banner-section img[alt="music"],
+.banner-section img[alt="book"]{
+  top: 60%;
+}
 
   .settings-cogwheel-btn {
     width: 60px;
