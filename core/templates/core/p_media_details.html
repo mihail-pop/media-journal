@@ -1,5 +1,6 @@
 {% extends "core/g_base.html" %}
 {% load static %}
+{% load custom_filters %}
 
 {% block head %}
   {{ block.super }}
@@ -83,7 +84,7 @@
   <div class="text-info">
     <h1>{{ title }}</h1>
     <div class="overview-container">
-      <p class="overview">{{ overview|safe|linebreaksbr }}</p>
+      <p class="overview">{{ overview|safe_html }}</p>
       <button class="read-more-btn">Read More</button>
     </div>
     <p class="release-date">{{ release_date }}</p>
@@ -119,7 +120,9 @@
      alt="{{ rec.title }}"
      data-placeholder="{% static 'core/img/placeholder.png' %}"
      onerror="this.onerror=null;this.src=this.dataset.placeholder;" />
-            <p class="rec-title">{{ rec.title }}</p>
+            <div class="card-title-overlay">
+              <p class="rec-title">{{ rec.title }}</p>
+            </div>
           </a>
           {% endfor %}
         </div>
@@ -136,7 +139,9 @@
      alt="{{ rec.title }}" 
      data-placeholder="{% static 'core/img/placeholder.png' %}" 
      onerror="this.onerror=null;this.src=this.dataset.placeholder;" />
-            <p class="rec-title">{{ rec.title }}</p>
+            <div class="card-title-overlay">
+              <p class="rec-title">{{ rec.title }}</p>
+            </div>
           </a>
           {% endfor %}
         </div>
@@ -157,9 +162,11 @@
     data-placeholder="{% static 'core/img/placeholder.png' %}"
     onerror="this.onerror=null;this.src=this.dataset.placeholder;"
   />
-          <p class="season-name">{{ season.name }}</p>
-          <p class="episode-count">{{ season.episode_count }} episodes</p>
-          <p class="air-date">{{ season.air_date }}</p>
+          <div class="card-title-overlay">
+            <p class="season-name">{{ season.name }}</p>
+            <p class="episode-count">{{ season.episode_count }} episodes</p>
+            <p class="air-date">{{ season.air_date }}</p>
+          </div>
         </a>
         {% endfor %}
       </div>
@@ -376,12 +383,14 @@
              data-placeholder="{% static 'core/img/placeholder.png' %}"
              onerror="this.onerror=null;this.src=this.dataset.placeholder;" />
         {% endif %}
-        {% if media_type == 'anime' or media_type == 'manga' %}
-          <p class="actor-name">{{ member.name }}</p>
-        {% else %}
-          <p class="actor-name">{{ member.name }}</p>
-          <p class="character-name">{{ member.character }}</p>
-        {% endif %}
+        <div class="card-title-overlay">
+          {% if media_type == 'anime' or media_type == 'manga' %}
+            <p class="actor-name">{{ member.name }}</p>
+          {% else %}
+            <p class="actor-name">{{ member.name }}</p>
+            <p class="character-name">{{ member.character }}</p>
+          {% endif %}
+        </div>
         {% if media_type != "book" %}
         <label class="cast-favorite" data-name="{{ member.name }}" data-img="{% if member.is_full_url %}{{ member.profile_path }}{% else %}https://image.tmdb.org/t/p/w185{{ member.profile_path }}{% endif %}" data-type="{% if media_type == 'anime' or media_type == 'manga' %}character{% else %}actor{% endif %}" data-id="{{ member.id|default:'' }}">
           <input type="checkbox">
@@ -401,8 +410,10 @@
              data-placeholder="{% static 'core/img/placeholder.png' %}"
              onerror="this.onerror=null;this.src=this.dataset.placeholder;" />
         {% endif %}
-        <p class="actor-name">{{ member.name }}</p>
-        <p class="character-name">{{ member.character }}</p>
+        <div class="card-title-overlay">
+          <p class="actor-name">{{ member.name }}</p>
+          <p class="character-name">{{ member.character }}</p>
+        </div>
         {% if media_type != "book" %}
         <label class="cast-favorite" data-name="{{ member.name }}" data-img="{% if member.is_full_url %}{{ member.profile_path }}{% else %}https://image.tmdb.org/t/p/w185{{ member.profile_path }}{% endif %}" data-type="{% if media_type == 'anime' or media_type == 'manga' %}character{% else %}actor{% endif %}" data-id="">
           <input type="checkbox">
@@ -458,7 +469,9 @@
 />
       {% endif %}
       
-      <p class="rec-title">{{ rec.title }}</p>
+      <div class="card-title-overlay">
+        <p class="rec-title">{{ rec.title }}</p>
+      </div>
     </a>
     </div>
     {% endfor %}

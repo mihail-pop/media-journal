@@ -1,5 +1,6 @@
 {% extends "core/g_base.html" %}
 {% load static %}
+{% load custom_filters %}
 
 {% block head %}
   {{ block.super }}
@@ -52,7 +53,7 @@
         <p class="release-date" style="margin-bottom: 5px;"><strong>Age:</strong> {{ person_data.age }}</p>
         {% endif %}
         <div class="overview-container" style="margin-top: 0 !important;">
-          <p class="overview">{% if person_data.biography %}{{ person_data.biography }}{% elif person_data.description %}{{ person_data.description|safe }}{% else %}No information available{% endif %}</p>
+          <p class="overview">{% if person_data.biography %}{{ person_data.biography|safe_html }}{% elif person_data.description %}{{ person_data.description|safe_html }}{% else %}No information available{% endif %}</p>
           <button class="read-more-btn">Read More</button>
         </div>
         {% if person_type == 'actor' %}
@@ -85,8 +86,10 @@
                 {% if media.formatted_date %}<p class="overlay-date">{{ media.formatted_date }}</p>{% endif %}
               </div>
             </div>
-            <p class="media-title">{{ media.title }}</p>
-            {% if media.character %}<p class="media-character">{{ media.character }}</p>{% endif %}
+            <div class="card-title-overlay">
+              <p class="media-title">{{ media.title }}</p>
+              {% if media.character %}<p class="media-character">{{ media.character }}</p>{% endif %}
+            </div>
           </div>
           {% endfor %}
         {% elif person_data.media_appearances %}
@@ -99,7 +102,9 @@
                 {% if media.formatted_date %}<p class="overlay-date">{{ media.formatted_date }}</p>{% endif %}
               </div>
             </div>
-            <p class="media-title">{{ media.title }}</p>
+            <div class="card-title-overlay">
+              <p class="media-title">{{ media.title }}</p>
+            </div>
           </div>
           {% endfor %}
         {% endif %}
@@ -120,7 +125,9 @@
               <p class="overlay-type">{{ va.language }}</p>
             </div>
           </div>
-          <p class="media-title">{{ va.name }}</p>
+          <div class="card-title-overlay">
+            <p class="media-title">{{ va.name }}</p>
+          </div>
         </div>
         {% endfor %}
       </div>

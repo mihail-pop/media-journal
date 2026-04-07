@@ -4,6 +4,7 @@ let musicCurrentIndex = 0;
 let isMusicPlayerReady = false;
 let isMusicInitialized = false;
 let playedSongs = [];
+const tabId = Date.now() + Math.random();
 
 function getCookie(name) {
   let cookieValue = null;
@@ -46,6 +47,7 @@ function initMusicPlayer() {
   }
   
   if (savedMode) {
+    localStorage.setItem('music_player_active_tab', tabId);
     loadYouTubeAPI();
     if (window.YT && window.YT.Player) {
       loadPlaylist();
@@ -99,7 +101,9 @@ function createPlayer(videoId, startTime = 0) {
   const scale = isMobilePortrait ? 2 : 1;
   const width = (isExpanded ? 480 : 320) * scale;
   const height = (isExpanded ? 270 : 180) * scale;
-  const expandIcon = '⤢';
+  const expandIcon = isExpanded 
+    ? `<svg viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg>`
+    : `<svg viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>`;
   
   const overlayHeight = height - (40 * scale);
   const btnSize = 32 * scale;
@@ -110,7 +114,8 @@ function createPlayer(videoId, startTime = 0) {
   const btnSpacing = 37 * scale;
   
   const svgSize = 20 * scale;
-  container.innerHTML = `<div id="music-player"></div><div style="position:absolute;top:0;right:0;width:${50*scale}px;height:${overlayHeight}px;background:transparent;z-index:9999;pointer-events:auto;"></div><div style="position:absolute;top:0;left:0;width:${50*scale}px;height:${overlayHeight}px;background:transparent;z-index:9999;pointer-events:auto;"></div><button id="music-player-expand" style="${hoverButtonStyle}top:${spacing}px;left:${spacing}px;${isMobilePortrait ? 'opacity:1;' : ''}">${expandIcon}</button><button id="music-player-heart" data-item-id="${itemId}" data-favorite="${isFavorite}" style="${hoverButtonStyle}top:${spacing+btnSpacing}px;left:${spacing}px;color:${heartColor};${isMobilePortrait ? 'opacity:1;' : ''}">♥</button><a id="music-player-info" href="/musicbrainz/music/${sourceId}/" style="${hoverButtonStyle}top:${spacing+btnSpacing*2}px;left:${spacing}px;display:flex;align-items:center;justify-content:center;text-decoration:none;color:white;padding:0;${isMobilePortrait ? 'opacity:1;' : ''}"><svg width="${svgSize}" height="${svgSize}" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/><path fill="rgba(0,0,0,0.7)" d="M11 10h2v7h-2zm0-4h2v2h-2z"/></svg></a><button id="music-player-close" style="${buttonStyle}top:${spacing}px;right:${spacing}px;">✕</button><button id="music-player-skip" style="${buttonStyle}top:${spacing+btnSpacing}px;right:${spacing}px;">⏭</button>`;
+  const heartSvg = `<svg width="${svgSize}" height="${svgSize}" fill="${heartColor}" stroke="${heartColor}" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 21C12 21 7 16.5 5 12.5C3 8.5 5 5 8.5 5C10.5 5 12 7 12 7C12 7 13.5 5 15.5 5C19 5 21 8.5 19 12.5C17 16.5 12 21 12 21Z"/></svg>`;
+  container.innerHTML = `<div id="music-player"></div><div style="position:absolute;top:0;right:0;width:${50*scale}px;height:${overlayHeight}px;background:transparent;z-index:9999;pointer-events:auto;"></div><div style="position:absolute;top:0;left:0;width:${50*scale}px;height:${overlayHeight}px;background:transparent;z-index:9999;pointer-events:auto;"></div><button id="music-player-expand" style="${hoverButtonStyle}top:${spacing}px;left:${spacing}px;${isMobilePortrait ? 'opacity:1;' : ''}">${expandIcon}</button><button id="music-player-heart" data-item-id="${itemId}" data-favorite="${isFavorite}" style="${hoverButtonStyle}top:${spacing+btnSpacing}px;left:${spacing}px;${isMobilePortrait ? 'opacity:1;' : ''}">${heartSvg}</button><a id="music-player-info" href="/musicbrainz/music/${sourceId}/" style="${hoverButtonStyle}top:${spacing+btnSpacing*2}px;left:${spacing}px;display:flex;align-items:center;justify-content:center;text-decoration:none;color:white;padding:0;${isMobilePortrait ? 'opacity:1;' : ''}"><svg width="${svgSize}" height="${svgSize}" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/><path fill="rgba(0,0,0,0.7)" d="M11 10h2v7h-2zm0-4h2v2h-2z"/></svg></a><button id="music-player-close" style="${buttonStyle}top:${spacing}px;right:${spacing}px;">✕</button><button id="music-player-skip" style="${buttonStyle}top:${spacing+btnSpacing}px;right:${spacing}px;">⏭</button>`;
   container.style.display = 'block';
   container.style.width = width + 'px';
   if (isMobilePortrait) {
@@ -154,8 +159,9 @@ function createPlayer(videoId, startTime = 0) {
     localStorage.setItem('music_player_expanded', newExpanded);
     if (musicPlayer && musicPlayer.destroy) {
       const currentTime = musicPlayer.getCurrentTime();
+      const currentVideoId = musicPlaylist[musicCurrentIndex]?.video_id || videoId;
       musicPlayer.destroy();
-      createPlayer(videoId, currentTime);
+      createPlayer(currentVideoId, currentTime);
     }
   });
   
@@ -185,7 +191,12 @@ function createPlayer(videoId, startTime = 0) {
     .then(data => {
       if (data.success) {
         this.dataset.favorite = !isFavorite;
-        this.style.color = !isFavorite ? 'red' : 'white';
+        const newColor = !isFavorite ? 'red' : 'white';
+        const svg = this.querySelector('svg');
+        if (svg) {
+          svg.setAttribute('fill', newColor);
+          svg.setAttribute('stroke', newColor);
+        }
         
         // Update playlist data
         const playlistItem = musicPlaylist.find(v => v.item_id === itemId);
@@ -204,6 +215,7 @@ function createPlayer(videoId, startTime = 0) {
     localStorage.removeItem('musicPlayerEnabled');
     localStorage.removeItem('music_player_video');
     localStorage.removeItem('music_player_time');
+    localStorage.removeItem('music_player_active_tab');
     const toggle = document.getElementById('music-player-toggle');
     if (toggle) toggle.checked = false;
   });
@@ -262,7 +274,12 @@ function playNext() {
     if (heartBtn) {
       heartBtn.dataset.itemId = nextVideo.item_id;
       heartBtn.dataset.favorite = nextVideo.is_favorite;
-      heartBtn.style.color = nextVideo.is_favorite ? 'red' : 'white';
+      const svg = heartBtn.querySelector('svg');
+      if (svg) {
+        const color = nextVideo.is_favorite ? 'red' : 'white';
+        svg.setAttribute('fill', color);
+        svg.setAttribute('stroke', color);
+      }
     }
     const infoLink = document.getElementById('music-player-info');
     if (infoLink && nextVideo.source_id) {
@@ -307,11 +324,13 @@ document.addEventListener('DOMContentLoaded', () => {
           localStorage.removeItem('music_player_time');
         }
         localStorage.setItem('musicPlayerEnabled', mode);
+        localStorage.setItem('music_player_active_tab', tabId);
         loadYouTubeAPI();
       } else {
         localStorage.removeItem('musicPlayerEnabled');
         localStorage.removeItem('music_player_video');
         localStorage.removeItem('music_player_time');
+        localStorage.removeItem('music_player_active_tab');
       }
       
       const container = document.getElementById('music-player-container');
@@ -328,6 +347,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         localStorage.removeItem('music_player_video');
         localStorage.removeItem('music_player_time');
+        localStorage.removeItem('music_player_active_tab');
       }
     });
   }
@@ -341,4 +361,28 @@ document.addEventListener('DOMContentLoaded', () => {
       initMusicPlayer();
     }
   }
+  
+  // Listen for storage changes from other tabs
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'music_player_active_tab' && e.newValue && e.newValue !== String(tabId)) {
+      const container = document.getElementById('music-player-container');
+      if (container && container.style.display !== 'none') {
+        // Save current time before closing
+        if (musicPlayer && isMusicPlayerReady && typeof musicPlayer.getCurrentTime === 'function') {
+          try {
+            const time = musicPlayer.getCurrentTime();
+            const videoId = musicPlaylist[musicCurrentIndex]?.video_id;
+            if (videoId) {
+              localStorage.setItem('music_player_time', time);
+              localStorage.setItem('music_player_video', videoId);
+            }
+          } catch (e) {}
+        }
+        if (musicPlayer && musicPlayer.destroy) {
+          musicPlayer.destroy();
+        }
+        container.style.display = 'none';
+      }
+    }
+  });
 });

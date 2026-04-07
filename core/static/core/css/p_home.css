@@ -385,12 +385,14 @@ h2 {
   color: var(--text-primary);
   max-width: 530px;
   margin-bottom: 1rem;
+  cursor: default;
 }
 
 .extra-stats-class h3 {
   color: var(--text-primary);
   max-width: 530px;
   margin-bottom: 1rem;
+  cursor: default;
 }
 
 .activity-grid {
@@ -485,7 +487,7 @@ h2 {
 .stats-bar-segment {
   height: 100%;
   position: relative;
-  cursor: pointer;
+  cursor: default;
   transition: all 0.2s;
   filter: brightness(0.85);
   border-right: 1px solid rgb(46, 46, 46);
@@ -535,6 +537,7 @@ h2 {
   font-size: 2rem;
   font-weight: 700;
   color: var(--text-primary);
+  cursor: default;
   line-height: 1;
 }
 
@@ -543,6 +546,7 @@ h2 {
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--text-secondary);
+  cursor: default; 
   margin-top: 0.4rem;
 }
 
@@ -559,7 +563,7 @@ h2 {
   border-radius: 4px;
   padding: 0.8rem 0.4rem;
   position: relative;
-  cursor: pointer;
+  cursor: default;
   transition: all 0.3s;
 }
 
@@ -833,6 +837,7 @@ h2 {
 .show-more-activity-wrapper {
   text-align: right;
   margin-top: 0.5rem;
+  cursor: default;
 }
 
 #show-more-activity-btn {

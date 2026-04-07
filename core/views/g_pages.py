@@ -23,33 +23,47 @@ logger = logging.getLogger(__name__)
 
 @ensure_csrf_cookie
 def home(request):
-    favorites = MediaItem.objects.filter(favorite=True).order_by(
-        "favorite_position", "date_added"
-    )
     start_tmdb_background_loop()
     start_anilist_background_loop()
 
     limit = 25
 
+    # Single query for favorites with prefetch
+    favorites = list(MediaItem.objects.filter(favorite=True).order_by(
+        "favorite_position", "date_added"
+    ))
+    
+    # Group favorites by media_type in Python
     favorite_sections = {
-        "Movies": favorites.filter(media_type="movie")[:limit],
-        "TV Shows": favorites.filter(media_type="tv")[:limit],
-        "Anime": favorites.filter(media_type="anime")[:limit],
-        "Manga": favorites.filter(media_type="manga")[:limit],
-        "Games": favorites.filter(media_type="game")[:limit],
-        "Books": favorites.filter(media_type="book")[:limit],
-        "Music": favorites.filter(media_type="music")[:limit],
+        "Movies": [f for f in favorites if f.media_type == "movie"][:limit],
+        "TV Shows": [f for f in favorites if f.media_type == "tv"][:limit],
+        "Anime": [f for f in favorites if f.media_type == "anime"][:limit],
+        "Manga": [f for f in favorites if f.media_type == "manga"][:limit],
+        "Games": [f for f in favorites if f.media_type == "game"][:limit],
+        "Books": [f for f in favorites if f.media_type == "book"][:limit],
+        "Music": [f for f in favorites if f.media_type == "music"][:limit],
     }
 
-    all_items = MediaItem.objects.all()
+    # Single query with Count aggregation by media_type
+    from django.db.models import Count, Case, When, IntegerField
+    counts_result = MediaItem.objects.aggregate(
+        movies=Count(Case(When(media_type="movie", then=1), output_field=IntegerField())),
+        tv=Count(Case(When(media_type="tv", then=1), output_field=IntegerField())),
+        anime=Count(Case(When(media_type="anime", then=1), output_field=IntegerField())),
+        games=Count(Case(When(media_type="game", then=1), output_field=IntegerField())),
+        books=Count(Case(When(media_type="book", then=1), output_field=IntegerField())),
+        manga=Count(Case(When(media_type="manga", then=1), output_field=IntegerField())),
+        music=Count(Case(When(media_type="music", then=1), output_field=IntegerField())),
+    )
+    
     media_counts = {
-        "Movies": all_items.filter(media_type="movie").count(),
-        "TV Shows": all_items.filter(media_type="tv").count(),
-        "Anime": all_items.filter(media_type="anime").count(),
-        "Games": all_items.filter(media_type="game").count(),
-        "Books": all_items.filter(media_type="book").count(),
-        "Manga": all_items.filter(media_type="manga").count(),
-        "Music": all_items.filter(media_type="music").count(),
+        "Movies": counts_result["movies"],
+        "TV Shows": counts_result["tv"],
+        "Anime": counts_result["anime"],
+        "Games": counts_result["games"],
+        "Books": counts_result["books"],
+        "Manga": counts_result["manga"],
+        "Music": counts_result["music"],
     }
 
     total_entries = sum(media_counts.values())
@@ -85,22 +99,21 @@ def home(request):
 
     stats = dict(media_counts)
     stats["Total Entries"] = total_entries
-    stats["Favorites"] = favorites.count()
+    stats["Favorites"] = len(favorites)
 
-    # Extra stats
-    movie_count = all_items.filter(media_type="movie", status="completed").count()
-    tv_episodes = (
-        all_items.filter(media_type="tv").aggregate(Sum("progress_main"))[
-            "progress_main__sum"
-        ]
-        or 0
+    # Extra stats - single aggregate query
+    extra_aggregates = MediaItem.objects.aggregate(
+        movie_count=Count(Case(When(media_type="movie", status="completed", then=1), output_field=IntegerField())),
+        tv_episodes=Sum(Case(When(media_type="tv", then="progress_main"), output_field=IntegerField())),
+        anime_episodes=Sum(Case(When(media_type="anime", then="progress_main"), output_field=IntegerField())),
+        game_hours=Sum(Case(When(media_type="game", then="progress_main"), output_field=IntegerField())),
+        chapters_read=Sum(Case(When(media_type="manga", then="progress_main"), output_field=IntegerField())),
+        pages_read=Sum(Case(When(media_type="book", then="progress_main"), output_field=IntegerField())),
     )
-    anime_episodes = (
-        all_items.filter(media_type="anime").aggregate(Sum("progress_main"))[
-            "progress_main__sum"
-        ]
-        or 0
-    )
+    
+    movie_count = extra_aggregates["movie_count"] or 0
+    tv_episodes = extra_aggregates["tv_episodes"] or 0
+    anime_episodes = extra_aggregates["anime_episodes"] or 0
 
     total_hours = (
         movie_count * (90 / 60) + tv_episodes * (40 / 60) + anime_episodes * (24 / 60)
@@ -109,29 +122,13 @@ def home(request):
     if days_watched.is_integer():
         days_watched = int(days_watched)
 
-    game_hours = (
-        all_items.filter(media_type="game").aggregate(Sum("progress_main"))[
-            "progress_main__sum"
-        ]
-        or 0
-    )
+    game_hours = extra_aggregates["game_hours"] or 0
     days_played = round(game_hours / 24, 1)
     if days_played.is_integer():
         days_played = int(days_played)
 
-    chapters_read = (
-        all_items.filter(media_type="manga").aggregate(Sum("progress_main"))[
-            "progress_main__sum"
-        ]
-        or 0
-    )
-
-    pages_read = (
-        all_items.filter(media_type="book").aggregate(Sum("progress_main"))[
-            "progress_main__sum"
-        ]
-        or 0
-    )
+    chapters_read = extra_aggregates["chapters_read"] or 0
+    pages_read = extra_aggregates["pages_read"] or 0
 
     extra_stats = {}
     if days_watched > 0:
@@ -244,15 +241,14 @@ def home(request):
             }
         )
 
-    favorite_banners = MediaItem.objects.filter(
-        favorite=True
-    ).exclude(banner_url="") 
+    # Reuse favorites list for banner
+    favorite_banners = [f for f in favorites if f.banner_url]
 
     initial_banner = None
     
-    # 2. Pick a random one if any exist
-    if favorite_banners.exists():
-        random_item = favorite_banners.order_by("?").first()
+    if favorite_banners:
+        import random
+        random_item = random.choice(favorite_banners)
         
         initial_banner = {
             "url": random_item.banner_url,

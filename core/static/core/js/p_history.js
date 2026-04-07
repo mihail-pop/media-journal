@@ -176,6 +176,26 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
 
+      // Generate URL if not present
+      if (!item.url) {
+        if (item.source === "tmdb" && item.media_type === "tv" && item.source_id && item.source_id.includes("_s")) {
+          const parts = item.source_id.split("_s");
+          item.url = `/tmdb/season/${parts[0]}/${parts[1]}/`;
+        } else if (item.source === "tmdb" && (item.media_type === "movie" || item.media_type === "tv")) {
+          item.url = `/tmdb/${item.media_type}/${item.source_id}/`;
+        } else if (item.media_type === "anime" || item.media_type === "manga") {
+          item.url = `/${item.source}/${item.media_type}/${item.source_id}/`;
+        } else if (item.source === "igdb" && item.media_type === "game") {
+          item.url = `/igdb/game/${item.source_id}/`;
+        } else if (item.source === "openlib" && item.media_type === "book") {
+          item.url = `/openlib/book/${item.source_id}/`;
+        } else if (item.source === "musicbrainz" && item.media_type === "music") {
+          item.url = `/musicbrainz/music/${item.source_id}/`;
+        } else {
+          item.url = "#";
+        }
+      }
+
       // Remove any existing DOM nodes for this id (avoid duplicates)
       document.querySelectorAll(`.card[data-id="${id}"]`).forEach(n => n.remove());
 

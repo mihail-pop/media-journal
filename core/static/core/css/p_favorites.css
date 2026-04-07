@@ -57,6 +57,7 @@ body {
   margin-bottom: 1rem;
   border-bottom: 2px solid var(--border-color);
   padding-bottom: 0.5rem;
+  cursor: default;
 }
 
 .card-grid {
@@ -211,51 +212,10 @@ body.drag-active .card-favorite {
 /* --- Header & View Controls --- */
 .favorites-header-bar {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
   gap: 1rem;
-}
-
-.info-group {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.info-toggle-btn {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  color: var(--text-primary);
-  cursor: pointer;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: color 0.2s;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-}
-
-.info-toggle-btn:hover {
-  background-color: var(--border-color);
-}
-
-.mode-info-cloud {
-  background-color: var(--bg-secondary);
-  color: var(--text-secondary);
-  padding: 0.8rem 1.2rem;
-  border-radius: 20px;
-  font-size: 0.9rem;
-  border: 1px solid var(--border-color);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-}
-
-.mode-info-cloud.hidden {
-  opacity: 0;
-  pointer-events: none;
-  /* Prevent interaction when hidden but keep space */
+  margin-bottom: -2rem;
 }
 
 .view-controls {
@@ -336,16 +296,6 @@ body.drag-active .card-favorite {
 
   .separator-bar {
     height: 0px;
-  }
-
-  .info-toggle-btn,
-  .info-toggle-btn svg {
-    width: 4rem;
-    height: 4rem;
-  }
-
-  .mode-info-cloud {
-    font-size: 2rem;
   }
 
   .view-btn,

@@ -216,6 +216,7 @@ def edit_item(request, item_id):
                         "id": item.id,
                         "title": item.title,
                         "media_type": item.media_type,
+                        "source": item.source,
                         "source_id": item.source_id,
                         "status": item.status,
                         "personal_rating": display_rating,

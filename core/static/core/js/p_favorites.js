@@ -270,23 +270,16 @@ document.addEventListener('DOMContentLoaded', () => {
   const container = document.querySelector('.favorites-container');
   const viewBigBtn = document.getElementById('view-big');
   const viewSmallBtn = document.getElementById('view-small');
-  const modeInfoText = document.getElementById('mode-info-text');
-  const infoToggleBtn = document.getElementById('info-toggle-btn');
-
-  const TEXT_BIG = "Detail View - Drag by title or image, hover to unfavorite, click on image for details page";
-  const TEXT_SMALL = "Compact View - Drag by image";
 
   function setMode(mode) {
     if (mode === 'small') {
         container.classList.add('small-mode');
         viewSmallBtn.classList.add('active');
         viewBigBtn.classList.remove('active');
-        modeInfoText.textContent = TEXT_SMALL;
     } else {
         container.classList.remove('small-mode');
         viewBigBtn.classList.add('active');
         viewSmallBtn.classList.remove('active');
-        modeInfoText.textContent = TEXT_BIG;
     }
     localStorage.setItem('favoritesViewMode', mode);
   }
@@ -310,25 +303,5 @@ document.addEventListener('DOMContentLoaded', () => {
   const savedMode = localStorage.getItem('favoritesViewMode');
   if (savedMode) {
       setMode(savedMode);
-  }
-
-  // --- Info Cloud Toggle ---
-  function setInfoVisibility(visible) {
-      if (visible === 'false') {
-          modeInfoText.classList.add('hidden');
-      } else {
-          modeInfoText.classList.remove('hidden');
-      }
-      localStorage.setItem('favoritesInfoVisible', visible);
-  }
-
-  const savedInfoState = localStorage.getItem('favoritesInfoVisible');
-  if (savedInfoState !== null) setInfoVisibility(savedInfoState);
-
-  if (infoToggleBtn) {
-      infoToggleBtn.addEventListener('click', () => {
-          const isHidden = modeInfoText.classList.contains('hidden');
-          setInfoVisibility(isHidden ? 'true' : 'false');
-      });
   }
 });

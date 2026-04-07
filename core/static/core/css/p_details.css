@@ -384,10 +384,8 @@ body[data-media-type="music"] .poster {
 .season-card,
 .rec-card,
 .recommendation {
-  background: var(--bg-tertiary);
   border-radius: 6px;
-  padding: 8px;
-  width: 120px;
+  width: 136px;
   text-align: center;
   text-decoration: none;
   color: var(--text-title);
@@ -395,34 +393,57 @@ body[data-media-type="music"] .poster {
   transition: transform 0.2s ease;
   display: block;
   position: relative;
-}
-
-.rec-card:hover,
-.recommendation:hover,
-.season-card:hover {
-  transform: scale(1.05);
-}
-
-.cast-member[href]:hover {
-  transform: scale(1.05);
+  overflow: hidden;
+  background: rgb(255 254 254 / 7%);
 }
 
 .cast-member[href]:hover .actor-name {
-  color: var(--text-title);
+  color: rgb(240, 240, 240);
 }
 
-.cast-member[href]:hover .character-name {
-  color: var(--text-overview);
+.season-card[href]:hover .season-name {
+  color: rgb(240, 240, 240);
+}
+
+.recommendation a:hover .rec-title {
+  color: rgb(240, 240, 240);
 }
 
 .cast-member img,
 .season-card img,
 .rec-card img,
 .recommendation img {
-  width: 120px;
-  height: 180px;
-  border-radius: 4px;
-  margin-bottom: 6px;
+  width: 136px;
+  height: 204px;
+  object-fit: cover;
+  border-radius: 6px;
+  display: block;
+  position: relative;
+  border-bottom: 1px solid transparent;
+}
+
+.cast-member img[src*="placeholder.png"],
+.season-card img[src*="placeholder.png"],
+.rec-card img[src*="placeholder.png"],
+.recommendation img[src*="placeholder.png"],
+.person-card img[src*="placeholder.png"],
+.media-image-wrapper img[src*="placeholder.png"] {
+  opacity: 0;
+}
+
+.card-title-overlay {
+  background: rgba(14, 15, 15, .8);
+  color: var(--text-light);
+  padding: 0.5rem 0.6rem;
+  display: flex;
+  flex-direction: column;
+  font-size: 0.8rem;
+  gap: 0.1rem;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1;
 }
 
 .actor-name,
@@ -433,8 +454,6 @@ body[data-media-type="music"] .poster {
 .rec-title {
   font-size: 0.85rem;
   margin: 0;
-  line-height: 1.2;
-
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;
@@ -445,25 +464,20 @@ body[data-media-type="music"] .poster {
 }
 
 .actor-name,
-.season-name {
+.season-name,
+.rec-title {
   font-weight: 500;
 }
 
-.season-card:hover .season-name {
-  color: var(--text-title);
-  /* lock it to not be affected by a element hover */
+.rec-title{
+  min-height: 2.2rem;
 }
 
 .character-name,
 .episode-count,
 .air-date {
-  color: var(--text-overview);
-}
-
-.rec-title {
-  font-weight: bold;
-  margin-top: 2px;
-  color: var(--text-primary);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.75rem;
 }
 
 .recommendations-list a {
@@ -534,50 +548,63 @@ body[data-media-type="music"] .poster {
 .person-card {
   background: var(--bg-tertiary);
   border-radius: 6px;
-  padding: 8px;
-  width: 120px;
+  width: 136px;
   text-align: center;
   text-decoration: none;
   color: var(--text-secondary);
   box-shadow: 0 1px 5px rgba(0, 0, 0, 0.6);
   transition: transform 0.2s ease;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  display: block;
   position: relative;
-}
-
-.person-card:hover {
-  transform: scale(1.05);
+  overflow: hidden;
 }
 
 
 /* Person image */
 .person-card img {
-  width: 120px;
-  height: 180px;
+  width: 136px;
+  height: 204px;
   object-fit: cover;
-  border-bottom: 1px solid var(--bg-primary);
   background-color: var(--hover-bg);
-  border-radius: 4px;
+  border-radius: 6px;
+  display: block;
+  position: relative;
+}
+
+.person-card img[src*="placeholder.png"] {
+  opacity: 0;
+}
+
+.person-card img[src*="placeholder.png"]::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(var(--modal-bg-rgb), 0.5);
+  border-radius: 6px;
 }
 
 /* Person name */
 .person-name {
   font-size: 0.85rem;
-  color: var(--text-secondary);
-  margin: 6px 4px 8px;
-  flex-grow: 1;
-  line-height: 1.1;
+  margin: 0;
+  line-height: 1.2;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: normal;
 }
 
 /* Person favorite heart */
 .person-favorite {
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: 2px;
+  right: 4px;
   cursor: pointer;
   user-select: none;
   opacity: 0;
@@ -634,8 +661,8 @@ body[data-media-type="music"] .poster {
 /* Cast member favorite heart */
 .cast-favorite {
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: 2px;
+  right: 4px;
   cursor: pointer;
   user-select: none;
   opacity: 0;
@@ -1012,6 +1039,7 @@ body[data-media-type="music"] .poster {
   font-size: 1.5rem;
   white-space: nowrap;
   color: var(--text-title);
+  cursor: default;
 }
 
 .cast-header {
@@ -1024,6 +1052,7 @@ body[data-media-type="music"] .poster {
 .cast-header h2 {
   color: var(--text-title);
   margin: 0;
+  cursor: default;
 }
 
 .cast-controls {
@@ -1091,6 +1120,7 @@ body[data-media-type="music"] .poster {
   color: var(--text-title);
   margin-top: 0px;
   margin-bottom: 12px;
+  cursor: default;
 }
 
 .seasons-section h2 {
@@ -1416,6 +1446,7 @@ body[data-media-type="music"] .poster {
 .seasons-section h2 {
   margin-top: 0.5rem;
   margin-bottom: 0.7rem;
+  cursor: default;
 }
 
 .trailer-grid iframe {
@@ -1440,6 +1471,7 @@ body[data-media-type="music"] .poster {
 .music-section h2 {
   color: var(--text-title);
   margin: 0;
+  cursor: default;
 }
 
 .music-controls {
@@ -1696,34 +1728,42 @@ body[data-page-type="person-detail"] .overview {
 .media-card {
   background: var(--bg-tertiary);
   border-radius: 6px;
-  padding: 8px;
   width: 120px;
   text-align: center;
   box-shadow: 0 1px 5px rgba(0, 0, 0, 0.6);
   transition: transform 0.2s ease;
-}
-
-.media-card:hover {
-  transform: scale(1.05);
-}
-
-.media-card[style*="cursor: pointer"]:hover {
-  transform: scale(1.08);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+  overflow: hidden;
+  position: relative;
 }
 
 .media-image-wrapper {
   position: relative;
   width: 120px;
   height: 180px;
-  margin-bottom: 6px;
 }
 
 .media-image-wrapper img {
   width: 100%;
   height: 100%;
-  border-radius: 4px;
+  border-radius: 6px;
   object-fit: cover;
+  display: block;
+  position: relative;
+}
+
+.media-image-wrapper img[src*="placeholder.png"] {
+  opacity: 0;
+}
+
+.media-image-wrapper img[src*="placeholder.png"]::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(var(--modal-bg-rgb), 0.5);
+  border-radius: 6px;
 }
 
 .media-overlay {
@@ -1732,8 +1772,8 @@ body[data-page-type="person-detail"] .overview {
   left: 0;
   right: 0;
   background: rgba(14, 15, 15, .8);
-  padding: 8px 4px 4px;
-  border-radius: 0 0 4px 4px;
+  padding: 6px 4px 4px;
+  border-radius: 0 0 6px 6px;
 }
 
 .overlay-type {
@@ -1767,11 +1807,9 @@ body[data-page-type="person-detail"] .overview {
 
 .media-title {
   font-size: 0.85rem;
-  margin: 0 0 4px 0;
+  margin: 0;
   line-height: 1.2;
   font-weight: 500;
-  color: var(--text-primary);
-
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;
@@ -1784,10 +1822,9 @@ body[data-page-type="person-detail"] .overview {
 .media-character {
   font-size: 0.75rem;
   margin: 0;
-  color: var(--text-overview);
+  color: rgba(255, 255, 255, 0.8);
   font-weight: 400;
   font-style: italic;
-
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;
@@ -2017,20 +2054,9 @@ body[data-page-type="person-detail"] .overview {
   .rec-card,
   .recommendation,
   .person-card,
-  .media-card,
-  .media-overlay {
+  .media-card {
     width: 200px !important;
-    max-height: 410px !important;
-    overflow: hidden !important;
-  }
-
-  .media-title {
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    height: 300px !important;
   }
 
   .cast-member img,
@@ -2042,6 +2068,20 @@ body[data-page-type="person-detail"] .overview {
   .media-image-wrapper {
     width: 200px !important;
     height: 300px !important;
+  }
+
+  .card-title-overlay {
+    font-size: 1.6rem;
+    padding: 0.8rem;
+  }
+
+  .cast-member img[src*="placeholder.png"],
+  .season-card img[src*="placeholder.png"],
+  .rec-card img[src*="placeholder.png"],
+  .recommendation img[src*="placeholder.png"],
+  .person-card img[src*="placeholder.png"],
+  .media-image-wrapper img[src*="placeholder.png"] {
+    opacity: 0;
   }
 
   .actor-name,

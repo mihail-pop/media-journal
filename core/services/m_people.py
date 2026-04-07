@@ -522,22 +522,16 @@ def save_favorite_actor_character(name, image_url, type, person_id=None):
     position = existing_count + 1
 
     timestamp = int(time.time() * 1000)
-    # Prepare local path
     slug_name = slugify(name)
-    ext = image_url.split(".")[-1].split("?")[
-        0
-    ]  # crude extension extract, e.g. jpg, png
-    relative_path = f"favorites/{type}s/{slug_name}_{timestamp}.{ext}"
 
-    local_url = download_image(image_url, relative_path)
-    # fallback to original url if download failed
-    final_image_url = local_url if local_url else image_url
-
-    # Fetch additional data based on type
+    # Fetch additional data based on type and get high-quality image
     additional_data = {}
+    high_quality_image_url = image_url  # fallback
+    
     if type == "actor" and person_id:
         actor_data = fetch_actor_data(person_id)
         if actor_data:
+            high_quality_image_url = actor_data.get("image") or image_url
             additional_data = {
                 "birthday": actor_data.get("birthday"),
                 "deathday": actor_data.get("deathday"),
@@ -547,12 +541,21 @@ def save_favorite_actor_character(name, image_url, type, person_id=None):
     elif type == "character" and person_id:
         character_data = fetch_character_data(person_id)
         if character_data:
+            high_quality_image_url = character_data.get("image") or image_url
             additional_data = {
                 "description": character_data.get("description"),
                 "age": character_data.get("age"),
                 "media_appearances": character_data.get("media_appearances"),
                 "voice_actors": character_data.get("voice_actors"),
             }
+
+    # Prepare local path
+    ext = high_quality_image_url.split(".")[-1].split("?")[0]
+    relative_path = f"favorites/{type}s/{slug_name}_{timestamp}.{ext}"
+
+    # Download the high-quality image
+    local_url = download_image(high_quality_image_url, relative_path)
+    final_image_url = local_url if local_url else high_quality_image_url
 
     person = FavoritePerson.objects.create(
         name=name,

@@ -212,12 +212,6 @@ document.addEventListener("DOMContentLoaded", function() {
         checkbox.checked = false;
       });
   });
-
-  // Banner background
-  const banner = document.querySelector(".banner-section");
-  if (banner && banner.dataset.banner) {
-    banner.style.backgroundImage = `url("${banner.dataset.banner}")`;
-  }
   
   const addBtn = document.getElementById("add-season-to-list-button");
   if (addBtn) {

@@ -1,5 +1,6 @@
 {% extends "core/g_base.html" %}
 {% load static %}
+{% load custom_filters %}
 
 {% block head %}
   {{ block.super }}
@@ -16,11 +17,14 @@
 </script>
 
 {% with banner=banner_url|default_if_none:'' %}
-  <div class="banner-section {% if not banner %}no-banner{% endif %}"
-       {% if banner %}data-banner="{{ banner_url}}"{% endif %}>
+  <div class="banner-section {% if not banner %}no-banner{% endif %}">
+    
+    {% if banner %}
+      <img src="{{ banner }}" alt="{{ media_type }}">
+    {% endif %}
+
     <div class="banner-overlay"></div>
   </div>
-{% if in_my_list %}{% endif %}
 {% endwith %}
 
 <div class="top-colored-section">
@@ -66,7 +70,7 @@
       <div class="text-info">
         <h1>{{ title }}</h1>
         <div class="overview-container">
-          <p class="overview">{{ overview|safe }}</p>
+          <p class="overview">{{ overview|safe_html }}</p>
           <button class="read-more-btn">Read More</button>
         </div>
         <p class="release-date">{{ release_date }}</p>
@@ -174,8 +178,10 @@
                alt="{{ member.name }}"
                data-placeholder="{% static 'core/img/placeholder.png' %}"
                onerror="this.onerror=null;this.src=this.dataset.placeholder;" />
-          <p class="actor-name">{{ member.name }}</p>
-          <p class="character-name">{{ member.character }}</p>
+          <div class="card-title-overlay">
+            <p class="actor-name">{{ member.name }}</p>
+            <p class="character-name">{{ member.character }}</p>
+          </div>
           <label class="cast-favorite" data-name="{{ member.name }}" data-img="{% if member.is_full_url %}{{ member.profile_path }}{% else %}https://image.tmdb.org/t/p/w185{{ member.profile_path }}{% endif %}" data-type="actor" data-id="{{ member.id|default:'' }}">
             <input type="checkbox">
             <span class="heart"></span>

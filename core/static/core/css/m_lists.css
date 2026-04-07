@@ -88,6 +88,7 @@ html {
   margin-bottom: 10px;
   /* adjust this value as you want */
   font-weight: bold;
+  cursor: default;
 }
 
 .separator-bar {
@@ -315,6 +316,7 @@ html {
   font-size: 1rem;
   margin-top: 1.5rem;
   margin-bottom: 0.75rem;
+  cursor: default;
 }
 
 .filter-btn:hover,
@@ -362,7 +364,6 @@ html {
 
 /* Default card (all media types) */
 .card {
-  border-radius: 3px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
   overflow: hidden;
   display: flex;

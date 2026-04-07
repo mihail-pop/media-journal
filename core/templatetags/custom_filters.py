@@ -1,5 +1,7 @@
 from django import template
 from django.utils.timezone import now
+from django.utils.safestring import mark_safe
+import re
 
 register = template.Library()
 
@@ -80,3 +82,49 @@ def timesince_one_unit(value):
         return f"{months} month{'s' if months != 1 else ''} ago"
     else:
         return f"{years} year{'s' if years != 1 else ''} ago"
+
+@register.filter
+def safe_html(value):
+    """
+    Whitelist safe HTML tags and strip hrefs from links.
+    Allows: br, strong, b, em, i, u, p, span, div
+    Removes: script tags, unknown tags, and href attributes
+    """
+    if not value:
+        return ''
+    
+    # Remove script tags and their content
+    value = re.sub(r'<script[^>]*>.*?</script>', '', value, flags=re.DOTALL | re.IGNORECASE)
+    
+    # Strip href from <a> tags but keep the text
+    value = re.sub(r'<a[^>]*>([^<]*)</a>', r'\1', value, flags=re.IGNORECASE)
+    
+    # Whitelist allowed tags
+    allowed_tags = ['br', 'strong', 'b', 'em', 'i', 'u', 'p', 'span', 'div']
+    
+    # Remove all tags except whitelisted ones
+    def replace_tag(match):
+        full_tag = match.group(0)
+        tag_content = match.group(2).strip()
+        
+        if not tag_content:
+            return ''
+        
+        # Extract tag name (first word, without attributes)
+        tag_parts = tag_content.split()
+        if not tag_parts:
+            return ''
+        
+        tag_name = tag_parts[0].lower()
+        
+        # Handle closing tags
+        if tag_name.startswith('/'):
+            tag_name = tag_name[1:]
+        
+        if tag_name in allowed_tags:
+            return full_tag
+        return ''  # Remove unknown tags
+    
+    value = re.sub(r'<(/?)([^>]*)>', replace_tag, value)
+    
+    return mark_safe(value)

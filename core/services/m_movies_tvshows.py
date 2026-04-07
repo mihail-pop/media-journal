@@ -138,14 +138,23 @@ def save_tmdb_item(media_type, tmdb_id):
         total_episodes = 0
         total_seasons = 0
         if media_type == "tv":
+            today = datetime.now().date()
+            one_year_ahead = datetime(today.year + 1, today.month, today.day).date()
             for i, season in enumerate(data.get("seasons", [])):
                 season_number = season.get("season_number")
                 episode_count = season.get("episode_count", 0)
                 
-                # Count episodes and seasons (excluding specials)
+                # Count episodes and seasons (excluding specials, within one year)
                 if season_number != 0:
-                    total_episodes += episode_count
-                    total_seasons += 1
+                    air_date_str = season.get("air_date")
+                    if air_date_str:
+                        try:
+                            air_date = datetime.strptime(air_date_str, "%Y-%m-%d").date()
+                            if air_date <= one_year_ahead:
+                                total_episodes += episode_count
+                                total_seasons += 1
+                        except Exception:
+                            pass
                 
                 season_poster_url = (
                     f"https://image.tmdb.org/t/p/w300{season.get('poster_path')}"
@@ -501,9 +510,21 @@ def get_tv_extra_info(tmdb_id):
         ]
 
         seasons = data.get("seasons", [])
-        total_episodes = sum(
-            s.get("episode_count", 0) for s in seasons if s.get("season_number") != 0
-        )
+        today = datetime.now().date()
+        one_year_ahead = datetime(today.year + 1, today.month, today.day).date()
+        total_episodes = 0
+        
+        for s in seasons:
+            if s.get("season_number") == 0:
+                continue
+            air_date_str = s.get("air_date")
+            if air_date_str:
+                try:
+                    air_date = datetime.strptime(air_date_str, "%Y-%m-%d").date()
+                    if air_date <= one_year_ahead:
+                        total_episodes += s.get("episode_count", 0)
+                except Exception:
+                    pass
 
         run_times = data.get("episode_run_time", [])
         episode_runtime = run_times[0] if run_times else None

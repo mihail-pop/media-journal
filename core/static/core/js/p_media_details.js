@@ -602,7 +602,9 @@ document.addEventListener("DOMContentLoaded", function () {
             card.innerHTML = `
               ${person.id ? `<a href="${personLink}" class="person-card-link">` : ''}
                 <img src="${person.image || "/static/core/img/placeholder.png"}" alt="${person.name}">
-                <p class="person-name">${person.name}</p>
+                <div class="card-title-overlay">
+                  <p class="person-name">${person.name}</p>
+                </div>
               ${person.id ? '</a>' : ''}
               <label class="person-favorite" data-name="${person.name}" data-img="${person.image}" data-type="${type}" data-id="${person.id || ''}">
                 <input type="checkbox" ${person.isFavorited ? 'checked' : ''}>
@@ -956,8 +958,10 @@ swapBtn?.addEventListener("click", function () {
                    alt="${member.name}" 
                    data-placeholder="/static/core/img/placeholder.png" 
                    onerror="this.onerror=null;this.src=this.dataset.placeholder;" />
-              <p class="actor-name">${member.name}</p>
-              <p class="character-name">${member.character}</p>
+              <div class="card-title-overlay">
+                <p class="actor-name">${member.name}</p>
+                <p class="character-name">${member.character}</p>
+              </div>
               <label class="cast-favorite" data-name="${member.name}" data-img="${member.profile_path || '/static/core/img/placeholder.png'}" data-type="${type}" data-id="${member.id || ''}">
                 <input type="checkbox">
                 <span class="heart"></span>
@@ -971,7 +975,9 @@ swapBtn?.addEventListener("click", function () {
                    alt="${member.name}" 
                    data-placeholder="/static/core/img/placeholder.png" 
                    onerror="this.onerror=null;this.src=this.dataset.placeholder;" />
-              <p class="actor-name">${member.name}</p>
+              <div class="card-title-overlay">
+                <p class="actor-name">${member.name}</p>
+              </div>
               <label class="cast-favorite" data-name="${member.name}" data-img="${member.profile_path || '/static/core/img/placeholder.png'}" data-type="${type}" data-id="${member.id || ''}">
                 <input type="checkbox">
                 <span class="heart"></span>
@@ -980,8 +986,8 @@ swapBtn?.addEventListener("click", function () {
           `;
         } else {
           const nameHtml = (mediaType === 'anime' || mediaType === 'manga') ? 
-            `<p class="actor-name">${member.name}</p>` : 
-            `<p class="actor-name">${member.name}</p><p class="character-name">${member.character}</p>`;
+            `<div class="card-title-overlay"><p class="actor-name">${member.name}</p></div>` : 
+            `<div class="card-title-overlay"><p class="actor-name">${member.name}</p><p class="character-name">${member.character}</p></div>`;
           castMember.innerHTML = `
             <div class="cast-member">
               <img src="${member.profile_path || '/static/core/img/placeholder.png'}" 
@@ -1059,8 +1065,10 @@ swapBtn?.addEventListener("click", function () {
                          alt="${member.name}" 
                          data-placeholder="/static/core/img/placeholder.png" 
                          onerror="this.onerror=null;this.src=this.dataset.placeholder;" />
-                    <p class="actor-name">${member.name}</p>
-                    <p class="character-name">${member.character}</p>
+                    <div class="card-title-overlay">
+                      <p class="actor-name">${member.name}</p>
+                      <p class="character-name">${member.character}</p>
+                    </div>
                     <label class="cast-favorite" data-name="${member.name}" data-img="${member.profile_path || '/static/core/img/placeholder.png'}" data-type="${type}" data-id="${member.id || ''}">
                       <input type="checkbox">
                       <span class="heart"></span>
@@ -1074,7 +1082,9 @@ swapBtn?.addEventListener("click", function () {
                          alt="${member.name}" 
                          data-placeholder="/static/core/img/placeholder.png" 
                          onerror="this.onerror=null;this.src=this.dataset.placeholder;" />
-                    <p class="actor-name">${member.name}</p>
+                    <div class="card-title-overlay">
+                      <p class="actor-name">${member.name}</p>
+                    </div>
                     <label class="cast-favorite" data-name="${member.name}" data-img="${member.profile_path || '/static/core/img/placeholder.png'}" data-type="${type}" data-id="${member.id || ''}">
                       <input type="checkbox">
                       <span class="heart"></span>
@@ -1083,8 +1093,8 @@ swapBtn?.addEventListener("click", function () {
                 `;
               } else {
                 const nameHtml = (mediaType === 'anime' || mediaType === 'manga') ? 
-                  `<p class="actor-name">${member.name}</p>` : 
-                  `<p class="actor-name">${member.name}</p><p class="character-name">${member.character}</p>`;
+                  `<div class="card-title-overlay"><p class="actor-name">${member.name}</p></div>` : 
+                  `<div class="card-title-overlay"><p class="actor-name">${member.name}</p><p class="character-name">${member.character}</p></div>`;
                 castMember.innerHTML = `
                   <div class="cast-member">
                     <img src="${member.profile_path || '/static/core/img/placeholder.png'}" 
@@ -1664,7 +1674,9 @@ if (data.recommendations?.length) {
                        alt="${rec.title}" 
                        data-placeholder="/static/core/img/placeholder.png" 
                        onerror="this.onerror=null;this.src=this.dataset.placeholder;" />
-                  <p class="rec-title">${rec.title}</p>
+                  <div class="card-title-overlay">
+                    <p class="rec-title">${rec.title}</p>
+                  </div>
                 </a>
               </div>
             `).join('')}
@@ -1821,7 +1833,9 @@ if (data.recommendations?.length) {
                        alt="${rec.title}" 
                        data-placeholder="/static/core/img/placeholder.png" 
                        onerror="this.onerror=null;this.src=this.dataset.placeholder;" />
-                  <p class="rec-title">${rec.title}</p>
+                  <div class="card-title-overlay">
+                    <p class="rec-title">${rec.title}</p>
+                  </div>
                 </a>
               </div>
             `).join('')}
@@ -2032,7 +2046,9 @@ if (data.trailers?.length) {
                            alt="${rec.title}" 
                            data-placeholder="/static/core/img/placeholder.png" 
                            onerror="this.onerror=null;this.src=this.dataset.placeholder;" />
-                      <p class="rec-title">${rec.title}</p>
+                      <div class="card-title-overlay">
+                        <p class="rec-title">${rec.title}</p>
+                      </div>
                     </a>
                   </div>
                 `).join('')}
@@ -2211,7 +2227,9 @@ if (data.recommendations?.length) {
                        alt="${rec.title}" 
                        data-placeholder="/static/core/img/placeholder.png" 
                        onerror="this.onerror=null;this.src=this.dataset.placeholder;" />
-                  <p class="rec-title">${rec.title}</p>
+                  <div class="card-title-overlay">
+                    <p class="rec-title">${rec.title}</p>
+                  </div>
                 </a>
               </div>
             `).join('')}
