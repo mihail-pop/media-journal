@@ -81,14 +81,14 @@
           <div class="media-card" {% if media.url and media.url != '#' %}style="cursor: pointer;" onclick="window.location.href='{{ media.url }}'"{% endif %}>
             <div class="media-image-wrapper">
               <img src="{% if media.poster_path %}{{ media.poster_path }}{% elif media.image %}{{ media.image }}{% else %}{% static 'core/img/placeholder.png' %}{% endif %}" alt="{{ media.title }}" onerror="this.src='{% static 'core/img/placeholder.png' %}'" />
-              <div class="media-overlay">
-                {% if media.type_display %}<p class="overlay-type">{{ media.type_display }}</p>{% endif %}
-                {% if media.formatted_date %}<p class="overlay-date">{{ media.formatted_date }}</p>{% endif %}
-              </div>
             </div>
             <div class="card-title-overlay">
               <p class="media-title">{{ media.title }}</p>
               {% if media.character %}<p class="media-character">{{ media.character }}</p>{% endif %}
+              <div class="media-meta-row">
+                {% if media.type_display %}<span class="media-type">{{ media.type_display }}</span>{% endif %}
+                {% if media.formatted_date %}<span class="media-year">{{ media.formatted_date|slice:"-4:" }}</span>{% endif %}
+              </div>
             </div>
           </div>
           {% endfor %}
@@ -97,13 +97,13 @@
           <div class="media-card" {% if media.url and media.url != '#' %}style="cursor: pointer;" onclick="window.location.href='{{ media.url }}'"{% endif %}>
             <div class="media-image-wrapper">
               <img src="{% if media.poster_path %}{{ media.poster_path }}{% elif media.image %}{{ media.image }}{% else %}{% static 'core/img/placeholder.png' %}{% endif %}" alt="{{ media.title }}" onerror="this.src='{% static 'core/img/placeholder.png' %}'" />
-              <div class="media-overlay">
-                {% if media.type_display %}<p class="overlay-type">{{ media.type_display }}</p>{% endif %}
-                {% if media.formatted_date %}<p class="overlay-date">{{ media.formatted_date }}</p>{% endif %}
-              </div>
             </div>
             <div class="card-title-overlay">
               <p class="media-title">{{ media.title }}</p>
+              <div class="media-meta-row">
+                {% if media.type_display %}<span class="media-type">{{ media.type_display }}</span>{% endif %}
+                {% if media.formatted_date %}<span class="media-year">{{ media.formatted_date|slice:"-4:" }}</span>{% endif %}
+              </div>
             </div>
           </div>
           {% endfor %}
@@ -121,12 +121,10 @@
         <div class="media-card">
           <div class="media-image-wrapper">
             <img src="{% if va.image %}{{ va.image }}{% else %}{% static 'core/img/placeholder.png' %}{% endif %}" alt="{{ va.name }}" onerror="this.src='{% static 'core/img/placeholder.png' %}'" />
-            <div class="media-overlay">
-              <p class="overlay-type">{{ va.language }}</p>
-            </div>
           </div>
           <div class="card-title-overlay">
             <p class="media-title">{{ va.name }}</p>
+            <span class="media-language">{{ va.language }}</span>
           </div>
         </div>
         {% endfor %}

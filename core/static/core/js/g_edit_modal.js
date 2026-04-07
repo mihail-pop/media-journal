@@ -28,6 +28,9 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
+  // Expose globally for use by m_lists.js
+  window.setModalBanner = setModalBanner;
+
 const statusLabelsMap = {
   movie: {
     ongoing: "Watching",
@@ -452,7 +455,7 @@ choicesSorted.forEach(choice => {
   document.addEventListener('click', function(e) {
     if (e.target.classList.contains('edit-card-btn') || e.target.closest('.edit-card-btn')) {
       const button = e.target.classList.contains('edit-card-btn') ? e.target : e.target.closest('.edit-card-btn');
-      const card = button.closest(".card");
+      const card = button.closest(".card") || button.closest(".list-row");
       if (!card) return;
       
       e.preventDefault();

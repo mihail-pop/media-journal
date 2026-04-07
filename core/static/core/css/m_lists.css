@@ -373,6 +373,7 @@ html {
   cursor: pointer;
   width: 150px;
   height: 210px;
+  border-radius: 3px 3px 0 0;
 }
 
 /* Game-specific card height */

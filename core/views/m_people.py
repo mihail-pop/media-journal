@@ -125,28 +125,50 @@ def load_more_cast(request):
 
             has_more = end_idx < len(all_cast)
 
-        elif source == "mal":
+        elif source in ["mal", "anilist"]:
             # For anime/manga, use AniList API
-            query = """
-            query ($id: Int, $type: MediaType, $page: Int) {
-              Media(idMal: $id, type: $type) {
-                characters(sort: [ROLE, RELEVANCE], page: $page, perPage: 25) {
-                  pageInfo {
-                    hasNextPage
-                  }
-                  nodes {
-                    id
-                    name {
-                      full
-                    }
-                    image {
-                      large
+            if source == "anilist":
+                query = """
+                query ($id: Int, $type: MediaType, $page: Int) {
+                  Media(id: $id, type: $type) {
+                    characters(sort: [ROLE, RELEVANCE], page: $page, perPage: 25) {
+                      pageInfo {
+                        hasNextPage
+                      }
+                      nodes {
+                        id
+                        name {
+                          full
+                        }
+                        image {
+                          large
+                        }
+                      }
                     }
                   }
                 }
-              }
-            }
-            """
+                """
+            else:
+                query = """
+                query ($id: Int, $type: MediaType, $page: Int) {
+                  Media(idMal: $id, type: $type) {
+                    characters(sort: [ROLE, RELEVANCE], page: $page, perPage: 25) {
+                      pageInfo {
+                        hasNextPage
+                      }
+                      nodes {
+                        id
+                        name {
+                          full
+                        }
+                        image {
+                          large
+                        }
+                      }
+                    }
+                  }
+                }
+                """
 
             # For AniList: page 1 gets remaining 17 from first page, page 2+ gets full pages
             if page == 1:

@@ -1089,7 +1089,6 @@ updateSortButtons();
     const sourceId = element.dataset.sourceId;
 
     const modal = document.getElementById('edit-modal');
-    const banner = modal.querySelector('.modal-banner');
     const cover = modal.querySelector('.modal-cover img');
     const titleElement = modal.querySelector('.modal-title');
     const overlay = document.getElementById('edit-overlay');
@@ -1100,6 +1099,11 @@ updateSortButtons();
 
     if (cover && coverUrl) {
       cover.src = coverUrl;
+    }
+
+    // Set banner using the function from g_edit_modal.js
+    if (window.setModalBanner) {
+      window.setModalBanner(bannerUrl, mediaType);
     }
 
     const form = document.getElementById("edit-form");

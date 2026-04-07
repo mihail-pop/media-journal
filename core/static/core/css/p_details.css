@@ -405,6 +405,10 @@ body[data-media-type="music"] .poster {
   color: rgb(240, 240, 240);
 }
 
+.media-card:hover .media-title {
+  color: rgb(197, 197, 197);
+}
+
 .recommendation a:hover .rec-title {
   color: rgb(240, 240, 240);
 }
@@ -1740,6 +1744,7 @@ body[data-page-type="person-detail"] .overview {
   position: relative;
   width: 120px;
   height: 180px;
+  border-bottom: 1px solid transparent;
 }
 
 .media-image-wrapper img {
@@ -1792,6 +1797,33 @@ body[data-page-type="person-detail"] .overview {
   font-weight: 400;
 }
 
+.media-meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.7rem;
+}
+
+.media-type {
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.media-year {
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 400;
+}
+
+.media-language {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.75rem;
+  font-weight: 400;
+  margin-top: 0.2rem;
+  display: block;
+}
+
 .spoiler {
   background-color: var(--text-overview);
   color: var(--text-overview);
@@ -1808,7 +1840,6 @@ body[data-page-type="person-detail"] .overview {
 .media-title {
   font-size: 0.85rem;
   margin: 0;
-  line-height: 1.2;
   font-weight: 500;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -1852,13 +1883,10 @@ body[data-page-type="person-detail"] .overview {
   color: var(--text-title);
   margin-top: 0.5rem;
   margin-bottom: 0.7rem;
+  cursor: default;
 }
 
 /* Specific overlay for voice actors */
-.voice-actors-list .media-overlay {
-  padding: 6px 4px 4px;
-}
-
 .voice-actors-list .overlay-type {
   font-size: 0.65rem;
   font-weight: 400;
@@ -2055,8 +2083,8 @@ body[data-page-type="person-detail"] .overview {
   .recommendation,
   .person-card,
   .media-card {
-    width: 200px !important;
-    height: 300px !important;
+    width: 215px !important;
+    height: 322.5px !important;
   }
 
   .cast-member img,
@@ -2066,8 +2094,8 @@ body[data-page-type="person-detail"] .overview {
   .person-card img,
   .media-image-wrapper img,
   .media-image-wrapper {
-    width: 200px !important;
-    height: 300px !important;
+    width: 215px !important;
+    height: 322.5px !important;
   }
 
   .card-title-overlay {

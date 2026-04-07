@@ -239,7 +239,9 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
     
     // Add hover events
+    let isHovering = false;
     card.addEventListener('mouseenter', async (e) => {
+      isHovering = true;
       const btn = card.querySelector('.add-to-list-btn');
       const source = item.source;
       const source_id = item.id;
@@ -254,18 +256,23 @@ document.addEventListener('DOMContentLoaded', () => {
         const response = await fetch(url);
         const data = await response.json();
         
-        if (!data.in_list) {
+        if (!data.in_list && isHovering) {
           btn.style.display = 'block';
         }
       } catch (error) {
-        btn.style.display = 'block';
+        if (isHovering) {
+          btn.style.display = 'block';
+        }
       }
       
       // Show tooltip
-      showTooltip(e, item);
+      if (isHovering) {
+        showTooltip(e, item);
+      }
     });
     
     card.addEventListener('mouseleave', () => {
+      isHovering = false;
       const btn = card.querySelector('.add-to-list-btn');
       btn.style.display = 'none';
       hideTooltip();
@@ -641,7 +648,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const btn = card.querySelector('.add-to-list-btn');
         const itemData = JSON.parse(decodeURIComponent(btn.dataset.item));
         
+        let isHovering = false;
         card.addEventListener('mouseenter', async (e) => {
+          isHovering = true;
           const source = itemData.source;
           const source_id = itemData.id;
           const mal_id = itemData.mal_id;
@@ -652,14 +661,15 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             const response = await fetch(url);
             const data = await response.json();
-            if (!data.in_list) btn.style.display = 'block';
+            if (!data.in_list && isHovering) btn.style.display = 'block';
           } catch {
-            btn.style.display = 'block';
+            if (isHovering) btn.style.display = 'block';
           }
-          showTooltip(e, itemData);
+          if (isHovering) showTooltip(e, itemData);
         });
         
         card.addEventListener('mouseleave', () => {
+          isHovering = false;
           btn.style.display = 'none';
           hideTooltip();
         });

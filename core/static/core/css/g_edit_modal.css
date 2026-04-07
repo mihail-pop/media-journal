@@ -238,10 +238,6 @@ html.modal-open {
   display: block;
 }
 
-.modal-banner:has(img[alt="game"]) {
-  border-bottom: 1px solid var(--modal-bg);
-}
-
 body[data-media-type="history"] .modal-banner {
   border-bottom: 1px solid var(--modal-bg);
 }
