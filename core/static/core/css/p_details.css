@@ -405,6 +405,10 @@ body[data-media-type="music"] .poster {
   color: rgb(240, 240, 240);
 }
 
+.recommendations-list:hover .rec-title{
+  color: rgb(240, 240, 240);
+}
+
 .media-card:hover .media-title {
   color: rgb(197, 197, 197);
 }
@@ -1443,13 +1447,51 @@ body[data-media-type="music"] .poster {
 .trailer-grid {
   display: grid;
   grid-template-columns: 1fr;
-  /* single column by default */
+  transition: all 0.3s ease;
+  margin-bottom: 1rem;
+}
+
+.trailer-grid.small {
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.trailer-grid.small iframe {
+  margin-bottom: 0;
+}
+
+.trailer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.5rem;
+  margin-bottom: 0.7rem;
+}
+
+.trailer-header h2 {
+  margin: 0;
+  cursor: default;
+}
+
+.trailer-size-btn {
+  background: none;
+  border: 1px solid var(--border-color);
+  color: var(--text-overview);
+  padding: 0.4em 1em;
+  font-size: 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.trailer-size-btn:hover {
+  background-color: var(--hover-bg);
+  color: var(--text-title);
 }
 
 #trailer-container h2,
 .seasons-section h2 {
   margin-top: 0.5rem;
-  margin-bottom: 0.7rem;
   cursor: default;
 }
 
@@ -2128,7 +2170,8 @@ body[data-page-type="person-detail"] .overview {
 
   .load-more-btn,
   .inline-form button,
-  .music-control-btn {
+  .music-control-btn,
+  .trailer-size-btn {
     font-size: 2rem;
   }
 

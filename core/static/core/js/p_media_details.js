@@ -1650,10 +1650,21 @@ if (data.trailers?.length) {
 
   const container = document.getElementById("trailer-container");
   if (container) {
+    const isSmall = localStorage.getItem('trailerSize') === 'small';
     container.innerHTML = `
-      <h2>${data.trailers.length === 1 ? 'Trailer' : 'Trailers'}</h2>
-      <div class="trailer-grid">${trailerEmbeds}</div>
+      <div class="trailer-header">
+        <h2>${data.trailers.length === 1 ? 'Trailer' : 'Trailers'}</h2>
+        <button id="trailer-size-toggle" class="trailer-size-btn">Toggle Size</button>
+      </div>
+      <div class="trailer-grid${isSmall ? ' small' : ''}">${trailerEmbeds}</div>
     `;
+    
+    const toggleBtn = container.querySelector('#trailer-size-toggle');
+    const grid = container.querySelector('.trailer-grid');
+    toggleBtn.addEventListener('click', () => {
+      grid.classList.toggle('small');
+      localStorage.setItem('trailerSize', grid.classList.contains('small') ? 'small' : 'large');
+    });
   }
 }
 
@@ -1809,10 +1820,21 @@ if (data.trailers?.length) {
 
   const container = document.getElementById("trailer-container");
   if (container) {
+    const isSmall = localStorage.getItem('trailerSize') === 'small';
     container.innerHTML = `
-      <h2>${data.trailers.length === 1 ? 'Trailer' : 'Trailers'}</h2>
-      <div class="trailer-grid">${trailerEmbeds}</div>
+      <div class="trailer-header">
+        <h2>${data.trailers.length === 1 ? 'Trailer' : 'Trailers'}</h2>
+        <button id="trailer-size-toggle" class="trailer-size-btn">Toggle Size</button>
+      </div>
+      <div class="trailer-grid${isSmall ? ' small' : ''}">${trailerEmbeds}</div>
     `;
+    
+    const toggleBtn = container.querySelector('#trailer-size-toggle');
+    const grid = container.querySelector('.trailer-grid');
+    toggleBtn.addEventListener('click', () => {
+      grid.classList.toggle('small');
+      localStorage.setItem('trailerSize', grid.classList.contains('small') ? 'small' : 'large');
+    });
   }
 }
 
@@ -2022,10 +2044,21 @@ if (data.trailers?.length) {
 
   const container = document.getElementById("trailer-container");
   if (container) {
+    const isSmall = localStorage.getItem('trailerSize') === 'small';
     container.innerHTML = `
-      <h2>${data.trailers.length === 1 ? 'Trailer' : 'Trailers'}</h2>
-      <div class="trailer-grid">${trailerEmbeds}</div>
+      <div class="trailer-header">
+        <h2>${data.trailers.length === 1 ? 'Trailer' : 'Trailers'}</h2>
+        <button id="trailer-size-toggle" class="trailer-size-btn">Toggle Size</button>
+      </div>
+      <div class="trailer-grid${isSmall ? ' small' : ''}">${trailerEmbeds}</div>
     `;
+    
+    const toggleBtn = container.querySelector('#trailer-size-toggle');
+    const grid = container.querySelector('.trailer-grid');
+    toggleBtn.addEventListener('click', () => {
+      grid.classList.toggle('small');
+      localStorage.setItem('trailerSize', grid.classList.contains('small') ? 'small' : 'large');
+    });
   }
 }
 
@@ -2126,10 +2159,21 @@ if (data.trailers?.length) {
 
   const container = document.getElementById("trailer-container");
   if (container) {
+    const isSmall = localStorage.getItem('trailerSize') === 'small';
     container.innerHTML = `
-      <h2>${data.trailers.length === 1 ? 'Trailer' : 'Trailers'}</h2>
-      <div class="trailer-grid">${trailerEmbeds}</div>
+      <div class="trailer-header">
+        <h2>${data.trailers.length === 1 ? 'Trailer' : 'Trailers'}</h2>
+        <button id="trailer-size-toggle" class="trailer-size-btn">Toggle Size</button>
+      </div>
+      <div class="trailer-grid${isSmall ? ' small' : ''}">${trailerEmbeds}</div>
     `;
+    
+    const toggleBtn = container.querySelector('#trailer-size-toggle');
+    const grid = container.querySelector('.trailer-grid');
+    toggleBtn.addEventListener('click', () => {
+      grid.classList.toggle('small');
+      localStorage.setItem('trailerSize', grid.classList.contains('small') ? 'small' : 'large');
+    });
   }
 }
 
