@@ -5,6 +5,7 @@ __pycache__/
 *.pyd
 .env
 *.log
+.cleanup_runs
 
 .vscode/
 /staticfiles/

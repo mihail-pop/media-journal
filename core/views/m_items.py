@@ -426,8 +426,32 @@ def refresh_item(request):
             media_type=media_type,
             **{lookup_key: str(source_id)}
         )
+
+        # --- Capture newly downloaded file paths before they are overwritten by user_data ---
+        new_paths_to_delete = []
+        if banner_backup and new_item.banner_url and new_item.banner_url.startswith("/media/"):
+            new_paths_to_delete.append(os.path.join(settings.MEDIA_ROOT, new_item.banner_url.replace("/media/", "")))
+        
+        if cover_backup and new_item.cover_url and new_item.cover_url.startswith("/media/"):
+            new_paths_to_delete.append(os.path.join(settings.MEDIA_ROOT, new_item.cover_url.replace("/media/", "")))
+
+        if screenshot_backups and new_item.screenshots:
+            for shot in new_item.screenshots:
+                url = shot.get("url", "")
+                if url.startswith("/media/"):
+                    new_paths_to_delete.append(os.path.join(settings.MEDIA_ROOT, url.replace("/media/", "")))
+
+        # Restore user data (This overwrites new_item with the old URLs)
         for field, value in user_data.items():
             setattr(new_item, field, value)
+
+        # Delete the orphaned newly downloaded files
+        for path in new_paths_to_delete:
+            if os.path.exists(path):
+                try:
+                    os.remove(path)
+                except Exception:
+                    pass
 
         # Restore backed up images
         if banner_backup:

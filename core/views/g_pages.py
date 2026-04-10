@@ -16,6 +16,7 @@ from core.models import APIKey, NavItem, MediaItem, FavoritePerson
 from core.services.p_home import (
     start_tmdb_background_loop,
     start_anilist_background_loop,
+    start_media_cleanup_loop,
 )
 from core.services.m_people import fetch_actor_data, fetch_character_data
 
@@ -25,6 +26,7 @@ logger = logging.getLogger(__name__)
 def home(request):
     start_tmdb_background_loop()
     start_anilist_background_loop()
+    start_media_cleanup_loop()
 
     limit = 25
 

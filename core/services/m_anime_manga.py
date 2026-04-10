@@ -445,7 +445,11 @@ def get_anime_extra_info(media_type, anilist_id=None, mal_id=None):
         # --- External Links & Staff ---
         external_links = [
             {"site": l["site"], "url": l["url"], "language": l.get("language") or ""}
-            for l in data.get("externalLinks", []) if l.get("site") and l.get("url")  # noqa: E741
+            for l in data.get("externalLinks", [])
+            # Ensure the keys exist
+            if l.get("site") and l.get("url")
+            # Perform security check on the URL
+            and l["url"].startswith(('http://', 'https://', '/'))
         ]
         staff_list = [
             f"{e['node']['name']['full']} ({e['role']})"
@@ -629,7 +633,9 @@ def get_manga_extra_info(media_type, anilist_id=None, mal_id=None):
         # --- External Links ---
         external_links = [
             {"site": l["site"], "url": l["url"], "language": l.get("language") or ""}
-            for l in data.get("externalLinks", []) if l.get("site") and l.get("url")  # noqa: E741
+            for l in data.get("externalLinks", [])
+            if l.get("site") and l.get("url")
+            and l["url"].startswith(('http://', 'https://', '/'))
         ]
 
         # --- Staff ---

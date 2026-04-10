@@ -1,7 +1,10 @@
+import re
+import html
+from html.parser import HTMLParser
+
 from django import template
 from django.utils.timezone import now
 from django.utils.safestring import mark_safe
-import re
 
 register = template.Library()
 
@@ -83,48 +86,82 @@ def timesince_one_unit(value):
     else:
         return f"{years} year{'s' if years != 1 else ''} ago"
 
+class SecureHTMLParser(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.allowed_tags = {'br', 'strong', 'b', 'em', 'i', 'u', 'p', 'span', 'div'}
+        self.result = []
+        self.in_script = 0  # Counter to completely ignore content inside <script> or <style>
+
+    def handle_starttag(self, tag, attrs):
+        tag = tag.lower()
+        if tag in ['script', 'style']:
+            self.in_script += 1
+        elif not self.in_script and tag in self.allowed_tags:
+            
+            # Allow spoiler class on spans
+            if tag == 'span':
+                for attr_name, attr_value in attrs:
+                    if attr_name == 'class' and attr_value and 'spoiler' in attr_value.lower():
+                        self.result.append('<span class="spoiler">')
+                        return
+
+            # Rebuild the tag with zero attributes. 
+            self.result.append(f"<{tag}>")
+
+    def handle_endtag(self, tag):
+        tag = tag.lower()
+        if tag in ['script', 'style']:
+            self.in_script = max(0, self.in_script - 1)
+        elif not self.in_script and tag in self.allowed_tags:
+            self.result.append(f"</{tag}>")
+
+    def handle_data(self, data):
+        if not self.in_script:
+            # Safely escape any random text (e.g. converting < and > to &lt; and &gt;)
+            self.result.append(html.escape(data))
+
+    # Handle special characters like &amp; 
+    def handle_entityref(self, name):
+        if not self.in_script:
+            self.result.append(f"&{name};")
+
+    def handle_charref(self, name):
+        if not self.in_script:
+            self.result.append(f"&#{name};")
+
+    def get_clean_html(self):
+        return "".join(self.result)
+
+
 @register.filter
 def safe_html(value):
     """
-    Whitelist safe HTML tags and strip hrefs from links.
-    Allows: br, strong, b, em, i, u, p, span, div
-    Removes: script tags, unknown tags, and href attributes
+    Whitelist safe HTML tags, strip ALL attributes, remove scripts,
+    convert Markdown bold to HTML, and smartly convert text newlines.
     """
     if not value:
         return ''
     
-    # Remove script tags and their content
-    value = re.sub(r'<script[^>]*>.*?</script>', '', value, flags=re.DOTALL | re.IGNORECASE)
+    # Convert markdown to html
+    value = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', value)
+    value = re.sub(r'\*(.+?)\*', r'<em>\1</em>', value)
+    value = re.sub(r'\_(.+?)\_', r'<em>\1</em>', value)
+
+    # Parse and sanitize the HTML
+    parser = SecureHTMLParser()
+    parser.feed(value)
+    clean_text = parser.get_clean_html()
     
-    # Strip href from <a> tags but keep the text
-    value = re.sub(r'<a[^>]*>([^<]*)</a>', r'\1', value, flags=re.IGNORECASE)
+    # Normalize Windows/Mac newlines to standard \n
+    text = clean_text.replace('\r\n', '\n').replace('\r', '\n')
     
-    # Whitelist allowed tags
-    allowed_tags = ['br', 'strong', 'b', 'em', 'i', 'u', 'p', 'span', 'div']
+    # Fix double spacing
+    text = re.sub(r'(\n[ \t]*)+<br>', '<br>', text)  # Removes \n before <br>
+    text = re.sub(r'<br>([ \t]*\n)+', '<br>', text)  # Removes \n after <br>
     
-    # Remove all tags except whitelisted ones
-    def replace_tag(match):
-        full_tag = match.group(0)
-        tag_content = match.group(2).strip()
-        
-        if not tag_content:
-            return ''
-        
-        # Extract tag name (first word, without attributes)
-        tag_parts = tag_content.split()
-        if not tag_parts:
-            return ''
-        
-        tag_name = tag_parts[0].lower()
-        
-        # Handle closing tags
-        if tag_name.startswith('/'):
-            tag_name = tag_name[1:]
-        
-        if tag_name in allowed_tags:
-            return full_tag
-        return ''  # Remove unknown tags
+    # Convert all remaining, meaningful newlines into <br> tags
+    formatted_text = text.replace('\n', '<br>')
     
-    value = re.sub(r'<(/?)([^>]*)>', replace_tag, value)
-    
-    return mark_safe(value)
+    # Mark safe for django so it renders the html
+    return mark_safe(formatted_text)

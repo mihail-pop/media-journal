@@ -265,6 +265,17 @@ def tmdb_detail(request, media_type, tmdb_id):
     settings = AppSettings.objects.first()
     theme_mode = settings.theme_mode if settings else "dark"
 
+    raw_recs = data.get("recommendations", {}).get("results", [])[:16]
+
+    recommendations = [
+        {
+            "id": rec.get("id"),
+            "title": rec.get("title") or rec.get("name"),
+            "poster_path": rec.get("poster_path"),
+        }
+        for rec in raw_recs
+    ]
+
     return render(
         request,
         "core/p_media_details.html",
@@ -282,7 +293,7 @@ def tmdb_detail(request, media_type, tmdb_id):
             "release_date": formatted_release_date,
             "genres": data.get("genres", []),
             "cast": cast_data,
-            "recommendations": data.get("recommendations", {}).get("results", [])[:16],
+            "recommendations": recommendations,
             "seasons": seasons,
             "page_type": media_type,
             "theme_mode": theme_mode,

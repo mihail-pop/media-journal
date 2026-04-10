@@ -1525,45 +1525,48 @@ document.addEventListener('keydown', function(e) {
 });
 });
 
-document.getElementById("more-info-btn").addEventListener("click", async function() {
-  const btn = this;
-  const container = document.getElementById("extra-info-container");
-  const mediaType = document.body.dataset.mediaType; // e.g., "movie", "tv", "anime"
-  const sourceId = document.body.dataset.sourceId;
+const moreInfoBtn = document.getElementById("more-info-btn");
 
-  const source = document.body.dataset.source || 'mal'; 
+if (moreInfoBtn) {
+  document.getElementById("more-info-btn").addEventListener("click", async function() {
+    const btn = this;
+    const container = document.getElementById("extra-info-container");
+    const mediaType = document.body.dataset.mediaType; // e.g., "movie", "tv", "anime"
+    const sourceId = document.body.dataset.sourceId;
 
-  btn.disabled = true;
-  btn.textContent = "Loading...";
+    const source = document.body.dataset.source || 'mal'; 
 
-  try {
-    let url = `/api/get-extra-info/?media_type=${mediaType}&item_id=${sourceId}&source=${source}`;
-    
-    // For music, add artist_id and album_id if available
-    if (mediaType === 'music') {
-      const artistId = document.body.dataset.artistId || '';
-      const albumId = document.body.dataset.albumId || '';
-      if (artistId) url += `&artist_id=${artistId}`;
-      if (albumId) url += `&album_id=${albumId}`;
+    btn.disabled = true;
+    btn.textContent = "Loading...";
+
+    try {
+      let url = `/api/get-extra-info/?media_type=${mediaType}&item_id=${sourceId}&source=${source}`;
+      
+      // For music, add artist_id and album_id if available
+      if (mediaType === 'music') {
+        const artistId = document.body.dataset.artistId || '';
+        const albumId = document.body.dataset.albumId || '';
+        if (artistId) url += `&artist_id=${artistId}`;
+        if (albumId) url += `&album_id=${albumId}`;
+      }
+      
+      const response = await fetch(url);
+      if (!response.ok) throw new Error("Network response was not ok");
+
+      const data = await response.json();
+
+      // Render the data as HTML in the container (you'll write this function)
+      container.innerHTML = renderExtraInfo(mediaType, data);
+
+      btn.style.display = "none"; // Hide button after successful fetch
+    } catch (error) {
+      container.innerHTML = `<p style="color:red;">Failed to load extra information.</p>`;
+      btn.disabled = false;
+      btn.textContent = "More information";
+      console.error(error);
     }
-    
-    const response = await fetch(url);
-    if (!response.ok) throw new Error("Network response was not ok");
-
-    const data = await response.json();
-
-    // Render the data as HTML in the container (you'll write this function)
-    container.innerHTML = renderExtraInfo(mediaType, data);
-
-    btn.style.display = "none"; // Hide button after successful fetch
-  } catch (error) {
-    container.innerHTML = `<p style="color:red;">Failed to load extra information.</p>`;
-    btn.disabled = false;
-    btn.textContent = "More information";
-    console.error(error);
-  }
-});
-
+  });
+}
 // Helper function to render the extra info HTML per media type
 function renderExtraInfo(mediaType, data) {
 

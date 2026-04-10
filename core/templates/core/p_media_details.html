@@ -404,12 +404,10 @@
       {% endif %}
     {% else %}
       <div class="cast-member">
-        {% if media_type != "book" %}
         <img src="{% if member.is_full_url %}{{ member.profile_path }}{% else %}https://image.tmdb.org/t/p/w185{{ member.profile_path }}{% endif %}"
              alt="{{ member.name }}"
              data-placeholder="{% static 'core/img/placeholder.png' %}"
              onerror="this.onerror=null;this.src=this.dataset.placeholder;" />
-        {% endif %}
         <div class="card-title-overlay">
           <p class="actor-name">{{ member.name }}</p>
           <p class="character-name">{{ member.character }}</p>

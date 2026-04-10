@@ -6,6 +6,7 @@ __pycache__/
 
 /staticfiles/
 .vscode/
+.cleanup_runs
 
 # Ignore all files in media and its subfolders
 /media/*
@@ -15,6 +16,7 @@ __pycache__/
 !/media/.gitkeep
 !/media/banners/
 !/media/cast/
+!/media/episodes/
 !/media/favorites/
 !/media/favorites/actors/
 !/media/favorites/characters/
@@ -25,6 +27,7 @@ __pycache__/
 
 !/media/banners/.gitkeep
 !/media/cast/.gitkeep
+!/media/episodes/.gitkeep
 !/media/favorites/.gitkeep
 !/media/favorites/actors/.gitkeep
 !/media/favorites/characters/.gitkeep

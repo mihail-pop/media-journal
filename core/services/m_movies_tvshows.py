@@ -542,13 +542,15 @@ def get_tv_extra_info(tmdb_id):
             if first_ep:
                 episode_runtime = first_ep.get("runtime")
 
+        homepage_url = data.get("homepage")
+
         return {
             "status": data.get("status"),
             "next_episode_data": next_episode_data,
             "last_episode_data": last_episode_data,
             "networks": [n.get("name") for n in data.get("networks", [])],
             "vote_average": round(data.get("vote_average", 0), 1),
-            "homepage": data.get("homepage"),
+            "homepage": homepage_url if homepage_url and homepage_url.startswith(('http://', 'https://', '/')) else None,
             "genres": [genre["name"] for genre in data.get("genres", [])],
             "trailers": trailers,
             "staff": staff_list,

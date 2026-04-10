@@ -361,9 +361,12 @@ def get_game_extra_info(game_id):
             "rating": round(game["rating"] / 10, 1)
             if game.get("rating") is not None
             else None,
-            "websites": [w.get("url") for w in game.get("websites", [])]
-            if game.get("websites")
-            else [],
+            "websites": [
+                w.get("url")
+                for w in game.get("websites", [])
+                # Add a filter condition inside the comprehension
+                if w.get("url") and w.get("url").startswith(('http://', 'https://', '/'))
+            ],
             "trailers": trailers,
             "recommendations": recommendations,
             "expansions": expansions,
