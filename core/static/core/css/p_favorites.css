@@ -23,7 +23,7 @@
   --text-primary: #e2c7b7;
   --text-secondary: #f1dbce;
   --text-light: #faeee7;
-  --border-color: #fffffe;
+  --border-color: #8d6f5d;
 }
 
 html {
@@ -78,8 +78,11 @@ body {
 
 .card.dragging {
   opacity: 0.5;
-  transform: scale(0.95);
   filter: grayscale(0.8);
+  /* FIX 1: Remove transforms so the bounding box is perfect for the snapshot */
+  transform: none !important; 
+  /* FIX 2: Force a new stacking context so overflow:hidden is respected during drag */
+  isolation: isolate; 
 }
 
 .card a {
@@ -93,6 +96,19 @@ body {
   position: relative;
   overflow: hidden;
   border-radius: 4px 4px 0 0;
+
+  contain: paint; 
+}
+
+.card-image:has(img[src*="placeholder.png"]) {
+  background-color: rgb(255 254 254 / 7%);
+  aspect-ratio: 2 / 3;
+  display: block;
+  border-radius: 6px;
+}
+
+.card-image img[src*="placeholder.png"] {
+  opacity: 0;
 }
 
 .card-image img {
@@ -256,6 +272,8 @@ body.drag-active .card-favorite {
 
 .favorites-container.small-mode .card {
   border-radius: 4px;
+  overflow: hidden;
+  contain: paint;
 }
 
 .favorites-container.small-mode .card-image {

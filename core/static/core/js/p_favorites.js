@@ -55,11 +55,11 @@ document.addEventListener('DOMContentLoaded', () => {
       if (draggable) {
         draggedItem = draggable;
         
-        // Explicitly set the drag image to the poster for better visibility
-        const img = draggable.querySelector('img');
-        if (img && e.dataTransfer) {
-            const rect = img.getBoundingClientRect();
-            e.dataTransfer.setDragImage(img, rect.width / 2, rect.height / 2);
+        if (e.dataTransfer) {
+            // Use the WHOLE card for the snapshot
+            const rect = draggable.getBoundingClientRect();
+            // This captures the card exactly as it looks in the DOM
+            e.dataTransfer.setDragImage(draggable, rect.width / 2, rect.height / 2);
         }
 
         // Use a timeout to avoid the element disappearing immediately

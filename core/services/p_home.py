@@ -124,7 +124,7 @@ def start_tmdb_background_loop():
             cutoff = now - timedelta(days=30)
 
             items = MediaItem.objects.filter(media_type="tv", source="tmdb").exclude(
-                provider_ids__icontains='"_s'
+                provider_ids__tmdb__icontains='_s'
             )
             eligible = [item for item in items if item.last_updated < cutoff]
 

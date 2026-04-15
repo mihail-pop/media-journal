@@ -217,6 +217,15 @@ body {
   border-radius: 4px;
 }
 
+.card-image:has(img[src*="placeholder.png"]) {
+  background-color: rgb(255 254 254 / 7%);
+
+}
+
+.card-image img[src*="placeholder.png"] {
+  opacity: 0;
+}
+
 .card img {
   width: 100%;
   height: auto;
@@ -795,12 +804,23 @@ h2 {
 
 .activity-thumbnail {
   position: absolute;
+  border-radius: 0.5rem;
   top: 50%;
   left: calc(100% + 1rem);
   /* 1rem gap from the right edge of the link box */
   transform: translateY(-50%);
   display: none;
   z-index: 10;
+}
+
+.activity-thumbnail:has(img[src*="placeholder.png"]) {
+  background-color: rgb(255 254 254 / 7%);
+  height: 170px;
+  width: 120px;
+}
+
+.activity-thumbnail img[src*="placeholder.png"] {
+  opacity: 0;
 }
 
 .activity-thumbnail img {

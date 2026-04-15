@@ -376,6 +376,16 @@ html {
   border-radius: 3px;
 }
 
+.card-image:has(img[src*="placeholder.png"]) {
+  background-color: rgb(255 254 254 / 7%);
+  aspect-ratio: 2 / 3;
+  display: block;
+}
+
+.card-image img[src*="placeholder.png"] {
+  opacity: 0;
+}
+
 /* Card Image */
 .card img {
   width: 100%;

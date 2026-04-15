@@ -150,21 +150,29 @@
     </section>
     {% endif %}
 
-    {% if seasons %}
+{% if seasons %}
     <section class="seasons-section">
       <h2>Season{{ seasons|length|pluralize }}</h2>
       <div class="seasons-list">
         {% for season in seasons %}
         <a href="/tmdb/season/{{ source_id }}/{{ season.season_number }}/" class="season-card">
-  <img 
-    src="{{ season.poster_path_full|default:'' }}"
-    alt="{{ season.name }}"
-    data-placeholder="{% static 'core/img/placeholder.png' %}"
-    onerror="this.onerror=null;this.src=this.dataset.placeholder;"
-  />
+          <img 
+            src="{{ season.poster_path_full|default:'' }}"
+            alt="{{ season.name }}"
+            data-placeholder="{% static 'core/img/placeholder.png' %}"
+            onerror="this.onerror=null;this.src=this.dataset.placeholder;"
+          />
           <div class="card-title-overlay">
             <p class="season-name">{{ season.name }}</p>
-            <p class="episode-count">{{ season.episode_count }} episodes</p>
+            
+            {% if season.season_number > 0 and season.episode_count <= 1 %}
+              <!-- If it's a normal season (1+) and has 0 or 1 episodes, show Announced -->
+              <p class="episode-count">Announced</p>
+            {% else %}
+              <!-- For specials, or normal seasons with 2+ episodes, show the exact count with proper grammar -->
+              <p class="episode-count">{{ season.episode_count }} episode{{ season.episode_count|pluralize }}</p>
+            {% endif %}
+            
             <p class="air-date">{{ season.air_date }}</p>
           </div>
         </a>

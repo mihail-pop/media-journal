@@ -155,7 +155,7 @@ a:hover {
   background-color: var(--bg-tertiary);
   padding: 1.5rem 1rem 1rem;
   position: relative;
-  z-index: 2;
+  z-index: 100;
   min-height: 13rem;
 }
 
@@ -398,23 +398,27 @@ body[data-media-type="music"] .poster {
 }
 
 .cast-member[href]:hover .actor-name {
-  color: rgb(240, 240, 240);
+  color: rgb(175, 166, 166);
 }
 
 .season-card[href]:hover .season-name {
-  color: rgb(240, 240, 240);
+  color: rgb(175, 166, 166);
 }
 
-.recommendations-list:hover .rec-title{
-  color: rgb(240, 240, 240);
+.recommendation:hover .rec-title{
+  color: rgb(175, 166, 166);
+}
+
+.rec-card:hover .rec-title{
+  color: rgb(175, 166, 166);
 }
 
 .media-card:hover .media-title {
-  color: rgb(197, 197, 197);
+  color: rgb(175, 166, 166);
 }
 
 .recommendation a:hover .rec-title {
-  color: rgb(240, 240, 240);
+  color: rgb(175, 166, 166);
 }
 
 .cast-member img,
@@ -435,8 +439,16 @@ body[data-media-type="music"] .poster {
 .rec-card img[src*="placeholder.png"],
 .recommendation img[src*="placeholder.png"],
 .person-card img[src*="placeholder.png"],
-.media-image-wrapper img[src*="placeholder.png"] {
+.media-image-wrapper img[src*="placeholder.png"]{
   opacity: 0;
+}
+
+img.poster[src*="placeholder.png"] {
+  content: url("data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7");
+  background-color: rgb(255 254 254 / 7%);
+  display: block; 
+  opacity: 1;
+  height: 300px;
 }
 
 .card-title-overlay {
@@ -554,7 +566,6 @@ body[data-media-type="music"] .poster {
 
 /* Each person card */
 .person-card {
-  background: var(--bg-tertiary);
   border-radius: 6px;
   width: 136px;
   text-align: center;
@@ -598,7 +609,6 @@ body[data-media-type="music"] .poster {
 .person-name {
   font-size: 0.85rem;
   margin: 0;
-  line-height: 1.2;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;
@@ -675,7 +685,7 @@ body[data-media-type="music"] .poster {
   user-select: none;
   opacity: 0;
   transition: opacity 0.3s ease;
-  z-index: 5;
+  z-index: 1; 
 }
 
 .cast-member:hover .cast-favorite {

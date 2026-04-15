@@ -593,29 +593,40 @@ const statusLabelsMap = {
           return val;
       }
 
-      function compareItems(a, b) {
+function compareItems(a, b) {
         if (!a || !b) return 0;
+
+        // Helper for case-insensitive, natural string comparison
+        const compareTitles = (t1, t2) => {
+          return String(t1 || '').localeCompare(String(t2 || ''), undefined, {
+            sensitivity: 'base',
+            numeric: true
+          });
+        };
+
         // rating
         if (currentSort === 'rating') {
           const ra = normalizeRating(a.personal_rating);
           const rb = normalizeRating(b.personal_rating);
           if (ra !== rb) return ra - rb;
-          return String(a.title || '').localeCompare(String(b.title || ''));
+          return compareTitles(a.title, b.title);
         }
         // date
         if (currentSort === 'date') {
           const da = a.date_added ? new Date(a.date_added).getTime() : 0;
           const db = b.date_added ? new Date(b.date_added).getTime() : 0;
-          return da - db;
+          if (da !== db) return da - db;
+          return compareTitles(a.title, b.title);
         }
         // hours / pages
         if (currentSort === 'hours' || currentSort === 'pages') {
             const pa = Number(a.progress_main) || 0;
             const pb = Number(b.progress_main) || 0;
-            return pa - pb;
+            if (pa !== pb) return pa - pb;
+            return compareTitles(a.title, b.title);
         }
         // fallback to title
-        return String(a.title || '').localeCompare(String(b.title || ''));
+        return compareTitles(a.title, b.title);
       }
 
       // Insert into correct container/group (card or list)

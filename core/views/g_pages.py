@@ -174,9 +174,13 @@ def home(request):
     notifications_list = []
     for item in notifications:
         if item.media_type == "tv":
+            # Fail-safe: If item is a season (e.g. '123_s2'), 
+            # we extract the base ID ('123') to link to the main show page.
+            base_id = str(item.source_id).split('_')[0]
+            
             url = reverse(
-                "tmdb_detail", args=[item.media_type, item.source_id]
-            )  # adjust the name/args if needed
+                "tmdb_detail", args=[item.media_type, base_id]
+            )
         elif item.media_type in ["anime", "manga"]:
             url = reverse("anilist_detail", args=[item.source, item.media_type, item.source_id])
         else:
