@@ -41,7 +41,7 @@
   <div class="left-column">
     <!-- Poster -->
 <img class="poster" 
-     src="{{ poster_url }}" 
+     src="{{ poster_url|default:'/static/core/img/placeholder.png' }}"  
      alt="{{ title }}" 
      data-placeholder="{% static 'core/img/placeholder.png' %}" 
      onerror="this.onerror=null;this.src=this.dataset.placeholder;" />

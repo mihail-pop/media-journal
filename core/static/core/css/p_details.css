@@ -434,16 +434,16 @@ body[data-media-type="music"] .poster {
   border-bottom: 1px solid transparent;
 }
 
-.cast-member img[src*="placeholder.png"],
-.season-card img[src*="placeholder.png"],
-.rec-card img[src*="placeholder.png"],
-.recommendation img[src*="placeholder.png"],
-.person-card img[src*="placeholder.png"],
-.media-image-wrapper img[src*="placeholder.png"]{
+.cast-member img[src*="placeholder"],
+.season-card img[src*="placeholder"],
+.rec-card img[src*="placeholder"],
+.recommendation img[src*="placeholder"],
+.person-card img[src*="placeholder"],
+.media-image-wrapper img[src*="placeholder"]{
   opacity: 0;
 }
 
-img.poster[src*="placeholder.png"] {
+img.poster[src*="placeholder"] {
   content: url("data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7");
   background-color: rgb(255 254 254 / 7%);
   display: block; 
@@ -576,6 +576,7 @@ img.poster[src*="placeholder.png"] {
   display: block;
   position: relative;
   overflow: hidden;
+  background: rgba(255, 254, 254, 0.07);
 }
 
 
@@ -590,11 +591,7 @@ img.poster[src*="placeholder.png"] {
   position: relative;
 }
 
-.person-card img[src*="placeholder.png"] {
-  opacity: 0;
-}
-
-.person-card img[src*="placeholder.png"]::before {
+.person-card img[src*="placeholder"]::before {
   content: '';
   position: absolute;
   top: 0;
@@ -1176,6 +1173,16 @@ img.poster[src*="placeholder.png"] {
   cursor: pointer;
 }
 
+.episode-image-container:has(img[src*="placeholder"]) {
+  background-color: rgb(255 254 254 / 7%);
+  border-radius: 4px;
+  display: block;
+}
+
+.episode-image-container img[src*="placeholder"] {
+  opacity: 0;
+}
+
 .episode-card img {
   width: 160px;
   height: 90px;
@@ -1239,6 +1246,17 @@ img.poster[src*="placeholder.png"] {
   transform: translate(-50%, -50%);
   max-width: 90%;
   max-height: 90%;
+}
+
+.image-modal-content:has(img[src*="placeholder"]) {
+  background-color: rgb(255 254 254 / 7%);
+  aspect-ratio: 16 / 9;
+  min-width: 300px;
+  border-radius: 8px;
+}
+
+.image-modal-content img[src*="placeholder"] {
+  opacity: 0;
 }
 
 .image-modal-content img {
@@ -1808,11 +1826,11 @@ body[data-page-type="person-detail"] .overview {
   position: relative;
 }
 
-.media-image-wrapper img[src*="placeholder.png"] {
+.media-image-wrapper img[src*="placeholder"] {
   opacity: 0;
 }
 
-.media-image-wrapper img[src*="placeholder.png"]::before {
+.media-image-wrapper img[src*="placeholder"]::before {
   content: '';
   position: absolute;
   top: 0;
@@ -2155,12 +2173,12 @@ body[data-page-type="person-detail"] .overview {
     padding: 0.8rem;
   }
 
-  .cast-member img[src*="placeholder.png"],
-  .season-card img[src*="placeholder.png"],
-  .rec-card img[src*="placeholder.png"],
-  .recommendation img[src*="placeholder.png"],
-  .person-card img[src*="placeholder.png"],
-  .media-image-wrapper img[src*="placeholder.png"] {
+  .cast-member img[src*="placeholder"],
+  .season-card img[src*="placeholder"],
+  .rec-card img[src*="placeholder"],
+  .recommendation img[src*="placeholder"],
+  .person-card img[src*="placeholder"],
+  .media-image-wrapper img[src*="placeholder"] {
     opacity: 0;
   }
 

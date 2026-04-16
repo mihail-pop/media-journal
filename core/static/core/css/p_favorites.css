@@ -100,14 +100,14 @@ body {
   contain: paint; 
 }
 
-.card-image:has(img[src*="placeholder.png"]) {
+.card-image:has(img[src*="placeholder"]) {
   background-color: rgb(255 254 254 / 7%);
   aspect-ratio: 2 / 3;
   display: block;
   border-radius: 6px;
 }
 
-.card-image img[src*="placeholder.png"] {
+.card-image img[src*="placeholder"] {
   opacity: 0;
 }
 

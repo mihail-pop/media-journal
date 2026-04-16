@@ -376,13 +376,13 @@ html {
   border-radius: 3px;
 }
 
-.card-image:has(img[src*="placeholder.png"]) {
+.card-image:has(img[src*="placeholder"]) {
   background-color: rgb(255 254 254 / 7%);
   aspect-ratio: 2 / 3;
   display: block;
 }
 
-.card-image img[src*="placeholder.png"] {
+.card-image img[src*="placeholder"] {
   opacity: 0;
 }
 

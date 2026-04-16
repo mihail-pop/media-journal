@@ -393,6 +393,19 @@ body[data-media-type="games"] .card {
   /* default crop */
 }
 
+.card-image:has(img[src*="placeholder"]) {
+  background-color: rgb(255 254 254 / 7%);
+  aspect-ratio: 2 / 3;
+  display: block;
+  position: relative;
+  overflow: hidden;
+  border-radius: 4px 4px 0 0;
+}
+
+.card-image img[src*="placeholder"] {
+  opacity: 0;
+}
+
 /* Card Image */
 .card img {
   width: 100%;

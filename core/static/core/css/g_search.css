@@ -132,7 +132,7 @@ body[data-media-type="music"] .search-card-grid {
   padding: 0.5rem;
 }
 
-.search-card img[src*="placeholder.png"] {
+.search-card img[src*="placeholder"] {
   content: url("data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7");
   background-color: rgb(255 254 254 / 7%);
   aspect-ratio: 2 / 3;

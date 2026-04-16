@@ -217,12 +217,12 @@ body {
   border-radius: 4px;
 }
 
-.card-image:has(img[src*="placeholder.png"]) {
+.card-image:has(img[src*="placeholder"]) {
   background-color: rgb(255 254 254 / 7%);
 
 }
 
-.card-image img[src*="placeholder.png"] {
+.card-image img[src*="placeholder"] {
   opacity: 0;
 }
 
@@ -813,13 +813,13 @@ h2 {
   z-index: 10;
 }
 
-.activity-thumbnail:has(img[src*="placeholder.png"]) {
+.activity-thumbnail:has(img[src*="placeholder"]) {
   background-color: rgb(255 254 254 / 7%);
   height: 170px;
   width: 120px;
 }
 
-.activity-thumbnail img[src*="placeholder.png"] {
+.activity-thumbnail img[src*="placeholder"] {
   opacity: 0;
 }
 

@@ -238,6 +238,15 @@ body {
   display: block;
 }
 
+.card .card-link img[src*="placeholder"] {
+  content: url("data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7");
+  background-color: rgb(255 254 254 / 7%);
+  aspect-ratio: 2 / 3;
+  display: block;
+  width: 100%;
+  opacity: 1;
+}
+
 .add-to-list-btn {
   position: absolute;
   top: 5px;

@@ -280,14 +280,14 @@ body[data-media-type="history"] .modal-banner {
   background: none;
 }
 
-.modal-cover:has(img[src*="placeholder.png"]) {
+.modal-cover:has(img[src*="placeholder"]) {
   background-color: rgb(255 254 254 / 7%);
   aspect-ratio: 2 / 3;
   display: block;
   overflow: hidden;
 }
 
-.modal-cover img[src*="placeholder.png"] {
+.modal-cover img[src*="placeholder"] {
   opacity: 0;
 }
 
