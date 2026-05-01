@@ -220,61 +220,67 @@ const statusLabelsMap = {
       } else {
         const table = document.createElement('table');
         let tableHeaders;
+        // Table headers with sort support
+        function th(label, sortKey) {
+          const isActive = currentSort === sortKey;
+          const arrow = isActive ? getArrow(currentSortOrder === 'asc') : '';
+          return `<th class="sortable-th" data-sort="${sortKey}">${label}${arrow}</th>`;
+        }
+
         if (mediaType === 'tvshows') {
-          tableHeaders = `<thead>
-            <tr>
-              <th>Title</th>
-              <th>Rating</th>
-              <th>Date</th>
-              <th>Episodes</th>
-              <th>Seasons</th>
-            </tr>
-          </thead>`;
+          tableHeaders = `<thead><tr>
+            ${th('Title', 'title')}
+            ${th('Rating', 'rating')}
+            ${th('Activity Date', 'activity_date')}
+            ${th('Release Date', 'release_date')}
+            ${th('Episodes', 'episodes')}
+            ${th('Seasons', 'seasons')}
+          </tr></thead>`;
         } else if (mediaType === 'anime') {
-          tableHeaders = `<thead>
-            <tr>
-              <th>Title</th>
-              <th>Rating</th>
-              <th>Date</th>
-              <th>Episodes</th>
-            </tr>
-          </thead>`;
+          tableHeaders = `<thead><tr>
+            ${th('Title', 'title')}
+            ${th('Rating', 'rating')}
+            ${th('Activity Date', 'activity_date')}
+            ${th('Release Date', 'release_date')}
+            ${th('Episodes', 'episodes')}
+          </tr></thead>`;
         } else if (mediaType === 'manga') {
-          tableHeaders = `<thead>
-            <tr>
-              <th>Title</th>
-              <th>Rating</th>
-              <th>Date</th>
-              <th>Chapters</th>
-              <th>Volumes</th>
-            </tr>
-          </thead>`;
+          tableHeaders = `<thead><tr>
+            ${th('Title', 'title')}
+            ${th('Rating', 'rating')}
+            ${th('Activity Date', 'activity_date')}
+            ${th('Release Date', 'release_date')}
+          </tr></thead>`;
         } else if (mediaType === 'games') {
-          tableHeaders = `<thead>
-            <tr>
-              <th>Title</th>
-              <th>Rating</th>
-              <th>Date</th>
-              <th>Hours</th>
-            </tr>
-          </thead>`;
+          tableHeaders = `<thead><tr>
+            ${th('Title', 'title')}
+            ${th('Rating', 'rating')}
+            ${th('Activity Date', 'activity_date')}
+            ${th('Release Date', 'release_date')}
+            ${th('Hours', 'hours')}
+          </tr></thead>`;
         } else if (mediaType === 'books') {
-          tableHeaders = `<thead>
-            <tr>
-              <th>Title</th>
-              <th>Rating</th>
-              <th>Date</th>
-              <th>Pages</th>
-            </tr>
-          </thead>`;
+          tableHeaders = `<thead><tr>
+            ${th('Title', 'title')}
+            ${th('Rating', 'rating')}
+            ${th('Activity Date', 'activity_date')}
+            ${th('Release Date', 'release_date')}
+            ${th('Pages', 'pages')}
+          </tr></thead>`;
+        } else if (mediaType === 'music') {
+          tableHeaders = `<thead><tr>
+            ${th('Title', 'title')}
+            ${th('Rating', 'rating')}
+            ${th('Activity Date', 'activity_date')}
+            ${th('Release Date', 'release_date')}
+          </tr></thead>`;
         } else {
-          tableHeaders = `<thead>
-            <tr>
-              <th>Title</th>
-              <th>Rating</th>
-              <th>Date</th>
-            </tr>
-          </thead>`;
+          tableHeaders = `<thead><tr>
+            ${th('Title', 'title')}
+            ${th('Rating', 'rating')}
+            ${th('Activity Date', 'activity_date')}
+            ${th('Release Date', 'release_date')}
+          </tr></thead>`;
         }
         
         table.innerHTML = `${tableHeaders}<tbody></tbody>`;
@@ -282,6 +288,25 @@ const statusLabelsMap = {
         const tbody = table.querySelector('tbody');
         items.forEach(item => {
           tbody.appendChild(createListRowElement(item));
+        });
+
+        // Add click listeners to table headers for sorting
+        const ths = table.querySelectorAll('.sortable-th');
+        ths.forEach(th => {
+          th.style.cursor = 'pointer';
+          th.addEventListener('click', () => {
+            const sortType = th.dataset.sort;
+            if (currentSort === sortType) {
+              currentSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
+            } else {
+              currentSort = sortType;
+              currentSortOrder = sortType === 'rating' ? 'desc' : 'asc';
+            }
+            localStorage.setItem(sortKey, currentSort);
+            localStorage.setItem(sortOrderKey, currentSortOrder);
+            updateSortButtons();
+            resetAndLoad();
+          });
         });
         
         statusGroup.appendChild(table);
@@ -356,19 +381,15 @@ const statusLabelsMap = {
       </td>
       <td>${ratingHtml}</td>
     `;
-    
-    // Add date column for all media types except books which also get date
-    if (mediaType === 'movies' || mediaType === 'tvshows' || mediaType === 'anime' || mediaType === 'manga' || mediaType === 'games' || mediaType === 'books' || mediaType === 'music') {
-      const dateFormatted = new Date(item.date_added || Date.now()).toLocaleDateString('en-GB', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric'
-      });
-      tableHtml += `<td>${dateFormatted}</td>`;
-    } else {
-      tableHtml += `<td>${item.get_status_display}</td>`;
-    }
-    
+
+    // Activity Date
+    const activityDate = item.date_added ? new Date(item.date_added).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
+    tableHtml += `<td>${activityDate}</td>`;
+
+    // Release Date
+    const releaseDate = item.release_date || '';
+    tableHtml += `<td>${releaseDate}</td>`;
+
     // Add episodes and seasons columns for TV shows
     if (mediaType === 'tvshows') {
       tableHtml += `
@@ -379,11 +400,6 @@ const statusLabelsMap = {
       tableHtml += `
         <td style="text-align: center;">${episodesHtml}</td>
       `;
-    } else if (mediaType === 'manga') {
-      tableHtml += `
-        <td style="text-align: center;">${episodesHtml}</td>
-        <td>${seasonsHtml}</td>
-      `;
     } else if (mediaType === 'games') {
       tableHtml += `
         <td style="text-align: center;">${episodesHtml}</td>
@@ -393,7 +409,7 @@ const statusLabelsMap = {
         <td style="text-align: center;">${episodesHtml}</td>
       `;
     }
-    
+
     row.innerHTML = tableHtml;
     return row;
   }

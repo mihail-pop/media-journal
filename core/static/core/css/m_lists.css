@@ -607,6 +607,11 @@ body[data-media-type="games"] .card {
   width: 50%;
 }
 
+body[data-page-type="tv"] .list-table th:nth-child(1),
+body[data-page-type="tv"] .list-table td:nth-child(1) {
+  width: 25%;
+}
+
 .list-table th:nth-child(2),
 .list-table td:nth-child(2) {
   width: 10%;
@@ -616,19 +621,26 @@ body[data-media-type="games"] .card {
 .list-table th:nth-child(3),
 .list-table td:nth-child(3) {
   color: var(--text-primary);
-  width: 20%;
+  width: 15%;
   text-align: center;
 }
 
 .list-table th:nth-child(4),
 .list-table td:nth-child(4) {
   color: var(--text-primary);
-  width: 10%;
+  width: 15%;
   text-align: center;
 }
 
 .list-table th:nth-child(5),
 .list-table td:nth-child(5) {
+  color: var(--text-primary);
+  width: 10%;
+  text-align: center;
+}
+
+.list-table th:nth-child(6),
+.list-table td:nth-child(6) {
   color: var(--text-primary);
   width: 10%;
   text-align: center;

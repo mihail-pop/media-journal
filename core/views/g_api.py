@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 
 from django.http import JsonResponse
 from django.urls import reverse
@@ -61,8 +62,11 @@ def movies_api(request):
     elif sort_by == "rating":
         order_fields.append("-rating_order" if sort_order == "desc" else "rating_order")
         order_fields.extend([Lower("title"), "title"])  # Secondary sort
-    elif sort_by == "date":
+    elif sort_by == "activity_date":
         order_fields.append("-date_added" if sort_order == "desc" else "date_added")
+        order_fields.extend([Lower("title"), "title"])  # Secondary sort
+    elif sort_by == "release_date":
+        order_fields.append("-release_date" if sort_order == "desc" else "release_date")
         order_fields.extend([Lower("title"), "title"])  # Secondary sort
 
     queryset = queryset.order_by(*order_fields)
@@ -89,6 +93,10 @@ def movies_api(request):
                 "get_status_display": item.get_status_display(),
                 "repeats": item.repeats,
                 "date_added": item.date_added.isoformat() if item.date_added else "",
+                "release_date": (
+                  datetime.strptime(item.release_date, "%Y-%m-%d").strftime("%d %b %Y")
+                  if item.release_date else ""
+                ),
             }
         )
 
@@ -164,8 +172,17 @@ def tvshows_api(request):
     elif sort_by == "rating":
         order_fields.append("-rating_order" if sort_order == "desc" else "rating_order")
         order_fields.extend([Lower("title"), "title"])  # Secondary sort
-    elif sort_by == "date":
+    elif sort_by == "activity_date":
         order_fields.append("-date_added" if sort_order == "desc" else "date_added")
+        order_fields.extend([Lower("title"), "title"])  # Secondary sort
+    elif sort_by == "release_date":
+        order_fields.append("-release_date" if sort_order == "desc" else "release_date")
+        order_fields.extend([Lower("title"), "title"])  # Secondary sort
+    elif sort_by == "episodes":
+        order_fields.append("-total_main" if sort_order == "desc" else "total_main")
+        order_fields.extend([Lower("title"), "title"])  # Secondary sort
+    elif sort_by == "seasons":
+        order_fields.append("-total_secondary" if sort_order == "desc" else "total_secondary")
         order_fields.extend([Lower("title"), "title"])  # Secondary sort
 
     queryset = queryset.order_by(*order_fields)
@@ -196,6 +213,10 @@ def tvshows_api(request):
                 "total_secondary": item.total_secondary,
                 "repeats": item.repeats,
                 "date_added": item.date_added.isoformat() if item.date_added else "",
+                "release_date": (
+                  datetime.strptime(item.release_date, "%Y-%m-%d").strftime("%d %b %Y")
+                  if item.release_date else ""
+                ),
             }
         )
 
@@ -263,8 +284,14 @@ def anime_api(request):
     elif sort_by == "rating":
         order_fields.append("-rating_order" if sort_order == "desc" else "rating_order")
         order_fields.extend([Lower("title"), "title"])  # Secondary sort
-    elif sort_by == "date":
+    elif sort_by == "activity_date":
         order_fields.append("-date_added" if sort_order == "desc" else "date_added")
+        order_fields.extend([Lower("title"), "title"])  # Secondary sort
+    elif sort_by == "release_date":
+        order_fields.append("-release_date" if sort_order == "desc" else "release_date")
+        order_fields.extend([Lower("title"), "title"])  # Secondary sort
+    elif sort_by == "episodes":
+        order_fields.append("-total_main" if sort_order == "desc" else "total_main")
         order_fields.extend([Lower("title"), "title"])  # Secondary sort
 
     queryset = queryset.order_by(*order_fields)
@@ -295,6 +322,10 @@ def anime_api(request):
                 "total_main": item.total_main,
                 "repeats": item.repeats,
                 "date_added": item.date_added.isoformat() if item.date_added else "",
+                "release_date": (
+                  datetime.strptime(item.release_date, "%Y-%m-%d").strftime("%d %b %Y")
+                  if item.release_date else ""
+                ),
             }
         )
 
@@ -362,8 +393,11 @@ def manga_api(request):
     elif sort_by == "rating":
         order_fields.append("-rating_order" if sort_order == "desc" else "rating_order")
         order_fields.extend([Lower("title"), "title"])  # Secondary sort
-    elif sort_by == "date":
+    elif sort_by == "activity_date":
         order_fields.append("-date_added" if sort_order == "desc" else "date_added")
+        order_fields.extend([Lower("title"), "title"])  # Secondary sort
+    elif sort_by == "release_date":
+        order_fields.append("-release_date" if sort_order == "desc" else "release_date")
         order_fields.extend([Lower("title"), "title"])  # Secondary sort
 
     queryset = queryset.order_by(*order_fields)
@@ -396,6 +430,10 @@ def manga_api(request):
                 "total_secondary": item.total_secondary,
                 "repeats": item.repeats,
                 "date_added": item.date_added.isoformat() if item.date_added else "",
+                "release_date": (
+                  datetime.strptime(item.release_date, "%Y-%m-%d").strftime("%d %b %Y")
+                  if item.release_date else ""
+                ),
             }
         )
 
@@ -463,8 +501,11 @@ def games_api(request):
     elif sort_by == "rating":
         order_fields.append("-rating_order" if sort_order == "desc" else "rating_order")
         order_fields.extend([Lower("title"), "title"])
-    elif sort_by == "date":
+    elif sort_by == "activity_date":
         order_fields.append("-date_added" if sort_order == "desc" else "date_added")
+        order_fields.extend([Lower("title"), "title"])
+    elif sort_by == "release_date":
+        order_fields.append("-release_date" if sort_order == "desc" else "release_date")
         order_fields.extend([Lower("title"), "title"])
     elif sort_by == "hours":
         order_fields.append("-progress_main" if sort_order == "desc" else "progress_main")
@@ -496,6 +537,10 @@ def games_api(request):
                 "total_main": item.total_main,
                 "repeats": item.repeats,
                 "date_added": item.date_added.isoformat() if item.date_added else "",
+                "release_date": (
+                  datetime.strptime(item.release_date, "%Y-%m-%d").strftime("%d %b %Y")
+                  if item.release_date else ""
+                ),
             }
         )
 
@@ -591,6 +636,10 @@ def music_api(request):
                 "get_status_display": item.get_status_display(),
                 "repeats": item.repeats,
                 "date_added": item.date_added.isoformat() if item.date_added else "",
+                "release_date": (
+                  datetime.strptime(item.release_date, "%Y-%m-%d").strftime("%d %b %Y")
+                  if item.release_date else ""
+                ),
             }
         )
 
@@ -658,8 +707,11 @@ def books_api(request):
     elif sort_by == "rating":
         order_fields.append("-rating_order" if sort_order == "desc" else "rating_order")
         order_fields.extend([Lower("title"), "title"])
-    elif sort_by == "date":
+    elif sort_by == "activity_date":
         order_fields.append("-date_added" if sort_order == "desc" else "date_added")
+        order_fields.extend([Lower("title"), "title"])
+    elif sort_by == "release_date":
+        order_fields.append("-release_date" if sort_order == "desc" else "release_date")
         order_fields.extend([Lower("title"), "title"])
     elif sort_by == "pages":
         order_fields.append("-progress_main" if sort_order == "desc" else "progress_main")
@@ -691,6 +743,10 @@ def books_api(request):
                 "total_main": item.total_main,
                 "repeats": item.repeats,
                 "date_added": item.date_added.isoformat() if item.date_added else "",
+                "release_date": (
+                  datetime.strptime(item.release_date, "%Y-%m-%d").strftime("%d %b %Y")
+                  if item.release_date else ""
+                ),
             }
         )
 
