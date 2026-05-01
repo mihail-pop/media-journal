@@ -206,6 +206,14 @@ document.addEventListener("DOMContentLoaded", function () {
       });
     }
   }
+  
+  // Hide navigation buttons if only one screenshot
+  if (screenshotsData.length <= 1) {
+    const rotator = document.querySelector('.screenshot-rotator');
+    const overlay = document.querySelector('.screenshot-overlay');
+    if (rotator) rotator.classList.add('single-screenshot');
+    if (overlay) overlay.classList.add('single-screenshot');
+  }
 });
 
 function loadMoreScreenshots() {
@@ -370,6 +378,49 @@ function handleDeleteScreenshot(btn) {
     const img = document.getElementById("screenshot-image");
     const screenshotUrl = img.src.replace(window.location.origin, "");
     const IGDB_ID = document.querySelector('.screenshots-background').dataset.igdbId;
+
+    // If deleting will leave only 1 screenshot, refresh the page for consistency
+    if (screenshotsData.length === 2) {
+      const formData = new FormData();
+      formData.append("igdb_id", IGDB_ID);
+      formData.append("screenshot_url", screenshotUrl);
+
+      fetch("/upload-game-screenshots/", {
+        method: "POST",
+        headers: {
+          "X-CSRFToken": getCookie("csrftoken"),
+          "X-Action": "delete",
+        },
+        body: formData,
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          sessionStorage.setItem("refreshSuccess", "1");
+          window.location.reload();
+        } else {
+          alert(data.message);
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        alert("Failed to delete screenshot.");
+      })
+      .finally(() => {
+        isDeletingScreenshot = false;
+        deleteConfirm = false;
+        const allDeleteBtns = document.querySelectorAll(".delete-screenshot-btn");
+        allDeleteBtns.forEach(b => {
+          b.disabled = false;
+          b.textContent = "×";
+          b.style.color = "";
+          b.title = "Delete Screenshot";
+          b.style.opacity = "";
+          b.style.cursor = "";
+        });
+      });
+      return;
+    }
 
     const nextIndex = currentIndex < screenshotsData.length - 1 ? currentIndex : Math.max(0, currentIndex - 1);
     

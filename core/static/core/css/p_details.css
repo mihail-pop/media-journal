@@ -814,6 +814,16 @@ img.poster[src*="placeholder"] {
   opacity: 1;
 }
 
+.screenshot-rotator.single-screenshot .rotator-btn,
+.screenshot-rotator.single-screenshot .autoplay-screenshot-btn {
+  display: none !important;
+}
+
+.screenshot-overlay.single-screenshot .rotator-btn,
+.screenshot-overlay.single-screenshot .autoplay-screenshot-btn {
+  display: none !important;
+}
+
 .autoplay-screenshot-btn {
   position: absolute;
   top: 4.5rem;
@@ -1972,6 +1982,10 @@ body[data-page-type="person-detail"] .overview {
   .banner-section img[alt="book"]{
     top: 80%;
   }
+
+.relation-item:hover .relation-hover-img-container {
+  display: none;
+}
 
 }
 

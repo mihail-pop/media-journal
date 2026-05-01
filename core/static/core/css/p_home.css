@@ -669,14 +669,14 @@ h2 {
   position: absolute;
   top: 100%;
   right: 0;
-  background: #222;
+  background: var(--bg-tertiary);
   color: white;
   min-width: 190px;
   max-height: 300px;
   overflow-y: auto;
   border-radius: 4px;
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
-  margin-top: 6px;
+  margin-top: 3px;
   padding: 10px 10px;
   z-index: 1000;
   margin-right: 13vw;
@@ -741,7 +741,7 @@ h2 {
   margin: 0;
   padding: 6px 4px;
   font-style: italic;
-  color: #aaa;
+  color: var(--text-primary);;
 }
 
 .favorites-section {
@@ -903,6 +903,17 @@ h2 {
     display: none !important;
   }
 
+  .favorites-column{
+    max-width: 43.2%;
+  }
+
+  .stats-section{
+    gap: 5.3rem;
+  }
+
+  .favorites-row{
+    gap: 5rem;
+  }
 
 }
 
@@ -958,7 +969,7 @@ h2 {
   }
 
   .separator-bar {
-    height: 5rem;
+    height: 6rem;
     justify-content: center;
     /* horizontal center */
     align-items: center;

@@ -456,6 +456,18 @@ body {
   padding: 0 7rem 2rem;
 }
 
+.hover-tooltip{
+  display: none;
+}
+
+.add-to-list-btn.not-in-list {
+  display:block !important;
+}
+
+.add-to-list-btn.in-list {
+  display: none !important;
+}
+
 }
 
 @media (orientation: portrait) {
@@ -599,4 +611,12 @@ body {
     padding: 6px 10px;
     font-size: 2rem;
   }
+
+.add-to-list-btn.not-in-list {
+  display:block !important;
+ }
+
+ .add-to-list-btn.in-list {
+   display: none !important;
+ }
 }

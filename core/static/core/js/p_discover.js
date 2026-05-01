@@ -275,16 +275,14 @@ document.addEventListener('DOMContentLoaded', () => {
       <button class="add-to-list-btn" data-id="${item.id}" data-type="${item.media_type}" data-title="${item.title}" data-poster="${posterUrl}" data-item="${encodeURIComponent(JSON.stringify(item))}" style="display: none;">+</button>
     `;
     
-    // Add hover events
-    let isHovering = false;
-    card.addEventListener('mouseenter', async (e) => {
-      isHovering = true;
-      const btn = card.querySelector('.add-to-list-btn');
+    const btn = card.querySelector('.add-to-list-btn');
+    
+    // Check if item is in list immediately for mobile
+    (async () => {
       const source = item.source;
       const source_id = item.id;
       const mal_id = item.mal_id;
       
-      // Check if item is in list
       try {
         let url = `/api/check_in_list/?source=${source}&source_id=${source_id}`;
         if (mal_id) {
@@ -293,13 +291,23 @@ document.addEventListener('DOMContentLoaded', () => {
         const response = await fetch(url);
         const data = await response.json();
         
-        if (!data.in_list && isHovering) {
-          btn.style.display = 'block';
+        if (data.in_list) {
+          btn.classList.add('in-list');
+        } else {
+          btn.classList.add('not-in-list');
         }
       } catch (error) {
-        if (isHovering) {
-          btn.style.display = 'block';
-        }
+        btn.classList.add('not-in-list');
+      }
+    })();
+    
+    // Add hover events
+    let isHovering = false;
+    card.addEventListener('mouseenter', async (e) => {
+      isHovering = true;
+      
+      if (!btn.classList.contains('in-list') && isHovering) {
+        btn.style.display = 'block';
       }
       
       // Show tooltip
@@ -732,7 +740,11 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             const response = await fetch(url);
             const data = await response.json();
-            if (!data.in_list && isHovering) btn.style.display = 'block';
+            if (data.in_list) {
+              btn.classList.add('in-list');
+            } else if (isHovering) {
+              btn.style.display = 'block';
+            }
           } catch {
             if (isHovering) btn.style.display = 'block';
           }
