@@ -28,6 +28,7 @@ document.addEventListener("DOMContentLoaded", function () {
   let hasMore = true;
   let allItems = [];
   let ratingMode = 'faces';
+  let listCacheVersion = sessionStorage.getItem(`cacheVersion_${mediaType}`) || "";
 
   // Canonical order for status groups (used to render and insert groups predictably)
   const statusesOrder = ['ongoing', 'completed', 'on_hold', 'planned', 'dropped'];
@@ -140,6 +141,10 @@ const statusLabelsMap = {
         params.append('type', currentType);
       }
       
+      if (listCacheVersion) {
+        params.append('_v', listCacheVersion);
+      }
+
       const response = await fetch(`/api/${mediaType}/?${params}`);
       const data = await response.json();
       
@@ -519,6 +524,9 @@ const statusLabelsMap = {
   // Replace or move a single updated item in the DOM without reloading the whole page
   function replaceItemElement(item) {
     try {
+      listCacheVersion = Date.now().toString();
+      sessionStorage.setItem(`cacheVersion_${mediaType}`, listCacheVersion);
+
       const id = String(item.id);
 
       // Get old status BEFORE updating allItems
@@ -758,6 +766,9 @@ function compareItems(a, b) {
   // Remove an item from DOM + in-memory arrays (used after delete)
   function removeItemElement(id) {
     try {
+      listCacheVersion = Date.now().toString();
+      sessionStorage.setItem(`cacheVersion_${mediaType}`, listCacheVersion);
+
       const sid = String(id);
       // Find the item to get its status before removal
       const itemIdx = allItems.findIndex(i => String(i.id) === sid);
@@ -1120,7 +1131,7 @@ updateSortButtons();
     const form = document.getElementById("edit-form");
     if (!form) return console.error("Edit form not found");
 
-    fetch(`/get-item/${itemId}/`)
+    fetch(`/get-item/${itemId}/?_t=${Date.now()}`)
       .then(res => res.json())
       .then(data => {
         if (!data.success) return alert("Failed to load item");
@@ -1146,7 +1157,7 @@ updateSortButtons();
   const isBackForwardNav = performance.getEntriesByType('navigation')[0]?.type === 'back_forward';
   
   // Save scroll position before leaving
-  window.addEventListener('beforeunload', () => {
+  window.addEventListener('pagehide', () => {
     sessionStorage.setItem(scrollKey, window.scrollY);
     sessionStorage.setItem(pageKey, currentPage);
   });

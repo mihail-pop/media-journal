@@ -227,13 +227,12 @@ function createPlayer(videoId, startTime = 0) {
     playerVars: {
       autoplay: 1,
       controls: 1,
+      start: Math.floor(startTime)
     },
     events: {
       onReady: (e) => {
         isMusicPlayerReady = true;
-        if (startTime > 0) {
-          e.target.seekTo(startTime, true);
-        }
+        e.target.playVideo();
       },
       onStateChange: onPlayerStateChange
     }
@@ -298,7 +297,7 @@ function shuffleArray(array) {
 }
 
 // Save state before page unload
-window.addEventListener('beforeunload', () => {
+window.addEventListener('pagehide', () => { 
   if (musicPlayer && isMusicPlayerReady && typeof musicPlayer.getCurrentTime === 'function' && localStorage.getItem('musicPlayerEnabled')) {
     try {
       const time = musicPlayer.getCurrentTime();
@@ -306,6 +305,13 @@ window.addEventListener('beforeunload', () => {
       localStorage.setItem('music_player_time', time);
       localStorage.setItem('music_player_video', videoId);
     } catch (e) {}
+  }
+});
+
+// Detect bfcache restoration
+window.addEventListener('pageshow', (e) => {
+  if (e.persisted && localStorage.getItem('musicPlayerEnabled')) {
+    initMusicPlayer();
   }
 });
 

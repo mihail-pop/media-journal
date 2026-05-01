@@ -1176,7 +1176,7 @@ swapBtn?.addEventListener("click", function () {
   }
   
   // Clear cast state when leaving the page (not to person pages)
-  window.addEventListener('beforeunload', function() {
+  window.addEventListener('pagehide', function() {
     if (!document.activeElement || !document.activeElement.href || !document.activeElement.href.includes('/person/')) {
       sessionStorage.removeItem('loadedCastData');
       sessionStorage.removeItem('castCurrentPage');

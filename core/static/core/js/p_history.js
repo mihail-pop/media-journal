@@ -58,6 +58,11 @@ document.addEventListener("DOMContentLoaded", () => {
       if (startDate) params.append('start_date', startDate);
       if (endDate) params.append('end_date', endDate);
       
+      const historyCacheVersion = sessionStorage.getItem('cacheVersion_history');
+      if (historyCacheVersion) {
+        params.append('_v', historyCacheVersion);
+      }
+
       const response = await fetch(`/api/history/?${params}`);
       const data = await response.json();
       
@@ -112,6 +117,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // Replace or move a single updated item in the History view without reloading
   function replaceHistoryItem(item) {
     try {
+      sessionStorage.setItem('cacheVersion_history', Date.now().toString());
+
       const id = String(item.id);
 
       // Update in-memory list
@@ -231,6 +238,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // Remove item from history DOM and in-memory list
   function removeHistoryItem(id) {
     try {
+      sessionStorage.setItem('cacheVersion_history', Date.now().toString());
+
       const sid = String(id);
       document.querySelectorAll(`.card[data-id="${sid}"]`).forEach(n => n.remove());
       allItems = allItems.filter(i => String(i.id) !== sid);
@@ -494,7 +503,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const form = document.getElementById("edit-form");
     if (!form) return console.error("Edit form not found");
 
-    fetch(`/get-item/${itemId}/`)
+    fetch(`/get-item/${itemId}/?_t=${Date.now()}`)
       .then(res => res.json())
       .then(data => {
         if (!data.success) return alert("Failed to load item");
@@ -528,7 +537,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const scrollKey = 'scrollPos_history';
   const pageKey = 'scrollPage_history';
   
-  window.addEventListener('beforeunload', () => {
+  window.addEventListener('pagehide', () => {
     sessionStorage.setItem(scrollKey, window.scrollY);
     sessionStorage.setItem(pageKey, currentPage);
   });
