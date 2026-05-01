@@ -84,11 +84,17 @@
 </div>
 
     <h3>Sort By</h3>
-    <div class="sort-buttons">
-      <button class="sort-btn" data-sort="title">Title</button>
-      <button class="sort-btn active" data-sort="rating">Rating</button>
-      <button class="sort-btn" data-sort="activity_date">Activity Date</button>
-      <button class="sort-btn" data-sort="release_date">Release Date</button>
+    <div class="sort-controls">
+      <div class="sort-select-wrapper custom-select-wrapper">
+        <div id="sort-select" class="sort-select custom-select-trigger" data-value="rating" role="button" tabindex="0" aria-haspopup="listbox" aria-expanded="false">Rating</div>
+        <div class="custom-options sort-options" role="listbox">
+          <div class="custom-option sort-option" data-sort="title" data-value="title" role="option">Title</div>
+          <div class="custom-option sort-option active" data-sort="rating" data-value="rating" role="option">Rating</div>
+          <div class="custom-option sort-option" data-sort="activity_date" data-value="activity_date" role="option">Activity Date</div>
+          <div class="custom-option sort-option" data-sort="release_date" data-value="release_date" role="option">Release Date</div>
+        </div>
+      </div>
+      <button type="button" id="sort-order-btn" class="sort-order-btn" data-order="desc" aria-label="Sort descending"></button>
     </div>
 
     <h3>View</h3>

@@ -380,7 +380,20 @@ def manga_api(request):
         queryset = queryset.filter(title__icontains=search)
 
     queryset = queryset.annotate(
-        status_order=status_ordering, rating_order=rating_ordering
+        status_order=status_ordering,
+        rating_order=rating_ordering,
+        chapter_order=Case(
+            When(total_main__isnull=True, then=F("progress_main")),
+            When(total_main=0, then=F("progress_main")),
+            default=F("total_main"),
+            output_field=IntegerField(),
+        ),
+        volume_order=Case(
+            When(total_secondary__isnull=True, then=F("progress_secondary")),
+            When(total_secondary=0, then=F("progress_secondary")),
+            default=F("total_secondary"),
+            output_field=IntegerField(),
+        ),
     )
 
     # Apply sorting
@@ -398,6 +411,12 @@ def manga_api(request):
         order_fields.extend([Lower("title"), "title"])  # Secondary sort
     elif sort_by == "release_date":
         order_fields.append("-release_date" if sort_order == "desc" else "release_date")
+        order_fields.extend([Lower("title"), "title"])  # Secondary sort
+    elif sort_by == "chapters":
+        order_fields.append("-chapter_order" if sort_order == "desc" else "chapter_order")
+        order_fields.extend([Lower("title"), "title"])  # Secondary sort
+    elif sort_by == "volumes":
+        order_fields.append("-volume_order" if sort_order == "desc" else "volume_order")
         order_fields.extend([Lower("title"), "title"])  # Secondary sort
 
     queryset = queryset.order_by(*order_fields)
@@ -608,8 +627,11 @@ def music_api(request):
     elif sort_by == "rating":
         order_fields.append("-rating_order" if sort_order == "desc" else "rating_order")
         order_fields.extend([Lower("title"), "title"])  # Secondary sort
-    elif sort_by == "date":
+    elif sort_by == "date" or sort_by == "activity_date":
         order_fields.append("-date_added" if sort_order == "desc" else "date_added")
+        order_fields.extend([Lower("title"), "title"])  # Secondary sort
+    elif sort_by == "release_date":
+        order_fields.append("-release_date" if sort_order == "desc" else "release_date")
         order_fields.extend([Lower("title"), "title"])  # Secondary sort
 
     queryset = queryset.order_by(*order_fields)

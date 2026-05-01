@@ -10,6 +10,9 @@ document.addEventListener("DOMContentLoaded", function () {
   const filterButtons = document.querySelectorAll(".filter-btn");
   const typeFilterButtons = document.querySelectorAll(".type-filter-btn");
   const sortButtons = document.querySelectorAll(".sort-btn");
+  const sortSelect = document.getElementById("sort-select");
+  const sortOptions = document.querySelectorAll(".sort-option");
+  const sortOrderBtn = document.getElementById("sort-order-btn");
   const searchInput = document.getElementById("search-input");
 
   const bannerImg = document.getElementById("rotating-banner");
@@ -39,7 +42,19 @@ document.addEventListener("DOMContentLoaded", function () {
   let currentView = sessionStorage.getItem(viewKey) || "card";
   let currentType = localStorage.getItem(typeKey) || "both";
   let currentSort = localStorage.getItem(sortKey) || "rating";
-  let currentSortOrder = localStorage.getItem(sortOrderKey) || "desc";
+  let currentSortOrder = localStorage.getItem(sortOrderKey) || (currentSort === "rating" ? "desc" : "asc");
+
+  const availableSortTypes = Array.from(sortOptions).map(option => option.dataset.sort).filter(Boolean);
+  if (availableSortTypes.length && !availableSortTypes.includes(currentSort)) {
+    currentSort = "rating";
+    currentSortOrder = "desc";
+    localStorage.setItem(sortKey, currentSort);
+    localStorage.setItem(sortOrderKey, currentSortOrder);
+  }
+  if (!['asc', 'desc'].includes(currentSortOrder)) {
+    currentSortOrder = currentSort === "rating" ? "desc" : "asc";
+    localStorage.setItem(sortOrderKey, currentSortOrder);
+  }
   
 const statusLabelsMap = {
   movies: {
@@ -250,6 +265,8 @@ const statusLabelsMap = {
             ${th('Rating', 'rating')}
             ${th('Activity Date', 'activity_date')}
             ${th('Release Date', 'release_date')}
+            ${th('Chapters', 'chapters')}
+            ${th('Volumes', 'volumes')}
           </tr></thead>`;
         } else if (mediaType === 'games') {
           tableHeaders = `<thead><tr>
@@ -296,16 +313,7 @@ const statusLabelsMap = {
           th.style.cursor = 'pointer';
           th.addEventListener('click', () => {
             const sortType = th.dataset.sort;
-            if (currentSort === sortType) {
-              currentSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
-            } else {
-              currentSort = sortType;
-              currentSortOrder = sortType === 'rating' ? 'desc' : 'asc';
-            }
-            localStorage.setItem(sortKey, currentSort);
-            localStorage.setItem(sortOrderKey, currentSortOrder);
-            updateSortButtons();
-            resetAndLoad();
+            applySortFromControl(sortType, true);
           });
         });
         
@@ -369,7 +377,7 @@ const statusLabelsMap = {
     
     const ratingHtml = getRatingHtml(item.personal_rating);
     const linkUrl = getLinkUrl(item);
-    const episodesHtml = getEpisodesHtml(item);
+    const episodesHtml = getListMainProgressHtml(item);
     const seasonsHtml = getSeasonsHtml(item);
     
     let tableHtml = `
@@ -399,6 +407,11 @@ const statusLabelsMap = {
     } else if (mediaType === 'anime') {
       tableHtml += `
         <td style="text-align: center;">${episodesHtml}</td>
+      `;
+    } else if (mediaType === 'manga') {
+      tableHtml += `
+        <td style="text-align: center;">${episodesHtml}</td>
+        <td style="text-align: center;">${seasonsHtml}</td>
       `;
     } else if (mediaType === 'games') {
       tableHtml += `
@@ -482,26 +495,34 @@ const statusLabelsMap = {
     }
   }
 
-  function getEpisodesHtml(item) {
-    if (!item.progress_main) return '';
-    
-    if (item.progress_main === item.total_main) {
-      return item.progress_main;
-    } else {
-      const total = item.total_main ? ` / ${item.total_main}` : '';
-      return `${item.progress_main}${total}`;
+  function formatListProgress(currentValue, totalValue, options = {}) {
+    const hasCurrent = currentValue !== null && currentValue !== undefined && currentValue !== '';
+    if (!hasCurrent) return '';
+
+    const currentNumber = Number(currentValue);
+    const totalNumber = Number(totalValue);
+    const current = Number.isFinite(currentNumber) ? currentNumber : currentValue;
+    const hasTotal = totalValue !== null && totalValue !== undefined && totalValue !== '' && Number.isFinite(totalNumber) && totalNumber > 0;
+
+    if (!hasTotal || (options.hideTotalWhenOver && Number.isFinite(currentNumber) && currentNumber > totalNumber)) {
+      return `${current}`;
     }
+
+    return `${current}/${totalNumber}`;
+  }
+
+  function getListMainProgressHtml(item) {
+    if (mediaType === 'games') {
+      return formatListProgress(item.progress_main);
+    }
+
+    return formatListProgress(item.progress_main, item.total_main, {
+      hideTotalWhenOver: mediaType === 'books'
+    });
   }
 
   function getSeasonsHtml(item) {
-    if (!item.progress_secondary) return '';
-    
-    if (item.progress_secondary === item.total_secondary) {
-      return item.progress_secondary;
-    } else {
-      const total = item.total_secondary ? ` / ${item.total_secondary}` : '';
-      return `${item.progress_secondary}${total}`;
-    }
+    return formatListProgress(item.progress_secondary, item.total_secondary);
   }
 
  function getLinkUrl(item) {
@@ -587,8 +608,11 @@ const statusLabelsMap = {
         let needsResort = false;
         if (oldStatus !== item.status) needsResort = true;
         else if (currentSort === 'rating' && oldItem && oldItem.personal_rating != item.personal_rating) needsResort = true;
-        else if (currentSort === 'date' && oldItem && oldItem.date_added != item.date_added) needsResort = true;
+        else if ((currentSort === 'date' || currentSort === 'activity_date') && oldItem && oldItem.date_added != item.date_added) needsResort = true;
+        else if (currentSort === 'release_date' && oldItem && oldItem.release_date != item.release_date) needsResort = true;
         else if ((currentSort === 'hours' || currentSort === 'pages') && oldItem && oldItem.progress_main != item.progress_main) needsResort = true;
+        else if ((currentSort === 'episodes' || currentSort === 'chapters') && oldItem && (oldItem.total_main != item.total_main || oldItem.progress_main != item.progress_main)) needsResort = true;
+        else if ((currentSort === 'seasons' || currentSort === 'volumes') && oldItem && (oldItem.total_secondary != item.total_secondary || oldItem.progress_secondary != item.progress_secondary)) needsResort = true;
         else if (currentSort === 'title' && oldItem && oldItem.title != item.title) needsResort = true;
 
         // If status didn't change and no re-sort needed, replace in-place (PRESERVE DOM position)
@@ -617,6 +641,12 @@ const statusLabelsMap = {
           return val;
       }
 
+      function effectiveProgress(total, progress) {
+          const totalValue = Number(total) || 0;
+          if (totalValue > 0) return totalValue;
+          return Number(progress) || 0;
+      }
+
 function compareItems(a, b) {
         if (!a || !b) return 0;
 
@@ -635,10 +665,17 @@ function compareItems(a, b) {
           if (ra !== rb) return ra - rb;
           return compareTitles(a.title, b.title);
         }
-        // date
-        if (currentSort === 'date') {
+        // activity date
+        if (currentSort === 'date' || currentSort === 'activity_date') {
           const da = a.date_added ? new Date(a.date_added).getTime() : 0;
           const db = b.date_added ? new Date(b.date_added).getTime() : 0;
+          if (da !== db) return da - db;
+          return compareTitles(a.title, b.title);
+        }
+        // release date
+        if (currentSort === 'release_date') {
+          const da = a.release_date ? new Date(a.release_date).getTime() : 0;
+          const db = b.release_date ? new Date(b.release_date).getTime() : 0;
           if (da !== db) return da - db;
           return compareTitles(a.title, b.title);
         }
@@ -647,6 +684,19 @@ function compareItems(a, b) {
             const pa = Number(a.progress_main) || 0;
             const pb = Number(b.progress_main) || 0;
             if (pa !== pb) return pa - pb;
+            return compareTitles(a.title, b.title);
+        }
+        // episodes / seasons / chapters / volumes
+        if (currentSort === 'episodes' || currentSort === 'chapters') {
+            const ea = effectiveProgress(a.total_main, a.progress_main);
+            const eb = effectiveProgress(b.total_main, b.progress_main);
+            if (ea !== eb) return ea - eb;
+            return compareTitles(a.title, b.title);
+        }
+        if (currentSort === 'seasons' || currentSort === 'volumes') {
+            const sa = effectiveProgress(a.total_secondary, a.progress_secondary);
+            const sb = effectiveProgress(b.total_secondary, b.progress_secondary);
+            if (sa !== sb) return sa - sb;
             return compareTitles(a.title, b.title);
         }
         // fallback to title
@@ -947,43 +997,119 @@ function compareItems(a, b) {
   
 
   
-// === Set active sort button ===
+// === Sort controls ===
+const defaultSortLabels = {
+  title: "Title",
+  rating: "Rating",
+  activity_date: "Activity Date",
+  date: "Activity Date",
+  release_date: "Release Date",
+  episodes: "Episodes",
+  seasons: "Seasons",
+  chapters: "Chapters",
+  volumes: "Volumes",
+  hours: "Hours",
+  pages: "Pages",
+};
+
+function getSortLabel(sortType) {
+  const option = Array.from(sortOptions).find(opt => opt.dataset.sort === sortType);
+  if (option) return option.textContent.trim();
+
+  const button = Array.from(sortButtons).find(btn => btn.dataset.sort === sortType);
+  if (button) return (button.dataset.label || button.textContent).trim();
+
+  return defaultSortLabels[sortType] || defaultSortLabels.rating;
+}
+
+function getSortTooltip(sortType) {
+  if (sortType === 'title') {
+    return currentSortOrder === 'asc' ? 'A-Z' : 'Z-A';
+  }
+  if (sortType === 'rating') {
+    return currentSortOrder === 'asc' ? '1-9' : '9-1';
+  }
+  if (sortType === 'date' || sortType === 'activity_date' || sortType === 'release_date') {
+    return currentSortOrder === 'asc' ? 'Old-New' : 'New-Old';
+  }
+  if (['hours', 'pages', 'episodes', 'seasons', 'chapters', 'volumes'].includes(sortType)) {
+    return currentSortOrder === 'asc' ? 'Low-High' : 'High-Low';
+  }
+  return '';
+}
+
+function persistSortState() {
+  localStorage.setItem(sortKey, currentSort);
+  localStorage.setItem(sortOrderKey, currentSortOrder);
+}
+
+function setSortSelectOpen(isOpen) {
+  const optionsList = sortSelect?.closest('.custom-select-wrapper')?.querySelector('.custom-options');
+  if (!optionsList) return;
+  optionsList.classList.toggle('open', isOpen);
+  sortSelect.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+}
+
 function updateSortButtons() {
   sortButtons.forEach(btn => {
     const sortType = btn.dataset.sort;
+    const baseLabel = btn.dataset.label || btn.textContent.trim();
+    btn.dataset.label = baseLabel;
+
     if (sortType === currentSort) {
       btn.classList.add('active');
-      
-      // Use responsive arrows
-      const arrow = getArrow(currentSortOrder === 'asc');
-      btn.textContent = btn.textContent.split(' ')[0] + arrow;
-      
-      // Set hover tooltip
-      let tooltip = '';
-      if (sortType === 'title') {
-        tooltip = currentSortOrder === 'asc' ? 'A-Z' : 'Z-A';
-      } else if (sortType === 'rating') {
-        tooltip = currentSortOrder === 'asc' ? '1-9' : '9-1';
-      } else if (sortType === 'date') {
-        tooltip = currentSortOrder === 'asc' ? 'Old-New' : 'New-Old';
-      } else if (sortType === 'hours') {
-        tooltip = currentSortOrder === 'asc' ? 'Low-High' : 'High-Low';
-      } else if (sortType === 'pages') {
-        tooltip = currentSortOrder === 'asc' ? 'Low-High' : 'High-Low';
-      }
-      btn.title = tooltip;
+      btn.textContent = `${baseLabel} ${currentSortOrder === 'asc' ? '^' : 'v'}`;
+      btn.title = getSortTooltip(sortType);
     } else {
       btn.classList.remove('active');
-      btn.textContent = btn.textContent.split(' ')[0];
+      btn.textContent = baseLabel;
       btn.removeAttribute('title');
     }
   });
+
+  if (sortSelect) {
+    sortSelect.textContent = getSortLabel(currentSort);
+    sortSelect.dataset.value = currentSort;
+    sortSelect.title = getSortTooltip(currentSort);
+  }
+
+  sortOptions.forEach(option => {
+    const isActive = option.dataset.sort === currentSort;
+    option.classList.toggle('active', isActive);
+    option.setAttribute('aria-selected', isActive ? 'true' : 'false');
+  });
+
+  if (sortOrderBtn) {
+    const orderLabel = currentSortOrder === 'asc' ? 'Sort ascending' : 'Sort descending';
+    sortOrderBtn.dataset.order = currentSortOrder;
+    sortOrderBtn.setAttribute('aria-label', orderLabel);
+    sortOrderBtn.title = orderLabel;
+  }
 }
 
-// Responsive arrow function
+function applySortFromControl(sortType, toggleIfSame = false) {
+  if (!sortType) return;
+
+  if (currentSort === sortType) {
+    if (!toggleIfSame) {
+      setSortSelectOpen(false);
+      updateSortButtons();
+      return;
+    }
+    currentSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
+  } else {
+    currentSort = sortType;
+    currentSortOrder = sortType === 'rating' ? 'desc' : 'asc';
+  }
+
+  persistSortState();
+  setSortSelectOpen(false);
+  updateSortButtons();
+  resetAndLoad();
+}
+
 function getArrow(isAscending) {
-  const isTouch = window.matchMedia('(pointer: coarse)').matches;
-  return isAscending ? (isTouch ? ' ▲' : ' ⮝') : (isTouch ? ' ▼' : ' ⮟');
+  return `<span class="table-sort-arrow ${isAscending ? 'asc' : 'desc'}" aria-hidden="true"></span>`;
 }
 
 updateSortButtons();
@@ -1059,22 +1185,48 @@ updateSortButtons();
   // === SORT BUTTONS ===
   sortButtons.forEach((btn) => {
     btn.addEventListener("click", () => {
-      const sortType = btn.dataset.sort;
-      
-      if (currentSort === sortType) {
-        // Toggle order for same sort type
-        currentSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
-      } else {
-        // New sort type
-        currentSort = sortType;
-        currentSortOrder = sortType === 'rating' ? 'desc' : 'asc';
+      applySortFromControl(btn.dataset.sort, true);
+    });
+  });
+
+  if (sortSelect) {
+    sortSelect.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const optionsList = sortSelect.closest('.custom-select-wrapper')?.querySelector('.custom-options');
+      setSortSelectOpen(!optionsList?.classList.contains('open'));
+    });
+
+    sortSelect.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        const optionsList = sortSelect.closest('.custom-select-wrapper')?.querySelector('.custom-options');
+        setSortSelectOpen(!optionsList?.classList.contains('open'));
+      } else if (e.key === "Escape") {
+        setSortSelectOpen(false);
       }
-      
-      localStorage.setItem(sortKey, currentSort);
-      localStorage.setItem(sortOrderKey, currentSortOrder);
+    });
+  }
+
+  sortOptions.forEach((option) => {
+    option.addEventListener("click", (e) => {
+      e.stopPropagation();
+      applySortFromControl(option.dataset.sort, false);
+    });
+  });
+
+  if (sortOrderBtn) {
+    sortOrderBtn.addEventListener("click", () => {
+      currentSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
+      persistSortState();
       updateSortButtons();
       resetAndLoad();
     });
+  }
+
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest || !e.target.closest('.sort-controls')) {
+      setSortSelectOpen(false);
+    }
   });
 
   // === SEARCH INPUT ===

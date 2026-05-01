@@ -238,10 +238,6 @@ html.modal-open {
   display: block;
 }
 
-body[data-media-type="history"] .modal-banner {
-  border-bottom: 1px solid var(--modal-bg);
-}
-
 .modal-banner.no-banner::before {
   background-color: rgba(var(--modal-bg-rgb), 0.5);
 }
