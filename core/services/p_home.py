@@ -1,7 +1,7 @@
 import os
 import time
 import threading
-from datetime import timedelta
+from datetime import timedelta, datetime
 
 from django.conf import settings
 from django.utils import timezone
@@ -20,37 +20,43 @@ def start_media_cleanup_loop():
         return
     _started_cleanup = True
 
-    # --- Persistent Run Counter Logic ---
-    # We use a simple text file in the project root so it survives app restarts
-    # but doesn't require modifying the database schema for a temporary patch.
+    # --- Monthly Run Logic ---
+    # Use a text file to track the last run date
     counter_file = os.path.join(settings.BASE_DIR, '.cleanup_runs')
-    runs = 0
+    last_run_date = None
     
     if os.path.exists(counter_file):
         try:
             with open(counter_file, 'r') as f:
-                runs = int(f.read().strip())
-        except ValueError:
-            pass
+                content = f.read().strip()
+                # Handle old format (1, 2, 3) or new format (YYYY-MM-DD)
+                if content.isdigit():
+                    # Old format - treat as if it needs to run
+                    last_run_date = None
+                else:
+                    # New format - parse the date
+                    last_run_date = datetime.strptime(content, '%Y-%m-%d').date()
+        except (ValueError, Exception):
+            last_run_date = None
 
-    if runs >= 3:
-        print("Cleanup loop has already run 3 times. Skipping.")
-        return
+    # Check if a month has passed since last run
+    today = datetime.now().date()
+    if last_run_date:
+        days_since_last_run = (today - last_run_date).days
+        if days_since_last_run < 30:
+            print(f"Cleanup already ran {days_since_last_run} days ago. Skipping (runs monthly).")
+            return
 
-    # Increment and save the run count
-    runs += 1
+    # Save today's date
     try:
         with open(counter_file, 'w') as f:
-            f.write(str(runs))
+            f.write(today.strftime('%Y-%m-%d'))
     except Exception as e:
-        print(f"Failed to write cleanup counter: {e}")
+        print(f"Failed to write cleanup date: {e}")
 
     # --- The Cleanup Thread ---
     def loop():
-        # Sleep for 30 seconds before running.
-        # This ensures the server boots fast and the user's home page loads
-        # without being slowed down by disk operations.
-        print(f"Media cleanup task scheduled (Run {runs}/3). Starting in 30 seconds...")
+        print("Media cleanup task scheduled (runs monthly). Starting in 30 seconds...")
         time.sleep(30)
 
         try:

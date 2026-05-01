@@ -31,9 +31,51 @@
         <button class="filter-btn sort-btn" data-sort="popularity.desc">Popular</button>
       </div>
       
+      <h3>Genre</h3>
+      <div class="custom-select-wrapper">
+        <div id="tmdb-genre-select" class="genre-select custom-select-trigger" data-value="">All Genres</div>
+        <div class="custom-options">
+          <div class="custom-option" data-value="" data-for="all">All Genres</div>
+          <div class="custom-option" data-value="28" data-for="movie">Action</div>
+          <div class="custom-option" data-value="12" data-for="movie">Adventure</div>
+          <div class="custom-option" data-value="16" data-for="movie">Animation</div>
+          <div class="custom-option" data-value="35" data-for="movie">Comedy</div>
+          <div class="custom-option" data-value="80" data-for="movie">Crime</div>
+          <div class="custom-option" data-value="99" data-for="movie">Documentary</div>
+          <div class="custom-option" data-value="18" data-for="movie">Drama</div>
+          <div class="custom-option" data-value="10751" data-for="movie">Family</div>
+          <div class="custom-option" data-value="14" data-for="movie">Fantasy</div>
+          <div class="custom-option" data-value="36" data-for="movie">History</div>
+          <div class="custom-option" data-value="27" data-for="movie">Horror</div>
+          <div class="custom-option" data-value="10402" data-for="movie">Music</div>
+          <div class="custom-option" data-value="9648" data-for="movie">Mystery</div>
+          <div class="custom-option" data-value="10749" data-for="movie">Romance</div>
+          <div class="custom-option" data-value="878" data-for="movie">Science Fiction</div>
+          <div class="custom-option" data-value="53" data-for="movie">Thriller</div>
+          <div class="custom-option" data-value="10752" data-for="movie">War</div>
+          <div class="custom-option" data-value="37" data-for="movie">Western</div>
+          <div class="custom-option" data-value="10759" data-for="tv">Action & Adventure</div>
+          <div class="custom-option" data-value="16" data-for="tv">Animation</div>
+          <div class="custom-option" data-value="35" data-for="tv">Comedy</div>
+          <div class="custom-option" data-value="80" data-for="tv">Crime</div>
+          <div class="custom-option" data-value="99" data-for="tv">Documentary</div>
+          <div class="custom-option" data-value="18" data-for="tv">Drama</div>
+          <div class="custom-option" data-value="10751" data-for="tv">Family</div>
+          <div class="custom-option" data-value="10762" data-for="tv">Kids</div>
+          <div class="custom-option" data-value="9648" data-for="tv">Mystery</div>
+          <div class="custom-option" data-value="10763" data-for="tv">News</div>
+          <div class="custom-option" data-value="10764" data-for="tv">Reality</div>
+          <div class="custom-option" data-value="10765" data-for="tv">Sci-Fi & Fantasy</div>
+          <div class="custom-option" data-value="10766" data-for="tv">Soap</div>
+          <div class="custom-option" data-value="10767" data-for="tv">Talk</div>
+          <div class="custom-option" data-value="10768" data-for="tv">War & Politics</div>
+          <div class="custom-option" data-value="37" data-for="tv">Western</div>
+        </div>
+      </div>
+      
       <div class="filter-group" style="display:none;">
         <h3>Year</h3>
-        <input type="number" id="tmdb-year-input" placeholder="Year" min="1900" max="2030">
+        <input type="text" id="tmdb-year-input" placeholder="Year" inputmode="numeric" pattern="[0-9]*" maxlength="4">
       </div>
     </div>
 
@@ -45,16 +87,43 @@
         <button class="filter-btn sort-btn" data-sort="POPULARITY_DESC">Popular</button>
       </div>
       
-      <h3>Season</h3>
-      <div class="season-filter filter-group">
-        <button class="filter-btn season-btn" data-season="WINTER">Winter</button>
-        <button class="filter-btn season-btn" data-season="SPRING">Spring</button>
-        <button class="filter-btn season-btn" data-season="SUMMER">Summer</button>
-        <button class="filter-btn season-btn" data-season="FALL">Fall</button>
+      <h3>Genre</h3>
+      <div class="custom-select-wrapper">
+        <div id="anilist-genre-select" class="genre-select custom-select-trigger" data-value="">All Genres</div>
+        <div class="custom-options">
+          <div class="custom-option" data-value="">All Genres</div>
+          <div class="custom-option" data-value="Action">Action</div>
+          <div class="custom-option" data-value="Adventure">Adventure</div>
+          <div class="custom-option" data-value="Comedy">Comedy</div>
+          <div class="custom-option" data-value="Drama">Drama</div>
+          <div class="custom-option" data-value="Fantasy">Fantasy</div>
+          <div class="custom-option" data-value="Horror">Horror</div>
+          <div class="custom-option" data-value="Mahou Shoujo">Mahou Shoujo</div>
+          <div class="custom-option" data-value="Mecha">Mecha</div>
+          <div class="custom-option" data-value="Music">Music</div>
+          <div class="custom-option" data-value="Mystery">Mystery</div>
+          <div class="custom-option" data-value="Psychological">Psychological</div>
+          <div class="custom-option" data-value="Romance">Romance</div>
+          <div class="custom-option" data-value="Sci-Fi">Sci-Fi</div>
+          <div class="custom-option" data-value="Slice of Life">Slice of Life</div>
+          <div class="custom-option" data-value="Sports">Sports</div>
+          <div class="custom-option" data-value="Supernatural">Supernatural</div>
+          <div class="custom-option" data-value="Thriller">Thriller</div>
+        </div>
+      </div>
+      
+      <div id="anime-season-group">
+        <h3>Season</h3>
+        <div class="season-filter filter-group">
+          <button class="filter-btn season-btn" data-season="WINTER">Winter</button>
+          <button class="filter-btn season-btn" data-season="SPRING">Spring</button>
+          <button class="filter-btn season-btn" data-season="SUMMER">Summer</button>
+          <button class="filter-btn season-btn" data-season="FALL">Fall</button>
+        </div>
       </div>
       
       <h3>Year</h3>
-      <input type="number" id="season-year-input" placeholder="Year" min="1900" max="2030">
+      <input type="text" id="season-year-input" placeholder="Year" inputmode="numeric" pattern="[0-9]*" maxlength="4">
       
       <h3>Status</h3>
       <div class="status-filter filter-group">
@@ -72,9 +141,37 @@
         <button class="filter-btn sort-btn" data-sort="hypes">Upcoming</button>
       </div>
       
+      <h3>Genre</h3>
+      <div class="custom-select-wrapper">
+        <div id="igdb-genre-select" class="genre-select custom-select-trigger" data-value="">All Genres</div>
+        <div class="custom-options">
+          <div class="custom-option" data-value="">All Genres</div>
+          <div class="custom-option" data-value="4">Fighting</div>
+          <div class="custom-option" data-value="5">Shooter</div>
+          <div class="custom-option" data-value="7">Music</div>
+          <div class="custom-option" data-value="8">Platform</div>
+          <div class="custom-option" data-value="9">Puzzle</div>
+          <div class="custom-option" data-value="10">Racing</div>
+          <div class="custom-option" data-value="11">Real Time Strategy (RTS)</div>
+          <div class="custom-option" data-value="12">Role-playing (RPG)</div>
+          <div class="custom-option" data-value="13">Simulator</div>
+          <div class="custom-option" data-value="14">Sport</div>
+          <div class="custom-option" data-value="15">Strategy</div>
+          <div class="custom-option" data-value="16">Turn-based strategy (TBS)</div>
+          <div class="custom-option" data-value="24">Tactical</div>
+          <div class="custom-option" data-value="25">Hack and slash/Beat 'em up</div>
+          <div class="custom-option" data-value="26">Quiz/Trivia</div>
+          <div class="custom-option" data-value="30">Pinball</div>
+          <div class="custom-option" data-value="31">Adventure</div>
+          <div class="custom-option" data-value="32">Indie</div>
+          <div class="custom-option" data-value="33">Arcade</div>
+          <div class="custom-option" data-value="34">Visual Novel</div>
+        </div>
+      </div>
+      
       <div class="filter-group" id="igdb-year-group">
         <h3>Year</h3>
-        <input type="number" id="igdb-year-input" placeholder="Year" min="1950" max="2030">
+        <input type="text" id="igdb-year-input" placeholder="Year" inputmode="numeric" pattern="[0-9]*" maxlength="4">
       </div>
     </div>
   </aside>

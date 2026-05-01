@@ -904,18 +904,16 @@ def discover_api(request):
 
     try:
         if media_type in ["anime", "manga"]:
-            # Map "upcoming" to NOT_YET_RELEASED for AniList
             if status == "upcoming":
                 status = "NOT_YET_RELEASED"
             data = get_anilist_discover(
-                media_type, page, query, sort, season, year, format_filter, status
+                media_type, page, query, sort, season, year, format_filter, status, genre
             )
-            # Handle case where function returns [] instead of dict
             if isinstance(data, list):
                 data = {"results": data, "hasMore": False}
             return JsonResponse(data)
         elif media_type in ["movie", "tv"]:
-            results = get_tmdb_discover(media_type, page, query, sort, year)
+            results = get_tmdb_discover(media_type, page, query, sort, year, genre)
         elif media_type == "game":
             results = get_igdb_discover(page, query, sort, genre, platform, year)
         else:

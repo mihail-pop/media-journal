@@ -564,18 +564,31 @@ def get_tv_extra_info(tmdb_id):
         return {}
 
 
-def get_tmdb_discover(media_type, page, query="", sort="popularity.desc", year=""):
+def get_tmdb_discover(media_type, page, query="", sort="popularity.desc", year="", genre=""):
     try:
         api_key = APIKey.objects.get(name="tmdb").key_1
     except APIKey.DoesNotExist:
-        return[]
+        return []
 
     if query:
         url = f"https://api.themoviedb.org/3/search/{media_type}"
         params = {"api_key": api_key, "query": query, "page": page}
     elif sort == "trending":
-        url = f"https://api.themoviedb.org/3/trending/{media_type}/week"
-        params = {"api_key": api_key, "page": page}
+        # Trending endpoint doesn't support genre filtering
+        # If genre is selected, use discover with popularity sort instead
+        if genre:
+            url = f"https://api.themoviedb.org/3/discover/{media_type}"
+            params = {
+                "api_key": api_key,
+                "sort_by": "popularity.desc",
+                "page": page,
+                "include_adult": "false",
+                "vote_count.gte": 100,
+                "with_genres": genre,
+            }
+        else:
+            url = f"https://api.themoviedb.org/3/trending/{media_type}/week"
+            params = {"api_key": api_key, "page": page}
     else:
         url = f"https://api.themoviedb.org/3/discover/{media_type}"
         params = {
@@ -593,19 +606,27 @@ def get_tmdb_discover(media_type, page, query="", sort="popularity.desc", year="
             elif media_type == "tv":
                 params["first_air_date.gte"] = f"{year}-01-01"
                 params["first_air_date.lte"] = f"{year}-12-31"
+        
+        if genre:
+            params["with_genres"] = genre
 
     try:
         response = requests.get(url, params=params)
         if response.status_code != 200:
-            return[]
+            return []
 
         data = response.json()
         raw_results = data.get("results", [])
+        
+        # Return early if no results
+        if not raw_results:
+            return []
+        
         results =[]
 
         # --- Fetch Next Episode Data for TV Shows Concurrently ---
         next_ep_data_map = {}
-        if media_type == "tv" and raw_results:
+        if media_type == "tv":
             def fetch_tv_details(tv_id):
                 try:
                     detail_url = f"https://api.themoviedb.org/3/tv/{tv_id}"
@@ -693,7 +714,7 @@ def get_tmdb_discover(media_type, page, query="", sort="popularity.desc", year="
         return results
     except Exception as e:
         print(f"Discover Error: {e}")
-        return
+        return []
 
 
 def update_tmdb_seasons(media_item):

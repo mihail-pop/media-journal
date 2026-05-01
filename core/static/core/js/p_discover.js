@@ -33,6 +33,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const yearInput = document.getElementById('tmdb-year-input');
       if (yearInput && yearInput.value) filters.year = yearInput.value;
       
+      const genreSelect = document.getElementById('tmdb-genre-select');
+      if (genreSelect && genreSelect.dataset.value) filters.genre = genreSelect.dataset.value;
+      
     } else if (currentType === 'anime' || currentType === 'manga') {
       const activeSort = document.querySelector('#anilist-filters .sort-btn.active');
       if (activeSort) filters.sort = activeSort.dataset.sort;
@@ -46,12 +49,18 @@ document.addEventListener('DOMContentLoaded', () => {
       const activeStatus = document.querySelector('#anilist-filters .status-btn.active');
       if (activeStatus) filters.status = activeStatus.dataset.status;
       
+      const genreSelect = document.getElementById('anilist-genre-select');
+      if (genreSelect && genreSelect.dataset.value) filters.genre = genreSelect.dataset.value;
+      
     } else if (currentType === 'game') {
       const activeSort = document.querySelector('#igdb-filters .sort-btn.active');
       if (activeSort) filters.sort = activeSort.dataset.sort;
       
       const igdbYearInput = document.getElementById('igdb-year-input');
       if (igdbYearInput && igdbYearInput.value) filters.year = igdbYearInput.value;
+      
+      const genreSelect = document.getElementById('igdb-genre-select');
+      if (genreSelect && genreSelect.dataset.value) filters.genre = genreSelect.dataset.value;
     }
     
     return filters;
@@ -186,6 +195,12 @@ document.addEventListener('DOMContentLoaded', () => {
       input.value = '';
     });
     
+    // Clear all genre selects
+    document.querySelectorAll('.custom-select-trigger').forEach(trigger => {
+      trigger.textContent = 'All Genres';
+      trigger.dataset.value = '';
+    });
+    
     // Hide year filter groups
     const tmdbYearGroup = document.getElementById('tmdb-year-input')?.closest('.filter-group');
     if (tmdbYearGroup) tmdbYearGroup.style.display = 'none';
@@ -201,8 +216,30 @@ document.addEventListener('DOMContentLoaded', () => {
     
     if (type === 'movie' || type === 'tv') {
       tmdbFilters.style.display = 'block';
+      
+      // Show/hide genre options based on media type
+      const genreOptions = document.querySelectorAll('#tmdb-filters .custom-option[data-for]');
+      genreOptions.forEach(option => {
+        if (option.dataset.for === type || option.dataset.for === 'all') {
+          option.style.display = '';
+        } else {
+          option.style.display = 'none';
+        }
+      });
+      // Reset genre selection when switching between movie/tv
+      const genreSelect = document.getElementById('tmdb-genre-select');
+      if (genreSelect) {
+        genreSelect.textContent = 'All Genres';
+        genreSelect.dataset.value = '';
+      }
     } else if (type === 'anime' || type === 'manga') {
       anilistFilters.style.display = 'block';
+      
+      // Hide season filter for manga
+      const seasonGroup = document.getElementById('anime-season-group');
+      if (seasonGroup) {
+        seasonGroup.style.display = type === 'anime' ? 'block' : 'none';
+      }
     } else if (type === 'game') {
       igdbFilters.style.display = 'block';
     }
@@ -544,9 +581,43 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   
   document.querySelectorAll('#season-year-input, #tmdb-year-input, #igdb-year-input').forEach(input => {
-    input.addEventListener('input', () => {
+    input.addEventListener('input', (e) => {
+      e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 4);
+      
       clearTimeout(searchTimeout);
-      searchTimeout = setTimeout(() => loadContent(true), 500);
+      if (e.target.value.length === 4 || e.target.value.length === 0) {
+        searchTimeout = setTimeout(() => loadContent(true), 500);
+      }
+    });
+  });
+  
+  // Genre select handlers
+  document.querySelectorAll('.custom-select-trigger').forEach(trigger => {
+    trigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const wrapper = trigger.closest('.custom-select-wrapper');
+      const optionsList = wrapper.querySelector('.custom-options');
+      optionsList.classList.toggle('open');
+    });
+  });
+
+  document.querySelectorAll('.custom-option').forEach(option => {
+    option.addEventListener('click', () => {
+      const wrapper = option.closest('.custom-select-wrapper');
+      const trigger = wrapper.querySelector('.custom-select-trigger');
+      const optionsList = wrapper.querySelector('.custom-options');
+      
+      trigger.textContent = option.textContent;
+      trigger.dataset.value = option.dataset.value;
+      optionsList.classList.remove('open');
+      
+      loadContent(true);
+    });
+  });
+
+  document.addEventListener('click', () => {
+    document.querySelectorAll('.custom-options').forEach(list => {
+      list.classList.remove('open');
     });
   });
 

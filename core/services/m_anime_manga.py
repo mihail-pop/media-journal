@@ -722,11 +722,12 @@ def get_anilist_discover(
     year="",
     format_filter="",
     status="",
+    genre="",
 ):
     query_text = """
-    query ($page: Int, $search: String, $type: MediaType, $sort: [MediaSort], $season: MediaSeason, $seasonYear: Int, $format: MediaFormat, $status: MediaStatus) {
+    query ($page: Int, $search: String, $type: MediaType, $sort: [MediaSort], $season: MediaSeason, $seasonYear: Int, $startDate_like: String, $format: MediaFormat, $status: MediaStatus, $genre: String) {
       Page(page: $page, perPage: 20) {
-        media(search: $search, type: $type, sort: $sort, season: $season, seasonYear: $seasonYear, format: $format, status: $status) {
+        media(search: $search, type: $type, sort: $sort, season: $season, seasonYear: $seasonYear, startDate_like: $startDate_like, format: $format, status: $status, genre: $genre) {
           id
           idMal
           title {
@@ -763,14 +764,29 @@ def get_anilist_discover(
 
     if query:
         variables["search"] = query
-    if season:
+    
+    # Season and year logic
+    if season and media_type.lower() == "anime":
         variables["season"] = season
-    if year:
-        variables["seasonYear"] = int(year)
+        # When season is selected, use seasonYear
+        if year:
+            variables["seasonYear"] = int(year)
+        else:
+            # Default to current year if season selected but no year
+            variables["seasonYear"] = datetime.now().year
+    elif year:
+        # Year filtering: anime uses seasonYear, manga uses startDate_like
+        if media_type.lower() == "anime":
+            variables["seasonYear"] = int(year)
+        else:  # manga
+            variables["startDate_like"] = f"{year}%"
+    
     if format_filter:
         variables["format"] = format_filter
     if status:
         variables["status"] = status
+    if genre:
+        variables["genre"] = genre
 
     headers = {"Content-Type": "application/json"}
 

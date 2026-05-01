@@ -24,6 +24,7 @@ def upload_banner(request):
     uploaded_file = request.FILES.get("banner")
     source = request.POST.get("source")
     source_id = request.POST.get("id")
+    media_type = request.POST.get("media_type", "")
 
     if not uploaded_file or not source or not source_id:
         return JsonResponse({"error": "Missing required data."}, status=400)
@@ -32,51 +33,38 @@ def upload_banner(request):
     if ext not in [".jpg", ".jpeg", ".png", ".webp", ".gif"]:
         return JsonResponse({"error": "Unsupported file type."}, status=400)
 
+    # Get MediaItem
+    try:
+        lookup_key = f"provider_ids__{source}"
+        if media_type and source in ["tmdb", "mal", "anilist"]:
+            item = MediaItem.objects.get(**{lookup_key: str(source_id)}, media_type=media_type)
+        else:
+            item = MediaItem.objects.get(**{lookup_key: str(source_id)})
+        
+        if item.banner_url:
+            old_file_path = os.path.join(settings.MEDIA_ROOT, item.banner_url.replace("/media/", ""))
+            if os.path.exists(old_file_path):
+                os.remove(old_file_path)
+    except MediaItem.DoesNotExist:
+        return JsonResponse({"error": "Item not found."}, status=404)
+
     banner_dir = os.path.join(settings.MEDIA_ROOT, "banners")
     os.makedirs(banner_dir, exist_ok=True)
 
-    # Generate cache-busting filename
     timestamp = int(time.time() * 1000)
-    media_type = request.POST.get("media_type", "")
-    if media_type and source in ["tmdb", "mal"]:
+    if media_type and source in ["tmdb", "mal", "anilist"]:
         base_name = f"{source}_{media_type}_{source_id}_{timestamp}"
     else:
         base_name = f"{source}_{source_id}_{timestamp}"
     new_path = os.path.join(banner_dir, base_name + ext)
 
-    # Remove any old banner files for this source/source_id
-    for old_file in glob.glob(os.path.join(banner_dir, f"{source}_*")):
-        if os.path.isfile(old_file):
-            filename = os.path.splitext(os.path.basename(old_file))[0]
-            # For tmdb/mal: match source_mediatype_id or source_mediatype_id_timestamp
-            if media_type and source in ["tmdb", "mal"]:
-                if (
-                    filename == f"{source}_{media_type}_{source_id}"
-                    or filename.startswith(f"{source}_{media_type}_{source_id}_")
-                ):
-                    os.remove(old_file)
-            # For others: match source_id or source_id_timestamp
-            else:
-                if filename == f"{source}_{source_id}" or filename.startswith(
-                    f"{source}_{source_id}_"
-                ):
-                    os.remove(old_file)
-
-    # Save the new file
     with open(new_path, "wb+") as destination:
         for chunk in uploaded_file.chunks():
             destination.write(chunk)
 
     relative_url = f"/media/banners/{base_name}{ext}"
-
-    # Update MediaItem
-    try:
-        lookup_key = f"provider_ids__{source}"
-        item = MediaItem.objects.get(**{lookup_key: str(source_id)})
-        item.banner_url = relative_url
-        item.save(update_fields=["banner_url"])
-    except MediaItem.DoesNotExist:
-        pass
+    item.banner_url = relative_url
+    item.save(update_fields=["banner_url"])
 
     return JsonResponse({"success": True, "url": relative_url})
 
@@ -87,6 +75,7 @@ def upload_cover(request):
     uploaded_file = request.FILES.get("cover")
     source = request.POST.get("source")
     source_id = request.POST.get("id")
+    media_type = request.POST.get("media_type", "")
 
     if not uploaded_file or not source or not source_id:
         return JsonResponse({"error": "Missing required data."}, status=400)
@@ -95,51 +84,38 @@ def upload_cover(request):
     if ext not in [".jpg", ".jpeg", ".png", ".webp", ".gif"]:
         return JsonResponse({"error": "Unsupported file type."}, status=400)
 
+    # Get MediaItem
+    try:
+        lookup_key = f"provider_ids__{source}"
+        if media_type and source in ["tmdb", "mal", "anilist"]:
+            item = MediaItem.objects.get(**{lookup_key: str(source_id)}, media_type=media_type)
+        else:
+            item = MediaItem.objects.get(**{lookup_key: str(source_id)})
+        
+        if item.cover_url:
+            old_file_path = os.path.join(settings.MEDIA_ROOT, item.cover_url.replace("/media/", ""))
+            if os.path.exists(old_file_path):
+                os.remove(old_file_path)
+    except MediaItem.DoesNotExist:
+        return JsonResponse({"error": "Item not found."}, status=404)
+
     poster_dir = os.path.join(settings.MEDIA_ROOT, "posters")
     os.makedirs(poster_dir, exist_ok=True)
 
-    # Generate cache-busting filename
     timestamp = int(time.time() * 1000)
-    media_type = request.POST.get("media_type", "")
-    if media_type and source in ["tmdb", "mal"]:
+    if media_type and source in ["tmdb", "mal", "anilist"]:
         base_name = f"{source}_{media_type}_{source_id}_{timestamp}"
     else:
         base_name = f"{source}_{source_id}_{timestamp}"
     new_path = os.path.join(poster_dir, base_name + ext)
 
-    # Remove old cover files for this source/source_id
-    for old_file in glob.glob(os.path.join(poster_dir, f"{source}_*")):
-        if os.path.isfile(old_file):
-            filename = os.path.splitext(os.path.basename(old_file))[0]
-            # For tmdb/mal: match source_mediatype_id or source_mediatype_id_timestamp
-            if media_type and source in ["tmdb", "mal"]:
-                if (
-                    filename == f"{source}_{media_type}_{source_id}"
-                    or filename.startswith(f"{source}_{media_type}_{source_id}_")
-                ):
-                    os.remove(old_file)
-            # For others: match source_id or source_id_timestamp
-            else:
-                if filename == f"{source}_{source_id}" or filename.startswith(
-                    f"{source}_{source_id}_"
-                ):
-                    os.remove(old_file)
-
-    # Save the new file
     with open(new_path, "wb+") as destination:
         for chunk in uploaded_file.chunks():
             destination.write(chunk)
 
     relative_url = f"/media/posters/{base_name}{ext}"
-
-    # Update MediaItem
-    try:
-        lookup_key = f"provider_ids__{source}"
-        item = MediaItem.objects.get(**{lookup_key: str(source_id)})
-        item.cover_url = relative_url
-        item.save(update_fields=["cover_url"])
-    except MediaItem.DoesNotExist:
-        pass
+    item.cover_url = relative_url
+    item.save(update_fields=["cover_url"])
 
     return JsonResponse({"success": True, "url": relative_url})
 
@@ -451,6 +427,18 @@ def set_video_as_cover(request):
                 thumbnail_url = f"https://img.youtube.com/vi/{video_id}/hqdefault.jpg"
         except Exception:
             thumbnail_url = f"https://img.youtube.com/vi/{video_id}/hqdefault.jpg"
+
+        # Delete old cover file if it exists
+        if item.cover_url:
+            old_file_path = os.path.join(settings.MEDIA_ROOT, item.cover_url.replace("/media/", ""))
+            if os.path.exists(old_file_path):
+                os.remove(old_file_path)
+
+        # Delete old banner file if it exists
+        if item.banner_url:
+            old_file_path = os.path.join(settings.MEDIA_ROOT, item.banner_url.replace("/media/", ""))
+            if os.path.exists(old_file_path):
+                os.remove(old_file_path)
 
         # Download and save
         cache_bust = int(time.time() * 1000)

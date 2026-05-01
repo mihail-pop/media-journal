@@ -146,7 +146,7 @@ body {
   width: 100%;
   padding: 0.5rem;
   font-size: 0.95rem;
-  color: var(--text-light);
+  color: var(--text-primary);
   background-color: var(--table-bg);
   border: none;
   border-radius: 6px;
@@ -157,6 +157,70 @@ body {
   /* For Firefox */
   -moz-appearance: textfield;
   appearance: textfield;
+}
+
+.genre-select {
+  width: 100%;
+  padding: 0.5rem;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  background-color: var(--table-bg);
+  border: none;
+  border-radius: 6px;
+  box-sizing: border-box;
+  outline: none;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin-bottom: 0.3rem;
+  position: relative;
+  padding-right: 2rem;
+}
+
+.genre-select::after {
+  content: '▼';
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.7rem;
+  color: var(--text-primary);
+  pointer-events: none;
+}
+
+.custom-select-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.custom-options {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  background-color: var(--table-bg);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  z-index: 1000;
+  max-height: 200px;
+  overflow-y: auto;
+  margin-top: 0.3rem;
+  scrollbar-color: var(--text-primary) var(--bg-secondary);
+}
+
+.custom-options.open {
+  display: block;
+}
+
+.custom-option {
+  padding: 0.5rem;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.custom-option:hover {
+  background-color: var(--hover-bg);
 }
 
 /* For Chrome, Safari, Edge, Opera */
@@ -506,6 +570,18 @@ body {
   #season-year-input,
   #igdb-year-input,
   #year-input {
+    font-size: 2.5rem;
+  }
+  
+  .genre-select {
+    font-size: 2.5rem;
+  }
+
+  .genre-select::after {
+    font-size: 2rem;
+  }
+
+  .custom-option{
     font-size: 2.5rem;
   }
 

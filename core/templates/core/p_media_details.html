@@ -166,10 +166,12 @@
             <p class="season-name">{{ season.name }}</p>
             
             {% if season.season_number > 0 and season.episode_count <= 1 %}
-              <!-- If it's a normal season (1+) and has 0 or 1 episodes, show Announced -->
-              <p class="episode-count">Announced</p>
+              {% with total=seasons|length is_last=forloop.revcounter0|add:0 is_second_last=forloop.revcounter0|add:0 %}
+                {% if is_last == 0 or is_second_last == 1 %}
+                  <p class="episode-count">Announced</p>
+                {% endif %}
+              {% endwith %}
             {% else %}
-              <!-- For specials, or normal seasons with 2+ episodes, show the exact count with proper grammar -->
               <p class="episode-count">{{ season.episode_count }} episode{{ season.episode_count|pluralize }}</p>
             {% endif %}
             
