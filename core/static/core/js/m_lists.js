@@ -473,9 +473,10 @@ const statusLabelsMap = {
       starsHtml += '</span></span>';
       return starsHtml;
     } else if (ratingMode === 'scale_10') {
-      // If rating looks like 0-100, convert to 1-10 for display; if already 1-10, show it
+      // If rating is above 10, divide and round. If it's under 10, to not round to 0 when its 5 or under, display 1.
       let displayVal = rnum;
-      if (rnum > 10) displayVal = Math.round(rnum / 10);
+      if (rnum > 10) displayVal = Math.round(rnum / 10)
+        else displayVal = 1;
       return `<span class="card-rating"><span class="rating-number">${displayVal}</span></span>`;
     } else if (ratingMode === 'scale_100') {
       return `<span class="card-rating"><span class="rating-number">${Math.round(rnum)}</span></span>`;
@@ -561,6 +562,10 @@ const statusLabelsMap = {
   // Replace or move a single updated item in the DOM without reloading the whole page
   function replaceItemElement(item) {
     try {
+      if (ratingMode === 'scale_10' && item.personal_rating > 0 && item.personal_rating <= 10) {
+          item.personal_rating = item.personal_rating * 10;
+      }
+
       listCacheVersion = Date.now().toString();
       sessionStorage.setItem(`cacheVersion_${mediaType}`, listCacheVersion);
 

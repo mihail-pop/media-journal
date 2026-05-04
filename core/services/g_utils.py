@@ -29,24 +29,27 @@ def rating_to_display(rating_value: int | None, rating_mode: str) -> int | None:
         return None
 
     if rating_mode == "faces":
-        # Always round to the nearest face value: 1 (bad), 50 (neutral), 100 (good)
-        # This ensures any value maps to a valid face
-        faces = [1, 50, 100]
-        # Find the face value with the smallest absolute difference
-        return min(faces, key=lambda x: abs(rating_value - x))
+        # The same boundaries as in m_lists.js
+        if rating_value <= 33:
+            return 1
+        elif rating_value <= 66:
+            return 50
+        else:
+            return 100
 
     elif rating_mode == "stars_5":
-        # Map 1–100 to 1–5 stars
-        # We'll round nearest integer: divide by 20 and round (e.g. 50->3 stars)
-        result = round(rating_value / 20)
-        if rating_value != 0 and result < 1:
+        # Always divide by 20. int(val + 0.5) perfectly mimics JS Math.round()
+        result = int((rating_value / 20) + 0.5)
+        # Prevent 0 stars if they gave a low 1-100 rating (like 3)
+        if rating_value > 0 and result < 1:
             return 1
         return result
 
     elif rating_mode == "scale_10":
-        # Map 1–100 to 1–10 scale, rounded nearest int
-        result = round(rating_value / 10)
-        if rating_value != 0 and result < 1:
+        # Always divide by 10. 
+        result = int((rating_value / 10) + 0.5)
+        # Prevent 0 if they gave a low 1-100 rating (like 3)
+        if rating_value > 0 and result < 1:
             return 1
         return result
 
@@ -66,7 +69,6 @@ def display_to_rating(display_value: int | None, rating_mode: str) -> int | None
         return None
 
     if rating_mode == "faces":
-        # Faces are only 1, 50, 100
         if display_value <= 1:
             return 1
         elif display_value <= 50:
@@ -75,15 +77,12 @@ def display_to_rating(display_value: int | None, rating_mode: str) -> int | None
             return 100
 
     elif rating_mode == "stars_5":
-        # 1–5 stars * 20
         return display_value * 20
 
     elif rating_mode == "scale_10":
-        # 1–10 * 10
         return display_value * 10
 
     elif rating_mode == "scale_100":
-        # Direct 1–100
         return display_value
 
     return None
