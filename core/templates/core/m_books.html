@@ -89,14 +89,33 @@
       <button type="button" id="sort-order-btn" class="sort-order-btn" data-order="desc" aria-label="Sort descending"></button>
     </div>
 
-    <h3>View</h3>
+<h3>View</h3>
     <div class="view-toggle">
-      <button class="toggle-btn dual-toggle">
-        <span id="card-view-btn" class="toggle-half active">
-          <span class="toggle-text">Card ⊞</span>
+      <button class="toggle-btn view-mode-toggle" aria-label="Toggle view mode">
+        <span id="card-view-btn" class="toggle-part active" title="Card View">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <rect x="3" y="3" width="7" height="7" rx="1" />
+            <rect x="14" y="3" width="7" height="7" rx="1" />
+            <rect x="3" y="14" width="7" height="7" rx="1" />
+            <rect x="14" y="14" width="7" height="7" rx="1" />
+          </svg>
         </span>
-        <span id="list-view-btn" class="toggle-half">
-          <span class="toggle-text">List ≡</span>
+        <span id="detailed-list-view-btn" class="toggle-part" title="Detailed List View">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <circle cx="4" cy="6" r="1.5" fill="currentColor" stroke="none"/>
+            <path d="M9 6h11"/>
+            <circle cx="4" cy="12" r="1.5" fill="currentColor" stroke="none"/>
+            <path d="M9 12h11"/>
+            <circle cx="4" cy="18" r="1.5" fill="currentColor" stroke="none"/>
+            <path d="M9 18h11"/>
+          </svg>
+        </span>
+        <span id="list-view-btn" class="toggle-part" title="Simple List View">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M4 6h16" />
+            <path d="M4 12h16" />
+            <path d="M4 18h16" />
+          </svg>
         </span>
       </button>
     </div>
@@ -111,6 +130,11 @@
 
     <!-- List View -->
     <div id="list-view" class="list-table" style="display: none;">
+      <!-- Content will be loaded dynamically -->
+    </div>
+
+    <!-- Detailed List View -->
+    <div id="detailed-list-view" class="list-table" style="display: none;">
       <!-- Content will be loaded dynamically -->
     </div>
 

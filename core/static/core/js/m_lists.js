@@ -2,10 +2,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
   const cardView = document.getElementById("card-view");
   const listView = document.getElementById("list-view");
+  const detailedListView = document.getElementById("detailed-list-view");
   const loadingIndicator = document.getElementById("loading-indicator");
 
   const cardBtn = document.getElementById("card-view-btn");
   const listBtn = document.getElementById("list-view-btn");
+  const detailedListBtn = document.getElementById("detailed-list-view-btn");
 
   const filterButtons = document.querySelectorAll(".filter-btn");
   const typeFilterButtons = document.querySelectorAll(".type-filter-btn");
@@ -197,7 +199,11 @@ const statusLabelsMap = {
 
   function renderItems() {
     const isCardView = currentView === 'card';
-    const container = isCardView ? cardView : listView;
+    const isDetailedView = currentView === 'detailed_list';
+
+    let container = cardView;
+    if (currentView === 'list') container = listView;
+    if (currentView === 'detailed_list') container = detailedListView;
     
     // Group items by status
     const groupedItems = {};
@@ -304,7 +310,7 @@ const statusLabelsMap = {
         
         const tbody = table.querySelector('tbody');
         items.forEach(item => {
-          tbody.appendChild(createListRowElement(item));
+          tbody.appendChild(createListRowElement(item, isDetailedView));
         });
 
         // Add click listeners to table headers for sorting
@@ -362,9 +368,9 @@ const statusLabelsMap = {
     return card;
   }
 
-  function createListRowElement(item) {
+function createListRowElement(item, isDetailed = false) {
     const row = document.createElement('tr');
-    row.className = 'list-row';
+    row.className = isDetailed ? 'list-row detailed-row' : 'list-row';
     row.dataset.id = item.id;
     row.dataset.mediaType = item.media_type;
     row.dataset.status = item.status;
@@ -374,19 +380,59 @@ const statusLabelsMap = {
     row.dataset.bannerUrl = item.banner_url;
     row.dataset.notes = item.notes || '';
     row.dataset.sourceId = item.source_id;
+
+    if (isDetailed && item.banner_url) {
+      row.style.setProperty('--banner-url', `url('${item.banner_url}')`);
+    }
     
     const ratingHtml = getRatingHtml(item.personal_rating);
     const linkUrl = getLinkUrl(item);
     const episodesHtml = getListMainProgressHtml(item);
     const seasonsHtml = getSeasonsHtml(item);
+
+    // Build the repeats indicator
+    const repeatHtml = item.repeats > 0 ? `
+      <div class="list-repeats-indicator" title="${item.repeats} repeats">
+        <span class="repeat-count-text">${item.repeats}</span>
+        <svg class="repeat-icon" viewBox="0 0 512 512"><path fill="currentColor" d="M256.455 8c66.269.119 126.437 26.233 170.859 68.685l35.715-35.715C478.149 25.851 504 36.559 504 57.941V192c0 13.255-10.745 24-24 24H345.941c-21.382 0-32.09-25.851-16.971-40.971l41.75-41.75c-30.864-28.899-70.801-44.907-113.23-45.273-92.398-.798-170.283 73.977-169.484 169.442C88.764 348.009 162.184 424 256 424c41.127 0 79.997-14.678 110.629-41.556 4.743-4.161 11.906-3.908 16.368.553l39.662 39.662c4.872 4.872 4.631 12.815-.482 17.433C378.202 479.813 319.926 504 256 504 119.034 504 8.001 392.967 8 256.002 7.999 119.193 119.646 7.755 256.455 8z"/></svg>
+      </div>
+    ` : '';
     
+    let firstCellHtml = '';
+    if (isDetailed) {
+      firstCellHtml = `
+        <td class="detailed-title-cell">
+          <a href="${linkUrl}">
+            <div class="mini-card-image">
+              <img src="${item.cover_url}" alt="${item.title}" loading="lazy">
+            </div>
+            <div class="detailed-text-content">
+              <span class="detailed-title">${item.title}</span>
+              ${item.notes ? `<span class="detailed-notes">${item.notes}</span>` : ''}
+            </div>
+            <div class="list-row-actions">
+              ${repeatHtml}
+              <button class="edit-card-btn">⋯</button>
+            </div>
+          </a>
+        </td>
+      `;
+    } else {
+      firstCellHtml = `
+        <td class="simple-title-cell">
+          <a href="${linkUrl}">
+            <span class="simple-title">${item.title}</span>
+            <div class="list-row-actions">
+              ${repeatHtml}
+              <button class="edit-card-btn">⋯</button>
+            </div>
+          </a>
+        </td>
+      `;
+    }
+
     let tableHtml = `
-      <td>
-        <a href="${linkUrl}">
-          ${item.title}
-          <button class="edit-card-btn">⋯</button>
-        </a>
-      </td>
+      ${firstCellHtml}
       <td>${ratingHtml}</td>
     `;
 
@@ -398,29 +444,13 @@ const statusLabelsMap = {
     const releaseDate = item.release_date || '';
     tableHtml += `<td>${releaseDate}</td>`;
 
-    // Add episodes and seasons columns for TV shows
+    // Add episodes and seasons columns
     if (mediaType === 'tvshows') {
-      tableHtml += `
-        <td style="text-align: center;">${episodesHtml}</td>
-        <td>${seasonsHtml}</td>
-      `;
-    } else if (mediaType === 'anime') {
-      tableHtml += `
-        <td style="text-align: center;">${episodesHtml}</td>
-      `;
+      tableHtml += `<td style="text-align: center;">${episodesHtml}</td><td>${seasonsHtml}</td>`;
+    } else if (['anime', 'games', 'books'].includes(mediaType)) {
+      tableHtml += `<td style="text-align: center;">${episodesHtml}</td>`;
     } else if (mediaType === 'manga') {
-      tableHtml += `
-        <td style="text-align: center;">${episodesHtml}</td>
-        <td style="text-align: center;">${seasonsHtml}</td>
-      `;
-    } else if (mediaType === 'games') {
-      tableHtml += `
-        <td style="text-align: center;">${episodesHtml}</td>
-      `;
-    } else if (mediaType === 'books') {
-      tableHtml += `
-        <td style="text-align: center;">${episodesHtml}</td>
-      `;
+      tableHtml += `<td style="text-align: center;">${episodesHtml}</td><td style="text-align: center;">${seasonsHtml}</td>`;
     }
 
     row.innerHTML = tableHtml;
@@ -601,13 +631,18 @@ const statusLabelsMap = {
       }
 
       // Create a fresh element using existing render helpers
-      const newEl = (currentView === 'card') ? createCardElement(item) : createListRowElement(item);
+      const newEl = (currentView === 'card') 
+          ? createCardElement(item) 
+          : createListRowElement(item, currentView === 'detailed_list');
       // Attach date data for comparisons
       if (item.date_added) newEl.dataset.dateAdded = item.date_added;
 
       // Try to find existing element in DOM BEFORE removing it
       const selector = currentView === 'card' ? `.card[data-id="${id}"]` : `.list-row[data-id="${id}"]`;
-      const oldEl = (currentView === 'card' ? cardView : listView)?.querySelector(selector) || document.querySelector(selector);
+      let activeContainer = cardView;
+      if (currentView === 'list') activeContainer = listView;
+      if (currentView === 'detailed_list') activeContainer = detailedListView;
+      const oldEl = activeContainer?.querySelector(selector) || document.querySelector(selector);
       if (oldEl) {
         // Check if we need to re-sort based on current sort criteria
         let needsResort = false;
@@ -764,7 +799,7 @@ function compareItems(a, b) {
         }
       } else {
         // List view: find or create status group table/tbody
-        let destGroup = listView.querySelector(`.status-group[data-status="${item.status}"]`);
+        let destGroup = activeContainer.querySelector(`.status-group[data-status="${item.status}"]`);
         if (!destGroup) {
           destGroup = document.createElement('div');
           destGroup.className = 'status-group';
@@ -779,20 +814,20 @@ function compareItems(a, b) {
           table.innerHTML = `<thead></thead><tbody></tbody>`;
           destGroup.appendChild(table);
 
-          // Insert destGroup into listView according to statusesOrder
-          const existingGroups = Array.from(listView.querySelectorAll('.status-group'));
+          // Insert destGroup into activeContainer according to statusesOrder
+          const existingGroups = Array.from(activeContainer.querySelectorAll('.status-group'));
           const myIndex = statusesOrder.indexOf(item.status);
           let placed = false;
           for (const g of existingGroups) {
             const gIndex = statusesOrder.indexOf(g.dataset.status);
             if (gIndex === -1) continue;
             if (gIndex > myIndex) {
-              listView.insertBefore(destGroup, g);
+              activeContainer.insertBefore(destGroup, g);
               placed = true;
               break;
             }
           }
-          if (!placed) listView.appendChild(destGroup);
+          if (!placed) activeContainer.appendChild(destGroup);
           console.log('Created new destGroup for status:', item.status);
         }
 
@@ -850,8 +885,9 @@ function compareItems(a, b) {
       // Remove from allItems
       allItems = allItems.filter(i => String(i.id) !== sid);
       // Remove empty status groups
-      const containers = [cardView, listView];
+      const containers = [cardView, listView, detailedListView];
       containers.forEach(container => {
+          if (!container) return;
           const groups = Array.from(container.querySelectorAll('.status-group')) || [];
           groups.forEach(g => {
             const grid = g.querySelector('.card-grid');
@@ -1127,41 +1163,35 @@ updateSortButtons();
     }
   }
 
-  // === Show the correct view immediately ===
-  if (currentView === "card") {
-    cardBtn.classList.add("active");
-    listBtn.classList.remove("active");
-    cardView.style.display = "block";
-    listView.style.display = "none";
-  } else {
-    listBtn.classList.add("active");
-    cardBtn.classList.remove("active");
-    listView.style.display = "block";
-    cardView.style.display = "none";
+// === View Initialization and Toggle Controls ===
+  function applyView(view) {
+    cardBtn?.classList.toggle("active", view === "card");
+    listBtn?.classList.toggle("active", view === "list");
+    detailedListBtn?.classList.toggle("active", view === "detailed_list");
+
+    if (cardView) cardView.style.display = view === "card" ? "block" : "none";
+    if (listView) listView.style.display = view === "list" ? "block" : "none";
+    if (detailedListView) detailedListView.style.display = view === "detailed_list" ? "block" : "none";
   }
 
-  // === VIEW TOGGLE ===
-  cardBtn.addEventListener("click", () => {
-    cardBtn.classList.add("active");
-    listBtn.classList.remove("active");
-    cardView.style.display = "block";
-    listView.style.display = "none";
-    currentView = "card";
-    sessionStorage.setItem(viewKey, currentView);
-    updateStatusContainer();
-    renderItems();
-  });
+  if (!['card', 'list', 'detailed_list'].includes(currentView)) {
+    currentView = 'card';
+  }
+  applyView(currentView);
 
-  listBtn.addEventListener("click", () => {
-    listBtn.classList.add("active");
-    cardBtn.classList.remove("active");
-    listView.style.display = "block";
-    cardView.style.display = "none";
-    currentView = "list";
+  // Helper for clicking toggle buttons
+  function switchView(newView) {
+    if (currentView === newView) return;
+    currentView = newView;
     sessionStorage.setItem(viewKey, currentView);
+    applyView(currentView);
     updateStatusContainer();
     renderItems();
-  });
+  }
+
+  cardBtn?.addEventListener("click", () => switchView("card"));
+  listBtn?.addEventListener("click", () => switchView("list"));
+  detailedListBtn?.addEventListener("click", () => switchView("detailed_list"));
 
   // === TYPE FILTER BUTTONS ===
   typeFilterButtons.forEach((btn) => {

@@ -246,16 +246,17 @@ html {
   gap: 0.5rem;
 }
 
-.dual-toggle {
+.view-mode-toggle {
   display: flex;
   gap: 0.5rem;
   border-radius: 6px;
   overflow: hidden;
   background: var(--bg-tertiary);
-  max-height: 1.9rem;
+  max-height: 2.3rem;
+  padding: 0;
 }
 
-.toggle-half {
+.toggle-part {
   flex: 1;
   display: flex;
   align-items: center;
@@ -263,20 +264,24 @@ html {
   padding: 0.5rem;
   cursor: pointer;
   border-radius: 6px;
-  transition: background-color 0.3s ease;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  color: var(--text-primary);
 }
 
-.toggle-half:hover {
+.toggle-part:hover {
   background-color: var(--bg-quaternary);
 }
 
-.toggle-half.active {
+.toggle-part.active {
   background-color: var(--bg-tertiary);
 }
 
-.toggle-text {
-  font-size: 0.85rem;
-  white-space: nowrap;
+.toggle-part svg {
+  width: 1.3rem;
+  height: 1.3rem;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .filter-btn,
@@ -385,11 +390,16 @@ html {
   position: absolute;
   right: 0.65rem;
   top: 50%;
-  transform: translateY(-35%);
+  transform: translateY(-35%) rotate(0deg);
+  transition: transform 0.3s ease;
   border-left: 0.3rem solid transparent;
   border-right: 0.3rem solid transparent;
   border-top: 0.35rem solid var(--text-primary);
   pointer-events: none;
+}
+
+.sort-select[aria-expanded="true"]::after {
+  transform: translateY(-35%) rotate(180deg);
 }
 
 .sort-select:hover,
@@ -581,7 +591,7 @@ body[data-media-type="games"] .card {
 .repeat-icon {
   width: 16px;
   height: 16px;
-  color: white;
+  color: var(--text-light);
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.8));
 }
 
@@ -625,6 +635,11 @@ body[data-media-type="games"] .card {
   position: relative;
 }
 
+.list-table tr.detailed-row .rating-number,
+.list-table tr.list-row .rating-number {
+  font-size: initial;
+}
+
 .card-meta-row {
   display: flex;
   justify-content: space-between;
@@ -645,7 +660,7 @@ body[data-media-type="games"] .card {
   right: 5px;
   display: none;
   background: rgba(0, 0, 0, 0.6);
-  color: white;
+  color: var(--text-light);
   border: none;
   padding: 8px 10px;
   cursor: pointer;
@@ -667,8 +682,8 @@ body[data-media-type="games"] .card {
 
 .list-table .edit-card-btn {
   display: none;
-  background: rgba(0, 0, 0, 0.6);
-  color: white;
+  background: var(--table-bg);
+  color: var(--text-primary);
   border: none;
   padding: 4px 8px;
   font-size: 1rem;
@@ -700,6 +715,95 @@ body[data-media-type="games"] .card {
   color: grey;
 }
 
+.list-table tr.detailed-row .card-rating svg {
+  width: 1.5em;
+  height: 1.5em;
+}
+
+/* --- Detailed List View Styles --- */
+.list-table tr.detailed-row {
+  /* transition: background-image 0.2s ease, background-color 0.2s ease; */
+  background-size: cover;
+  background-position: center 25%;
+  background-repeat: no-repeat;
+}
+
+.list-table tr.detailed-row td {
+  /* transition: background-color 0.2s ease;*/
+}
+
+/* Force the td to become transparent on hover so the TR background shows through */
+.list-table tr.detailed-row:hover td {
+   background-color: transparent !important; 
+}
+
+/* Base dark theme overlay */
+.list-table tr.detailed-row:hover {
+  background-image: linear-gradient(rgba(11, 22, 34, 0.88), rgba(11, 22, 34, 0.88)), var(--banner-url, none);
+  
+}
+
+/* Adjust overlay color automatically for light and brown themes */
+[data-theme="light"] .list-table tr.detailed-row:hover {
+  background-image: linear-gradient(rgba(100, 100, 148, 0.5)rgba(87, 74, 146, 0.5)), var(--banner-url, none);
+}
+[data-theme="brown"] .list-table tr.detailed-row:hover {
+  background-image: linear-gradient(rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.75)), var(--banner-url, none);
+}
+
+/* Mini Cover Adjustments */
+.detailed-title-cell a {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  text-decoration: none;
+  position: relative;
+}
+
+.mini-card-image {
+  width: 45px;
+  height: 65px;
+  flex-shrink: 0;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.mini-card-image img {
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  object-position: center top;
+}
+
+.mini-card-image img[src*="placeholder"] {
+    opacity: 0;
+}
+
+body[data-media-type="music"] .mini-card-image img {
+  height: 100%;
+}
+
+/* Make music images square */
+body[data-media-type="games"] .mini-card-image {
+  width: 45px;
+  height: 60px;
+}
+
+/* Make music images square */
+body[data-media-type="music"] .mini-card-image {
+  width: 65px;
+  height: 65px;
+}
+
+.detailed-title {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* --- List View Table --- */
 .list-table {
   width: 100%;
@@ -726,7 +830,7 @@ body[data-page-type="tv"] .list-table td:nth-child(1) {
 
 .list-table th:nth-child(2),
 .list-table td:nth-child(2) {
-  width: 10%;
+  width: 11%;
   text-align: center;
 }
 
@@ -801,14 +905,108 @@ body[data-page-type="tv"] .list-table td:nth-child(1) {
   text-decoration: none;
 }
 
-.list-table a:hover {
+.list-table a:hover .detailed-title,
+.list-table a:hover .simple-title {
   text-decoration: underline;
 }
-
 
 #card-view,
 #list-view {
   display: none;
+}
+
+/* --- Text layout & Notes positioning --- */
+.detailed-text-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  padding-right: 80px;
+}
+
+body[data-media-type="tvshows"] .detailed-text-content {
+  padding-right: 40px;
+}
+
+body[data-media-type="tvshows"] .simple-title-cell a {
+  padding-right: 40px;
+}
+
+.detailed-title {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Position notes absolutely below the centered title so it doesn't affect vertical flow */
+.detailed-notes {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--text-tertiary);
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  opacity: 0.8;
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+.simple-title-cell a {
+  display: block;
+  position: relative;
+  padding-right: 80px;
+}
+
+.simple-title {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* --- List Row Actions (Repeats + Edit Button) --- */
+.list-row-actions {
+  position: absolute;
+  right: -10px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 2;
+}
+
+.list-repeats-indicator {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-primary);
+  font-weight: bold;
+  font-size: 0.9rem;
+  background: var(--table-bg);
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.list-repeats-indicator svg {
+  width: 13px;
+  height: 13px;
+  color: var(--text-primary);
+  filter: none;
+}
+
+/* Override the old list edit button rules */
+.list-table .edit-card-btn {
+  position: static;
+  transform: none;
+  margin: 0;
+  display: none;
+}
+
+.list-table tr:hover .edit-card-btn {
+  display: block;
 }
 
 .status-dot {
@@ -1253,4 +1451,37 @@ padding: 0 5rem 2rem
     height: 2.5rem;
     width: 2.5rem;
   }
+
+  .view-mode-toggle {
+    max-height: none;
+    padding: 0.2rem;
+  }
+  .toggle-part svg {
+    width: 2.8rem;
+    height: 2.8rem;
+  }
+
+  .list-repeats-indicator {
+    font-size: 2rem;
+    padding: 4px 8px;
+  }
+  
+  .list-repeats-indicator svg {
+    width: 1.8rem;
+    height: 1.8rem;
+  }
+  
+  .list-row-actions {
+    gap: 20px;
+  }
+
+  .simple-title-cell a ,
+  .detailed-text-content {
+    padding-right: 0;
+  }
+
+  /* Position notes absolutely below the centered title so it doesn't affect vertical flow */
+.detailed-notes {
+  display: none;
+}
 }

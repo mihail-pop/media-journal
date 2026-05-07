@@ -875,6 +875,7 @@ input[type="number"] {
 
   #date_added {
     width: 18rem;
+    max-width: 18rem;
   }
 
   #repeats {

@@ -6,10 +6,10 @@ This is the self-hosted media tracker app I always wanted to have. From now on I
 ## Features
 
 - Separate lists for movies, tv shows, games, anime, manga, books and music.
-- Track progress, ratings, status, and notes.
+- Track progress, ratings, status and notes.
 - Home page shows stats, recent activity and favorites (including actors and characters).
 - Multiple rating systems (3 faces, 5 stars, 1-10, 1-100).
-- You can play your saved songs through a YouTube music player while navigating the site.
+- Play your saved songs through a YouTube music player while navigating the site.
 - Automated check for sequels and new seasons (tv shows, anime, manga).
 - Get status for planned movies, tv shows, anime, manga.
 
@@ -87,8 +87,15 @@ The application can be configured using environment variables.
    ```
 
 7. Start the app:
+
    ```sh
-   python manage.py runserver --noreload
+   python manage.py runserver 0.0.0.0:8000 --noreload
+   ```
+
+   Or use this command if you plan to run it on a machine 24/7.
+
+   ```sh
+   python -m waitress --listen=0.0.0.0:8000 --threads=8 media_journal.wsgi:application
    ```
 
 8. Open the app in your browser at: http://localhost:8000
@@ -98,14 +105,9 @@ The application can be configured using environment variables.
 
 ### Optional Tips
 
-- To access the app from your phone or other devices on the same network, run the server using this command:
+- Access the app from your phone or other devices on the same network using your machine's IPv4 address. You can find your IPv4 address by running `ipconfig` in the terminal.
 
-  ```sh
-  python manage.py runserver 0.0.0.0:8000 --noreload
-  ```
-   Then on your other devices you can access it using your machine's IPv4 address. You can find your IPv4 address by running `ipconfig` in the terminal.
-
-- For windows, to automatically start the app, you can create a `.bat` file that runs the `runserver` command and a `.vbs` file in the shell:startup folder to start that bat file at startup.
+- For windows, to automatically start the app, you can create a `.bat` file that runs the `runserver` command and a `.vbs` file in the shell:startup folder to start that bat file at startup (it will start after log on, if you want before log on you can make the app start as a service with nssm and the `.bat` file).
 
   Example `.bat` file:
 
