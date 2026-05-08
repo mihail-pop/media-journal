@@ -11,7 +11,12 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_POST
 
 from core.models import APIKey, NavItem
-from core.services.p_settings import BACKUP_TASKS, BackupTask, cleanup_old_tasks
+from core.services.p_settings import (
+    BACKUP_TASKS,
+    BackupTask,
+    RefreshTask,
+    cleanup_old_tasks,
+)
 
 
 @ensure_csrf_cookie
@@ -96,6 +101,27 @@ def update_nav_items(request):
         return JsonResponse({"success": False, "error": str(e)}, status=400)
 
 
+class AutoDeleteFile:
+    """A cross-platform wrapper that deletes the file from disk the moment the browser finishes downloading."""
+    def __init__(self, path):
+        self._path = path
+        self._file = open(path, 'rb')
+
+    def __getattr__(self, item):
+        # Pass normal file operations (read, seek, size) to the actual file
+        return getattr(self._file, item)
+
+    def close(self):
+        # 1. Close the file to release OS locks (crucial for Windows)
+        self._file.close()
+        
+        # 2. Instantly delete the file if it hasn't been deleted already
+        if os.path.exists(self._path):
+            try:
+                os.remove(self._path)
+            except Exception:
+                pass
+
 @ensure_csrf_cookie
 @require_GET
 def create_backup(request):
@@ -115,8 +141,9 @@ def restore_backup(request):
     if not uploaded_file:
         return JsonResponse({"error": "No file uploaded"}, status=400)
 
-    # Save to temp file first
-    temp_fd, temp_path = tempfile.mkstemp(suffix=".zip")
+    # --- CHANGED LINE HERE --- 
+    # Added the prefix so we can easily track and clean up orphaned uploads
+    temp_fd, temp_path = tempfile.mkstemp(prefix="media_journal_upload_", suffix=".zip")
     os.close(temp_fd)
 
     with open(temp_path, "wb") as f:
@@ -162,8 +189,11 @@ def backup_download(request, task_id):
     if not task or task.status != "completed" or not task.result_path:
         return HttpResponseBadRequest("Backup not ready or not found")
 
+    # Use our new AutoDelete wrapper instead of the standard open()
+    wrapped_file = AutoDeleteFile(task.result_path)
+
     return FileResponse(
-        open(task.result_path, "rb"),
+        wrapped_file,
         as_attachment=True,
         filename=f"media_journal_backup_{datetime.datetime.now().strftime('%Y%m%d')}.zip",
     )
@@ -237,3 +267,20 @@ def version_info_api(request):
     return JsonResponse(
         {"current_version": current_version, "latest_version": latest_version}
     )
+
+@ensure_csrf_cookie
+@require_POST
+def refresh_data(request):
+    try:
+        data = json.loads(request.body)
+        media_type = data.get("media_type", "all")
+
+        cleanup_old_tasks()
+        task_id = uuid.uuid4().hex
+        task = RefreshTask(task_id, media_type)
+        BACKUP_TASKS[task_id] = task
+        task.start()
+
+        return JsonResponse({"task_id": task_id})
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)

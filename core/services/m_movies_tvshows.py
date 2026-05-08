@@ -209,9 +209,10 @@ def save_tmdb_season(tmdb_id, season_number):
         season_params = {"api_key": api_key, "append_to_response": "aggregate_credits"}
         season_response = requests.get(season_url, params=season_params)
 
-        if season_response.status_code != 200:
+        if season_response.status_code == 429:
+            raise Exception("HTTP 429 Too Many Requests: Rate Limit Exceeded")
+        elif season_response.status_code != 200:
             return JsonResponse({"error": "Failed to fetch season details."})
-
         season_data = season_response.json()
 
         # Get main show details

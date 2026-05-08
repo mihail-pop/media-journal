@@ -14,7 +14,9 @@ def save_openlib_item(work_id):
     detail_url = f"https://openlibrary.org/works/{work_id}.json"
     detail_response = requests.get(detail_url, timeout=10)
 
-    if detail_response.status_code != 200:
+    if detail_response.status_code == 429:
+        raise Exception("HTTP 429 Too Many Requests: Rate Limit Exceeded")
+    elif detail_response.status_code != 200:
         raise Exception("Failed to fetch book details from Open Library.")
 
     detail_data = detail_response.json()
@@ -26,14 +28,23 @@ def save_openlib_item(work_id):
     
     try:
         search_response = requests.get(search_url, timeout=10)
+        
+        # Catch the 429 Rate Limit here
+        if search_response.status_code == 429:
+            raise Exception("HTTP 429 Too Many Requests: Rate Limit Exceeded")
+            
         if search_response.status_code == 200:
             search_data = search_response.json()
             if search_data.get("docs"):
                 doc = search_data["docs"][0]
-                author_names = doc.get("author_name", [])
+                # Replaced empty brackets with list() to bypass your UI cutoff bug
+                author_names = doc.get("author_name", list())
                 total_pages = doc.get("number_of_pages_median")
-    except Exception:
-        # if search fails, the script continues without authors/pages
+                
+    except Exception as e:
+        # Make sure the 429 exception bubbles up and isn't swallowed
+        if "429" in str(e):
+            raise e
         pass
 
     # Title and description logic

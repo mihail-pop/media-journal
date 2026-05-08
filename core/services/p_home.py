@@ -29,17 +29,13 @@ def start_media_cleanup_loop():
         try:
             with open(counter_file, 'r') as f:
                 content = f.read().strip()
-                # Handle old format (1, 2, 3) or new format (YYYY-MM-DD)
                 if content.isdigit():
-                    # Old format - treat as if it needs to run
                     last_run_date = None
                 else:
-                    # New format - parse the date
                     last_run_date = datetime.strptime(content, '%Y-%m-%d').date()
         except (ValueError, Exception):
             last_run_date = None
 
-    # Check if a month has passed since last run
     today = datetime.now().date()
     if last_run_date:
         days_since_last_run = (today - last_run_date).days
@@ -47,7 +43,6 @@ def start_media_cleanup_loop():
             print(f"Cleanup already ran {days_since_last_run} days ago. Skipping (runs monthly).")
             return
 
-    # Save today's date
     try:
         with open(counter_file, 'w') as f:
             f.write(today.strftime('%Y-%m-%d'))
@@ -62,27 +57,46 @@ def start_media_cleanup_loop():
         try:
             print("Running orphan media cleanup...")
             
+            # Helper function to recursively find all media URLs inside JSON fields
+            def extract_valid_media(data, valid_set):
+                if isinstance(data, dict):
+                    for value in data.values():
+                        extract_valid_media(value, valid_set)
+                elif isinstance(data, list):
+                    for item in data:
+                        extract_valid_media(item, valid_set)
+                elif isinstance(data, str):
+                    if data.startswith("/media/"):
+                        valid_set.add(data.replace("/media/", "", 1).strip('/'))
+
             # 1. Gather all VALID images currently in use by the database
             valid_files = set()
             for item in MediaItem.objects.all():
                 # Add Cover
                 if item.cover_url and item.cover_url.startswith("/media/"):
-                    # Extract just the "posters/filename.jpg" part
                     valid_files.add(item.cover_url.replace("/media/", "", 1).strip('/'))
                 
                 # Add Banner
                 if item.banner_url and item.banner_url.startswith("/media/"):
                     valid_files.add(item.banner_url.replace("/media/", "", 1).strip('/'))
                 
-                # Add Screenshots (Only for games)
-                if item.media_type == "game" and item.screenshots:
-                    for shot in item.screenshots:
-                        url = shot.get("url", "")
-                        if url.startswith("/media/"):
-                            valid_files.add(url.replace("/media/", "", 1).strip('/'))
+                # Smart scan all JSON fields for any image paths
+                extract_valid_media(item.screenshots, valid_files)
+                extract_valid_media(item.seasons, valid_files)
+                extract_valid_media(item.episodes, valid_files)
+                extract_valid_media(item.related_titles, valid_files)
+                extract_valid_media(item.cast, valid_files)
 
             # 2. Define the specific folders we want to clean
-            folders_to_clean = ["posters", "banners", "screenshots"]
+            folders_to_clean =[
+                "posters", 
+                "banners", 
+                "screenshots", 
+                "seasons", 
+                "episodes", 
+                "related", 
+                "cast"
+            ]
             deleted_count = 0
 
             # 3. Scan the folders and delete files NOT in the valid list
@@ -93,7 +107,6 @@ def start_media_cleanup_loop():
                     continue
                 
                 for filename in os.listdir(folder_path):
-
                     if filename.startswith('.'):
                         continue
                     
@@ -113,7 +126,6 @@ def start_media_cleanup_loop():
         except Exception as e:
             print(f"Error during media cleanup: {e}")
 
-    # Start the thread in the background
     t = threading.Thread(target=loop, daemon=True)
     t.start()
 

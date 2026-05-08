@@ -14,6 +14,7 @@
     <button class="tab-button active" data-tab="preferences">Preferences</button>
     <button class="tab-button" data-tab="backup">Backup</button>
     <button class="tab-button" data-tab="api-keys">API Keys</button>
+    <button class="tab-button" data-tab="refresh">Refresh</button>
     <button class="tab-button" data-tab="information">Information</button>
   </div>
 
@@ -247,6 +248,35 @@
             <span class="api-service-desc">Needs <b>ID</b> only</span>
             <a href="https://myanimelist.net/apiconfig" target="_blank" rel="noopener noreferrer">Guide</a>
             <a href="https://imgur.com/a/d9NkhmN" target="_blank" rel="noopener noreferrer">Example</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<div class="tab-content" id="refresh">
+    <div class="preferences-container">
+      <div class="preferences-section" style="grid-column: 1 / -1; max-width: 600px; margin: 0 auto; text-align: center;">
+        <h3>Refresh Data</h3>
+        <p style="margin-bottom: 1.5rem; font-size: 0.9rem; color: var(--text-primary);">
+          Update information for your saved items. This will only refresh data (like overview, release date, cast) and will not overwrite your cover images, banners, or personal notes. Custom items will be skipped.
+        </p>
+        <div class="refresh-actions" style="display: flex; flex-direction: column; gap: 1rem; align-items: center;">
+          <button class="backup-btn" id="refresh-all-btn" style="width: 100%; max-width: 300px; background-color: var(--special-color); color: white; border-color: var(--special-color);">
+            <svg viewBox="0 0 512 512" style="width: 16px; height: 16px; margin-right: 8px;"><path fill="currentColor" d="M440.65 12.57l4 82.06A247.16 247.16 0 0 0 256 8C119.34 8 7.9 119.53 8 256.19 8.1 393.07 119.1 504 256 504a247.1 247.1 0 0 0 166.18-63.91 12 12 0 0 0 .48-17.43l-34-34a12 12 0 0 0-16.38-.55A176 176 0 1 1 402.1 157.8l-102.18-4.94a12 12 0 0 0-12.57 11.41l-1.07 43.1a12 12 0 0 0 11.41 12.57l163.63 7.92A12 12 0 0 0 474 216l3.52-192a12 12 0 0 0-11.41-12.57l-13.68-.68a12 12 0 0 0-11.78 11.82z"/></svg>
+            Refresh All
+          </button>
+          
+          <div class="settings-separator" style="margin: 0.5rem auto; width: 100%; max-width: 300px;"></div>
+          
+          <div id="refresh-media-types" style="display: flex; flex-direction: column; gap: 0.8rem; width: 100%; max-width: 300px;">
+            {% for item in nav_items %}
+              {% if item.name != 'home' %}
+              <button class="backup-btn refresh-type-btn" data-type="{{ item.name }}" style="width: 100%; font-size: 0.95rem; padding: 0.6rem 1rem;">
+                Refresh {{ item.name|title }}
+              </button>
+              {% endif %}
+            {% endfor %}
           </div>
         </div>
       </div>

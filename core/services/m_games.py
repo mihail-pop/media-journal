@@ -214,7 +214,9 @@ def get_game_extra_info(game_id):
         response = requests.post(
             "https://api.igdb.com/v4/games", headers=headers, data=body
         )
-        if response.status_code != 200:
+        if response.status_code == 429:
+            raise Exception("HTTP 429 Too Many Requests: Rate Limit Exceeded")
+        elif response.status_code != 200:
             return {}
 
         data = response.json()
@@ -444,9 +446,11 @@ def get_igdb_discover(
         response = requests.post(
             "https://api.igdb.com/v4/games", headers=headers, data=data.encode('utf-8')
         )
-        if response.status_code != 200:
+        if response.status_code == 429:
+            raise Exception("HTTP 429 Too Many Requests: Rate Limit Exceeded")
+        elif response.status_code != 200:
             print(f"IGDB API Error: {response.status_code} - {response.text}")
-            return []
+            return list()
 
         results_raw = response.json()
         results = []

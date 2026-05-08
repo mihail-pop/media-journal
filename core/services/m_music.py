@@ -390,6 +390,8 @@ def get_music_extra_info(recording_id, artist_id=None, album_id=None):
             album_response = requests.get(
                 album_url, params=album_params, headers=headers, timeout=10
             )
+            if album_response.status_code == 429:
+                raise Exception("HTTP 429 Too Many Requests: Rate Limit Exceeded")
             print(f"[MUSIC] Album status: {album_response.status_code}")
             if album_response.status_code == 200:
                 album_data = album_response.json()
@@ -422,10 +424,10 @@ def get_music_extra_info(recording_id, artist_id=None, album_id=None):
                 rg_response = requests.get(
                     rg_url, params=rg_params, headers=headers, timeout=10
                 )
-                if rg_response.status_code != 200:
-                    print(
-                        f"[MUSIC] Release-group request failed: {rg_response.status_code}"
-                    )
+                if rg_response.status_code == 429:
+                    raise Exception("HTTP 429 Too Many Requests: Rate Limit Exceeded")
+                elif rg_response.status_code != 200:
+                    print(f"[MUSIC] Release-group request failed: {rg_response.status_code}")
                     break
 
                 rg_data = rg_response.json()

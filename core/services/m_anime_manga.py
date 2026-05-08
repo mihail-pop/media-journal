@@ -195,8 +195,10 @@ def fetch_anilist_data(media_type, anilist_id=None, mal_id=None):
         headers=headers,
     )
 
-    if response.status_code != 200:
-        raise Exception("AniList API request failed.")
+    if response.status_code == 429:
+        raise Exception("HTTP 429 Too Many Requests: Rate Limit Exceeded")
+    elif response.status_code != 200:
+        raise Exception(f"AniList API request failed with status {response.status_code}.")
 
     media = response.json().get("data", {}).get("Media")
     if not media:

@@ -342,7 +342,7 @@ function showProgressModal(title) {
     updateMessage: (msg) => {
       statusText.textContent = msg;
     },
-    startPolling: (taskId, isDownload = true) => {
+    startPolling: (taskId, isDownload = true, successMsg = "Process completed successfully!") => {
       currentTaskId = taskId;
       pollInterval = setInterval(() => {
         fetch(`/backup/status/${taskId}/`)
@@ -372,7 +372,7 @@ function showProgressModal(title) {
                 if (isDownload) {
                   window.location.href = `/backup/download/${taskId}/`;
                 } else {
-                  showNotification("Backup restored successfully!");
+                  showNotification(successMsg);
                   setTimeout(() => window.location.reload(), 1000);
                 }
               }, 800);
@@ -444,7 +444,7 @@ if (uploadBtn && uploadInput) {
       .then((response) => response.json())
       .then((data) => {
         if (data.task_id) {
-          modal.startPolling(data.task_id, false);
+          modal.startPolling(data.task_id, false, "Backup restored successfully!");
         } else {
           alert(data.error || "Upload failed.");
           modal.close();
@@ -457,6 +457,50 @@ if (uploadBtn && uploadInput) {
       })
       .finally(() => { uploadInput.value = ""; });
   });
+}
+
+// ----- Refresh Functionality -----
+const refreshAllBtn = document.getElementById("refresh-all-btn");
+if (refreshAllBtn) {
+  refreshAllBtn.addEventListener("click", () => {
+    startRefresh("all", "Refreshing All Items");
+  });
+}
+
+document.querySelectorAll(".refresh-type-btn").forEach(btn => {
+  btn.addEventListener("click", (e) => {
+    const mediaType = e.target.closest('.refresh-type-btn').dataset.type;
+    const title = `Refreshing ${mediaType.charAt(0).toUpperCase() + mediaType.slice(1)}`;
+    startRefresh(mediaType, title);
+  });
+});
+
+function startRefresh(mediaType, title) {
+  const modal = showProgressModal(title);
+  modal.updateMessage("Initializing refresh... Please wait.");
+  
+  fetch("/settings/refresh-data/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": getCookie("csrftoken"),
+    },
+    body: JSON.stringify({ media_type: mediaType }),
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.task_id) {
+        modal.startPolling(data.task_id, false, "Refresh completed successfully!");
+      } else {
+        alert(data.error || "Failed to start refresh.");
+        modal.close();
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      alert("Error starting refresh.");
+      modal.close();
+    });
 }
 
 // ----- Tab Functionality -----
