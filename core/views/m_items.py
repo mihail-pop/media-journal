@@ -1,5 +1,7 @@
 import os
 import json
+import uuid
+import time
 import datetime
 import datetime as dt
 
@@ -7,6 +9,7 @@ from django.apps import apps
 from django.conf import settings
 from django.http import JsonResponse
 from django.utils import timezone
+from django.core.files.storage import FileSystemStorage
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_POST
 
@@ -85,6 +88,147 @@ def add_season_to_list(request):
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
 
+@ensure_csrf_cookie
+@require_POST
+def create_custom_item(request):
+    try:
+        # 1. Base Variables & Normalization
+        media_type_raw = request.POST.get("media_type", "movie").lower()
+        
+        # Map frontend plurals to strict database singulars
+        type_map = {
+            "movies": "movie",
+            "movie": "movie",
+            "tvshows": "tv",
+            "tv": "tv",
+            "anime": "anime",
+            "manga": "manga",
+            "games": "game",
+            "game": "game",
+            "books": "book",
+            "book": "book",
+            "music": "music"
+        }
+        # Fallback to "movie" if somehow unmatched
+        media_type = type_map.get(media_type_raw, "movie")
+            
+        title = request.POST.get("title", "Untitled")
+        
+        # Determine strict source mapping for the app
+        source_map = {
+            "movie": "tmdb",
+            "tv": "tmdb",
+            "anime": "anilist",
+            "manga": "anilist",
+            "game": "igdb",
+            "book": "openlib",
+            "music": "musicbrainz"
+        }
+        source = source_map.get(media_type, "tmdb")
+        
+        # 2. Assign Custom ID
+        custom_id = f"custom_{uuid.uuid4().hex}"
+        provider_ids = {source: custom_id}
+
+        # 3. Handle File Uploads with proper naming
+        cache_bust = int(time.time() * 1000)
+        fs = FileSystemStorage(location=settings.MEDIA_ROOT)
+        
+        def save_custom_image(file_obj, image_type):
+            if not file_obj:
+                return ""
+            
+            ext = os.path.splitext(file_obj.name)[1] or ".jpg"
+            folder = "posters" if image_type == "poster" else "banners"
+            
+            if source in ["tmdb", "anilist"]:
+                filename = f"{folder}/{source}_{media_type}_{custom_id}_{cache_bust}{ext}"
+            else:
+                filename = f"{folder}/{source}_{custom_id}_{cache_bust}{ext}"
+                
+            saved_name = fs.save(filename, file_obj)
+            return fs.url(saved_name)
+
+        cover_url = save_custom_image(request.FILES.get("cover_image"), "poster")
+        banner_url = save_custom_image(request.FILES.get("banner_image"), "banner")
+
+        # 4. Handle Formatting numbers
+        def parse_int(val):
+            try:
+                return int(val)
+            except (TypeError, ValueError):
+                return None
+
+        personal_rating_input = request.POST.get("personal_rating")
+        rating_val = None
+        if personal_rating_input:
+            AppSettings = apps.get_model("core", "AppSettings")
+            try:
+                app_settings = AppSettings.objects.first()
+                rating_mode = app_settings.rating_mode if app_settings else "faces"
+            except Exception:
+                rating_mode = "faces"
+                
+            display_value_int = parse_int(personal_rating_input)
+            if display_value_int is not None:
+                rating_val = display_to_rating(display_value_int, rating_mode)
+
+        # 5. Create Item
+        new_item = MediaItem.objects.create(
+            title=title,
+            media_type=media_type, # Now guaranteed to be "movie", "tv", "game", etc.
+            source=source,
+            provider_ids=provider_ids,
+            cover_url=cover_url,
+            banner_url=banner_url,
+            release_date=request.POST.get("release_date", ""),
+            overview=request.POST.get("overview", ""),
+            status=request.POST.get("status", "planned"),
+            
+            progress_main=0,
+            progress_secondary=0,
+            
+            personal_rating=rating_val,
+            favorite=request.POST.get("favorite") in ["true", "on", True],
+            notes=request.POST.get("notes", ""),
+            date_added=timezone.now()
+        )
+
+        # 6. Format Display Rating for frontend
+        try:
+            settings_obj = apps.get_model("core", "AppSettings").objects.first()
+            rating_mode = settings_obj.rating_mode if settings_obj else "faces"
+        except Exception:
+            rating_mode = "faces"
+            
+        display_rating = rating_to_display(new_item.personal_rating, rating_mode)
+
+        # 7. Return Data
+        return JsonResponse({
+            "success": True,
+            "item": {
+                "id": new_item.id,
+                "title": new_item.title,
+                "media_type": new_item.media_type,
+                "source": new_item.source,
+                "source_id": custom_id,
+                "status": new_item.status,
+                "personal_rating": display_rating,
+                "notes": new_item.notes,
+                "progress_main": new_item.progress_main,
+                "progress_secondary": new_item.progress_secondary,
+                "favorite": new_item.favorite,
+                "repeats": new_item.repeats,
+                "date_added": new_item.date_added.isoformat(),
+                "cover_url": new_item.cover_url,
+                "banner_url": new_item.banner_url,
+            }
+        })
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({"success": False, "error": str(e)}, status=400)
 
 @ensure_csrf_cookie
 def edit_item(request, item_id):

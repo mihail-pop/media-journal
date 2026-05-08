@@ -1,0 +1,94 @@
+{% load static %}
+
+<!-- Create Modal Partial -->
+<div id="create-modal" class="modal modal-hidden">
+  <div class="modal-content">
+    <form id="create-form" enctype="multipart/form-data">
+      
+      <!-- Banner Upload Area -->
+      <div class="modal-banner" id="create-banner-container">
+        <!-- Image element MUST exist for your placeholder CSS to work -->
+        <img id="create-banner-preview" src="{% static 'core/img/placeholder.png' %}" alt="banner">
+        <div class="banner-overlay"></div>
+        
+        <!-- Full-size clickable overlay for the Plus Button -->
+        <label class="create-upload-overlay" for="create-banner-input" title="Upload Banner">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        </label>
+        <input type="file" id="create-banner-input" name="banner_image" accept="image/*" style="display: none;">
+      </div>
+
+      <!-- Cover Upload Area -->
+      <div class="modal-cover" id="create-cover-container">
+        <img id="create-cover-preview" src="{% static 'core/img/placeholder.png' %}" alt="cover">
+        
+        <label class="create-upload-overlay" for="create-cover-input" title="Upload Cover">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        </label>
+        <input type="file" id="create-cover-input" name="cover_image" accept="image/*" style="display: none;">
+      </div>
+
+      <!-- Title Block -->
+      <div class="modal-title-block">
+        <input type="text" name="title" class="create-title-input modal-title" placeholder="Title" required autocomplete="off">
+      </div>
+
+      <!-- Modal Body -->
+      <div class="modal-body">
+        
+        <div class="modal-actions-top">
+          <label class="favorite-checkbox">
+            <input type="checkbox" name="favorite">
+            <span class="heart"></span>
+          </label>
+          <button type="submit" class="btn save-btn">Create</button>
+        </div>
+
+        <div class="form-row-two">
+          <div class="form-group vertical-label">
+            <label for="create_status">Status</label>
+            <select name="status" id="create_status" class="status-select">
+              <option value="ongoing">Ongoing</option>
+              <option value="completed">Completed</option>
+              <option value="on_hold">On Hold</option>
+              <option value="planned" selected>Planned</option>
+              <option value="dropped">Dropped</option>
+            </select>
+          </div>
+
+          <div class="form-group vertical-label">
+            <label>Rating</label>
+            <input type="hidden" name="personal_rating" id="create_personal_rating">
+            <div class="rating-faces" id="create-rating-faces">
+              <button type="button" data-value="1" class="face face-bad" title="Bad"></button>
+              <button type="button" data-value="50" class="face face-neutral" title="Neutral"></button>
+              <button type="button" data-value="100" class="face face-good" title="Good"></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Release Date -->
+        <div class="form-row-two">
+          <div class="form-group" style="max-width: 218px;">
+            <label>Release Date</label>
+            <input type="date" name="release_date">
+          </div>
+        </div>
+
+        <div class="form-group notes-group">
+          <label>Overview</label>
+          <textarea name="overview"></textarea>
+        </div>
+
+        <div class="form-group notes-group">
+          <label>Notes</label>
+          <textarea name="notes"></textarea>
+        </div>
+
+        <button type="button" id="create-close-btn" class="btn close-btn">X</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="create-overlay" class="modal-overlay modal-hidden"></div>

@@ -98,6 +98,50 @@ html {
   margin-bottom: 1.5rem;
 }
 
+/* --- Separator Bar Actions --- */
+.separator-bar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding-right: 2rem;
+}
+
+.separator-actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.separator-btn {
+  background: var(--bg-quaternary);
+  color: var(--text-primary);
+  border: none;
+  border-radius: 8px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.separator-btn:hover {
+  background: var(--hover-bg);
+  color: var(--text-light);
+  transform: scale(1.05);
+}
+
+/* Adjust the existing music player label to act like a normal button */
+label.music-player-btn.separator-btn {
+  margin: 0;
+  padding: 0;
+}
+label.music-player-btn.separator-btn .music-icon {
+  border: none;
+  padding: 0;
+}
+
 /* --- Page Layout --- */
 .list-page-container {
   display: flex;
