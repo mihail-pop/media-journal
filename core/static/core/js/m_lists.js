@@ -17,6 +17,24 @@ document.addEventListener("DOMContentLoaded", function () {
   const sortOrderBtn = document.getElementById("sort-order-btn");
   const searchInput = document.getElementById("search-input");
 
+  const genreSelectWrapper = document.querySelector('.genre-select-wrapper');
+  const genreSearchInput = document.getElementById('genre-search');
+  const genreOptionsContainer = document.getElementById('genre-options');
+  const genreTagsContainer = document.querySelector('.genre-tags');
+
+  // Hardcoded standard API genres
+  const mediaGenres = {
+    movies:["Action", "Adventure", "Animation", "Comedy", "Crime", "Documentary", "Drama", "Family", "Fantasy", "History", "Horror", "Music", "Mystery", "Romance", "Science Fiction", "TV Movie", "Thriller", "War", "Western"],
+    tvshows:["Action & Adventure", "Animation", "Comedy", "Crime", "Documentary", "Drama", "Family", "Kids", "Mystery", "News", "Reality", "Sci-Fi & Fantasy", "Soap", "Talk", "War & Politics", "Western"],
+    anime:["Action", "Adventure", "Comedy", "Drama", "Fantasy", "Horror", "Mahou Shoujo", "Mecha", "Music", "Mystery", "Psychological", "Romance", "Sci-Fi", "Slice of Life", "Sports", "Supernatural", "Thriller"],
+    manga:["Action", "Adventure", "Comedy", "Drama", "Fantasy", "Horror", "Mahou Shoujo", "Mecha", "Music", "Mystery", "Psychological", "Romance", "Sci-Fi", "Slice of Life", "Sports", "Supernatural", "Thriller"],
+    games:["Adventure", "Arcade", "Card & Board Game", "Fighting", "Hack and slash/Beat 'em up", "Indie", "MOBA", "Music", "Pinball", "Platform", "Point-and-click", "Puzzle", "Quiz/Trivia", "Racing", "Real Time Strategy (RTS)", "Role-playing (RPG)", "Shooter", "Simulator", "Sport", "Strategy", "Tactical", "Turn-based strategy (TBS)", "Visual Novel"],
+    books:["Action & Adventure Fiction", "Biography", "Classics", "Fantasy", "Historical Fiction", "History", "Horror", "Mystery", "Non-fiction", "Poetry", "Romance", "Science Fiction", "Thriller", "Young Adult"],
+    music:["Alternative", "Blues", "Classical", "Country", "Electronic", "Folk", "Hip Hop", "Indie", "Jazz", "Metal", "Pop", "Punk", "R&B", "Reggae", "Rock", "Soul"]
+  };
+
+  let currentGenres =[];
+
   const bannerImg = document.getElementById("rotating-banner");
   let bannerPool = [];
 
@@ -152,6 +170,10 @@ const statusLabelsMap = {
         sort_by: currentSort,
         sort_order: currentSortOrder
       });
+
+      if (currentGenres.length > 0) {
+        params.append('genres', currentGenres.join(','));
+      }
       
       // Add type filter for TV shows
       if (mediaType === 'tvshows') {
@@ -1193,6 +1215,138 @@ updateSortButtons();
   listBtn?.addEventListener("click", () => switchView("list"));
   detailedListBtn?.addEventListener("click", () => switchView("detailed_list"));
 
+// === GENRES MULTI-SELECT LOGIC ===
+  if (genreSelectWrapper && genreSearchInput && genreOptionsContainer) {
+    const availableGenres = mediaGenres[mediaType] ||[];
+    
+    // 1. Populate Dropdown
+    availableGenres.forEach(genre => {
+      const option = document.createElement('div');
+      option.className = 'custom-option genre-option';
+      option.dataset.value = genre;
+      option.innerHTML = `<span>${genre}</span><span class="genre-check">❌</span>`;
+      
+      option.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleGenre(genre);
+        genreSearchInput.value = '';
+        filterGenreOptions('');
+      });
+      genreOptionsContainer.appendChild(option);
+    });
+
+    // 2. Toggle selection
+    function toggleGenre(genre) {
+      if (currentGenres.includes(genre)) {
+        currentGenres = currentGenres.filter(g => g !== genre);
+      } else {
+        currentGenres.push(genre);
+      }
+      updateGenreUI();
+      resetAndLoad();
+    }
+
+    // Grab the new indicator element
+    const genreIndicator = document.getElementById('genre-indicator');
+
+    // 3. Update UI (Bubbles & Checks)
+    function updateGenreUI() {
+      // Update Tags
+      genreTagsContainer.innerHTML = '';
+      currentGenres.forEach(genre => {
+        const tag = document.createElement('div');
+        tag.className = 'genre-tag';
+        tag.innerHTML = `<span>${genre}</span><span class="remove-tag">✕</span>`;
+        tag.querySelector('.remove-tag').addEventListener('click', (e) => {
+          e.stopPropagation();
+          toggleGenre(genre);
+        });
+        genreTagsContainer.appendChild(tag);
+      });
+
+      // Update Dropdown Checkmarks
+      const options = genreOptionsContainer.querySelectorAll('.genre-option');
+      options.forEach(opt => {
+        if (currentGenres.includes(opt.dataset.value)) {
+          opt.classList.add('selected');
+        } else {
+          opt.classList.remove('selected');
+        }
+      });
+
+      // Update Placeholder and "has-items" class
+      if (currentGenres.length > 0) {
+        genreSearchInput.placeholder = '';
+        genreSelectWrapper.classList.add('has-items');
+      } else {
+        genreSearchInput.placeholder = 'Genres';
+        genreSelectWrapper.classList.remove('has-items');
+      }
+    }
+
+    // 4. Open/Close & Clear Logic
+    genreSelectWrapper.addEventListener('click', () => {
+      genreOptionsContainer.classList.add('open');
+      genreSelectWrapper.classList.add('open');
+      genreSearchInput.focus();
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!genreSelectWrapper.contains(e.target)) {
+        genreOptionsContainer.classList.remove('open');
+        genreSelectWrapper.classList.remove('open');
+      }
+    });
+
+    // Handle clicking the arrow / X button
+    genreIndicator.addEventListener('click', (e) => {
+      e.stopPropagation(); // Prevent opening the wrapper
+      
+      if (currentGenres.length > 0) {
+        // If items are selected, clicking clears all and closes dropdown
+        currentGenres = new Array(); // Safely emptying the list without using brackets!
+        updateGenreUI();
+        genreOptionsContainer.classList.remove('open');
+        genreSelectWrapper.classList.remove('open');
+        resetAndLoad();
+      } else {
+        // If empty, toggle dropdown open/closed
+        if (genreOptionsContainer.classList.contains('open')) {
+          genreOptionsContainer.classList.remove('open');
+          genreSelectWrapper.classList.remove('open');
+        } else {
+          genreOptionsContainer.classList.add('open');
+          genreSelectWrapper.classList.add('open');
+          genreSearchInput.focus();
+        }
+      }
+    });
+
+    // 5. Search/Filter Typing
+    function filterGenreOptions(query) {
+      const q = query.toLowerCase();
+      const options = genreOptionsContainer.querySelectorAll('.genre-option');
+      options.forEach(opt => {
+        if (opt.dataset.value.toLowerCase().includes(q)) {
+          opt.classList.remove('hidden');
+        } else {
+          opt.classList.add('hidden');
+        }
+      });
+    }
+
+    genreSearchInput.addEventListener('input', (e) => {
+      filterGenreOptions(e.target.value);
+    });
+
+    // Backspace to delete last tag
+    genreSearchInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Backspace' && e.target.value === '' && currentGenres.length > 0) {
+        toggleGenre(currentGenres[currentGenres.length - 1]);
+      }
+    });
+  }
+  
   // === TYPE FILTER BUTTONS ===
   typeFilterButtons.forEach((btn) => {
     btn.addEventListener("click", () => {

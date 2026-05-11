@@ -179,6 +179,15 @@ def save_tmdb_item(media_type, tmdb_id):
                     }
                 )
 
+        genres =[g.get("name") for g in data.get("genres", []) if g.get("name")]
+
+        creators =[]
+        if media_type == "tv":
+            creators =[c.get("name") for c in data.get("created_by", []) if c.get("name")]
+        else:
+            crew = data.get("credits", {}).get("crew", [])
+            creators =[c.get("name") for c in crew if c.get("job") == "Director" and c.get("name")]
+
         MediaItem.objects.create(
             title=data.get("title") or data.get("name"),
             media_type=media_type,
@@ -192,6 +201,8 @@ def save_tmdb_item(media_type, tmdb_id):
             seasons=seasons,
             total_main=total_episodes if media_type == "tv" else None,
             total_secondary=total_seasons if media_type == "tv" else None,
+            genres=genres,
+            creators=creators,
         )
 
         return JsonResponse({"message": "Added to your list."})
@@ -308,6 +319,9 @@ def save_tmdb_season(tmdb_id, season_number):
 
         season_title = f"{show_data.get('name', 'Unknown Show')} {season_data.get('name', f'Season {season_number}')}"
 
+        genres =[g.get("name") for g in show_data.get("genres", []) if g.get("name")]
+        creators =[c.get("name") for c in show_data.get("created_by", []) if c.get("name")]
+
         MediaItem.objects.create(
             title=season_title,
             media_type="tv",
@@ -321,6 +335,8 @@ def save_tmdb_season(tmdb_id, season_number):
             episodes=episodes_data,
             total_main=len(episodes_data),
             total_secondary=1,
+            genres=genres,
+            creators=creators,
         )
 
         return JsonResponse({"message": "Season added to your list."})

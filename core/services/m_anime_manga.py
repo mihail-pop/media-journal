@@ -92,6 +92,8 @@ def save_anilist_item(media_type, anilist_id=None, mal_id=None):
             related_titles=related_titles,
             total_main=data.get("total_main"),
             total_secondary=data.get("total_secondary"),
+            genres=data["genres"],
+            creators=data["creators"],
         )
 
         return JsonResponse({"message": "Saved to your list."})
@@ -132,6 +134,22 @@ def fetch_anilist_data(media_type, anilist_id=None, mal_id=None):
         bannerImage
         coverImage {
           extraLarge
+        }
+        genres
+        studios(isMain: true) {
+          nodes {
+            name
+          }
+        }
+        staff {
+          edges {
+            role
+            node {
+              name {
+                full
+              }
+            }
+          }
         }
         characters(sort: [ROLE, RELEVANCE], perPage: 8) {
           edges {
@@ -299,6 +317,53 @@ def fetch_anilist_data(media_type, anilist_id=None, mal_id=None):
             }
         )
 
+    genres = media.get("genres") or list()
+    creators = list()
+    
+    if media_type.lower() == "anime":
+        # Anime = Main Studio
+        studios = media.get("studios") or dict()
+        nodes = studios.get("nodes") or list()
+        
+        for s in nodes:
+            if s and s.get("name"):
+                creators.append(s["name"])
+    else:
+        # Manga = Original Creator / Story & Art
+        staff = media.get("staff") or dict()
+        edges = staff.get("edges") or list()
+        
+        # Exact roles that designate the main creator(s)
+        valid_roles =[
+            "story & art", 
+            "story", 
+            "art", 
+            "original creator", 
+            "original story"
+        ]
+        
+        for edge in edges:
+            if not edge:
+                continue
+                
+            # Safely handle null roles and strip whitespace
+            raw_role = edge.get("role")
+            if not raw_role:
+                continue
+            
+            # Clean the role: lowercase and remove leading/trailing spaces
+            role = str(raw_role).lower().strip()
+            
+            # Safely navigate nested dictionaries for the name
+            node = edge.get("node") or dict()
+            name_dict = node.get("name") or dict()
+            name = name_dict.get("full")
+            
+            # Use exact matching in our valid_roles list instead of loose substring matching
+            if name and role in valid_roles:
+                if name not in creators:
+                    creators.append(name)
+
     return {
         "anilist_id": media.get("id"),
         "mal_id": media.get("idMal"),
@@ -312,6 +377,8 @@ def fetch_anilist_data(media_type, anilist_id=None, mal_id=None):
         "recommendations": recommendations,
         "total_main": media.get("episodes") or media.get("chapters"),
         "total_secondary": media.get("volumes"),
+        "genres": genres,
+        "creators": creators,
     }
 
 

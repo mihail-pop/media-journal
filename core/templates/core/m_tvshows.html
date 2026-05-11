@@ -101,6 +101,20 @@
       <button type="button" id="sort-order-btn" class="sort-order-btn" data-order="desc" aria-label="Sort descending"></button>
     </div>
 
+    <h3>Filter By</h3>
+    <div class="genre-filter-container">
+      <div class="genre-select-wrapper custom-select-wrapper">
+        <div id="genre-select" class="genre-select custom-select-trigger" role="button" tabindex="0">
+          <div class="genre-tags"></div>
+          <input type="text" id="genre-search" placeholder="Genres">
+          <div id="genre-indicator" class="genre-indicator"></div>
+        </div>
+        <div class="custom-options genre-options" id="genre-options" role="listbox" multiple>
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+
 {% if has_seasons %}
 <div class="filter-buttons-wrapper">
   <h3>Type</h3>

@@ -41,32 +41,30 @@ class MediaItem(models.Model):
 
     source = models.CharField(max_length=50) # old              
     # source_id = models.CharField(max_length=100) # old
-
     provider_ids = models.JSONField(default=dict, blank=True) # new source and source_id to support multiple apis     
 
     cover_url = models.URLField(blank=True, null=True)               
     banner_url = models.URLField(blank=True, null=True)
 
+    overview = models.TextField(blank=True, null=True)
     release_date = models.CharField(max_length=20, blank=True, null=True)
-    overview = models.TextField(blank=True, null=True)    # Description
-    cast = models.JSONField(blank=True, null=True)        # Actors&Characters for anime&manga / Extra data for Music
-    seasons = models.JSONField(blank=True, null=True)     # Only for TV series
-    episodes = models.JSONField(blank=True, null=True)    # Episode details for seasons
-    related_titles = models.JSONField(blank=True, null=True)  # Prequels/Sequels for anime/manga
-    screenshots = models.JSONField(blank=True, null=True) # Screenshots for games / Youtube Links + Position for Music
+    cast = models.JSONField(blank=True, null=True)        # Movies, TV, Anime, Manga - Actors, Characters / Music - Extra data
+    seasons = models.JSONField(blank=True, null=True)     # TV - Seasons
+    episodes = models.JSONField(blank=True, null=True)    # Seasons - Episode details
+    related_titles = models.JSONField(blank=True, null=True)  # Anime, Manga - Prequels, Sequels
+    screenshots = models.JSONField(blank=True, null=True) # Games - Screenshots / Music - Youtube Links + Position 
+    genres = models.JSONField(default=list, blank=True)
+    creators = models.JSONField(default=list, blank=True) # Movies, TV - Directors / Anime - Studio / Games - Devs / Manga, Books - Authors / Music - Artists
 
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="planned")
-    
     progress_main = models.PositiveIntegerField(default=0) # User progress out of the total
     progress_secondary = models.PositiveIntegerField(null=True, blank=True)
-
-    total_main = models.PositiveIntegerField(null=True, blank=True) # Total of episodes/chapters received from the api
+    total_main = models.PositiveIntegerField(null=True, blank=True) # Total of episodes/chapters/pages received from the api
     total_secondary = models.PositiveIntegerField(null=True, blank=True)
 
-    personal_rating = models.PositiveSmallIntegerField(null=True,blank=True)  # Stores values from 1–100
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="planned")
+    personal_rating = models.PositiveSmallIntegerField(null=True,blank=True)  # Stores values from 1 to 100
     favorite = models.BooleanField(default=False)
     favorite_position = models.PositiveIntegerField(null=True, blank=True)
-
     date_added = models.DateTimeField(default=timezone.now)
     repeats = models.PositiveIntegerField(default=0)
     notes = models.TextField(blank=True, null=True)

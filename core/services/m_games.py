@@ -30,6 +30,7 @@ def save_igdb_item(igdb_id):
     fields 
       id, name, summary, storyline, 
       cover.url, genres.name, platforms.name, 
+      involved_companies.company.name, involved_companies.developer,
       first_release_date, screenshots.url, artworks.url;
     where id = {igdb_id};
     """
@@ -124,6 +125,13 @@ def save_igdb_item(igdb_id):
             "%Y-%m-%d", time.localtime(game["first_release_date"])
         )
 
+    genres =[g.get("name") for g in game.get("genres", []) if g.get("name")]
+    creators =[
+        c.get("company", {}).get("name")
+        for c in game.get("involved_companies", [])
+        if c.get("developer") and c.get("company", {}).get("name")
+    ]
+
     # Save to DB
     MediaItem.objects.create(
         title=title,
@@ -138,6 +146,8 @@ def save_igdb_item(igdb_id):
         seasons=None,
         related_titles=[],
         screenshots=local_screenshots,
+        genres=genres,
+        creators=creators,
     )
 
     return JsonResponse({"success": True, "message": "Game added to list"})

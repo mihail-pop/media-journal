@@ -80,6 +80,13 @@ def save_openlib_item(work_id):
     if local_poster.startswith("media/"):
         local_poster = local_poster[len("media/") :]
 
+    genres = detail_data.get("subjects",[])
+    if isinstance(genres, list):
+        # Keep only strings and take the first 10 to avoid bloating
+        genres = [s for s in genres if isinstance(s, str)][:10]
+    else:
+        genres =[]
+
     # Release date
     release_date = None
     raw_date = detail_data.get("created", {}).get("value", "")
@@ -105,6 +112,8 @@ def save_openlib_item(work_id):
         related_titles=[],
         screenshots=[],
         total_main=total_pages,
+        genres=genres,
+        creators=author_names,
     )
 
     return JsonResponse({"success": True, "message": "Book added to list"})

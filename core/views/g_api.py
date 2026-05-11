@@ -3,7 +3,7 @@ from datetime import datetime
 
 from django.http import JsonResponse
 from django.urls import reverse
-from django.db.models import F, Case, When, Value, IntegerField
+from django.db.models import F, Case, When, Value, IntegerField, Q
 from django.db.models.functions import Lower
 from django.views.decorators.http import require_GET
 
@@ -20,6 +20,7 @@ def movies_api(request):
     page = int(request.GET.get("page", 1))
     status = request.GET.get("status", "all")
     search = request.GET.get("search", "").strip()
+    genres_param = request.GET.get("genres", "")
     sort_by = request.GET.get("sort_by", "rating")
     sort_order = request.GET.get("sort_order", "desc")
     page_size = 50
@@ -47,6 +48,12 @@ def movies_api(request):
 
     if search:
         queryset = queryset.filter(title__icontains=search)
+
+    if genres_param:
+        selected_genres = [g.strip() for g in genres_param.split(",") if g.strip()]
+        for g in selected_genres:
+            # Uses __icontains because the JSON is stored as a stringified list in SQLite
+            queryset = queryset.filter(genres__icontains=g)
 
     queryset = queryset.annotate(
         status_order=status_ordering, rating_order=rating_ordering
@@ -122,6 +129,7 @@ def tvshows_api(request):
     page = int(request.GET.get("page", 1))
     status = request.GET.get("status", "all")
     search = request.GET.get("search", "").strip()
+    genres_param = request.GET.get("genres", "")
     type_filter = request.GET.get("type", "both")
     sort_by = request.GET.get("sort_by", "rating")
     sort_order = request.GET.get("sort_order", "desc")
@@ -150,6 +158,12 @@ def tvshows_api(request):
 
     if search:
         queryset = queryset.filter(title__icontains=search)
+
+    if genres_param:
+        selected_genres = [g.strip() for g in genres_param.split(",") if g.strip()]
+        for g in selected_genres:
+            # Uses __icontains because the JSON is stored as a stringified list in SQLite
+            queryset = queryset.filter(genres__icontains=g)
 
     # Type filtering for TV shows vs seasons
     if type_filter == "shows":
@@ -242,6 +256,7 @@ def anime_api(request):
     page = int(request.GET.get("page", 1))
     status = request.GET.get("status", "all")
     search = request.GET.get("search", "").strip()
+    genres_param = request.GET.get("genres", "")
     sort_by = request.GET.get("sort_by", "rating")
     sort_order = request.GET.get("sort_order", "desc")
     page_size = 50
@@ -269,6 +284,12 @@ def anime_api(request):
 
     if search:
         queryset = queryset.filter(title__icontains=search)
+
+    if genres_param:
+        selected_genres = [g.strip() for g in genres_param.split(",") if g.strip()]
+        for g in selected_genres:
+            # Uses __icontains because the JSON is stored as a stringified list in SQLite
+            queryset = queryset.filter(genres__icontains=g)
 
     queryset = queryset.annotate(
         status_order=status_ordering, rating_order=rating_ordering
@@ -351,6 +372,7 @@ def manga_api(request):
     page = int(request.GET.get("page", 1))
     status = request.GET.get("status", "all")
     search = request.GET.get("search", "").strip()
+    genres_param = request.GET.get("genres", "")
     sort_by = request.GET.get("sort_by", "rating")
     sort_order = request.GET.get("sort_order", "desc")
     page_size = 50
@@ -378,6 +400,12 @@ def manga_api(request):
 
     if search:
         queryset = queryset.filter(title__icontains=search)
+
+    if genres_param:
+        selected_genres = [g.strip() for g in genres_param.split(",") if g.strip()]
+        for g in selected_genres:
+            # Uses __icontains because the JSON is stored as a stringified list in SQLite
+            queryset = queryset.filter(genres__icontains=g)
 
     queryset = queryset.annotate(
         status_order=status_ordering,
@@ -478,6 +506,7 @@ def games_api(request):
     page = int(request.GET.get("page", 1))
     status = request.GET.get("status", "all")
     search = request.GET.get("search", "").strip()
+    genres_param = request.GET.get("genres", "")
     sort_by = request.GET.get("sort_by", "rating")
     sort_order = request.GET.get("sort_order", "desc")
     page_size = 50
@@ -505,6 +534,12 @@ def games_api(request):
 
     if search:
         queryset = queryset.filter(title__icontains=search)
+
+    if genres_param:
+        selected_genres = [g.strip() for g in genres_param.split(",") if g.strip()]
+        for g in selected_genres:
+            # Uses __icontains because the JSON is stored as a stringified list in SQLite
+            queryset = queryset.filter(genres__icontains=g)
 
     queryset = queryset.annotate(
         status_order=status_ordering, rating_order=rating_ordering
@@ -585,6 +620,7 @@ def music_api(request):
     page = int(request.GET.get("page", 1))
     status = request.GET.get("status", "all")
     search = request.GET.get("search", "").strip()
+    genres_param = request.GET.get("genres", "")
     sort_by = request.GET.get("sort_by", "rating")
     sort_order = request.GET.get("sort_order", "desc")
     page_size = 50
@@ -611,7 +647,15 @@ def music_api(request):
         queryset = queryset.filter(status=status)
 
     if search:
-        queryset = queryset.filter(title__icontains=search)
+        queryset = queryset.filter(
+            Q(title__icontains=search) | Q(creators__icontains=search)
+        )
+
+    if genres_param:
+        selected_genres = [g.strip() for g in genres_param.split(",") if g.strip()]
+        for g in selected_genres:
+            # Uses __icontains because the JSON is stored as a stringified list in SQLite
+            queryset = queryset.filter(genres__icontains=g)
 
     queryset = queryset.annotate(
         status_order=status_ordering, rating_order=rating_ordering
@@ -687,6 +731,7 @@ def books_api(request):
     page = int(request.GET.get("page", 1))
     status = request.GET.get("status", "all")
     search = request.GET.get("search", "").strip()
+    genres_param = request.GET.get("genres", "")
     sort_by = request.GET.get("sort_by", "rating")
     sort_order = request.GET.get("sort_order", "desc")
     page_size = 50
@@ -714,6 +759,12 @@ def books_api(request):
 
     if search:
         queryset = queryset.filter(title__icontains=search)
+
+    if genres_param:
+        selected_genres = [g.strip() for g in genres_param.split(",") if g.strip()]
+        for g in selected_genres:
+            # Uses __icontains because the JSON is stored as a stringified list in SQLite
+            queryset = queryset.filter(genres__icontains=g)
 
     queryset = queryset.annotate(
         status_order=status_ordering, rating_order=rating_ordering

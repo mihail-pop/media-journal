@@ -96,7 +96,8 @@ def save_musicbrainz_item(recording_id):
     isrc = isrcs[0] if isrcs else ""
 
     # Get genres from tags
-    genres = [tag.get("name", "") for tag in recording_data.get("tags", [])[:5]]
+    genres = [tag.get("name", "") for tag in recording_data.get("tags", [])[:10]]
+    creators =[a.get("name", "") for a in artist_credits if a.get("name")]
 
     # Build overview
     overview_parts = []
@@ -344,6 +345,8 @@ def save_musicbrainz_item(recording_id):
         seasons=None,
         related_titles=[],
         screenshots=youtube_links,
+        genres=genres,
+        creators=creators,
     )
 
     return JsonResponse({"success": True, "message": "Song added to list"})

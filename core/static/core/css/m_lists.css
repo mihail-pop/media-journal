@@ -251,6 +251,138 @@ label.music-player-btn.separator-btn .music-icon {
   display: none;
 }
 
+/* --- Genres Multi-Select --- */
+.genre-filter-container {
+  margin-bottom: 1.5rem;
+}
+
+.genre-select {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0.4rem;
+  padding-right: 2.5rem; /* Make room for the indicator icon */
+  background-color: var(--bg-tertiary);
+  border-radius: 6px;
+  cursor: text;
+  min-height: 2.5rem;
+  align-items: center;
+  position: relative;
+}
+
+/* Ensure no inherited arrows appear */
+.genre-select::after {
+  display: none !important;
+}
+
+.genre-indicator {
+  position: absolute;
+  right: 0;
+  top: 0;
+  height: 100%;
+  width: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-primary);
+}
+
+/* Default state: Triangle Arrow */
+.genre-indicator::after {
+  content: "";
+  border-left: 0.3rem solid transparent;
+  border-right: 0.3rem solid transparent;
+  border-top: 0.35rem solid currentColor;
+  transition: transform 0.3s ease;
+  display: block;
+}
+
+/* Open state: Rotated Arrow */
+.genre-select-wrapper.open .genre-indicator::after {
+  transform: rotate(180deg);
+}
+
+/* Selected state + Hover: Turn into 'X' */
+.genre-select-wrapper.has-items .genre-indicator:hover::after {
+  content: "✕";
+  border: none;
+  font-size: 14px;
+  font-weight: bold;
+  transform: none; /* Reset rotation */
+}
+
+.genre-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.genre-tag {
+  background-color: var(--bg-quaternary);
+  color: var(--text-primary);
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.genre-tag .remove-tag {
+  cursor: pointer;
+  font-weight: bold;
+  color: var(--text-secondary);
+  transition: color 0.2s;
+}
+
+.genre-tag .remove-tag:hover {
+  color: #ff4444;
+}
+
+#genre-search {
+  flex: 1;
+  min-width: 80px;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  padding: 0.2rem;
+  outline: none;
+}
+
+#genre-search::placeholder {
+  color: var(--text-tertiary);
+}
+
+.genre-options {
+  max-height: 350px; /* Fits roughly 10 items before scrolling */
+}
+
+.genre-option {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.genre-option.selected {
+  background-color: var(--bg-quaternary);
+  font-weight: bold;
+}
+
+.genre-option.hidden {
+  display: none;
+}
+
+.genre-check {
+  display: none;
+  font-size: 0.8rem;
+}
+
+.genre-option.selected .genre-check {
+  display: block;
+}
+
 /* --- Sidebar --- */
 .sidebar {
   width: 15%;

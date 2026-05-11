@@ -384,7 +384,7 @@ def refresh_musicbrainz_item(recording_id):
 
     isrcs = recording_data.get("isrcs",[])
     isrc = isrcs[0] if isrcs else ""
-    genres =[tag.get("name", "") for tag in recording_data.get("tags", [])[:5]]
+    genres =[tag.get("name", "") for tag in recording_data.get("tags", [])[:10]]
 
     overview_parts =[]
     if artists:
@@ -417,6 +417,8 @@ def refresh_musicbrainz_item(recording_id):
             except ValueError:
                 pass
 
+    creators =[a.get("name", "") for a in artist_credits if a.get("name")]
+
     MediaItem.objects.create(
         title=title,
         media_type="music",
@@ -430,6 +432,8 @@ def refresh_musicbrainz_item(recording_id):
         seasons=None,
         related_titles=[],
         screenshots=[],    # Preserved later
+        genres=genres,
+        creators=creators,
     )
     return True
 
@@ -452,6 +456,7 @@ def refresh_igdb_item(igdb_id):
     fields 
       id, name, summary, storyline, 
       cover.url, genres.name, platforms.name, 
+      involved_companies.company.name, involved_companies.developer,
       first_release_date, screenshots.url, artworks.url;
     where id = {igdb_id};
     """
@@ -474,6 +479,13 @@ def refresh_igdb_item(igdb_id):
     if game.get("first_release_date"):
         release_date = time.strftime("%Y-%m-%d", time.localtime(game["first_release_date"]))
 
+    genres = [g.get("name") for g in game.get("genres", []) if g.get("name")]
+    creators =[
+        c.get("company", {}).get("name")
+        for c in game.get("involved_companies", [])
+        if c.get("developer") and c.get("company", {}).get("name")
+    ]
+
     MediaItem.objects.create(
         title=title,
         media_type="game",
@@ -487,6 +499,8 @@ def refresh_igdb_item(igdb_id):
         seasons=None,
         related_titles=[],
         screenshots=[],
+        genres=genres,
+        creators=creators,
     )
     return True
 
@@ -595,6 +609,14 @@ def refresh_tmdb_item(media_type, tmdb_id, existing_seasons=None, existing_cast=
             if season_number != 0 and season_number not in existing_numbers:
                 has_new_season = True
 
+    genres =[g.get("name") for g in data.get("genres", []) if g.get("name")]
+    creators =[]
+    if media_type == "tv":
+        creators =[c.get("name") for c in data.get("created_by", []) if c.get("name")]
+    else:
+        crew = data.get("credits", {}).get("crew", [])
+        creators =[c.get("name") for c in crew if c.get("job") == "Director" and c.get("name")]
+
     MediaItem.objects.create(
         title=data.get("title") or data.get("name"),
         media_type=media_type,
@@ -608,7 +630,9 @@ def refresh_tmdb_item(media_type, tmdb_id, existing_seasons=None, existing_cast=
         seasons=seasons,
         total_main=total_episodes if media_type == "tv" else None,
         total_secondary=total_seasons if media_type == "tv" else None,
-        notification=has_new_season
+        notification=has_new_season,
+        genres=genres,
+        creators=creators,
     )
     return True
 
@@ -707,7 +731,9 @@ def refresh_anilist_item(media_type, anilist_id=None, mal_id=None, existing_rela
         related_titles=related_titles,
         total_main=data.get("total_main"),
         total_secondary=data.get("total_secondary"),
-        notification=has_new_sequel
+        notification=has_new_sequel,
+        genres=data["genres"],
+        creators=data["creators"],
     )
     return True
 
@@ -884,9 +910,11 @@ class RefreshTask(threading.Thread):
                 # --- NEW SMART ORPHAN CLEANUP ---
                 def extract_urls(data, paths_set):
                     if isinstance(data, dict):
-                        for v in data.values(): extract_urls(v, paths_set)
+                        for v in data.values():
+                            extract_urls(v, paths_set)
                     elif isinstance(data, list):
-                        for i in data: extract_urls(i, paths_set)
+                        for i in data:
+                            extract_urls(i, paths_set)
                     elif isinstance(data, str) and data.startswith("/media/"):
                         paths_set.add(data.replace("/media/", "", 1).strip('/'))
 
