@@ -44,7 +44,8 @@
           <button type="submit" class="btn save-btn">Create</button>
         </div>
 
-        <div class="form-row-two">
+        <!-- Row 1: Status, Rating, Activity Date -->
+        <div class="form-row-three">
           <div class="form-group vertical-label">
             <label for="create_status">Status</label>
             <select name="status" id="create_status" class="status-select">
@@ -65,13 +66,61 @@
               <button type="button" data-value="100" class="face face-good" title="Good"></button>
             </div>
           </div>
+
+          <div class="form-group vertical-label">
+            <label>Activity Date</label>
+            <input type="date" name="date_added" id="create_date_added">
+          </div>
         </div>
 
-        <!-- Release Date -->
-        <div class="form-row-two">
-          <div class="form-group" style="max-width: 218px;">
+        <!-- Row 2: Release Date, Creators, Genres -->
+        <div class="form-row-three">
+          <div class="form-group vertical-label">
             <label>Release Date</label>
             <input type="date" name="release_date">
+          </div>
+
+          <div class="form-group vertical-label">
+            <label>Creators</label>
+            <div class="creator-input-container" onclick="document.getElementById('create-creator-input').focus()">
+              <div class="creator-tags" id="create-creator-tags"></div>
+              <input type="text" id="create-creator-input" placeholder="Add creator..." autocomplete="off">
+            </div>
+          </div>
+
+          <div class="form-group vertical-label">
+            <label>Genres</label>
+            <div class="genre-select-wrapper custom-select-wrapper" id="create-genre-wrapper">
+              <div class="genre-select custom-select-trigger" id="create-genre-select" role="button" tabindex="0">
+                <div class="genre-tags" id="create-genre-tags"></div>
+                <input type="text" id="create-genre-search" placeholder="Genres">
+                <div class="genre-indicator" id="create-genre-indicator"></div>
+              </div>
+              <div class="custom-options genre-options" id="create-genre-options" role="listbox" multiple>
+                <!-- Populated by JS -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 3: Progress Main & Secondary -->
+        <div class="form-row-three" id="create-progress-row" style="display: none;">
+          <div class="form-group vertical-label" id="create_progress_main_group" style="display: none;">
+            <label id="create_progress_main_label">Main Progress</label>
+            <div class="progress-inputs">
+              <input type="number" name="progress_main" min="0" placeholder="Current" class="progress-box">
+              <span class="progress-separator">/</span>
+              <input type="number" name="total_main" min="0" placeholder="Total" class="progress-box">
+            </div>
+          </div>
+
+          <div class="form-group vertical-label" id="create_progress_secondary_group" style="display: none;">
+            <label id="create_progress_secondary_label">Secondary Progress</label>
+            <div class="progress-inputs">
+              <input type="number" name="progress_secondary" min="0" placeholder="Current" class="progress-box">
+              <span class="progress-separator">/</span>
+              <input type="number" name="total_secondary" min="0" placeholder="Total" class="progress-box">
+            </div>
           </div>
         </div>
 

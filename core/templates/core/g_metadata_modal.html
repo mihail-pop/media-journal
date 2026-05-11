@@ -1,0 +1,104 @@
+{% load static %}
+
+<!-- Metadata Modal Partial -->
+<div id="metadata-modal" class="modal modal-hidden">
+  <div class="modal-content">
+    <form id="metadata-form" enctype="multipart/form-data">
+      
+      <!-- Banner Upload Area -->
+      <div class="modal-banner" id="metadata-banner-container">
+        <img id="metadata-banner-preview" src="{% static 'core/img/placeholder.png' %}" alt="banner">
+        <div class="banner-overlay"></div>
+        <label class="create-upload-overlay" for="metadata-banner-input" title="Upload Banner">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        </label>
+        <input type="file" id="metadata-banner-input" name="banner_image" accept="image/*" style="display: none;">
+      </div>
+
+      <!-- Cover Upload Area -->
+      <div class="modal-cover" id="metadata-cover-container">
+        <img id="metadata-cover-preview" src="{% static 'core/img/placeholder.png' %}" alt="cover">
+        <label class="create-upload-overlay" for="metadata-cover-input" title="Upload Cover">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        </label>
+        <input type="file" id="metadata-cover-input" name="cover_image" accept="image/*" style="display: none;">
+      </div>
+
+      <!-- Title Block -->
+      <div class="modal-title-block">
+        <input type="text" name="title" id="metadata-title-input" class="create-title-input modal-title" placeholder="Title" required autocomplete="off">
+      </div>
+
+      <!-- Modal Body -->
+      <div class="modal-body">
+        
+        <div class="modal-actions-top">
+          <button type="submit" class="btn save-btn">Save</button>
+        </div>
+
+        <!-- Row 1: Release Date, Creators -->
+        <div class="form-row-two">
+          <div class="form-group vertical-label">
+            <label>Release Date</label>
+            <input type="date" name="release_date" id="metadata-release-date">
+          </div>
+
+          <div class="form-group vertical-label">
+            <label>Creators</label>
+            <div class="creator-input-container" onclick="document.getElementById('metadata-creator-input').focus()">
+              <div class="creator-tags" id="metadata-creator-tags"></div>
+              <input type="text" id="metadata-creator-input" placeholder="Add creator..." autocomplete="off">
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 2: Genres, Progress Main -->
+        <div class="form-row-two">
+          <div class="form-group vertical-label">
+            <label>Genres</label>
+            <div class="genre-select-wrapper custom-select-wrapper" id="metadata-genre-wrapper">
+              <div class="genre-select custom-select-trigger" id="metadata-genre-select" role="button" tabindex="0">
+                <div class="genre-tags" id="metadata-genre-tags"></div>
+                <input type="text" id="metadata-genre-search" placeholder="Genres">
+                <div class="genre-indicator" id="metadata-genre-indicator"></div>
+              </div>
+              <div class="custom-options genre-options" id="metadata-genre-options" role="listbox" multiple>
+                <!-- Populated by JS -->
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group vertical-label" id="metadata_progress_main_group" style="display: none;">
+            <label id="metadata_progress_main_label">Main Progress</label>
+            <div class="progress-inputs">
+              <input type="number" name="progress_main" id="metadata_progress_main" min="0" placeholder="Current" class="progress-box">
+              <span class="progress-separator">/</span>
+              <input type="number" name="total_main" id="metadata_total_main" min="0" placeholder="Total" class="progress-box">
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 3: Progress Secondary -->
+        <div class="form-row-two" id="metadata-progress-row-2" style="display: none;">
+          <div class="form-group vertical-label" id="metadata_progress_secondary_group" style="display: none;">
+            <label id="metadata_progress_secondary_label">Secondary Progress</label>
+            <div class="progress-inputs">
+              <input type="number" name="progress_secondary" id="metadata_progress_secondary" min="0" placeholder="Current" class="progress-box">
+              <span class="progress-separator">/</span>
+              <input type="number" name="total_secondary" id="metadata_total_secondary" min="0" placeholder="Total" class="progress-box">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group notes-group">
+          <label>Overview</label>
+          <textarea name="overview" id="metadata-overview"></textarea>
+        </div>
+
+        <button type="button" id="metadata-close-btn" class="btn close-btn">X</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="metadata-overlay" class="modal-overlay modal-hidden"></div>

@@ -16,6 +16,7 @@ urlpatterns = [
     path('api/add_to_list/', views.add_to_list, name='add_to_list'),
     path('api/add_season_to_list/', views.add_season_to_list, name='add_season_to_list'),
     path("create-custom-item/", views.create_custom_item, name="create_custom_item"),
+    path('edit-metadata/<int:item_id>/', views.edit_metadata, name='edit_metadata'),
     path("edit-item/<int:item_id>/", views.edit_item, name="edit_item"),
     path("delete-item/<int:item_id>/", views.delete_item, name="delete_item"),
     path('tmdb/<str:media_type>/<str:tmdb_id>/', views.tmdb_detail, name='tmdb_detail'),

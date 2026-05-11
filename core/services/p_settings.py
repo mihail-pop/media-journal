@@ -826,7 +826,7 @@ class RefreshTask(threading.Thread):
 
         total_items = len(items_to_refresh)
         processed = 0
-        consecutive_errors = 0  # <--- NEW: Track consecutive failures
+        consecutive_errors = 0
 
         self.update_progress(0, total_items, "Starting refresh")
 
@@ -844,35 +844,16 @@ class RefreshTask(threading.Thread):
             source_id = str(item.source_id)
             media_type = item.media_type
 
-            # Serialize old item state as failsafe fallback
-            old_data_json = serialize("json", [item])
-
+            original_provider_ids = dict(item.provider_ids)
             existing_seasons = item.seasons if media_type == 'tv' else None
             existing_related = item.related_titles if media_type in ['anime', 'manga'] else None
-
-            # Preserve critical user modifications and local asset URLs
-            user_data = {
-                "status": item.status,
-                "progress_main": item.progress_main,
-                "progress_secondary": item.progress_secondary,
-                "personal_rating": item.personal_rating,
-                "favorite": item.favorite,
-                "date_added": item.date_added,
-                "repeats": item.repeats,
-                "notes": item.notes,
-                "screenshots": item.screenshots,
-                "favorite_position": item.favorite_position,
-                "banner_url": item.banner_url,
-                "cover_url": item.cover_url,
-                "notification": item.notification,
-            }
-
             existing_cast = item.cast
 
-            try:
-                # 1. Delete DB entry but DO NOT remove local files (ORM default behavior)
-                item.delete()
+            # 1. Safely hide old item so API fetcher doesn't clash
+            item.provider_ids = {source: f"temp_{uuid.uuid4().hex}"}
+            item.save(update_fields=['provider_ids'])
 
+            try:
                 # 2. Refetch item via lightweight functions (respectfully against rate limits)
                 if source == "tmdb":
                     if "_s" in source_id:
@@ -881,9 +862,9 @@ class RefreshTask(threading.Thread):
                     else:
                         refresh_tmdb_item(media_type, source_id, existing_seasons, existing_cast)
                     time.sleep(0.2)
-                elif source in["mal", "anilist"]:
-                    anilist_id = item.provider_ids.get("anilist")
-                    mal_id = item.provider_ids.get("mal")
+                elif source in ["mal", "anilist"]:
+                    anilist_id = original_provider_ids.get("anilist")
+                    mal_id = original_provider_ids.get("mal")
                     refresh_anilist_item(media_type, anilist_id, mal_id, existing_related, existing_cast)
                     time.sleep(2.1)
                 elif source == "igdb":
@@ -896,18 +877,16 @@ class RefreshTask(threading.Thread):
                     refresh_musicbrainz_item(source_id)
                     time.sleep(1.1)
                 else:
+                    item.provider_ids = original_provider_ids
+                    item.save(update_fields=['provider_ids'])
                     processed += 1
                     continue
 
-                # 3. Pull recently made object to override variables back to our preserved custom ones
+                # 3. Pull recently made object to grab fresh metadata
                 lookup_key = f"provider_ids__{source}"
                 new_item = MediaItem.objects.get(media_type=media_type, **{lookup_key: source_id})
 
-                # Combine old notification state with the newly checked state
-                user_data["notification"] = user_data["notification"] or new_item.notification
-
-                # 4. Cleanup any orphan files downloaded during this specific run
-                # --- NEW SMART ORPHAN CLEANUP ---
+                # 4. Clean up orphans and copy metadata
                 def extract_urls(data, paths_set):
                     if isinstance(data, dict):
                         for v in data.values():
@@ -918,38 +897,41 @@ class RefreshTask(threading.Thread):
                     elif isinstance(data, str) and data.startswith("/media/"):
                         paths_set.add(data.replace("/media/", "", 1).strip('/'))
 
-                # Fields that might contain image URLs
-                media_fields =['cover_url', 'banner_url', 'screenshots', 'cast', 'seasons', 'episodes', 'related_titles']
-                
-                # 1. Gather OLD images and NEW temporary images
-                old_files, temp_new_files = set(), set()
-                old_obj = list(deserialize("json", old_data_json))[0].object
+                media_fields =['cast', 'seasons', 'episodes', 'related_titles']
+                old_files = set()
+                new_files = set()
                 
                 for f in media_fields:
-                    extract_urls(getattr(old_obj, f, None), old_files)
-                    extract_urls(getattr(new_item, f, None), temp_new_files)
+                    extract_urls(getattr(item, f, None), old_files)
+                    extract_urls(getattr(new_item, f, None), new_files)
 
-                # 2. Restore preserved user data (custom screenshots, covers, etc.)
-                for field, value in user_data.items():
-                    setattr(new_item, field, value)
+                # Copy strictly API-driven fields
+                metadata_fields =[
+                    'title', 'overview', 'release_date', 'cast', 'seasons', 'episodes',
+                    'related_titles', 'genres', 'creators', 'total_main', 'total_secondary'
+                ]
+                for field in metadata_fields:
+                    setattr(item, field, getattr(new_item, field))
+                
+                # Combine notifications
+                item.notification = item.notification or new_item.notification
+                
+                # Restore original provider IDs
+                item.provider_ids = original_provider_ids
+                item.last_updated = timezone.now()
+                item.save()
 
-                # 3. Gather FINAL images
-                final_files = set()
-                for f in media_fields:
-                    extract_urls(getattr(new_item, f, None), final_files)
+                # Delete the temporary new_item container
+                new_item.delete()
 
-                # 4. Delete what is no longer used
-                for rel_path in (old_files | temp_new_files) - final_files:
+                # Delete orphaned local files explicitly replaced by the API
+                for rel_path in old_files - new_files:
                     abs_path = os.path.join(settings.MEDIA_ROOT, rel_path)
                     if os.path.exists(abs_path):
                         try:
                             os.remove(abs_path)
                         except Exception:
                             pass
-                # --- END SMART ORPHAN CLEANUP ---
-
-                new_item.last_updated = timezone.now()
-                new_item.save()
 
                 consecutive_errors = 0  # <--- RESET on successful fetch
                 processed += 1
@@ -959,9 +941,9 @@ class RefreshTask(threading.Thread):
                 consecutive_errors += 1
                 error_msg = str(e).lower()
                 
-                # Restore the DB state for this failed item immediately
-                for obj in deserialize("json", old_data_json):
-                    obj.object.save()
+                # Restore original provider IDs on failure. Data completely safe.
+                item.provider_ids = original_provider_ids
+                item.save(update_fields=['provider_ids'])
                     
                 # If it explicitly caught a known 429
                 if "429" in error_msg or "rate limit" in error_msg or "too many requests" in error_msg:
@@ -970,13 +952,13 @@ class RefreshTask(threading.Thread):
                     self.status = "error"
                     break # Break the for loop
                 
-                # NEW FAILSAFE: If it failed 3 times in a row with generic errors (like AniList's)
+                # FAILSAFE: If it failed 3 times in a row with generic errors
                 if consecutive_errors >= 3:
                     logger.error(f"Too many consecutive errors ({consecutive_errors}). Last error on {item_id}: {e}")
                     self.error = f"Multiple API failures on {source} (Possible rate limit). Process stopped."
                     self.status = "error"
                     break # Break the for loop
                 
-                logger.error(f"Failed to refresh {item_id}, restoring backup: {e}")
+                logger.error(f"Failed to refresh {item_id}, maintaining original: {e}")
                 processed += 1
                 self.update_progress(processed, total_items, "Refreshing items")

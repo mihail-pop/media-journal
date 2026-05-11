@@ -1,12 +1,12 @@
 document.addEventListener("DOMContentLoaded", function () {
-  const modal = document.getElementById("create-modal");
-  const overlay = document.getElementById("create-overlay");
-  const openBtn = document.getElementById("open-create-modal-btn");
-  const closeBtn = document.getElementById("create-close-btn");
-  const form = document.getElementById("create-form");
+  const modal = document.getElementById("metadata-modal");
+  const overlay = document.getElementById("metadata-overlay");
+  const closeBtn = document.getElementById("metadata-close-btn");
+  const form = document.getElementById("metadata-form");
   let scrollY = 0;
+  let currentItemId = null;
 
-  if (!openBtn || !modal) return;
+  if (!modal) return;
 
   const mediaGenres = {
     movies:["Action", "Adventure", "Animation", "Comedy", "Crime", "Documentary", "Drama", "Family", "Fantasy", "History", "Horror", "Music", "Mystery", "Romance", "Science Fiction", "TV Movie", "Thriller", "War", "Western"],
@@ -18,20 +18,19 @@ document.addEventListener("DOMContentLoaded", function () {
     music:["Alternative", "Blues", "Classical", "Country", "Electronic", "Folk", "Hip Hop", "Indie", "Jazz", "Metal", "Pop", "Punk", "R&B", "Reggae", "Rock", "Soul"]
   };
 
-  let createCurrentGenres =[];
-  let createCurrentCreators =[];
+  let metadataCurrentGenres = [];
+  let metadataCurrentCreators =[];
 
-  const genreWrapper = document.getElementById("create-genre-wrapper");
-  const genreSearch = document.getElementById("create-genre-search");
-  const genreOptions = document.getElementById("create-genre-options");
-  const genreTags = document.getElementById("create-genre-tags");
-  const genreIndicator = document.getElementById("create-genre-indicator");
+  const genreWrapper = document.getElementById("metadata-genre-wrapper");
+  const genreSearch = document.getElementById("metadata-genre-search");
+  const genreOptions = document.getElementById("metadata-genre-options");
+  const genreTags = document.getElementById("metadata-genre-tags");
+  const genreIndicator = document.getElementById("metadata-genre-indicator");
 
-  function initCreateGenres(mediaType) {
-    createCurrentGenres =[];
+  function initMetadataGenres(mediaType) {
     if (genreOptions) {
       genreOptions.innerHTML = "";
-      updateCreateGenreUI();
+      updateMetadataGenreUI();
 
       const availableGenres = mediaGenres[mediaType] ||[];
       availableGenres.forEach(genre => {
@@ -42,36 +41,38 @@ document.addEventListener("DOMContentLoaded", function () {
         
         option.addEventListener('click', (e) => {
           e.stopPropagation();
-          toggleCreateGenre(genre);
+          toggleMetadataGenre(genre);
           if (genreSearch) {
             genreSearch.value = '';
-            filterCreateGenreOptions('');
+            filterMetadataGenreOptions('');
           }
         });
         genreOptions.appendChild(option);
       });
+      // Initial render for pre-filled genres
+      updateMetadataGenreUI();
     }
   }
 
-  function toggleCreateGenre(genre) {
-    if (createCurrentGenres.includes(genre)) {
-      createCurrentGenres = createCurrentGenres.filter(g => g !== genre);
+  function toggleMetadataGenre(genre) {
+    if (metadataCurrentGenres.includes(genre)) {
+      metadataCurrentGenres = metadataCurrentGenres.filter(g => g !== genre);
     } else {
-      createCurrentGenres.push(genre);
+      metadataCurrentGenres.push(genre);
     }
-    updateCreateGenreUI();
+    updateMetadataGenreUI();
   }
 
-  function updateCreateGenreUI() {
+  function updateMetadataGenreUI() {
     if (!genreTags) return;
     genreTags.innerHTML = '';
-    createCurrentGenres.forEach(genre => {
+    metadataCurrentGenres.forEach(genre => {
       const tag = document.createElement('div');
       tag.className = 'genre-tag';
       tag.innerHTML = `<span>${genre}</span><span class="remove-tag">✕</span>`;
       tag.querySelector('.remove-tag').addEventListener('click', (e) => {
         e.stopPropagation();
-        toggleCreateGenre(genre);
+        toggleMetadataGenre(genre);
       });
       genreTags.appendChild(tag);
     });
@@ -79,7 +80,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (genreOptions) {
       const options = genreOptions.querySelectorAll('.genre-option');
       options.forEach(opt => {
-        if (createCurrentGenres.includes(opt.dataset.value)) {
+        if (metadataCurrentGenres.includes(opt.dataset.value)) {
           opt.classList.add('selected');
         } else {
           opt.classList.remove('selected');
@@ -88,7 +89,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     if (genreSearch && genreWrapper) {
-      if (createCurrentGenres.length > 0) {
+      if (metadataCurrentGenres.length > 0) {
         genreSearch.placeholder = '';
         genreWrapper.classList.add('has-items');
       } else {
@@ -115,9 +116,9 @@ document.addEventListener("DOMContentLoaded", function () {
     if (genreIndicator) {
       genreIndicator.addEventListener('click', (e) => {
         e.stopPropagation();
-        if (createCurrentGenres.length > 0) {
-          createCurrentGenres =[];
-          updateCreateGenreUI();
+        if (metadataCurrentGenres.length > 0) {
+          metadataCurrentGenres =[];
+          updateMetadataGenreUI();
           if (genreOptions) genreOptions.classList.remove('open');
           genreWrapper.classList.remove('open');
         } else {
@@ -135,21 +136,21 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (genreSearch) {
       genreSearch.addEventListener('input', (e) => {
-        filterCreateGenreOptions(e.target.value);
+        filterMetadataGenreOptions(e.target.value);
       });
 
       genreSearch.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
           e.preventDefault();
         }
-        if (e.key === 'Backspace' && e.target.value === '' && createCurrentGenres.length > 0) {
-          toggleCreateGenre(createCurrentGenres[createCurrentGenres.length - 1]);
+        if (e.key === 'Backspace' && e.target.value === '' && metadataCurrentGenres.length > 0) {
+          toggleMetadataGenre(metadataCurrentGenres[metadataCurrentGenres.length - 1]);
         }
       });
     }
   }
 
-  function filterCreateGenreOptions(query) {
+  function filterMetadataGenreOptions(query) {
     if (!genreOptions) return;
     const q = query.toLowerCase();
     const options = genreOptions.querySelectorAll('.genre-option');
@@ -162,26 +163,26 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  const creatorTagsContainer = document.getElementById("create-creator-tags");
-  const creatorInput = document.getElementById("create-creator-input");
+  const creatorTagsContainer = document.getElementById("metadata-creator-tags");
+  const creatorInput = document.getElementById("metadata-creator-input");
 
   function addCreator(name) {
     name = name.trim();
-    if (name && !createCurrentCreators.includes(name)) {
-      createCurrentCreators.push(name);
-      renderCreatorTags();
+    if (name && !metadataCurrentCreators.includes(name)) {
+      metadataCurrentCreators.push(name);
+      renderMetadataCreatorTags();
     }
   }
 
   function removeCreator(name) {
-    createCurrentCreators = createCurrentCreators.filter(c => c !== name);
-    renderCreatorTags();
+    metadataCurrentCreators = metadataCurrentCreators.filter(c => c !== name);
+    renderMetadataCreatorTags();
   }
 
-  function renderCreatorTags() {
+  function renderMetadataCreatorTags() {
     if (!creatorTagsContainer) return;
     creatorTagsContainer.innerHTML = '';
-    createCurrentCreators.forEach(creator => {
+    metadataCurrentCreators.forEach(creator => {
       const tag = document.createElement('div');
       tag.className = 'creator-tag';
       tag.innerHTML = `<span>${creator}</span><span class="remove-tag">✕</span>`;
@@ -192,7 +193,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
     
     if (creatorInput) {
-      if (createCurrentCreators.length > 0) {
+      if (metadataCurrentCreators.length > 0) {
         creatorInput.placeholder = '';
       } else {
         creatorInput.placeholder = 'Add creator...';
@@ -206,8 +207,8 @@ document.addEventListener("DOMContentLoaded", function () {
         e.preventDefault();
         addCreator(creatorInput.value);
         creatorInput.value = '';
-      } else if (e.key === 'Backspace' && creatorInput.value === '' && createCurrentCreators.length > 0) {
-        removeCreator(createCurrentCreators[createCurrentCreators.length - 1]);
+      } else if (e.key === 'Backspace' && creatorInput.value === '' && metadataCurrentCreators.length > 0) {
+        removeCreator(metadataCurrentCreators[metadataCurrentCreators.length - 1]);
       }
     });
 
@@ -219,150 +220,113 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  function updateCreateFieldVisibility(mediaType) {
-    const mainGroup = document.getElementById("create_progress_main_group");
-    const secondaryGroup = document.getElementById("create_progress_secondary_group");
-    const progressRow = document.getElementById("create-progress-row");
+  function updateMetadataFieldVisibility(mediaType) {
+    const mainGroup = document.getElementById("metadata_progress_main_group");
+    const secondaryGroup = document.getElementById("metadata_progress_secondary_group");
+    const progressRow2 = document.getElementById("metadata-progress-row-2");
     
     if (mainGroup) mainGroup.style.display = "none";
     if (secondaryGroup) secondaryGroup.style.display = "none";
-    if (progressRow) progressRow.style.display = "none";
+    if (progressRow2) progressRow2.style.display = "none";
 
-    const mainLabel = document.getElementById("create_progress_main_label");
-    const secondaryLabel = document.getElementById("create_progress_secondary_label");
+    const mainLabel = document.getElementById("metadata_progress_main_label");
+    const secondaryLabel = document.getElementById("metadata_progress_secondary_label");
 
     if (mediaType === "tv") {
       if (mainGroup) mainGroup.style.display = "flex";
       if (secondaryGroup) secondaryGroup.style.display = "flex";
-      if (progressRow) progressRow.style.display = "flex";
+      if (progressRow2) progressRow2.style.display = "flex";
       if (mainLabel) mainLabel.textContent = "Episode Progress";
       if (secondaryLabel) secondaryLabel.textContent = "Season Progress";
     } else if (mediaType === "anime") {
       if (mainGroup) mainGroup.style.display = "flex";
-      if (progressRow) progressRow.style.display = "flex";
       if (mainLabel) mainLabel.textContent = "Episode Progress";
     } else if (mediaType === "game") {
       if (mainGroup) mainGroup.style.display = "flex";
-      if (progressRow) progressRow.style.display = "flex";
       if (mainLabel) mainLabel.textContent = "Hours Played";
     } else if (mediaType === "manga") {
       if (mainGroup) mainGroup.style.display = "flex";
       if (secondaryGroup) secondaryGroup.style.display = "flex";
-      if (progressRow) progressRow.style.display = "flex";
+      if (progressRow2) progressRow2.style.display = "flex";
       if (mainLabel) mainLabel.textContent = "Chapter Progress";
       if (secondaryLabel) secondaryLabel.textContent = "Volume Progress";
     } else if (mediaType === "book") {
       if (mainGroup) mainGroup.style.display = "flex";
-      if (progressRow) progressRow.style.display = "flex";
       if (mainLabel) mainLabel.textContent = "Pages Read";
     }
   }
 
-  // Rating UI initialization
-  function setupCreateRatingUI() {
-    const ratingInput = document.getElementById('create_personal_rating');
-    const ratingMode = document.body.dataset.ratingMode || 'faces';
-    
-    // Clear old dynamic UIs
-    const existingDynamic = form.querySelector('.dynamic-rating-ui');
-    if (existingDynamic) existingDynamic.remove();
-    
-    const ratingFaces = document.getElementById('create-rating-faces');
-    ratingFaces.style.display = 'none';
-
-    if (ratingMode === 'faces') {
-      ratingFaces.style.display = 'flex';
-      ratingFaces.querySelectorAll('.face').forEach(face => {
-        face.onclick = () => {
-          if (face.classList.contains('selected')) {
-            ratingFaces.querySelectorAll('.face').forEach(f => f.classList.remove('selected'));
-            ratingInput.value = '';
-          } else {
-            ratingFaces.querySelectorAll('.face').forEach(f => f.classList.remove('selected'));
-            face.classList.add('selected');
-            ratingInput.value = face.dataset.value;
-          }
-        };
-      });
-    } else if (ratingMode === 'stars_5') {
-      const starDiv = document.createElement('div');
-      starDiv.className = 'dynamic-rating-ui rating-stars';
-      for (let i = 1; i <= 5; i++) {
-        const star = document.createElement('span');
-        star.className = 'star';
-        star.textContent = '★';
-        star.onclick = () => {
-          const currentlySelected = starDiv.querySelectorAll('.star.selected').length;
-          if (currentlySelected === i) {
-            starDiv.querySelectorAll('.star').forEach(s => s.classList.remove('selected'));
-            ratingInput.value = '';
-          } else {
-            ratingInput.value = i;
-            starDiv.querySelectorAll('.star').forEach((s, idx) => {
-              s.classList.toggle('selected', idx < i);
-            });
-          }
-        };
-        starDiv.appendChild(star);
-      }
-      ratingInput.parentNode.insertBefore(starDiv, ratingInput.nextSibling);
-    } else {
-      // 1-10 or 1-100 scale
-      const numDiv = document.createElement('div');
-      numDiv.className = 'dynamic-rating-ui rating-number';
-      const input = document.createElement('input');
-      input.type = 'number';
-      input.min = 1;
-      input.max = ratingMode === 'scale_10' ? 10 : 100;
-      input.placeholder = ratingMode === 'scale_10' ? '1-10' : '1-100';
-      input.oninput = () => { ratingInput.value = input.value; };
-      numDiv.appendChild(input);
-      ratingInput.parentNode.insertBefore(numDiv, ratingInput.nextSibling);
-    }
-  }
-
-  // Open Modal
-  openBtn.addEventListener("click", () => {
+  window.openMetadataModal = function(itemId) {
+    currentItemId = itemId;
     form.reset();
     
-    // Inject the correct media type so your CSS placeholder logic kicks in
-    const mediaType = document.body.dataset.mediaType || "movies";
-    const coverContainer = document.getElementById("create-cover-container");
+    // Reset file inputs visually
+    document.getElementById("metadata-banner-preview").src = "/static/core/img/placeholder.png";
+    document.getElementById("metadata-cover-preview").src = "/static/core/img/placeholder.png";
+    document.getElementById("metadata-banner-container").classList.remove("has-image");
+    document.getElementById("metadata-cover-container").classList.remove("has-image");
 
-    initCreateGenres(mediaType);
-    createCurrentCreators =[];
-    renderCreatorTags();
+    // Close settings dropdown if open
+    const dropdown = document.getElementById('settingsDropdown');
+    if (dropdown) dropdown.style.display = 'none';
 
-    let canonicalType = mediaType;
-    if (mediaType === "movies") canonicalType = "movie";
-    if (mediaType === "tvshows") canonicalType = "tv";
-    if (mediaType === "games") canonicalType = "game";
-    if (mediaType === "books") canonicalType = "book";
-    updateCreateFieldVisibility(canonicalType);
+    fetch(`/get-item/${itemId}/`)
+      .then(res => res.json())
+      .then(data => {
+        if (!data.success) return alert("Failed to load item metadata");
+        const item = data.item;
 
-    const bannerContainer = document.getElementById("create-banner-container");
+        let canonicalType = item.media_type;
+        const bodyType = document.body.dataset.mediaType || "movies"; // plural form mapping for genres
+        
+        document.getElementById("metadata-cover-container").dataset.mediaType = bodyType;
+        document.getElementById("metadata-banner-container").dataset.mediaType = bodyType;
 
-    coverContainer.dataset.mediaType = mediaType;
-    bannerContainer.dataset.mediaType = mediaType;
-    
-    // Reset images to placeholder path and remove .has-image states
-    document.getElementById("create-banner-preview").src = "/static/core/img/placeholder.png";
-    document.getElementById("create-cover-preview").src = "/static/core/img/placeholder.png";
-    coverContainer.classList.remove("has-image");
-    bannerContainer.classList.remove("has-image");
-    
-    // Reset Rating Selection
-    document.querySelectorAll('#create-rating-faces .face').forEach(f => f.classList.remove('selected'));
-    document.getElementById('create_personal_rating').value = '';
-    setupCreateRatingUI();
+        // Populate fields
+        document.getElementById("metadata-title-input").value = item.title || "";
+        document.getElementById("metadata-overview").value = item.overview || "";
+        
+        // Populate date carefully
+        if (item.release_date) {
+            document.getElementById("metadata-release-date").value = item.release_date;
+        }
 
-    modal.classList.remove("modal-hidden");
-    overlay.classList.remove("modal-hidden");
-    scrollY = window.scrollY;
-    document.body.style.top = `-${scrollY}px`;
-    document.body.classList.add("modal-open");
-    document.documentElement.classList.add("modal-open");
-  });
+        // Setup Images
+        if (item.cover_url) {
+            document.getElementById("metadata-cover-preview").src = item.cover_url;
+            document.getElementById("metadata-cover-container").classList.add("has-image");
+        }
+        if (item.banner_url) {
+            document.getElementById("metadata-banner-preview").src = item.banner_url;
+            document.getElementById("metadata-banner-container").classList.add("has-image");
+        }
+
+        // Arrays for Genres & Creators
+        metadataCurrentGenres = item.genres || [];
+        metadataCurrentCreators = item.creators ||[];
+        initMetadataGenres(bodyType);
+        renderMetadataCreatorTags();
+
+        // Progress variables mapping
+        updateMetadataFieldVisibility(canonicalType);
+        document.getElementById("metadata_progress_main").value = item.progress_main ?? "";
+        document.getElementById("metadata_total_main").value = item.total_main ?? "";
+        document.getElementById("metadata_progress_secondary").value = item.progress_secondary ?? "";
+        document.getElementById("metadata_total_secondary").value = item.total_secondary ?? "";
+
+        // Show Modal
+        modal.classList.remove("modal-hidden");
+        overlay.classList.remove("modal-hidden");
+        scrollY = window.scrollY;
+        document.body.style.top = `-${scrollY}px`;
+        document.body.classList.add("modal-open");
+        document.documentElement.classList.add("modal-open");
+      })
+      .catch(err => {
+        console.error(err);
+        alert("Error loading item metadata.");
+      });
+  };
 
   // Close Modal
   function closeModal() {
@@ -372,6 +336,7 @@ document.addEventListener("DOMContentLoaded", function () {
     document.documentElement.classList.remove("modal-open");
     document.body.style.top = "";
     window.scrollTo(0, scrollY);
+    currentItemId = null;
   }
   closeBtn.addEventListener("click", closeModal);
   overlay.addEventListener("click", closeModal);
@@ -386,9 +351,7 @@ document.addEventListener("DOMContentLoaded", function () {
       if (this.files && this.files[0]) {
         const reader = new FileReader();
         reader.onload = function(e) {
-          // Setting a real image URL instantly removes your placeholder CSS behavior
           preview.src = e.target.result;
-          // Add class so CSS knows to hide the plus button until hover
           container.classList.add("has-image");
         };
         reader.readAsDataURL(this.files[0]);
@@ -396,23 +359,25 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  setupImagePreview("create-banner-input", "create-banner-preview", "create-banner-container");
-  setupImagePreview("create-cover-input", "create-cover-preview", "create-cover-container");
+  setupImagePreview("metadata-banner-input", "metadata-banner-preview", "metadata-banner-container");
+  setupImagePreview("metadata-cover-input", "metadata-cover-preview", "metadata-cover-container");
 
   // Form Submission
   form.addEventListener("submit", function(e) {
     e.preventDefault();
+    if (!currentItemId) return;
 
     const formData = new FormData(form);
     
-    // Append the media type dynamically derived from the page's body attribute
-    const mediaType = document.body.dataset.mediaType || "movies";
-    formData.append("media_type", mediaType);
+    // Inject genres and creators manually since they are customized components
+    formData.append("genres", metadataCurrentGenres.join(","));
+    formData.append("creators", metadataCurrentCreators.join(","));
 
-    formData.append("genres", createCurrentGenres.join(","));
-    formData.append("creators", createCurrentCreators.join(","));
+    const submitBtn = form.querySelector('.save-btn');
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Saving...";
 
-    fetch("/create-custom-item/", {
+    fetch(`/edit-metadata/${currentItemId}/`, {
       method: "POST",
       headers: {
         "X-CSRFToken": getCookie("csrftoken")
@@ -423,18 +388,19 @@ document.addEventListener("DOMContentLoaded", function () {
     .then(data => {
       if (data.success) {
         closeModal();
-        if (window.replaceItemElement) {
-          window.replaceItemElement(data.item); 
-        } else {
-          window.location.reload();
-        }
+        sessionStorage.setItem("refreshSuccess", "1");
+        window.location.reload();
       } else {
-        alert("Failed to create entry: " + data.error);
+        alert("Failed to update metadata: " + data.error);
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Save";
       }
     })
     .catch(err => {
       console.error(err);
-      alert("Error saving custom item.");
+      alert("Error saving metadata.");
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Save";
     });
   });
 

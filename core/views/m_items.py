@@ -173,6 +173,27 @@ def create_custom_item(request):
             if display_value_int is not None:
                 rating_val = display_to_rating(display_value_int, rating_mode)
 
+        # Handle genres and creators
+        genres = request.POST.get("genres", "")
+        genres_list =[g.strip() for g in genres.split(",") if g.strip()]
+        
+        creators = request.POST.get("creators", "")
+        creators_list =[c.strip() for c in creators.split(",") if c.strip()]
+
+        total_main = parse_int(request.POST.get("total_main"))
+        total_secondary = parse_int(request.POST.get("total_secondary"))
+        progress_main = parse_int(request.POST.get("progress_main")) or 0
+        progress_secondary = parse_int(request.POST.get("progress_secondary")) or 0
+
+        date_added_input = request.POST.get("date_added", "")
+        if date_added_input:
+            try:
+                date_added = timezone.datetime.strptime(date_added_input, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+            except ValueError:
+                date_added = timezone.now()
+        else:
+            date_added = timezone.now()
+
         # 5. Create Item
         new_item = MediaItem.objects.create(
             title=title,
@@ -184,14 +205,18 @@ def create_custom_item(request):
             release_date=request.POST.get("release_date", ""),
             overview=request.POST.get("overview", ""),
             status=request.POST.get("status", "planned"),
+            genres=genres_list,
+            creators=creators_list,
             
-            progress_main=0,
-            progress_secondary=0,
+            progress_main=progress_main,
+            total_main=total_main,
+            progress_secondary=progress_secondary,
+            total_secondary=total_secondary,
             
             personal_rating=rating_val,
             favorite=request.POST.get("favorite") in ["true", "on", True],
             notes=request.POST.get("notes", ""),
-            date_added=timezone.now()
+            date_added=date_added
         )
 
         # 6. Format Display Rating for frontend
@@ -229,6 +254,80 @@ def create_custom_item(request):
         import traceback
         traceback.print_exc()
         return JsonResponse({"success": False, "error": str(e)}, status=400)
+
+@ensure_csrf_cookie
+def edit_metadata(request, item_id):
+    if request.method == "POST":
+        try:
+            item = MediaItem.objects.get(id=item_id)
+
+            item.title = request.POST.get("title", item.title)
+            item.release_date = request.POST.get("release_date", item.release_date)
+            item.overview = request.POST.get("overview", item.overview)
+
+            genres = request.POST.get("genres", "")
+            item.genres =[g.strip() for g in genres.split(",") if g.strip()]
+
+            creators = request.POST.get("creators", "")
+            item.creators =[c.strip() for c in creators.split(",") if c.strip()]
+
+            def parse_int(val):
+                try:
+                    return int(val)
+                except (TypeError, ValueError):
+                    return None
+
+            if "progress_main" in request.POST:
+                item.progress_main = parse_int(request.POST.get("progress_main")) or 0
+            if "total_main" in request.POST:
+                item.total_main = parse_int(request.POST.get("total_main"))
+            if "progress_secondary" in request.POST:
+                item.progress_secondary = parse_int(request.POST.get("progress_secondary")) or 0
+            if "total_secondary" in request.POST:
+                item.total_secondary = parse_int(request.POST.get("total_secondary"))
+
+            # Image processing
+            fs = FileSystemStorage(location=settings.MEDIA_ROOT)
+            cache_bust = int(time.time() * 1000)
+
+            if "cover_image" in request.FILES:
+                if item.cover_url and item.cover_url.startswith("/media/"):
+                    old_path = os.path.join(settings.MEDIA_ROOT, item.cover_url.replace("/media/", ""))
+                    if os.path.exists(old_path):
+                        os.remove(old_path)
+
+                file_obj = request.FILES["cover_image"]
+                ext = os.path.splitext(file_obj.name)[1] or ".jpg"
+                if item.source in ["tmdb", "anilist"]:
+                    filename = f"posters/{item.source}_{item.media_type}_{item.source_id}_{cache_bust}{ext}"
+                else:
+                    filename = f"posters/{item.source}_{item.source_id}_{cache_bust}{ext}"
+                saved_name = fs.save(filename, file_obj)
+                item.cover_url = fs.url(saved_name)
+
+            if "banner_image" in request.FILES:
+                if item.banner_url and item.banner_url.startswith("/media/"):
+                    old_path = os.path.join(settings.MEDIA_ROOT, item.banner_url.replace("/media/", ""))
+                    if os.path.exists(old_path):
+                        os.remove(old_path)
+
+                file_obj = request.FILES["banner_image"]
+                ext = os.path.splitext(file_obj.name)[1] or ".jpg"
+                if item.source in ["tmdb", "anilist"]:
+                    filename = f"banners/{item.source}_{item.media_type}_{item.source_id}_{cache_bust}{ext}"
+                else:
+                    filename = f"banners/{item.source}_{item.source_id}_{cache_bust}{ext}"
+                saved_name = fs.save(filename, file_obj)
+                item.banner_url = fs.url(saved_name)
+
+            item.save()
+            return JsonResponse({"success": True})
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return JsonResponse({"success": False, "error": str(e)})
+
+    return JsonResponse({"success": False, "error": "Invalid request"})
 
 @ensure_csrf_cookie
 def edit_item(request, item_id):
@@ -476,164 +575,136 @@ def refresh_item(request):
 
         # Get the item first
         item = MediaItem.objects.get(id=item_id)
-
-        anilist_id = item.provider_ids.get("anilist")
-        mal_id = item.provider_ids.get("mal")
-
+        original_provider_ids = dict(item.provider_ids)
+        
         source = item.source
         source_id = item.source_id
         media_type = item.media_type
 
-        # Save user data
-        user_data = {
-            "status": item.status,
-            "progress_main": item.progress_main,
-            "progress_secondary": item.progress_secondary,
-            "personal_rating": item.personal_rating,
-            "favorite": item.favorite,
-            "date_added": item.date_added,
-            "repeats": item.repeats,
-            "notes": item.notes,
-            "screenshots": item.screenshots,
-            "favorite_position": item.favorite_position,
-        }
+        # 1. Temporarily hide the old item by changing its provider_ids 
+        # so the API fetcher doesn't think it's a duplicate and abort.
+        item.provider_ids = {source: f"temp_{uuid.uuid4().hex}"}
+        item.save(update_fields=['provider_ids'])
 
-        # Backup images based on refresh_type
-        banner_backup = None
-        cover_backup = None
-
-        if refresh_type in ["data", "cover"]:
-            if item.banner_url and item.banner_url.startswith("/media/"):
-                file_path = os.path.join(
-                    settings.MEDIA_ROOT, item.banner_url.replace("/media/", "")
-                )
-                if os.path.exists(file_path):
-                    with open(file_path, "rb") as f:
-                        banner_backup = {"url": item.banner_url, "data": f.read()}
-
-        if refresh_type in ["data", "banner"]:
-            if item.cover_url and item.cover_url.startswith("/media/"):
-                file_path = os.path.join(
-                    settings.MEDIA_ROOT, item.cover_url.replace("/media/", "")
-                )
-                if os.path.exists(file_path):
-                    with open(file_path, "rb") as f:
-                        cover_backup = {"url": item.cover_url, "data": f.read()}
-
-        # Backup screenshot files
-        screenshot_backups = []
-        if item.screenshots:
-            for shot in item.screenshots:
-                url = shot.get("url", "")
-                if url.startswith("/media/"):
-                    file_path = os.path.join(
-                        settings.MEDIA_ROOT, url.replace("/media/", "")
-                    )
-                    if os.path.exists(file_path):
-                        with open(file_path, "rb") as f:
-                            screenshot_backups.append(
-                                {
-                                    "url": url,
-                                    "data": f.read(),
-                                    "is_full_url": shot.get("is_full_url", False),
-                                }
-                            )
-
-        # Delete the existing item
-        delete_item(request, item_id)
-
-        # Re-save the item based on its source
-        if source == "tmdb":
-            if "_s" in source_id:  # It's a season
-                tmdb_id, season_number = source_id.split("_s")
-                save_tmdb_season(tmdb_id, season_number)
+        try:
+            # 2. Fetch fresh data by triggering the standard save function
+            res = None
+            if source == "tmdb":
+                if "_s" in source_id:  # It's a season
+                    tmdb_id, season_number = source_id.split("_s")
+                    res = save_tmdb_season(tmdb_id, season_number)
+                else:
+                    res = save_tmdb_item(media_type, source_id)
+            elif source in ["mal", "anilist"]:
+                anilist_id = original_provider_ids.get("anilist")
+                mal_id = original_provider_ids.get("mal")
+                res = save_anilist_item(media_type, anilist_id=anilist_id, mal_id=mal_id)
+            elif source == "igdb":
+                res = save_igdb_item(source_id)
+            elif source == "openlib":
+                res = save_openlib_item(source_id)
+            elif source == "musicbrainz":
+                res = save_musicbrainz_item(source_id)
             else:
-                save_tmdb_item(media_type, source_id)
-        elif source in ["mal", "anilist"]:
-            save_anilist_item(
-                media_type, 
-                anilist_id=anilist_id,
-                mal_id=mal_id
-            )
-        elif source == "igdb":
-            save_igdb_item(source_id)
-        elif source == "openlib":
-            save_openlib_item(source_id)
-        elif source == "musicbrainz":
-            save_musicbrainz_item(source_id)
-        else:
-            return JsonResponse({"error": "Unsupported source."}, status=400)
+                raise Exception("Unsupported source.")
+            
+            # Check for API failure
+            if res and res.status_code != 200:
+                error_msg = "Unknown API error"
+                try:
+                    error_msg = json.loads(res.content).get("error", error_msg)
+                except Exception:
+                    pass
+                raise Exception(error_msg)
 
-        # Restore user data
-        lookup_key = f"provider_ids__{source}"
-        new_item = MediaItem.objects.get(
-            media_type=media_type,
-            **{lookup_key: str(source_id)}
-        )
+            # 3. Find the newly created temporary item holding the fresh data
+            lookup_key = f"provider_ids__{source}"
+            new_item = MediaItem.objects.get(media_type=media_type, **{lookup_key: str(source_id)})
 
-        # --- Capture newly downloaded file paths before they are overwritten by user_data ---
-        new_paths_to_delete = []
-        if banner_backup and new_item.banner_url and new_item.banner_url.startswith("/media/"):
-            new_paths_to_delete.append(os.path.join(settings.MEDIA_ROOT, new_item.banner_url.replace("/media/", "")))
+        except Exception as e:
+            # 4a. On API failure, simply revert provider_ids and abort. NO DATA LOST!
+            item.provider_ids = original_provider_ids
+            item.save(update_fields=['provider_ids'])
+            return JsonResponse({"error": f"Failed to refresh: {str(e)}"}, status=500)
+
+        # 4b. On success, securely copy purely API-driven metadata from new_item to old item
+        metadata_fields =[
+            'title', 'overview', 'release_date', 'cast', 'seasons', 'episodes',
+            'related_titles', 'genres', 'creators', 'total_main', 'total_secondary'
+        ]
         
-        if cover_backup and new_item.cover_url and new_item.cover_url.startswith("/media/"):
-            new_paths_to_delete.append(os.path.join(settings.MEDIA_ROOT, new_item.cover_url.replace("/media/", "")))
+        # Mark local metadata images of the OLD item for cleanup (since they are replaced)
+        files_to_delete =[]
+        if item.media_type != "music":
+            for member in (item.cast or[]):
+                p = member.get("profile_path", "")
+                if p.startswith("/media/"):
+                    files_to_delete.append(os.path.join(settings.MEDIA_ROOT, p.replace("/media/", "")))
+        for related in (item.related_titles or[]):
+            p = related.get("poster_path", "")
+            if p.startswith("/media/"):
+                files_to_delete.append(os.path.join(settings.MEDIA_ROOT, p.replace("/media/", "")))
+        for season in (item.seasons or[]):
+            p = season.get("poster_path", "")
+            if p.startswith("/media/"):
+                files_to_delete.append(os.path.join(settings.MEDIA_ROOT, p.replace("/media/", "")))
+        for episode in (item.episodes or[]):
+            p = episode.get("still_path", "")
+            if p.startswith("/media/"):
+                files_to_delete.append(os.path.join(settings.MEDIA_ROOT, p.replace("/media/", "")))
 
-        if screenshot_backups and new_item.screenshots:
+        # Apply the new text-based metadata
+        for field in metadata_fields:
+            setattr(item, field, getattr(new_item, field))
+
+        # Handle Cover based on refresh_type
+        if refresh_type in ['all', 'cover']:
+            if item.cover_url and item.cover_url.startswith('/media/'):
+                files_to_delete.append(os.path.join(settings.MEDIA_ROOT, item.cover_url.replace('/media/', '')))
+            item.cover_url = new_item.cover_url
+        else:
+            if new_item.cover_url and new_item.cover_url.startswith('/media/'):
+                files_to_delete.append(os.path.join(settings.MEDIA_ROOT, new_item.cover_url.replace('/media/', '')))
+
+        # Handle Banner based on refresh_type
+        if refresh_type in ['all', 'banner']:
+            if item.banner_url and item.banner_url.startswith('/media/'):
+                files_to_delete.append(os.path.join(settings.MEDIA_ROOT, item.banner_url.replace('/media/', '')))
+            item.banner_url = new_item.banner_url
+        else:
+            if new_item.banner_url and new_item.banner_url.startswith('/media/'):
+                files_to_delete.append(os.path.join(settings.MEDIA_ROOT, new_item.banner_url.replace('/media/', '')))
+
+        # Screenshots are manual, so we ALWAYS keep old screenshots. Mark new ones for deletion.
+        if new_item.screenshots:
             for shot in new_item.screenshots:
                 url = shot.get("url", "")
                 if url.startswith("/media/"):
-                    new_paths_to_delete.append(os.path.join(settings.MEDIA_ROOT, url.replace("/media/", "")))
+                    files_to_delete.append(os.path.join(settings.MEDIA_ROOT, url.replace("/media/", "")))
 
-        # Restore user data (This overwrites new_item with the old URLs)
-        for field, value in user_data.items():
-            setattr(new_item, field, value)
+        # Restore original provider ids to put it back in its rightful place
+        item.provider_ids = original_provider_ids
+        item.last_updated = timezone.now()
+        item.save()
 
-        # Delete the orphaned newly downloaded files
-        for path in new_paths_to_delete:
+        # 5. Delete the temporary new_item container from DB
+        new_item.delete()
+
+        # 6. Delete orphaned local files
+        for path in files_to_delete:
             if os.path.exists(path):
                 try:
                     os.remove(path)
                 except Exception:
                     pass
 
-        # Restore backed up images
-        if banner_backup:
-            file_path = os.path.join(
-                settings.MEDIA_ROOT, banner_backup["url"].replace("/media/", "")
-            )
-            os.makedirs(os.path.dirname(file_path), exist_ok=True)
-            with open(file_path, "wb") as f:
-                f.write(banner_backup["data"])
-            new_item.banner_url = banner_backup["url"]
-
-        if cover_backup:
-            file_path = os.path.join(
-                settings.MEDIA_ROOT, cover_backup["url"].replace("/media/", "")
-            )
-            os.makedirs(os.path.dirname(file_path), exist_ok=True)
-            with open(file_path, "wb") as f:
-                f.write(cover_backup["data"])
-            new_item.cover_url = cover_backup["url"]
-
-        # Restore screenshot files
-        if screenshot_backups:
-            for backup in screenshot_backups:
-                file_path = os.path.join(
-                    settings.MEDIA_ROOT, backup["url"].replace("/media/", "")
-                )
-                os.makedirs(os.path.dirname(file_path), exist_ok=True)
-                with open(file_path, "wb") as f:
-                    f.write(backup["data"])
-
-        new_item.last_updated = timezone.now()
-        new_item.save()
-
         return JsonResponse({"message": "Item refreshed successfully."})
 
     except MediaItem.DoesNotExist:
         return JsonResponse({"error": "Item not found."}, status=404)
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return JsonResponse({"error": str(e)}, status=500)
 
 
@@ -672,11 +743,15 @@ def get_item(request, item_id):
                     "item_status_choices": MediaItem.STATUS_CHOICES,
                     "rating_mode": rating_mode,
                     "repeats": item.repeats if item.repeats else None,
-                    "date_added": item.date_added.isoformat()
-                    if item.date_added
-                    else None,
+                    "date_added": item.date_added.isoformat() if item.date_added else None,
                     "show_date_field": settings.show_date_field,
                     "show_repeats_field": settings.show_repeats_field,
+                    "cover_url": item.cover_url,
+                    "banner_url": item.banner_url,
+                    "overview": item.overview,
+                    "release_date": item.release_date,
+                    "genres": item.genres,
+                    "creators": item.creators,
                 },
             }
         )

@@ -56,6 +56,21 @@
   --close-hover-text: #495057;
 }
 
+#metadata-genre-wrapper .custom-options {
+  background-color: var(--bg-primary);
+}
+#metadata-genre-search {
+  flex: 1;
+  max-width: unset !important;
+  padding: 0 !important;
+  min-width: 60px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  outline: none;
+  color: var(--text-tertiary);
+}
+
 /* --- Custom Create Modal Stylings --- */
 
 /* Title Styling mimicking edit_modal h2 */
@@ -98,6 +113,145 @@
   cursor: pointer;
   transition: opacity 0.2s ease;
   opacity: 1; /* Visible by default */
+  z-index: 10;
+}
+
+/* Base custom options for dropdown missing in details view */
+.custom-select-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.custom-options {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  background-color: var(--bg-primary);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  z-index: 2000;
+  max-height: 200px;
+  overflow-y: auto;
+  margin-top: 0.3rem;
+}
+
+.custom-options.open {
+  display: block;
+}
+
+.custom-option {
+  padding: 0.5rem;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.custom-option:hover {
+  background-color: var(--modal-bg);
+}
+
+.genre-select {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0.4rem;
+  padding-right: 2.5rem;
+  background-color: var(--bg-primary);
+  border-radius: 6px;
+  cursor: text;
+  min-height: 2.5rem;
+  align-items: center;
+  position: relative;
+}
+
+.genre-indicator {
+  position: absolute;
+  right: 0;
+  top: 0;
+  height: 100%;
+  width: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-primary);
+}
+
+.genre-indicator::after {
+  content: "";
+  border-left: 0.3rem solid transparent;
+  border-right: 0.3rem solid transparent;
+  border-top: 0.35rem solid var(--text-tertiary);
+  transition: transform 0.3s ease;
+  display: block;
+}
+
+.genre-select-wrapper.open .genre-indicator::after {
+  transform: rotate(180deg);
+}
+
+.genre-select-wrapper.has-items .genre-indicator:hover::after {
+  content: "✕";
+  border: none;
+  font-size: 14px;
+  font-weight: bold;
+  transform: none;
+  color: #ff4444;
+}
+
+.genre-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.genre-tag {
+  background-color: var(--modal-bg);
+  color: var(--text-light);
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.genre-tag .remove-tag {
+  cursor: pointer;
+  font-weight: bold;
+  color: var(--text-muted);
+  transition: color 0.2s;
+}
+
+.genre-tag .remove-tag:hover {
+  color: #ff4444;
+}
+
+.genre-option {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.genre-option.selected {
+  background-color: var(--button-primary);
+  color: white;
+  font-weight: bold;
+}
+
+.genre-option.hidden {
+  display: none;
+}
+
+.genre-check {
+  display: none;
+  font-size: 0.8rem;
+}
+
+.genre-option.selected .genre-check {
+  display: block;
 }
 
 /* Hide the overlay only if the container has an image, but reveal on hover */

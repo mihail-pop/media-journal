@@ -1559,16 +1559,22 @@ document.addEventListener('keydown', function(e) {
       if (source && sourceId) {
         openCoverUpload(source, sourceId);
       }
+    } else if (key === 'e') {
+      e.preventDefault();
+      // Edit Metadata - SHIFT + E
+      if (dbId) {
+        openMetadataModal(dbId);
+      }
     } else if (key === 'r') {
       e.preventDefault();
       // Refresh data - SHIFT + R
-      if (dbId) {
+      if (dbId && sourceId && !sourceId.startsWith('custom_')) {
         refreshItem(dbId, 'data');
       }
     } else if (key === 'd') {
       e.preventDefault();
       // Refresh data & images - SHIFT + D
-      if (dbId) {
+      if (dbId && sourceId && !sourceId.startsWith('custom_')) {
         refreshItem(dbId, 'all');
       }
     }

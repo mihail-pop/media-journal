@@ -7,6 +7,7 @@
   <title>{{ title }} - Media Journal</title>
   <link rel="stylesheet" href="{% static 'core/css/p_details.css' %}" />
   <link rel="stylesheet" href="{% static 'core/css/g_edit_modal.css' %}" />
+  <link rel="stylesheet" href="{% static 'core/css/g_metadata_modal.css' %}" />
 {% endblock %}
 
 {% block content %}
@@ -64,10 +65,13 @@
         <div class="settings-dropdown" id="settingsDropdown">
           <button onclick="openBannerUpload('{{ source }}', '{{ source_id }}')" class="dropdown-item">Change Banner (Shift + B)</button>
           <button onclick="openCoverUpload('{{ source }}', '{{ source_id }}')" class="dropdown-item">Change Cover (Shift + C)</button>
+          <button onclick="openMetadataModal('{{ item_id }}')" class="dropdown-item">Edit Metadata (Shift + E)</button>
+          {% if 'custom_' not in source_id %}
           <button onclick="refreshItem('{{ item_id }}', 'data')" class="dropdown-item" title="Only data; not the cover, banner, screenshots, or videos.">Refresh Data (Shift + R)</button>
           <button onclick="refreshItem('{{ item_id }}', 'all')" class="dropdown-item" title="Only data, cover, and banner; not screenshots or videos. (Shift + D)">Refresh Data & Images</button>
           <button onclick="refreshItem('{{ item_id }}', 'banner')" class="dropdown-item" title="Only the banner.">Refresh Banner</button>
           <button onclick="refreshItem('{{ item_id }}', 'cover')" class="dropdown-item" title="Only the cover.">Refresh Cover</button>
+          {% endif %}
         </div>
       {% else %}
         <button id="add-to-list-button" class="btn"
@@ -90,7 +94,7 @@
     <p class="release-date">{{ release_date }}</p>
 
     <!-- More info button -->
-    {% if media_type != "book" %}
+    {% if media_type != "book" and 'custom_' not in source_id %}
     <button id="more-info-btn" class="more-info-btn">More information</button>
     {% endif %}
     <!-- Container for extra info -->
@@ -103,6 +107,7 @@
 
 
 {% include "core/g_edit_modal.html" with media_type=media_type item_id=item_id status=item.status personal_rating=item.personal_rating notes=item.notes progress_main=item.progress_main total_main=item.total_main progress_secondary=item.progress_secondary total_secondary=item.total_secondary favorite=item.favorite item_status_choices=item_status_choices item_rating_choices=item_rating_choices %}
+{% include "core/g_metadata_modal.html" %}
 
 <!-- Main background section -->
 <div class="main-colored-section">
@@ -495,4 +500,5 @@
   {{ block.super }}
   <script src="{% static 'core/js/p_media_details.js' %}"></script>
   <script src="{% static 'core/js/g_edit_modal.js' %}"></script>
+  <script src="{% static 'core/js/g_metadata_modal.js' %}"></script>
 {% endblock %}
