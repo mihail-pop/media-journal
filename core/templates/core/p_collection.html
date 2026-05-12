@@ -1,0 +1,91 @@
+{% extends 'core/g_base.html' %}
+{% load static %}
+
+{% block head %}
+{{ block.super }}
+<title>{{ collection.title }} - Media Journal</title>
+<!-- Load history CSS for base card styling, then our overrides -->
+<link rel="stylesheet" href="{% static 'core/css/g_edit_modal.css' %}">
+<link rel="stylesheet" href="{% static 'core/css/p_collection.css' %}">
+{% endblock %}
+
+{% block content %}
+<body data-media-type="collection"></body>
+<div class="separator-bar"></div>
+
+<div class="collection-page-container">
+    <div class="collection-header">
+        <div class="header-titles">
+            <h1>{{ collection.title }}</h1>
+            {% if collection.description %}
+                <p class="col-desc">{{ collection.description }}</p>
+            {% endif %}
+        </div>
+        
+        <div class="header-actions">
+            <button id="toggle-reorder-btn" class="action-btn">Reorder</button>
+            <button id="toggle-delete-btn" class="action-btn delete-btn">Delete</button>
+            <button id="add-items-btn" class="action-btn primary">+ Add Items</button>
+        </div>
+    </div>
+
+    <!-- Main Grid for Collection Items -->
+    <div id="card-view" class="card-grid"></div>
+    <div id="loading-indicator" style="text-align: center; padding: 20px;">Loading...</div>
+    <p id="no-items-message" class="hidden-items" style="display: none;">This collection is empty.</p>
+</div>
+
+<!-- Floating Action Button for Delete Mode -->
+<div id="floating-delete-bar" class="floating-bar hidden">
+    <span id="delete-count-text">0 items selected</span>
+    <button id="confirm-delete-btn" class="action-btn delete-btn">Delete Selected</button>
+    <button id="cancel-delete-btn" class="action-btn">Cancel</button>
+</div>
+
+<!-- Add Items Modal -->
+<div id="add-modal-overlay" class="modal-overlay modal-hidden">
+    <div class="add-modal">
+        <div class="add-modal-header">
+            <h2>Add Items to Collection</h2>
+            <button class="close-add-modal">&times;</button>
+        </div>
+        
+        <input type="text" id="add-search-input" placeholder="Search your library..." autocomplete="off">
+        
+        <div class="type-filters">
+            <button class="filter-btn active" data-type="all">All</button>
+            <button class="filter-btn" data-type="movie">Movies</button>
+            <button class="filter-btn" data-type="tv">TV Shows</button>
+            <button class="filter-btn" data-type="anime">Anime</button>
+            <button class="filter-btn" data-type="manga">Manga</button>
+            <button class="filter-btn" data-type="game">Games</button>
+            <button class="filter-btn" data-type="music">Music</button>
+            <button class="filter-btn" data-type="book">Books</button>
+        </div>
+
+        <div id="add-search-results" class="card-grid add-results-grid"></div>
+        <div id="add-loading" style="display: none; text-align: center; margin: 20px 0;">Searching...</div>
+
+        <div class="add-modal-footer">
+            <span id="add-count-text">0 selected</span>
+            <button id="confirm-add-btn" class="action-btn primary">Add Selected</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Pass collection ID safely to JS
+    window.COLLECTION_ID = {{ collection.id }};
+</script>
+
+{% include 'core/g_edit_modal.html' %}
+{% endblock %}
+
+{% block script %}
+{{ block.super }}
+<script>
+  document.body.setAttribute('data-theme', '{{ theme_mode }}');
+</script>
+<script src="{% static 'core/js/g_edit_modal.js' %}"></script>
+<script src="{% static 'core/js/p_collection.js' %}"></script>
+{% endblock %}

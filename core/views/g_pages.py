@@ -1,22 +1,22 @@
 import logging
-from datetime import timedelta, date
+from datetime import date, timedelta
 from collections import defaultdict
 
 from django.apps import apps
 from django.urls import reverse
 from django.utils import timezone
 from django.db.models import Q, Sum
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.utils.text import slugify
 from django.utils.timesince import timesince
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET
 
-from core.models import APIKey, NavItem, MediaItem, FavoritePerson
+from core.models import APIKey, NavItem, MediaItem, Collection, FavoritePerson
 from core.services.p_home import (
+    start_media_cleanup_loop,
     start_tmdb_background_loop,
     start_anilist_background_loop,
-    start_media_cleanup_loop,
 )
 from core.services.m_people import fetch_actor_data, fetch_character_data
 
@@ -47,7 +47,7 @@ def home(request):
     }
 
     # Single query with Count aggregation by media_type
-    from django.db.models import Count, Case, When, IntegerField
+    from django.db.models import Case, When, Count, IntegerField
     counts_result = MediaItem.objects.aggregate(
         movies=Count(Case(When(media_type="movie", then=1), output_field=IntegerField())),
         tv=Count(Case(When(media_type="tv", then=1), output_field=IntegerField())),
@@ -262,6 +262,18 @@ def home(request):
             "media_type":random_item.media_type
         }
 
+    top_collections_qs = Collection.objects.order_by("position", "-date_created")[:10]
+    home_collections = []
+    for col in top_collections_qs:
+        # Fetch up to 3 covers ordered by their position in the collection
+        items = col.items.order_by("collectionitem__position", "-collectionitem__date_added")[:3]
+        covers = [item.cover_url or "/static/core/img/placeholder.png" for item in items]
+        home_collections.append({
+            "id": col.id,
+            "title": col.title,
+            "covers": covers
+        })
+
     # Get theme mode
     AppSettings = apps.get_model("core", "AppSettings")
     settings = AppSettings.objects.first()
@@ -284,6 +296,7 @@ def home(request):
             "recent_activity": recent_activity,
             "theme_mode": theme_mode,
             "initial_banner": initial_banner,
+            "home_collections": home_collections,
         },
     )
 
@@ -891,6 +904,32 @@ def community(request):
             "username": settings.username if settings and settings.username else "",
         },
     )
+
+@ensure_csrf_cookie
+def collections_page(request):
+    AppSettings = apps.get_model("core", "AppSettings")
+    settings = AppSettings.objects.first()
+    theme_mode = settings.theme_mode if settings else "dark"
+    
+    return render(
+        request, 
+        "core/p_collections.html", 
+        {"theme_mode": theme_mode}
+    )
+
+@require_GET
+def collection_page(request, collection_id):
+    collection = get_object_or_404(Collection, id=collection_id)
+    AppSettings = apps.get_model("core", "AppSettings")
+    settings = AppSettings.objects.first()
+    theme_mode = settings.theme_mode if settings else "dark"
+    
+    return render(
+        request, 
+        "core/p_collection.html", 
+        {"collection": collection, "theme_mode": theme_mode}
+    )
+
 
 @ensure_csrf_cookie
 def settings_page(request):

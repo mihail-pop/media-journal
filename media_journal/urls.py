@@ -101,6 +101,17 @@ urlpatterns = [
     path('api/toggle-music-favorite/', views.toggle_music_favorite, name='toggle_music_favorite'),
     path('api/reorder-music-videos/', views.reorder_music_videos, name='reorder_music_videos'),
     path('api/set-video-as-cover/', views.set_video_as_cover, name='set_video_as_cover'),
+    path('collections/', views.collections_page, name='collections_page'),
+    path('api/collections/', views.collections_api, name='collections_api'),
+    path('api/collections/save/', views.save_collection, name='save_collection'),
+    path('api/collections/delete/<int:collection_id>/', views.delete_collection, name='delete_collection'),
+    path('api/collections/reorder/', views.reorder_collections, name='reorder_collections'),
+    path('collection/<int:collection_id>/', views.collection_page, name='collection_page'),
+    path('api/collection/<int:collection_id>/items/', views.collection_items_api, name='collection_items_api'),
+    path('api/collection/<int:collection_id>/search-local/', views.search_local_items, name='search_local_items'),
+    path('api/collection/<int:collection_id>/add/', views.collection_add_items, name='collection_add_items'),
+    path('api/collection/<int:collection_id>/remove/', views.collection_remove_items, name='collection_remove_items'),
+    path('api/collection/<int:collection_id>/reorder/', views.collection_reorder_items, name='collection_reorder_items'),
     path('<str:source>/<str:media_type>/<str:source_id>/', views.anilist_detail, name='anilist_detail'), # greedy! needs to be at the bottom :D
     re_path(r'^media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT}),
 ]

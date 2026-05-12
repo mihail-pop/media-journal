@@ -3,11 +3,11 @@ from datetime import datetime
 
 from django.http import JsonResponse
 from django.urls import reverse
-from django.db.models import F, Case, When, Value, IntegerField, Q
+from django.db.models import F, Case, When, Value, IntegerField, Q, Prefetch
 from django.db.models.functions import Lower
 from django.views.decorators.http import require_GET
 
-from core.models import MediaItem, FavoritePerson
+from core.models import MediaItem, FavoritePerson, Collection, CollectionItem
 from core.services.g_api import get_game_screenshots_data
 from core.services.m_games import get_igdb_discover
 from core.services.m_anime_manga import get_anilist_discover
@@ -1051,7 +1051,39 @@ def discover_api(request):
         return JsonResponse({"results": results})
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
+
+@require_GET
+def collections_api(request):
+    page = int(request.GET.get("page", 1))
+    page_size = 30
+    start = (page - 1) * page_size
+    end = start + page_size
+
+    # Fetch collections and force it to order the items inside by their custom position!
+    prefetch = Prefetch(
+        'collectionitem_set',
+        queryset=CollectionItem.objects.select_related('item').order_by('position')
+    )
+    qs = Collection.objects.all().prefetch_related(prefetch).order_by('position', '-date_created')
     
+    total = qs.count()
+    has_more = total > end
+
+    collections_data =[]
+    for col in qs[start:end]:
+        # Grab covers using the properly sorted collectionitem_set
+        covers = [ci.item.cover_url for ci in col.collectionitem_set.all() if ci.item.cover_url][:3]
+        
+        collections_data.append({
+            "id": col.id,
+            "title": col.title,
+            "description": col.description or "",
+            "item_count": col.items.count(),
+            "covers": covers,
+        })
+
+    return JsonResponse({"items": collections_data, "has_more": has_more, "page": page})
+
 @require_GET
 def game_screenshots_api(request):
     igdb_id = request.GET.get("igdb_id")

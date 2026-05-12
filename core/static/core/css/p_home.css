@@ -875,7 +875,8 @@ h2 {
 }
 
 #advanced-activity-btn,
-#toggle-activity-btn {
+#toggle-activity-btn,
+.all-collections-btn {
   display: inline-block;
   padding: 0.25rem 0.5rem;
   background-color: var(--button-bg);
@@ -883,11 +884,187 @@ h2 {
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  text-decoration: none;
+  font-family: inherit;
+  font-size: 0.85rem;
 }
 
 #advanced-activity-btn:hover,
-#toggle-activity-btn:hover {
+#toggle-activity-btn:hover,
+.all-collections-btn:hover {
   background-color: var(--bg-quaternary);
+  color: var(--text-primary);
+}
+
+/* --- Home Dashboard Swap UI --- */
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 0.8rem;
+  max-width: 554px;
+  position: relative;
+}
+
+.section-title-wrapper {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  width: fit-content;
+  margin-left: 1.5rem;
+}
+
+.section-title-wrapper h3 {
+  margin-bottom: 0 !important;
+  margin-right: 12px;
+  transition: color 0.3s;
+}
+
+.swap-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  opacity: 0;
+  transform: translateX(-10px);
+  transition: all 0.3s ease;
+  pointer-events: none;
+  font-weight: 600;
+}
+
+.section-title-wrapper:hover .swap-hint {
+  opacity: 0.7;
+  transform: translateX(0);
+}
+
+.section-title-wrapper:hover h3 {
+  color: var(--activity-high);
+}
+
+.panel-header-link {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+  background: var(--bg-primary);
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-weight: bold;
+  transition: all 0.2s;
+  margin-bottom: 4px;
+}
+
+.panel-header-link:hover {
+  color: var(--activity-high);
+  background: var(--bg-tertiary);
+}
+
+/* --- Collections Swap View --- */
+.collections-summary-box {
+  display: flex;
+  align-items: flex-start; /* Aligns correctly for multiple rows */
+  justify-content: flex-start;
+  min-height: 182px; 
+  padding: 1.4rem 1.5rem;
+  box-sizing: border-box;
+}
+
+.home-collections-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px 20px; /* 22px row gap, 20px column gap to perfectly fit 5 items */
+  width: 100%;
+  justify-content: flex-start; /* Keeps items aligned to the left */
+}
+
+.home-collection-card {
+  width: 85px;
+  height: 115px; /* Match standard favorites dimensions */
+  border-radius: 4px;
+  position: relative;
+  box-shadow: none; /* Override standard card shadow */
+  background: none;
+}
+
+.home-collection-card a {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible !important; /* Allow the fan slices to spill past the 85px border */
+}
+
+.home-cover-stack {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.home-stack-img {
+  position: absolute;
+  width: 85px;
+  height: 115px;
+  object-fit: cover;
+  border-radius: 4px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.4);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  background: var(--bg-tertiary);
+  top: 0;
+}
+
+/* Explicit pixel placement replaces buggy percentages */
+.home-stack-img.pos-0 { left: 0; z-index: 3; filter: none; }
+.home-stack-img.pos-1 { left: -12px; transform: rotate(-8deg) scale(0.9); z-index: 2; filter: brightness(0.6); }
+.home-stack-img.pos-2 { left: 12px; transform: rotate(8deg) scale(0.9); z-index: 1; filter: brightness(0.6); }
+
+.home-collection-card:hover .home-stack-img.pos-0 { transform: translateY(-6px) scale(1.05); }
+.home-collection-card:hover .home-stack-img.pos-1 { transform: rotate(-15deg) scale(0.9) translateX(-10px); filter: brightness(0.8); z-index: 2; }
+.home-collection-card:hover .home-stack-img.pos-2 { transform: rotate(15deg) scale(0.9) translateX(10px); filter: brightness(0.8); }
+
+/* 1 & 2 Item Adjustments */
+.home-cover-stack.items-1 .home-stack-img.pos-0 { z-index: 3; filter: brightness(1); left: 0; transform: none; }
+.home-collection-card:hover .home-cover-stack.items-1 .home-stack-img.pos-0 { transform: translateY(-6px) scale(1.05); }
+
+.home-cover-stack.items-2 .home-stack-img.pos-0 { left: -5px; transform: rotate(-5deg); z-index: 3; filter: brightness(1); }
+.home-cover-stack.items-2 .home-stack-img.pos-1 { left: 5px; transform: rotate(5deg); z-index: 2; filter: brightness(0.8); }
+.home-collection-card:hover .home-cover-stack.items-2 .home-stack-img.pos-0 { transform: rotate(-8deg) translateX(-5px) translateY(-4px) scale(1.05); }
+.home-collection-card:hover .home-cover-stack.items-2 .home-stack-img.pos-1 { transform: rotate(8deg) translateX(5px) scale(0.95); filter: brightness(0.9); }
+
+/* Empty Glass Styles */
+.home-collections-empty {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(4px);
+}
+
+.empty-plus {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  font-weight: 300;
+  color: var(--text-secondary);
+  padding-bottom: 4px;
+}
+
+.placeholder-fan:hover .empty-plus {
+  color: var(--activity-high);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Button & Link wrapper */
+.all-collections-link-wrapper {
+  text-align: right;
+  margin-top: 0.5rem;
+  margin-right: 0rem;
 }
 
 @media (pointer: coarse) and (hover: none) {

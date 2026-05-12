@@ -110,7 +110,39 @@ class FavoritePerson(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.type})"
+
+class Collection(models.Model):
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True, null=True)
     
+    items = models.ManyToManyField(MediaItem, through='CollectionItem', related_name="collections", blank=True)
+    
+    position = models.PositiveIntegerField(default=1)
+    cover_url = models.URLField(blank=True, null=True)
+    
+    date_created = models.DateTimeField(default=timezone.now)
+    last_updated = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['position', '-date_created']
+
+    def __str__(self):
+        return self.title
+
+class CollectionItem(models.Model):
+    collection = models.ForeignKey(Collection, on_delete=models.CASCADE)
+    item = models.ForeignKey(MediaItem, on_delete=models.CASCADE)
+    
+    position = models.PositiveIntegerField(default=1)
+    date_added = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ['position', '-date_added']
+        unique_together = ('collection', 'item') 
+
+    def __str__(self):
+        return f"{self.collection.title} - {self.item.title} (Pos: {self.position})"
+
 class NavItem(models.Model):
     CATEGORY_CHOICES = [
         ("home", "Home"),

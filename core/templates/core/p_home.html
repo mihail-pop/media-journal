@@ -91,10 +91,23 @@
 <!-- Stats Section -->
 <section class="stats-section">
 <div class="extra-stats-class">
-  <h3>Stats</h3>
-  <div class="stats-summary-box">
-
-    <!-- Colored category blocks -->
+  
+  <!-- STATS VIEW -->
+  <div id="stats-view-container">
+    <div class="panel-header">
+      <div class="section-title-wrapper swap-to-collections">
+        <h3>Stats</h3>
+        <span class="swap-hint">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/>
+          </svg>
+          Collections
+        </span>
+      </div>
+    </div>
+    
+    <div class="stats-summary-box">
+      <!-- Colored category blocks -->
     <div class="stats-blocks">
       {% for block in stats_blocks %}
         <div class="stats-block {% if block.visible %}visible{% endif %}" data-label="{{ block.label }}" style="--block-color: {{ block.color }};">
@@ -121,11 +134,72 @@
           </div>
         {% endfor %}
       </div>
-    {% endif %}
-  </div>
+{% endif %}
+    </div>
   </div>
 
-  <div class="activity-graph">
+<!-- COLLECTIONS VIEW -->
+  <div id="collections-view-container" style="display: none;">
+    <div class="panel-header">
+      <div class="section-title-wrapper swap-to-stats">
+        <h3>Collections</h3>
+        <span class="swap-hint">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/>
+          </svg>
+          Stats
+        </span>
+      </div>
+    </div>
+
+    <div class="stats-summary-box collections-summary-box">
+      {% if home_collections %}
+        <div class="home-collections-grid">
+          {% for col in home_collections %}
+            <div class="card home-collection-card">
+              <a href="/collection/{{ col.id }}/">
+                <div class="home-cover-stack items-{{ col.covers|length }}">
+                  {% for cover in col.covers %}
+                    <img src="{{ cover }}" class="home-stack-img pos-{{ forloop.counter0 }}">
+                  {% endfor %}
+                  {% if not col.covers %}
+                    <div class="home-stack-img pos-0 glass-card"></div>
+                  {% endif %}
+                </div>
+              </a>
+              <div class="hover-title-overlay">
+                <span class="hover-title-text">{{ col.title }}</span>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="home-collections-empty">
+          <div class="card home-collection-card placeholder-fan">
+            <a href="/collections/">
+              <div class="home-cover-stack items-3">
+                <div class="home-stack-img pos-1 glass-card"></div>
+                <div class="home-stack-img pos-2 glass-card"></div>
+                <div class="home-stack-img pos-0 glass-card empty-plus">+</div>
+              </div>
+            </a>
+            <div class="hover-title-overlay">
+              <span class="hover-title-text">Create Collection</span>
+            </div>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+
+    {% if home_collections %}
+    <div class="show-more-activity-wrapper all-collections-link-wrapper">
+      <a href="/collections/" class="all-collections-btn">All collections</a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="activity-graph">
     <h3>Activity History</h3>
     <div class="activity-grid">
       {% for column in activity_columns %}

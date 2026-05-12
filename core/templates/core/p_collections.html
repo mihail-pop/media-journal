@@ -1,0 +1,68 @@
+{% extends 'core/g_base.html' %}
+{% load static %}
+
+{% block head %}
+{{ block.super }}
+<title>Collections - Media Journal</title>
+<link rel="stylesheet" href="{% static 'core/css/p_collections.css' %}">
+{% endblock %}
+
+{% block content %}
+<body data-media-type="collections"></body>
+<div class="separator-bar"></div>
+
+<div class="collections-page-container">
+    <div class="collections-header">
+        <h1>Collections</h1>
+        <div class="header-actions">
+            <button id="toggle-sort-btn" class="action-btn">Reorder: OFF</button>
+            <button id="create-collection-btn" class="action-btn primary">+ Create</button>
+        </div>
+    </div>
+
+    <!-- The grid where collections are dynamically loaded -->
+    <div id="collections-grid" class="collections-grid"></div>
+
+    <div id="loading-indicator" style="text-align: center; padding: 20px; display: none;">
+        Loading...
+    </div>
+    <p id="no-items-message" class="hidden-items" style="display: none;">No collections found.</p>
+</div>
+
+<!-- Embedded Create/Edit Modal -->
+<div id="collection-modal-overlay" class="modal-overlay modal-hidden">
+    <div class="collection-modal">
+        <h2 id="modal-title">Create Collection</h2>
+        <form id="collection-form">
+            <input type="hidden" id="col-id">
+            
+            <div class="form-group">
+                <label for="col-title">Title</label>
+                <input type="text" id="col-title" required autocomplete="off" placeholder="e.g. Marvel Universe">
+            </div>
+            
+            <div class="form-group">
+                <label for="col-desc">Description</label>
+                <textarea id="col-desc" rows="4" placeholder="Optional notes about this collection..."></textarea>
+            </div>
+            
+            <div class="modal-actions">
+                <button type="button" id="delete-col-btn" class="btn-delete" style="display: none;">Delete</button>
+                <div class="right-actions">
+                    <button type="button" id="close-modal-btn" class="btn-cancel">Cancel</button>
+                    <button type="submit" id="save-col-btn" class="btn-save">Save</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block script %}
+{{ block.super }}
+<script>
+  document.body.setAttribute('data-theme', '{{ theme_mode }}');
+</script>
+<script src="{% static 'core/js/p_collections.js' %}"></script>
+{% endblock %}

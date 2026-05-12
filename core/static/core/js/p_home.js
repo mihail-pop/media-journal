@@ -3,6 +3,40 @@ document.addEventListener("DOMContentLoaded", function () {
   const bannerImg = document.getElementById("rotating-banner");
   const quoteBox = document.querySelector(".banner-quote");
 
+  const statsContainer = document.getElementById("stats-view-container");
+  const collectionsContainer = document.getElementById("collections-view-container");
+  
+  if (statsContainer && collectionsContainer) {
+    const savedView = localStorage.getItem("homeDashboardView") || "stats";
+    
+    // Initial Load Check
+    if (savedView === "collections") {
+      statsContainer.style.display = "none";
+      collectionsContainer.style.display = "block";
+    } else {
+      statsContainer.style.display = "block";
+      collectionsContainer.style.display = "none";
+    }
+
+    // Toggle to Collections
+    document.querySelectorAll('.swap-to-collections').forEach(btn => {
+      btn.addEventListener('click', () => {
+        statsContainer.style.display = "none";
+        collectionsContainer.style.display = "block";
+        localStorage.setItem("homeDashboardView", "collections");
+      });
+    });
+
+    // Toggle to Stats
+    document.querySelectorAll('.swap-to-stats').forEach(btn => {
+      btn.addEventListener('click', () => {
+        statsContainer.style.display = "block";
+        collectionsContainer.style.display = "none";
+        localStorage.setItem("homeDashboardView", "stats");
+      });
+    });
+  }
+
   let bannerPool = [];
   let firstLoad = true;
   let lastBannerIndex = -1;
