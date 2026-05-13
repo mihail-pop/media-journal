@@ -31,6 +31,27 @@ document.addEventListener("DOMContentLoaded", function () {
   // Expose globally for use by m_lists.js
   window.setModalBanner = setModalBanner;
 
+document.addEventListener('click', (e) => {
+      const statusWrapper = document.getElementById('edit-status-wrapper');
+      const optionsContainer = document.getElementById('edit-status-options');
+      if (statusWrapper && optionsContainer && !statusWrapper.contains(e.target)) {
+          optionsContainer.classList.remove('open');
+          statusWrapper.classList.remove('open');
+      }
+  });
+
+  const editStatusWrapper = document.getElementById('edit-status-wrapper');
+  if (editStatusWrapper) {
+      editStatusWrapper.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const opts = document.getElementById('edit-status-options');
+          if(opts) {
+              opts.classList.toggle('open');
+              editStatusWrapper.classList.toggle('open');
+          }
+      });
+  }
+
 const statusLabelsMap = {
   movie: {
     ongoing: "Watching",
@@ -229,28 +250,51 @@ if (repeatsGroup && repeatsInput && repeatsLabel) {
 }
 
 
-const statusSelect = form.querySelector('select[name="status"]');
-statusSelect.innerHTML = "";
-const mediaTypeKey = item.media_type === 'tv' ? 'tvshows' : item.media_type; // map tv -> tvshows
+const hiddenInput = form.querySelector('#edit_status_hidden');
+    const statusWrapper = form.querySelector('#edit-status-wrapper');
+    const optionsContainer = form.querySelector('#edit-status-options');
+    const textSpan = form.querySelector('#edit-status-text');
 
-// Order statuses so 'on_hold' (paused) appears after 'completed'
-const desiredOrder = ['ongoing', 'completed', 'on_hold', 'planned', 'dropped'];
-const choicesSorted = (item.item_status_choices || []).slice().sort((a, b) => {
-  const ia = desiredOrder.indexOf(a[0]);
-  const ib = desiredOrder.indexOf(b[0]);
-  const va = ia === -1 ? desiredOrder.length : ia;
-  const vb = ib === -1 ? desiredOrder.length : ib;
-  return va - vb;
-});
+    if (optionsContainer && hiddenInput && textSpan) {
+        optionsContainer.innerHTML = "";
+        const mediaTypeKey = item.media_type === 'tv' ? 'tvshows' : item.media_type;
 
-choicesSorted.forEach(choice => {
-  const option = document.createElement("option");
-  option.value = choice[0];
-  // Use user-friendly label from statusLabelsMap if available
-  option.textContent = statusLabelsMap[mediaTypeKey]?.[choice[0]] || choice[1];
-  if (choice[0] === item.status) option.selected = true;
-  statusSelect.appendChild(option);
-});
+        const desiredOrder = ['ongoing', 'completed', 'on_hold', 'planned', 'dropped'];
+        const choicesSorted = (item.item_status_choices ||[]).slice().sort((a, b) => {
+          const ia = desiredOrder.indexOf(a[0]);
+          const ib = desiredOrder.indexOf(b[0]);
+          const va = ia === -1 ? desiredOrder.length : ia;
+          const vb = ib === -1 ? desiredOrder.length : ib;
+          return va - vb;
+        });
+
+        choicesSorted.forEach(choice => {
+          const label = statusLabelsMap[mediaTypeKey]?.[choice[0]] || choice[1];
+          const opt = document.createElement("div");
+          opt.className = "custom-option status-option";
+          opt.dataset.value = choice[0];
+          opt.textContent = label;
+
+          if (choice[0] === item.status) {
+             hiddenInput.value = choice[0];
+             textSpan.textContent = label;
+             opt.classList.add('selected');
+          }
+
+          opt.addEventListener('click', (e) => {
+             e.stopPropagation();
+             hiddenInput.value = choice[0];
+             textSpan.textContent = label;
+             optionsContainer.classList.remove('open');
+             if (statusWrapper) statusWrapper.classList.remove('open');
+             
+             optionsContainer.querySelectorAll('.status-option').forEach(o => o.classList.remove('selected'));
+             opt.classList.add('selected');
+          });
+
+          optionsContainer.appendChild(opt);
+        });
+    }
 
     // --- RATING UI ---
     const ratingSelect = form.querySelector('select[name="personal_rating"]');

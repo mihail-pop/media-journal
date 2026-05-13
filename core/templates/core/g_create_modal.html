@@ -1,94 +1,100 @@
 {% load static %}
 
 <!-- Create Modal Partial -->
-<div id="create-modal" class="modal modal-hidden">
-  <div class="modal-content">
+<div id="create-modal" class="c-modal c-modal-hidden">
+  <div class="c-modal-content">
     <form id="create-form" enctype="multipart/form-data">
       
       <!-- Banner Upload Area -->
-      <div class="modal-banner" id="create-banner-container">
+      <div class="c-modal-banner" id="create-banner-container">
         <!-- Image element MUST exist for your placeholder CSS to work -->
         <img id="create-banner-preview" src="{% static 'core/img/placeholder.png' %}" alt="banner">
-        <div class="banner-overlay"></div>
+        <div class="c-banner-overlay"></div>
         
         <!-- Full-size clickable overlay for the Plus Button -->
-        <label class="create-upload-overlay" for="create-banner-input" title="Upload Banner">
+        <label class="c-upload-overlay" for="create-banner-input" title="Upload Banner">
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
         </label>
         <input type="file" id="create-banner-input" name="banner_image" accept="image/*" style="display: none;">
       </div>
 
       <!-- Cover Upload Area -->
-      <div class="modal-cover" id="create-cover-container">
+      <div class="c-modal-cover" id="create-cover-container">
         <img id="create-cover-preview" src="{% static 'core/img/placeholder.png' %}" alt="cover">
         
-        <label class="create-upload-overlay" for="create-cover-input" title="Upload Cover">
+        <label class="c-upload-overlay" for="create-cover-input" title="Upload Cover">
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
         </label>
         <input type="file" id="create-cover-input" name="cover_image" accept="image/*" style="display: none;">
       </div>
 
       <!-- Title Block -->
-      <div class="modal-title-block">
-        <input type="text" name="title" class="create-title-input modal-title" placeholder="Title" required autocomplete="off">
+      <div class="c-modal-title-block">
+        <input type="text" name="title" class="c-title-input c-modal-title" placeholder="Title" required autocomplete="off">
       </div>
 
       <!-- Modal Body -->
-      <div class="modal-body">
+      <div class="c-modal-body">
         
-        <div class="modal-actions-top">
-          <label class="favorite-checkbox">
+        <div class="c-modal-actions-top">
+          <label class="c-favorite-checkbox">
             <input type="checkbox" name="favorite">
-            <span class="heart"></span>
+            <span class="c-heart"></span>
           </label>
-          <button type="submit" class="btn save-btn">Create</button>
+          <button type="submit" class="c-btn c-save-btn">Create</button>
         </div>
 
-        <!-- Row 1: Status, Rating, Activity Date -->
-        <div class="form-row-three">
-          <div class="form-group vertical-label">
-            <label for="create_status">Status</label>
-            <select name="status" id="create_status" class="status-select">
-              <option value="ongoing">Ongoing</option>
-              <option value="completed">Completed</option>
-              <option value="on_hold">On Hold</option>
-              <option value="planned" selected>Planned</option>
-              <option value="dropped">Dropped</option>
-            </select>
-          </div>
-
-          <div class="form-group vertical-label">
-            <label>Rating</label>
-            <input type="hidden" name="personal_rating" id="create_personal_rating">
-            <div class="rating-faces" id="create-rating-faces">
-              <button type="button" data-value="1" class="face face-bad" title="Bad"></button>
-              <button type="button" data-value="50" class="face face-neutral" title="Neutral"></button>
-              <button type="button" data-value="100" class="face face-good" title="Good"></button>
+<!-- Row 1: Status, Activity Date, Release Date -->
+        <div class="c-form-row-three">
+          
+          <div class="c-form-group c-vertical-label">
+            <label>Status</label>
+            <input type="hidden" name="status" id="create_status_hidden" value="planned">
+            <div class="c-status-select-wrapper" id="create-status-wrapper">
+              <div class="c-status-select" id="create-status-select" role="button" tabindex="0">
+                <span id="create-status-text">Planned</span>
+                <div class="c-status-indicator" id="create-status-indicator"></div>
+              </div>
+              <div class="c-status-options" id="create-status-options" role="listbox">
+                <!-- Populated by JS -->
+              </div>
             </div>
           </div>
 
-          <div class="form-group vertical-label">
+          <div class="c-form-group c-vertical-label">
             <label>Activity Date</label>
             <input type="date" name="date_added" id="create_date_added">
           </div>
-        </div>
 
-        <!-- Row 2: Release Date, Creators, Genres -->
-        <div class="form-row-three">
-          <div class="form-group vertical-label">
+          <div class="c-form-group c-vertical-label">
             <label>Release Date</label>
             <input type="date" name="release_date">
           </div>
 
-          <div class="form-group vertical-label">
+        </div>
+
+        <!-- Row 2: Rating, Creators, Genres -->
+        <div class="c-form-row-three">
+
+          <div class="c-form-group c-vertical-label">
+            <label>Rating</label>
+            <input type="hidden" name="personal_rating" id="create_personal_rating">
+            <div class="c-rating-faces" id="create-rating-faces">
+              <button type="button" data-value="1" class="c-face c-face-bad" title="Bad"></button>
+              <button type="button" data-value="50" class="c-face c-face-neutral" title="Neutral"></button>
+              <button type="button" data-value="100" class="c-face c-face-good" title="Good"></button>
+            </div>
+          </div>
+
+          <div class="c-form-group c-vertical-label">
             <label>Creators</label>
-            <div class="creator-input-container" onclick="document.getElementById('create-creator-input').focus()">
-              <div class="creator-tags" id="create-creator-tags"></div>
+            <div class="c-creator-input-container" onclick="document.getElementById('create-creator-input').focus()">
+              <div class="c-creator-tags" id="create-creator-tags"></div>
               <input type="text" id="create-creator-input" placeholder="Add creator..." autocomplete="off">
             </div>
           </div>
 
-          <div class="form-group vertical-label">
+          <div class="c-form-group c-vertical-label">
             <label>Genres</label>
             <div class="genre-select-wrapper custom-select-wrapper" id="create-genre-wrapper">
               <div class="genre-select custom-select-trigger" id="create-genre-select" role="button" tabindex="0">
@@ -101,43 +107,44 @@
               </div>
             </div>
           </div>
+
         </div>
 
         <!-- Row 3: Progress Main & Secondary -->
-        <div class="form-row-three" id="create-progress-row" style="display: none;">
-          <div class="form-group vertical-label" id="create_progress_main_group" style="display: none;">
+        <div class="c-form-row-three" id="create-progress-row" style="display: none;">
+          <div class="c-form-group c-vertical-label" id="create_progress_main_group" style="display: none;">
             <label id="create_progress_main_label">Main Progress</label>
-            <div class="progress-inputs">
-              <input type="number" name="progress_main" min="0" placeholder="Current" class="progress-box">
-              <span class="progress-separator">/</span>
-              <input type="number" name="total_main" min="0" placeholder="Total" class="progress-box">
+            <div class="c-progress-inputs">
+              <input type="number" name="progress_main" min="0" placeholder="Current" class="c-progress-box">
+              <span class="c-progress-separator">/</span>
+              <input type="number" name="total_main" min="0" placeholder="Total" class="c-progress-box">
             </div>
           </div>
 
-          <div class="form-group vertical-label" id="create_progress_secondary_group" style="display: none;">
+          <div class="c-form-group c-vertical-label" id="create_progress_secondary_group" style="display: none;">
             <label id="create_progress_secondary_label">Secondary Progress</label>
-            <div class="progress-inputs">
-              <input type="number" name="progress_secondary" min="0" placeholder="Current" class="progress-box">
-              <span class="progress-separator">/</span>
-              <input type="number" name="total_secondary" min="0" placeholder="Total" class="progress-box">
+            <div class="c-progress-inputs">
+              <input type="number" name="progress_secondary" min="0" placeholder="Current" class="c-progress-box">
+              <span class="c-progress-separator">/</span>
+              <input type="number" name="total_secondary" min="0" placeholder="Total" class="c-progress-box">
             </div>
           </div>
         </div>
 
-        <div class="form-group notes-group">
+        <div class="c-form-group c-notes-group">
           <label>Overview</label>
           <textarea name="overview"></textarea>
         </div>
 
-        <div class="form-group notes-group">
+        <div class="c-form-group c-notes-group">
           <label>Notes</label>
-          <textarea name="notes"></textarea>
+          <textarea name="c-notes"></textarea>
         </div>
 
-        <button type="button" id="create-close-btn" class="btn close-btn">X</button>
+        <button type="button" id="create-close-btn" class="c-btn c-close-btn">X</button>
       </div>
     </form>
   </div>
 </div>
 
-<div id="create-overlay" class="modal-overlay modal-hidden"></div>
+<div id="create-overlay" class="c-modal-overlay c-modal-hidden"></div>

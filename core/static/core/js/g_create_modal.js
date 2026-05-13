@@ -20,6 +20,67 @@ document.addEventListener("DOMContentLoaded", function () {
 
   let createCurrentGenres =[];
   let createCurrentCreators =[];
+  let createCreatorPlaceholder = "Add creator...";
+
+  const creatorPlaceholdersMap = {
+      movies: "Add directors...", movie: "Add directors...",
+      tvshows: "Add directors...", tv: "Add directors...",
+      anime: "Add studios...",
+      manga: "Add authors...", books: "Add authors...", book: "Add authors...",
+      games: "Add developers...", game: "Add developers...",
+      music: "Add artists..."
+  };
+
+  const statusLabelsMap = {
+    movie: { ongoing: "Watching", on_hold: "Paused", completed: "Completed", planned: "Planned", dropped: "Dropped" },
+    tvshows: { ongoing: "Watching", on_hold: "Paused", completed: "Completed", planned: "Planned", dropped: "Dropped" },
+    anime: { ongoing: "Watching", on_hold: "Paused", completed: "Completed", planned: "Planned", dropped: "Dropped" },
+    manga: { ongoing: "Reading", on_hold: "Paused", completed: "Completed", planned: "Planned", dropped: "Dropped" },
+    game: { ongoing: "Playing", on_hold: "Paused", completed: "Completed", planned: "Planned", dropped: "Dropped" },
+    book: { ongoing: "Reading", on_hold: "Paused", completed: "Completed", planned: "Planned", dropped: "Dropped" },
+    music: { ongoing: "Listening", on_hold: "Paused", completed: "Completed", planned: "Planned", dropped: "Dropped" },
+  };
+
+  const statusKeys = ['ongoing', 'completed', 'on_hold', 'planned', 'dropped'];
+
+  function initCreateStatus(mediaType) {
+      const mediaTypeKey = mediaType === 'tv' ? 'tvshows' : mediaType;
+      const optionsContainer = document.getElementById('create-status-options');
+      const hiddenInput = document.getElementById('create_status_hidden');
+      const textSpan = document.getElementById('create-status-text');
+
+      if (!optionsContainer) return;
+      optionsContainer.innerHTML = '';
+
+      statusKeys.forEach(key => {
+          const label = statusLabelsMap[mediaTypeKey]?.[key] || key.charAt(0).toUpperCase() + key.slice(1);
+          const opt = document.createElement('div');
+              opt.className = 'c-status-option';
+              opt.dataset.value = key;
+              opt.textContent = label;
+              opt.addEventListener('click', (e) => {
+                  e.stopPropagation();
+                  hiddenInput.value = key;
+                  textSpan.textContent = label;
+                  optionsContainer.classList.remove('c-open');
+                  document.getElementById('create-status-wrapper').classList.remove('c-open');
+                  
+                  const options = optionsContainer.querySelectorAll('.c-status-option');
+                  options.forEach(o => o.classList.remove('c-selected'));
+                  opt.classList.add('c-selected');
+              });
+              optionsContainer.appendChild(opt);
+          });
+
+          // Default to 'planned'
+          hiddenInput.value = 'planned';
+          textSpan.textContent = statusLabelsMap[mediaTypeKey]?.['planned'] || 'Planned';
+          
+          const options = optionsContainer.querySelectorAll('.c-status-option');
+          options.forEach(o => {
+              if (o.dataset.value === 'planned') o.classList.add('c-selected');
+          });
+      }
 
   const genreWrapper = document.getElementById("create-genre-wrapper");
   const genreSearch = document.getElementById("create-genre-search");
@@ -38,7 +99,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const option = document.createElement('div');
         option.className = 'custom-option genre-option';
         option.dataset.value = genre;
-        option.innerHTML = `<span>${genre}</span><span class="genre-check">❌</span>`;
+        option.innerHTML = `<span>${genre}</span><span class="genre-check">✕</span>`;
         
         option.addEventListener('click', (e) => {
           e.stopPropagation();
@@ -110,7 +171,25 @@ document.addEventListener("DOMContentLoaded", function () {
         if (genreOptions) genreOptions.classList.remove('open');
         genreWrapper.classList.remove('open');
       }
+      const statusWrapper = document.getElementById("create-status-wrapper");
+      if (statusWrapper && !statusWrapper.contains(e.target)) {
+        const opts = document.getElementById('create-status-options');
+        if (opts) opts.classList.remove('c-open');
+        statusWrapper.classList.remove('c-open');
+      }
     });
+
+    const statusWrapper = document.getElementById("create-status-wrapper");
+    if (statusWrapper) {
+      statusWrapper.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const opts = document.getElementById('create-status-options');
+        if (opts) {
+          opts.classList.toggle('c-open');
+          statusWrapper.classList.toggle('c-open');
+        }
+      });
+    }
 
     if (genreIndicator) {
       genreIndicator.addEventListener('click', (e) => {
@@ -183,9 +262,9 @@ document.addEventListener("DOMContentLoaded", function () {
     creatorTagsContainer.innerHTML = '';
     createCurrentCreators.forEach(creator => {
       const tag = document.createElement('div');
-      tag.className = 'creator-tag';
-      tag.innerHTML = `<span>${creator}</span><span class="remove-tag">✕</span>`;
-      tag.querySelector('.remove-tag').addEventListener('click', () => {
+      tag.className = 'c-creator-tag';
+      tag.innerHTML = `<span>${creator}</span><span class="c-remove-tag">✕</span>`;
+      tag.querySelector('.c-remove-tag').addEventListener('click', () => {
         removeCreator(creator);
       });
       creatorTagsContainer.appendChild(tag);
@@ -195,7 +274,7 @@ document.addEventListener("DOMContentLoaded", function () {
       if (createCurrentCreators.length > 0) {
         creatorInput.placeholder = '';
       } else {
-        creatorInput.placeholder = 'Add creator...';
+        creatorInput.placeholder = createCreatorPlaceholder;
       }
     }
   }
@@ -264,7 +343,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const ratingMode = document.body.dataset.ratingMode || 'faces';
     
     // Clear old dynamic UIs
-    const existingDynamic = form.querySelector('.dynamic-rating-ui');
+    const existingDynamic = form.querySelector('.c-dynamic-rating-ui');
     if (existingDynamic) existingDynamic.remove();
     
     const ratingFaces = document.getElementById('create-rating-faces');
@@ -272,34 +351,34 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (ratingMode === 'faces') {
       ratingFaces.style.display = 'flex';
-      ratingFaces.querySelectorAll('.face').forEach(face => {
+      ratingFaces.querySelectorAll('.c-face').forEach(face => {
         face.onclick = () => {
-          if (face.classList.contains('selected')) {
-            ratingFaces.querySelectorAll('.face').forEach(f => f.classList.remove('selected'));
+          if (face.classList.contains('c-selected')) {
+            ratingFaces.querySelectorAll('.c-face').forEach(f => f.classList.remove('c-selected'));
             ratingInput.value = '';
           } else {
-            ratingFaces.querySelectorAll('.face').forEach(f => f.classList.remove('selected'));
-            face.classList.add('selected');
+            ratingFaces.querySelectorAll('.c-face').forEach(f => f.classList.remove('c-selected'));
+            face.classList.add('c-selected');
             ratingInput.value = face.dataset.value;
           }
         };
       });
     } else if (ratingMode === 'stars_5') {
       const starDiv = document.createElement('div');
-      starDiv.className = 'dynamic-rating-ui rating-stars';
+      starDiv.className = 'c-dynamic-rating-ui c-rating-stars';
       for (let i = 1; i <= 5; i++) {
         const star = document.createElement('span');
-        star.className = 'star';
+        star.className = 'c-star';
         star.textContent = '★';
         star.onclick = () => {
-          const currentlySelected = starDiv.querySelectorAll('.star.selected').length;
+          const currentlySelected = starDiv.querySelectorAll('.c-star.c-selected').length;
           if (currentlySelected === i) {
-            starDiv.querySelectorAll('.star').forEach(s => s.classList.remove('selected'));
+            starDiv.querySelectorAll('.c-star').forEach(s => s.classList.remove('c-selected'));
             ratingInput.value = '';
           } else {
             ratingInput.value = i;
-            starDiv.querySelectorAll('.star').forEach((s, idx) => {
-              s.classList.toggle('selected', idx < i);
+            starDiv.querySelectorAll('.c-star').forEach((s, idx) => {
+              s.classList.toggle('c-selected', idx < i);
             });
           }
         };
@@ -309,7 +388,7 @@ document.addEventListener("DOMContentLoaded", function () {
     } else {
       // 1-10 or 1-100 scale
       const numDiv = document.createElement('div');
-      numDiv.className = 'dynamic-rating-ui rating-number';
+      numDiv.className = 'c-dynamic-rating-ui c-rating-number';
       const input = document.createElement('input');
       input.type = 'number';
       input.min = 1;
@@ -327,6 +406,7 @@ document.addEventListener("DOMContentLoaded", function () {
     
     // Inject the correct media type so your CSS placeholder logic kicks in
     const mediaType = document.body.dataset.mediaType || "movies";
+    createCreatorPlaceholder = creatorPlaceholdersMap[mediaType] || "Add creators...";
     const coverContainer = document.getElementById("create-cover-container");
 
     initCreateGenres(mediaType);
@@ -339,37 +419,41 @@ document.addEventListener("DOMContentLoaded", function () {
     if (mediaType === "games") canonicalType = "game";
     if (mediaType === "books") canonicalType = "book";
     updateCreateFieldVisibility(canonicalType);
+    initCreateStatus(canonicalType);
 
     const bannerContainer = document.getElementById("create-banner-container");
 
     coverContainer.dataset.mediaType = mediaType;
     bannerContainer.dataset.mediaType = mediaType;
     
-    // Reset images to placeholder path and remove .has-image states
-    document.getElementById("create-banner-preview").src = "/static/core/img/placeholder.png";
+// Reset images to placeholder path, pass alt attribute for CSS, and remove .has-image states
+    const bannerPreview = document.getElementById("create-banner-preview");
+    bannerPreview.src = "/static/core/img/placeholder.png";
+    bannerPreview.alt = canonicalType; // <--- This passes the type so CSS can style it!
+
     document.getElementById("create-cover-preview").src = "/static/core/img/placeholder.png";
-    coverContainer.classList.remove("has-image");
-    bannerContainer.classList.remove("has-image");
+    coverContainer.classList.remove("c-has-image");
+    bannerContainer.classList.remove("c-has-image");
     
     // Reset Rating Selection
-    document.querySelectorAll('#create-rating-faces .face').forEach(f => f.classList.remove('selected'));
+    document.querySelectorAll('#create-rating-faces .c-face').forEach(f => f.classList.remove('c-selected'));
     document.getElementById('create_personal_rating').value = '';
     setupCreateRatingUI();
 
-    modal.classList.remove("modal-hidden");
-    overlay.classList.remove("modal-hidden");
+    modal.classList.remove("c-modal-hidden");
+    overlay.classList.remove("c-modal-hidden");
     scrollY = window.scrollY;
     document.body.style.top = `-${scrollY}px`;
-    document.body.classList.add("modal-open");
-    document.documentElement.classList.add("modal-open");
+    document.body.classList.add("c-modal-open");
+    document.documentElement.classList.add("c-modal-open");
   });
 
   // Close Modal
   function closeModal() {
-    modal.classList.add("modal-hidden");
-    overlay.classList.add("modal-hidden");
-    document.body.classList.remove("modal-open");
-    document.documentElement.classList.remove("modal-open");
+    modal.classList.add("c-modal-hidden");
+    overlay.classList.add("c-modal-hidden");
+    document.body.classList.remove("c-modal-open");
+    document.documentElement.classList.remove("c-modal-open");
     document.body.style.top = "";
     window.scrollTo(0, scrollY);
   }
@@ -389,7 +473,7 @@ document.addEventListener("DOMContentLoaded", function () {
           // Setting a real image URL instantly removes your placeholder CSS behavior
           preview.src = e.target.result;
           // Add class so CSS knows to hide the plus button until hover
-          container.classList.add("has-image");
+          container.classList.add("c-has-image");
         };
         reader.readAsDataURL(this.files[0]);
       }

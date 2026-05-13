@@ -9,17 +9,27 @@ document.addEventListener("DOMContentLoaded", function () {
   if (!modal) return;
 
   const mediaGenres = {
-    movies:["Action", "Adventure", "Animation", "Comedy", "Crime", "Documentary", "Drama", "Family", "Fantasy", "History", "Horror", "Music", "Mystery", "Romance", "Science Fiction", "TV Movie", "Thriller", "War", "Western"],
-    tvshows:["Action & Adventure", "Animation", "Comedy", "Crime", "Documentary", "Drama", "Family", "Kids", "Mystery", "News", "Reality", "Sci-Fi & Fantasy", "Soap", "Talk", "War & Politics", "Western"],
+    movie:["Action", "Adventure", "Animation", "Comedy", "Crime", "Documentary", "Drama", "Family", "Fantasy", "History", "Horror", "Music", "Mystery", "Romance", "Science Fiction", "TV Movie", "Thriller", "War", "Western"],
+    tv:["Action & Adventure", "Animation", "Comedy", "Crime", "Documentary", "Drama", "Family", "Kids", "Mystery", "News", "Reality", "Sci-Fi & Fantasy", "Soap", "Talk", "War & Politics", "Western"],
     anime:["Action", "Adventure", "Comedy", "Drama", "Fantasy", "Horror", "Mahou Shoujo", "Mecha", "Music", "Mystery", "Psychological", "Romance", "Sci-Fi", "Slice of Life", "Sports", "Supernatural", "Thriller"],
     manga:["Action", "Adventure", "Comedy", "Drama", "Fantasy", "Horror", "Mahou Shoujo", "Mecha", "Music", "Mystery", "Psychological", "Romance", "Sci-Fi", "Slice of Life", "Sports", "Supernatural", "Thriller"],
-    games:["Adventure", "Arcade", "Card & Board Game", "Fighting", "Hack and slash/Beat 'em up", "Indie", "MOBA", "Music", "Pinball", "Platform", "Point-and-click", "Puzzle", "Quiz/Trivia", "Racing", "Real Time Strategy (RTS)", "Role-playing (RPG)", "Shooter", "Simulator", "Sport", "Strategy", "Tactical", "Turn-based strategy (TBS)", "Visual Novel"],
-    books:["Action & Adventure Fiction", "Biography", "Classics", "Fantasy", "Historical Fiction", "History", "Horror", "Mystery", "Non-fiction", "Poetry", "Romance", "Science Fiction", "Thriller", "Young Adult"],
+    game:["Adventure", "Arcade", "Card & Board Game", "Fighting", "Hack and slash/Beat 'em up", "Indie", "MOBA", "Music", "Pinball", "Platform", "Point-and-click", "Puzzle", "Quiz/Trivia", "Racing", "Real Time Strategy (RTS)", "Role-playing (RPG)", "Shooter", "Simulator", "Sport", "Strategy", "Tactical", "Turn-based strategy (TBS)", "Visual Novel"],
+    book:["Action & Adventure Fiction", "Biography", "Classics", "Fantasy", "Historical Fiction", "History", "Horror", "Mystery", "Non-fiction", "Poetry", "Romance", "Science Fiction", "Thriller", "Young Adult"],
     music:["Alternative", "Blues", "Classical", "Country", "Electronic", "Folk", "Hip Hop", "Indie", "Jazz", "Metal", "Pop", "Punk", "R&B", "Reggae", "Rock", "Soul"]
   };
 
-  let metadataCurrentGenres = [];
+  let metadataCurrentGenres =[];
   let metadataCurrentCreators =[];
+  let metadataCreatorPlaceholder = "Add creator...";
+
+  const creatorPlaceholdersMap = {
+      movies: "Add directors...", movie: "Add directors...",
+      tvshows: "Add directors...", tv: "Add directors...",
+      anime: "Add studios...",
+      manga: "Add authors...", books: "Add authors...", book: "Add authors...",
+      games: "Add developers...", game: "Add developers...",
+      music: "Add artists..."
+  };
 
   const genreWrapper = document.getElementById("metadata-genre-wrapper");
   const genreSearch = document.getElementById("metadata-genre-search");
@@ -35,9 +45,9 @@ document.addEventListener("DOMContentLoaded", function () {
       const availableGenres = mediaGenres[mediaType] ||[];
       availableGenres.forEach(genre => {
         const option = document.createElement('div');
-        option.className = 'custom-option genre-option';
+        option.className = 'md-custom-option md-genre-option';
         option.dataset.value = genre;
-        option.innerHTML = `<span>${genre}</span><span class="genre-check">❌</span>`;
+        option.innerHTML = `<span>${genre}</span><span class="md-genre-check">✕</span>`;
         
         option.addEventListener('click', (e) => {
           e.stopPropagation();
@@ -68,9 +78,9 @@ document.addEventListener("DOMContentLoaded", function () {
     genreTags.innerHTML = '';
     metadataCurrentGenres.forEach(genre => {
       const tag = document.createElement('div');
-      tag.className = 'genre-tag';
-      tag.innerHTML = `<span>${genre}</span><span class="remove-tag">✕</span>`;
-      tag.querySelector('.remove-tag').addEventListener('click', (e) => {
+      tag.className = 'md-genre-tag';
+      tag.innerHTML = `<span>${genre}</span><span class="md-remove-tag">✕</span>`;
+      tag.querySelector('.md-remove-tag').addEventListener('click', (e) => {
         e.stopPropagation();
         toggleMetadataGenre(genre);
       });
@@ -78,12 +88,12 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     if (genreOptions) {
-      const options = genreOptions.querySelectorAll('.genre-option');
+      const options = genreOptions.querySelectorAll('.md-genre-option');
       options.forEach(opt => {
         if (metadataCurrentGenres.includes(opt.dataset.value)) {
-          opt.classList.add('selected');
+          opt.classList.add('md-selected');
         } else {
-          opt.classList.remove('selected');
+          opt.classList.remove('md-selected');
         }
       });
     }
@@ -91,25 +101,25 @@ document.addEventListener("DOMContentLoaded", function () {
     if (genreSearch && genreWrapper) {
       if (metadataCurrentGenres.length > 0) {
         genreSearch.placeholder = '';
-        genreWrapper.classList.add('has-items');
+        genreWrapper.classList.add('md-has-items');
       } else {
         genreSearch.placeholder = 'Genres';
-        genreWrapper.classList.remove('has-items');
+        genreWrapper.classList.remove('md-has-items');
       }
     }
   }
 
   if (genreWrapper) {
     genreWrapper.addEventListener('click', () => {
-      if (genreOptions) genreOptions.classList.add('open');
-      genreWrapper.classList.add('open');
+      if (genreOptions) genreOptions.classList.add('md-open');
+      genreWrapper.classList.add('md-open');
       if (genreSearch) genreSearch.focus();
     });
 
     document.addEventListener('click', (e) => {
       if (!genreWrapper.contains(e.target)) {
-        if (genreOptions) genreOptions.classList.remove('open');
-        genreWrapper.classList.remove('open');
+        if (genreOptions) genreOptions.classList.remove('md-open');
+        genreWrapper.classList.remove('md-open');
       }
     });
 
@@ -119,15 +129,15 @@ document.addEventListener("DOMContentLoaded", function () {
         if (metadataCurrentGenres.length > 0) {
           metadataCurrentGenres =[];
           updateMetadataGenreUI();
-          if (genreOptions) genreOptions.classList.remove('open');
-          genreWrapper.classList.remove('open');
+          if (genreOptions) genreOptions.classList.remove('md-open');
+          genreWrapper.classList.remove('md-open');
         } else {
-          if (genreOptions && genreOptions.classList.contains('open')) {
-            genreOptions.classList.remove('open');
-            genreWrapper.classList.remove('open');
+          if (genreOptions && genreOptions.classList.contains('md-open')) {
+            genreOptions.classList.remove('md-open');
+            genreWrapper.classList.remove('md-open');
           } else {
-            if (genreOptions) genreOptions.classList.add('open');
-            genreWrapper.classList.add('open');
+            if (genreOptions) genreOptions.classList.add('md-open');
+            genreWrapper.classList.add('md-open');
             if (genreSearch) genreSearch.focus();
           }
         }
@@ -153,12 +163,12 @@ document.addEventListener("DOMContentLoaded", function () {
   function filterMetadataGenreOptions(query) {
     if (!genreOptions) return;
     const q = query.toLowerCase();
-    const options = genreOptions.querySelectorAll('.genre-option');
+    const options = genreOptions.querySelectorAll('.md-genre-option');
     options.forEach(opt => {
       if (opt.dataset.value.toLowerCase().includes(q)) {
-        opt.classList.remove('hidden');
+        opt.classList.remove('md-hidden');
       } else {
-        opt.classList.add('hidden');
+        opt.classList.add('md-hidden');
       }
     });
   }
@@ -184,9 +194,9 @@ document.addEventListener("DOMContentLoaded", function () {
     creatorTagsContainer.innerHTML = '';
     metadataCurrentCreators.forEach(creator => {
       const tag = document.createElement('div');
-      tag.className = 'creator-tag';
-      tag.innerHTML = `<span>${creator}</span><span class="remove-tag">✕</span>`;
-      tag.querySelector('.remove-tag').addEventListener('click', () => {
+      tag.className = 'md-creator-tag';
+      tag.innerHTML = `<span>${creator}</span><span class="md-remove-tag">✕</span>`;
+      tag.querySelector('.md-remove-tag').addEventListener('click', () => {
         removeCreator(creator);
       });
       creatorTagsContainer.appendChild(tag);
@@ -196,7 +206,7 @@ document.addEventListener("DOMContentLoaded", function () {
       if (metadataCurrentCreators.length > 0) {
         creatorInput.placeholder = '';
       } else {
-        creatorInput.placeholder = 'Add creator...';
+        creatorInput.placeholder = metadataCreatorPlaceholder;
       }
     }
   }
@@ -261,10 +271,11 @@ document.addEventListener("DOMContentLoaded", function () {
     form.reset();
     
     // Reset file inputs visually
-    document.getElementById("metadata-banner-preview").src = "/static/core/img/placeholder.png";
+    const bannerPreview = document.getElementById("metadata-banner-preview");
+    bannerPreview.src = "/static/core/img/placeholder.png";
     document.getElementById("metadata-cover-preview").src = "/static/core/img/placeholder.png";
-    document.getElementById("metadata-banner-container").classList.remove("has-image");
-    document.getElementById("metadata-cover-container").classList.remove("has-image");
+    document.getElementById("metadata-banner-container").classList.remove("md-has-image");
+    document.getElementById("metadata-cover-container").classList.remove("md-has-image");
 
     // Close settings dropdown if open
     const dropdown = document.getElementById('settingsDropdown');
@@ -278,7 +289,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
         let canonicalType = item.media_type;
         const bodyType = document.body.dataset.mediaType || "movies"; // plural form mapping for genres
+        metadataCreatorPlaceholder = creatorPlaceholdersMap[bodyType] || "Add creators...";
         
+        // Feed canonical type into alt element so preview positioning is accurate!
+        bannerPreview.alt = canonicalType;
+
         document.getElementById("metadata-cover-container").dataset.mediaType = bodyType;
         document.getElementById("metadata-banner-container").dataset.mediaType = bodyType;
 
@@ -294,15 +309,15 @@ document.addEventListener("DOMContentLoaded", function () {
         // Setup Images
         if (item.cover_url) {
             document.getElementById("metadata-cover-preview").src = item.cover_url;
-            document.getElementById("metadata-cover-container").classList.add("has-image");
+            document.getElementById("metadata-cover-container").classList.add("md-has-image");
         }
         if (item.banner_url) {
             document.getElementById("metadata-banner-preview").src = item.banner_url;
-            document.getElementById("metadata-banner-container").classList.add("has-image");
+            document.getElementById("metadata-banner-container").classList.add("md-has-image");
         }
 
         // Arrays for Genres & Creators
-        metadataCurrentGenres = item.genres || [];
+        metadataCurrentGenres = item.genres ||[];
         metadataCurrentCreators = item.creators ||[];
         initMetadataGenres(bodyType);
         renderMetadataCreatorTags();
@@ -315,12 +330,12 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("metadata_total_secondary").value = item.total_secondary ?? "";
 
         // Show Modal
-        modal.classList.remove("modal-hidden");
-        overlay.classList.remove("modal-hidden");
+        modal.classList.remove("md-modal-hidden");
+        overlay.classList.remove("md-modal-hidden");
         scrollY = window.scrollY;
         document.body.style.top = `-${scrollY}px`;
-        document.body.classList.add("modal-open");
-        document.documentElement.classList.add("modal-open");
+        document.body.classList.add("md-modal-open");
+        document.documentElement.classList.add("md-modal-open");
       })
       .catch(err => {
         console.error(err);
@@ -330,10 +345,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Close Modal
   function closeModal() {
-    modal.classList.add("modal-hidden");
-    overlay.classList.add("modal-hidden");
-    document.body.classList.remove("modal-open");
-    document.documentElement.classList.remove("modal-open");
+    modal.classList.add("md-modal-hidden");
+    overlay.classList.add("md-modal-hidden");
+    document.body.classList.remove("md-modal-open");
+    document.documentElement.classList.remove("md-modal-open");
     document.body.style.top = "";
     window.scrollTo(0, scrollY);
     currentItemId = null;
@@ -352,7 +367,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const reader = new FileReader();
         reader.onload = function(e) {
           preview.src = e.target.result;
-          container.classList.add("has-image");
+          container.classList.add("md-has-image");
         };
         reader.readAsDataURL(this.files[0]);
       }
@@ -373,7 +388,7 @@ document.addEventListener("DOMContentLoaded", function () {
     formData.append("genres", metadataCurrentGenres.join(","));
     formData.append("creators", metadataCurrentCreators.join(","));
 
-    const submitBtn = form.querySelector('.save-btn');
+    const submitBtn = form.querySelector('.md-save-btn');
     submitBtn.disabled = true;
     submitBtn.textContent = "Saving...";
 

@@ -1224,7 +1224,7 @@ updateSortButtons();
       const option = document.createElement('div');
       option.className = 'custom-option genre-option';
       option.dataset.value = genre;
-      option.innerHTML = `<span>${genre}</span><span class="genre-check">❌</span>`;
+      option.innerHTML = `<span>${genre}</span><span class="genre-check">✕</span>`;
       
       option.addEventListener('click', (e) => {
         e.stopPropagation();

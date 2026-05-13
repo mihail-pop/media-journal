@@ -11,6 +11,7 @@
   --border-color: #32445b;
   --hover-bg: #2a3441;
   --table-bg: #1f2a38;
+  --activity-high: #abbacd;
 }
 
 [data-theme="light"] {
@@ -25,6 +26,7 @@
   --border-color: #DCECF8;
   --hover-bg: #cfe8f7;
   --table-bg: #DCECF8;
+  --activity-high: #4b90b8;
 }
 
 [data-theme="brown"] {
@@ -39,6 +41,7 @@
   --border-color: #fffffe;
   --hover-bg: #fffffe;
   --table-bg: #74544d;
+  --activity-high: #af7f76;
 }
 
 /* --- Star Rating Overlap Effect --- */
@@ -103,42 +106,66 @@ html {
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  padding-right: 2rem;
 }
 
 .separator-actions {
   display: flex;
   gap: 1rem;
   align-items: center;
+  margin-right: 8vw;
 }
 
 .separator-btn {
-  background: var(--bg-quaternary);
-  color: var(--text-primary);
-  border: none;
-  border-radius: 8px;
-  width: 36px;
-  height: 36px;
+  fill: var(--text-primary) !important;
+  border-radius: 20%;
+  padding: 4px;
   display: flex;
   justify-content: center;
   align-items: center;
   cursor: pointer;
   transition: all 0.2s ease;
+  border: 2px solid var(--text-primary);
+  background: none;
+}
+
+#open-create-modal-btn{
+  stroke: var(--text-primary) !important;
 }
 
 .separator-btn:hover {
-  background: var(--hover-bg);
-  color: var(--text-light);
-  transform: scale(1.05);
+  border-color: var(--activity-high);
 }
 
-/* Adjust the existing music player label to act like a normal button */
+label.music-player-btn:hover .music-icon path {
+  fill: var(--activity-high) !important;
+}
+
+#open-create-modal-btn:hover{
+  stroke: var(--activity-high) !important;
+}
+
+label.music-player-btn {
+  cursor: pointer;
+}
+
+label.music-player-btn input[type="checkbox"] {
+  display: none;
+}
+
+label.music-player-btn .music-icon {
+  border-radius: 20%;
+  padding: 4px;
+  transition: border-color 0.3s ease;
+}
+
+label.music-player-btn .music-icon path {
+  fill: var(--text-primary) !important;
+  transition: fill 0.3s ease;
+}
+
+/* Do not delete */
 label.music-player-btn.separator-btn {
   margin: 0;
-  padding: 0;
-}
-label.music-player-btn.separator-btn .music-icon {
-  border: none;
   padding: 0;
 }
 
@@ -252,9 +279,6 @@ label.music-player-btn.separator-btn .music-icon {
 }
 
 /* --- Genres Multi-Select --- */
-.genre-filter-container {
-  margin-bottom: 1.5rem;
-}
 
 .genre-select {
   display: flex;
@@ -265,7 +289,6 @@ label.music-player-btn.separator-btn .music-icon {
   background-color: var(--bg-tertiary);
   border-radius: 6px;
   cursor: text;
-  min-height: 2.5rem;
   align-items: center;
   position: relative;
 }
@@ -1200,42 +1223,6 @@ body[data-media-type="tvshows"] .simple-title-cell a {
 
 #check-status-container {
   display: none;
-}
-
-label.music-player-btn {
-  cursor: pointer;
-}
-
-label.music-player-btn input[type="checkbox"] {
-  display: none;
-}
-
-label.music-player-btn .music-icon {
-  border: 2px solid var(--text-primary);
-  border-radius: 20%;
-  padding: 4px;
-  transition: border-color 0.3s ease;
-}
-
-label.music-player-btn .music-icon path {
-  fill: var(--text-primary) !important;
-  transition: fill 0.3s ease;
-}
-
-label.music-player-btn:has(input:checked) .music-icon {
-  border-color: var(--activity-high, #c0d0e0);
-}
-
-label.music-player-btn:has(input:checked) .music-icon path {
-  fill: var(--activity-high, #c0d0e0) !important;
-}
-
-label.music-player-btn:hover .music-icon {
-  border-color: #c0d0e0;
-}
-
-label.music-player-btn:hover .music-icon path {
-  fill: #c0d0e0 !important;
 }
 
 .status-legend {

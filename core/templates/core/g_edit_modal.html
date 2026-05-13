@@ -28,12 +28,17 @@
   </div>
 <div class="form-row-two">
   <div class="form-group vertical-label">
-    <label for="status">Status</label>
-    <select name="status" id="status" class="status-select">
-      {% for key, label in item_status_choices %}
-        <option value="{{ key }}" {% if key == status %}selected{% endif %}>{{ label }}</option>
-      {% endfor %}
-    </select>
+    <label>Status</label>
+    <input type="hidden" name="status" id="edit_status_hidden">
+    <div class="status-select-wrapper custom-select-wrapper" id="edit-status-wrapper">
+      <div class="status-select custom-select-trigger" id="edit-status-select" role="button" tabindex="0">
+        <span id="edit-status-text"></span>
+        <div class="status-indicator" id="edit-status-indicator"></div>
+      </div>
+      <div class="custom-options status-options" id="edit-status-options" role="listbox">
+        <!-- Populated by JS -->
+      </div>
+    </div>
   </div>
 <div class="form-group vertical-label">
   <label for="personal_rating">Rating</label>
@@ -76,7 +81,7 @@
 
 <!-- Date -->
 <div id="date_added_group" class="form-group" style="display: {% if show_date_field %}block{% else %}none{% endif %};">
-  <label for="date_added">Date</label>
+  <label for="date_added">Activity Date</label>
   <input type="date" name="date_added" id="date_added" 
          value="{{ item.date_added|date:'Y-m-d'|default_if_none:'' }}">
 </div>
