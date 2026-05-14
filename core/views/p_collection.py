@@ -50,6 +50,10 @@ def collection_items_api(request, collection_id):
 def search_local_items(request, collection_id):
     query = request.GET.get('q', '').strip()
     media_type = request.GET.get('type', 'all')
+    page = int(request.GET.get('page', 1))
+    page_size = 50
+    start = (page - 1) * page_size
+    end = start + page_size
     
     # Exclude items already in this collection
     existing_ids = CollectionItem.objects.filter(collection_id=collection_id).values_list('item_id', flat=True)
@@ -61,11 +65,12 @@ def search_local_items(request, collection_id):
     if query:
         qs = qs.filter(title__icontains=query)
         
-    # Limit to 50 results to keep the modal snappy
-    qs = qs.order_by('-date_added')[:50]
+    qs = qs.order_by('-date_added')
+    total = qs.count()
+    has_more = total > end
     
-    data =[]
-    for item in qs:
+    data = []
+    for item in qs[start:end]:
         data.append({
             "id": item.id,
             "title": item.title,
@@ -74,7 +79,7 @@ def search_local_items(request, collection_id):
             "banner_url": item.banner_url,
         })
         
-    return JsonResponse({"items": data})
+    return JsonResponse({"items": data, "has_more": has_more, "page": page})
 
 @require_http_methods(["POST"])
 def collection_add_items(request, collection_id):

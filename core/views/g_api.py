@@ -1071,16 +1071,23 @@ def collections_api(request):
 
     collections_data =[]
     for col in qs[start:end]:
-        # Grab covers using the properly sorted collectionitem_set
-        covers = [ci.item.cover_url for ci in col.collectionitem_set.all() if ci.item.cover_url][:3]
-        
-        collections_data.append({
-            "id": col.id,
-            "title": col.title,
-            "description": col.description or "",
-            "item_count": col.items.count(),
-            "covers": covers,
-        })
+            # Fetch up to 5 covers with their URLs and media_types
+            covers = []
+            for ci in col.collectionitem_set.all():
+                covers.append({
+                    "url": ci.item.cover_url or "/static/core/img/placeholder.png",
+                    "media_type": ci.item.media_type
+                })
+                if len(covers) == 5:
+                    break
+            
+            collections_data.append({
+                "id": col.id,
+                "title": col.title,
+                "description": col.description or "",
+                "item_count": col.items.count(),
+                "covers": covers,
+            })
 
     return JsonResponse({"items": collections_data, "has_more": has_more, "page": page})
 

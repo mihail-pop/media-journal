@@ -119,11 +119,25 @@ body {
   object-fit: cover;
 }
 
-.card[data-media-type="music"] .card-image img {
-  width: 170%;
-  left: 50%;
-  transform: translateX(-50%);
+/* Prevent text/card flashing while rapidly moving during drag */
+body.drag-active .card {
+    transition: none !important;
+}
+body.drag-active .card-title {
+    color: var(--text-secondary) !important;
+}
 
+/* Fix bounds so drag ghost clips perfectly */
+.card[data-media-type="music"] .card-image {
+  padding-top: 0;
+  height: 100%;
+}
+
+.card[data-media-type="music"] .card-image img {
+  position: static; /* Removes the absolute positioning that causes the bleed */
+  width: 179%;
+  margin-left: -39.5%;
+  object-position: center center;
 }
 
 .card-link {

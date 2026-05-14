@@ -160,10 +160,12 @@
               <a href="/collection/{{ col.id }}/">
                 <div class="home-cover-stack items-{{ col.covers|length }}">
                   {% for cover in col.covers %}
-                    <img src="{{ cover }}" class="home-stack-img pos-{{ forloop.counter0 }}">
+                    <div class="home-stack-item pos-{{ forloop.counter0 }}" data-media-type="{{ cover.media_type }}">
+                      <img src="{{ cover.url }}" alt="cover">
+                    </div>
                   {% endfor %}
                   {% if not col.covers %}
-                    <div class="home-stack-img pos-0 glass-card"></div>
+                    <div class="home-stack-item pos-0 glass-card"></div>
                   {% endif %}
                 </div>
               </a>
@@ -173,14 +175,21 @@
             </div>
           {% endfor %}
         </div>
+        <div class="all-collections-link-wrapper">
+          <a href="/collections/" class="all-collections-btn" title="All collections">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+          </a>
+        </div>
       {% else %}
         <div class="home-collections-empty">
           <div class="card home-collection-card placeholder-fan">
             <a href="/collections/">
               <div class="home-cover-stack items-3">
-                <div class="home-stack-img pos-1 glass-card"></div>
-                <div class="home-stack-img pos-2 glass-card"></div>
-                <div class="home-stack-img pos-0 glass-card empty-plus">+</div>
+                <div class="home-stack-item pos-1 glass-card"></div>
+                <div class="home-stack-item pos-2 glass-card"></div>
+                <div class="home-stack-item pos-0 glass-card empty-plus">+</div>
               </div>
             </a>
             <div class="hover-title-overlay">
@@ -190,12 +199,6 @@
         </div>
       {% endif %}
     </div>
-
-    {% if home_collections %}
-    <div class="show-more-activity-wrapper all-collections-link-wrapper">
-      <a href="/collections/" class="all-collections-btn">All collections</a>
-    </div>
-    {% endif %}
   </div>
 </div>
 

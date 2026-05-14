@@ -1,4 +1,11 @@
 document.addEventListener("DOMContentLoaded", () => {
+    // Initialize Mobile Drag and Drop Polyfill
+    if (typeof MobileDragDrop !== 'undefined') {
+        MobileDragDrop.polyfill({
+            dragImageTranslateOverride: MobileDragDrop.scrollBehaviourDragImageTranslateOverride
+        });
+    }
+
     const grid = document.getElementById("collections-grid");
     const loadingIndicator = document.getElementById("loading-indicator");
     const noItemsMsg = document.getElementById("no-items-message");
@@ -33,7 +40,9 @@ document.addEventListener("DOMContentLoaded", () => {
         if (isLoading || (!hasMore && page !== 1)) return;
         isLoading = true;
         
-        loadingIndicator.style.display = 'block';
+        if (page !== 1) {
+            loadingIndicator.style.display = 'block';
+        }
         
         try {
             const response = await fetch(`/api/collections/?page=${page}`);
@@ -69,10 +78,18 @@ document.addEventListener("DOMContentLoaded", () => {
         a.className = "collection-card";
         a.dataset.id = col.id;
         
-        // Generate the 3-image fan
-        const coversHtml = col.covers.map((url, idx) => {
-            return `<img src="${url}" class="stack-img pos-${idx}" alt="cover">`;
+        // Generate the 5-image fan
+        const coversHtml = col.covers.map((cover, idx) => {
+            return `
+                <div class="stack-item pos-${idx}" data-media-type="${cover.media_type}">
+                    <img src="${cover.url}" alt="cover">
+                </div>
+            `;
         }).join("");
+        
+        const fallbackHtml = col.covers.length === 0 
+            ? `<div class="stack-item pos-0 glass-card"></div>` 
+            : "";
         
         const stackClass = `cover-stack items-${col.covers.length}`;
   
@@ -80,6 +97,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <button class="edit-col-btn" title="Edit Collection">⋯</button>
             <div class="${stackClass}">
                 ${coversHtml}
+                ${fallbackHtml}
             </div>
             <div class="col-info">
                 <h3 class="col-title" title="${col.title}">${col.title}</h3>
@@ -194,7 +212,6 @@ document.addEventListener("DOMContentLoaded", () => {
     // ==========================================
     sortBtn.addEventListener("click", () => {
         isSortMode = !isSortMode;
-        sortBtn.textContent = isSortMode ? "Reorder: ON" : "Reorder: OFF";
         sortBtn.classList.toggle("active-sort", isSortMode);
         updateDraggableState();
     });
@@ -216,20 +233,29 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   
     let draggedElement = null;
-  
+
     grid.addEventListener('dragstart', (e) => {
         if (!isSortMode) return;
+        document.body.classList.add('drag-active');
+        
         draggedElement = e.target.closest('.collection-card');
-        setTimeout(() => draggedElement.classList.add('dragging'), 0);
+        if (draggedElement) {
+            if (e.dataTransfer) {
+                const rect = draggedElement.getBoundingClientRect();
+                e.dataTransfer.setDragImage(draggedElement, rect.width / 2, rect.height / 2);
+            }
+            setTimeout(() => draggedElement.classList.add('dragging'), 0);
+        }
     });
-  
+
     grid.addEventListener('dragend', () => {
+        document.body.classList.remove('drag-active');
         if (!draggedElement) return;
         draggedElement.classList.remove('dragging');
         draggedElement = null;
         saveOrder();
     });
-  
+
     grid.addEventListener('dragover', (e) => {
         if (!isSortMode || !draggedElement) return;
         e.preventDefault();
@@ -241,24 +267,24 @@ document.addEventListener("DOMContentLoaded", () => {
             grid.insertBefore(draggedElement, afterElement);
         }
     });
-  
+
     function getDragAfterElement(container, x, y) {
         const draggableElements = [...container.querySelectorAll('.collection-card:not(.dragging)')];
-  
-        return draggableElements.reduce((closest, child) => {
+
+        return draggableElements.find(child => {
             const box = child.getBoundingClientRect();
-            // A simple grid distance check
-            const offsetX = x - box.left - box.width / 2;
-            const offsetY = y - box.top - box.height / 2;
-            const distance = Math.sqrt(offsetX*offsetX + offsetY*offsetY);
             
-            // Limit bounds to avoid weird wrapping jumps
-            if (offsetY < 0 && distance < closest.distance) {
-                return { offset: distance, element: child, distance: distance };
-            } else {
-                return closest;
-            }
-        }, { distance: Number.POSITIVE_INFINITY }).element;
+            // If cursor is above this element's top edge, we are before it
+            if (y < box.top) return true;
+            
+            // If cursor is below this element's bottom edge, we are after it
+            if (y > box.bottom) return false;
+            
+            // If within vertical bounds, check horizontal center
+            if (x < box.left + box.width / 2) return true;
+            
+            return false;
+        });
     }
   
     async function saveOrder() {

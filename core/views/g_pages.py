@@ -267,7 +267,14 @@ def home(request):
     for col in top_collections_qs:
         # Fetch up to 3 covers ordered by their position in the collection
         items = col.items.order_by("collectionitem__position", "-collectionitem__date_added")[:3]
-        covers = [item.cover_url or "/static/core/img/placeholder.png" for item in items]
+        covers = [
+            {
+                "url": item.cover_url or "/static/core/img/placeholder.png",
+                "media_type": item.media_type
+            } 
+            for item in items
+        ]
+        
         home_collections.append({
             "id": col.id,
             "title": col.title,

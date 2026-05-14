@@ -80,29 +80,29 @@ body {
 }
 
 .action-btn {
-  padding: 0.6rem 1.2rem;
-  border: none;
-  border-radius: 6px;
-  font-size: 1rem;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
   cursor: pointer;
-  background: var(--bg-quaternary);
-  color: var(--text-light);
-  transition: all 0.2s;
-  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  padding: 0;
 }
 
 .action-btn:hover {
-  filter: brightness(1.2);
-}
-
-.action-btn.primary {
-  background: #42A5F5;
-  color: white;
+  background-color: var(--border-color);
+  color: var(--text-light);
 }
 
 .action-btn.active-sort {
-  background: #E53935;
-  color: white;
+  background-color: var(--text-primary);
+  color: var(--bg-primary);
+  border-color: var(--text-primary);
 }
 
 /* Grid */
@@ -140,7 +140,14 @@ body {
 }
 .collection-card.dragging {
   opacity: 0.5;
-  transform: scale(0.95);
+  filter: grayscale(0.8);
+  transform: none !important;
+  isolation: isolate;
+}
+
+body.drag-active .edit-col-btn {
+  pointer-events: none;
+  display: none !important;
 }
 
 /* Edit Button (3 dots) */
@@ -173,98 +180,94 @@ body {
   background: rgba(0, 0, 0, 0.9);
 }
 
-/* Image Stack (The interactive 3-image fan) */
+/* Image Stack (The interactive 5-image fan) */
 .cover-stack {
   position: relative;
   width: 100%;
-  height: 200px;
+  height: 190px;
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-bottom: 1.5rem;
 }
 
-.stack-img {
+.stack-item {
   position: absolute;
-  width: 110px;
-  height: 165px;
-  object-fit: cover;
+  width: 120px;
+  height: 162px; /* Mirrors home page ratio perfectly */
+  max-height: 162px; /* Creates the clipping boundary */
+  overflow: hidden; /* Clips the image cleanly */
   border-radius: 6px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   background: var(--bg-tertiary);
-}
-
-/* Positioning based on the number of images */
-/* Image 1 (Center Front) */
-.stack-img.pos-0 {
+  top: 0;
   left: 50%;
-  transform: translateX(-50%);
-  z-index: 2;
-  filter: none;
 }
 
-/* Image 2 (Left Back) */
-.stack-img.pos-1 {
-  left: 15%;
-  transform: rotate(-10deg) scale(0.85);
-  z-index: 1;
-  filter: brightness(0.6);
+.stack-item img {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 6px;
 }
 
-/* Image 3 (Right Back) */
-.stack-img.pos-2 {
-  right: 15%;
-  transform: rotate(10deg) scale(0.85);
-  z-index: 1;
-  filter: brightness(0.6);
+/* Glass styling for collections with empty/placeholder covers */
+.stack-item:has(img[src*="placeholder"]),
+.stack-item.glass-card {
+  background-color: rgb(255 254 254 / 7%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(4px);
 }
+
+.stack-item img[src*="placeholder"] {
+  opacity: 0;
+}
+
+/* --- Music Collection Card Overrides --- */
+.stack-item[data-media-type="music"] {
+  height: 120px;
+  max-height: 120px;
+  top: 42px; /* 162px standard height - 120px music height = 42px offset to perfectly align bottom edges */
+}
+
+.stack-item[data-media-type="music"] img {
+  width: 178.8%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+  display: block;
+  border-radius: 6px;
+  transform: translateX(-21.7%);
+  transform-origin: center;
+}
+
+/* Positioning based on the number of images (up to 5) */
+.stack-item.pos-0 { transform: translateX(-50%); z-index: 5; filter: none; }
+.stack-item.pos-1 { transform: translateX(calc(-50% - 30px)) rotate(-8deg) scale(0.9); z-index: 4; filter: brightness(0.8); }
+.stack-item.pos-2 { transform: translateX(calc(-50% + 30px)) rotate(8deg) scale(0.9); z-index: 3; filter: brightness(0.8); }
+.stack-item.pos-3 { transform: translateX(calc(-50% - 60px)) rotate(-16deg) scale(0.8); z-index: 2; filter: brightness(0.6); }
+.stack-item.pos-4 { transform: translateX(calc(-50% + 60px)) rotate(16deg) scale(0.8); z-index: 1; filter: brightness(0.6); }
 
 /* Hover effect: Fan them out! */
-.collection-card:hover .stack-img.pos-0 {
-  transform: translateX(-50%) translateY(-10px) scale(1.05);
-}
+.collection-card:hover .stack-item.pos-0 { transform: translateX(-50%) translateY(-15px) scale(1.05); }
+.collection-card:hover .stack-item.pos-1 { transform: translateX(calc(-50% - 45px)) rotate(-12deg) scale(0.95); filter: brightness(0.9); }
+.collection-card:hover .stack-item.pos-2 { transform: translateX(calc(-50% + 45px)) rotate(12deg) scale(0.95); filter: brightness(0.9); }
+.collection-card:hover .stack-item.pos-3 { transform: translateX(calc(-50% - 85px)) rotate(-24deg) scale(0.85); filter: brightness(0.7); }
+.collection-card:hover .stack-item.pos-4 { transform: translateX(calc(-50% + 85px)) rotate(24deg) scale(0.85); filter: brightness(0.7); }
 
-.collection-card:hover .stack-img.pos-1 {
-  transform: rotate(-18deg) scale(0.9) translateX(-20px);
-  filter: brightness(0.8);
-}
+/* Fallbacks for fewer items so they look dynamically balanced */
+.cover-stack.items-1 .stack-item.pos-0 { z-index: 5; filter: brightness(1); transform: translateX(-50%); }
+.collection-card:hover .cover-stack.items-1 .stack-item.pos-0 { transform: translateX(-50%) translateY(-10px) scale(1.05); }
 
-.collection-card:hover .stack-img.pos-2 {
-  transform: rotate(18deg) scale(0.9) translateX(20px);
-  filter: brightness(0.8);
-}
+.cover-stack.items-2 .stack-item.pos-0 { transform: translateX(calc(-50% - 15px)) rotate(-4deg); z-index: 5; filter: brightness(1); }
+.cover-stack.items-2 .stack-item.pos-1 { transform: translateX(calc(-50% + 15px)) rotate(4deg); z-index: 4; filter: brightness(0.8); }
+.collection-card:hover .cover-stack.items-2 .stack-item.pos-0 { transform: translateX(calc(-50% - 25px)) rotate(-8deg) translateY(-5px) scale(1.02); filter: brightness(1); }
+.collection-card:hover .cover-stack.items-2 .stack-item.pos-1 { transform: translateX(calc(-50% + 25px)) rotate(8deg) scale(0.98); filter: brightness(0.9); }
 
-/* Empty State / Only 1 or 2 images fallback */
-.cover-stack.items-0::after {
-  content: "Empty Collection";
-  color: var(--text-tertiary);
-  font-style: italic;
-}
-
-.cover-stack.items-1 .stack-img.pos-0 {
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 2;
-  filter: brightness(1);
-}
-.collection-card:hover .cover-stack.items-1 .stack-img.pos-0 {
-  transform: translateX(-50%) translateY(-10px) scale(1.05);
-}
-
-/* Update 2 Image Fallback so 0 is bright/front and 1 is dim/back */
-.cover-stack.items-2 .stack-img.pos-0 {
-  left: 25%;
-  transform: rotate(-5deg);
-  z-index: 2; /* Brought to Front */
-  filter: brightness(1);
-}
-.cover-stack.items-2 .stack-img.pos-1 {
-  right: 25%;
-  transform: rotate(5deg);
-  z-index: 1; /* Pushed to Back */
-  filter: brightness(0.8);
-}
+.cover-stack.items-3 .stack-item.pos-1 { transform: translateX(calc(-50% - 35px)) rotate(-10deg) scale(0.9); }
+.cover-stack.items-3 .stack-item.pos-2 { transform: translateX(calc(-50% + 35px)) rotate(10deg) scale(0.9); }
+.collection-card:hover .cover-stack.items-3 .stack-item.pos-1 { transform: translateX(calc(-50% - 55px)) rotate(-15deg) scale(0.95); }
+.collection-card:hover .cover-stack.items-3 .stack-item.pos-2 { transform: translateX(calc(-50% + 55px)) rotate(15deg) scale(0.95); }
 
 /* Text Info */
 .col-info {
@@ -349,7 +352,7 @@ body {
 
 .form-group input:focus, .form-group textarea:focus {
   outline: none;
-  border-color: #42A5F5;
+  border-color: var(--text-primary);
 }
 
 .modal-actions {
@@ -366,15 +369,38 @@ body {
 
 .btn-cancel, .btn-save, .btn-delete {
   padding: 0.6rem 1.2rem;
-  border: none;
-  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
   font-size: 1rem;
   cursor: pointer;
   font-weight: bold;
+  transition: all 0.2s ease;
+  background: var(--bg-secondary);
 }
 
-.btn-cancel { background: var(--bg-quaternary); color: var(--text-light); }
-.btn-save { background: #42A5F5; color: white; }
-.btn-delete { background: #E53935; color: white; }
+.btn-cancel {
+  color: var(--text-secondary);
+}
+.btn-cancel:hover {
+  background: var(--border-color);
+  color: var(--text-light);
+}
 
-.btn-save:hover, .btn-delete:hover, .btn-cancel:hover { filter: brightness(1.2); }
+.btn-save {
+  color: var(--text-secondary);
+}
+.btn-save:hover {
+  background: var(--text-primary);
+  color: var(--bg-primary);
+  border-color: var(--text-primary);
+}
+
+.btn-delete {
+  color: #e0245e;
+  border-color: rgba(224, 36, 94, 0.3);
+}
+.btn-delete:hover {
+  background: #e0245e;
+  color: #ffffff;
+  border-color: #e0245e;
+}

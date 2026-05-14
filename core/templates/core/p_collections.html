@@ -4,6 +4,8 @@
 {% block head %}
 {{ block.super }}
 <title>Collections - Media Journal</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0-rc.2/default.css">
+<script src="https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0-rc.2/index.min.js"></script>
 <link rel="stylesheet" href="{% static 'core/css/p_collections.css' %}">
 {% endblock %}
 
@@ -15,8 +17,12 @@
     <div class="collections-header">
         <h1>Collections</h1>
         <div class="header-actions">
-            <button id="toggle-sort-btn" class="action-btn">Reorder: OFF</button>
-            <button id="create-collection-btn" class="action-btn primary">+ Create</button>
+            <button id="toggle-sort-btn" class="action-btn" title="Toggle Reorder">
+                <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+            </button>
+            <button id="create-collection-btn" class="action-btn" title="Create Collection">
+                <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            </button>
         </div>
     </div>
 

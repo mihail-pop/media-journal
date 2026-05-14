@@ -1,10 +1,17 @@
 document.addEventListener("DOMContentLoaded", () => {
 
+    // Initialize Mobile Drag and Drop Polyfill
+    if (typeof MobileDragDrop !== 'undefined') {
+        MobileDragDrop.polyfill({
+            dragImageTranslateOverride: MobileDragDrop.scrollBehaviourDragImageTranslateOverride
+        });
+    }
+
 window.openEditModal = function(element) {
         const itemId = element.dataset.id;
         const coverUrl = element.dataset.coverUrl;
         const bannerUrl = element.dataset.bannerUrl;
-        const mediaType = element.dataset.mediaType; // Grab media type for styling
+        const mediaType = element.dataset.mediaType; 
         const title = element.dataset.title;
 
         const modal = document.getElementById('edit-modal');
@@ -74,9 +81,14 @@ window.openEditModal = function(element) {
     const confirmAddBtn = document.getElementById("confirm-add-btn");
 
     // States
-    let collectionItems =[];
+    let collectionItems = [];
     let isReorderMode = false;
     let isDeleteMode = false;
+    
+    // Pagination state for Add Modal
+    let addCurrentPage = 1;
+    let addHasMore = true;
+    let addIsLoading = false;
     
     // Sets to keep track of multi-selection across searches
     let selectedForAdd = new Set();
@@ -128,18 +140,15 @@ function createCardElement(item, isAddModal = false) {
             editBtnHtml = `<button class="edit-card-btn">⋯</button>`;
         }
 
-        // We wrap the image/title in an <a> tag using display: contents to maintain the grid styling
         card.innerHTML = `
-            ${selectCircleHtml}
-            <a href="${item.url || '#'}" class="card-link" style="display: contents; color: inherit; text-decoration: none;">
+            <a href="${item.url || '#'}" class="card-link" ${isAddModal ? 'draggable="false"' : ''}>
                 <div class="card-image">
-                    <img src="${item.cover_url}" alt="${item.title}" loading="lazy">
-                </div>
-                <div class="card-title-overlay">
-                    <span class="card-title">${item.title}</span>
+                    <img src="${item.cover_url}" alt="${item.title}" loading="lazy" draggable="false">
+                    ${selectCircleHtml}
+                    ${editBtnHtml}
                 </div>
             </a>
-            ${editBtnHtml}
+            <div class="card-title" title="${item.title}">${item.title}</div>
         `;
 
         // Card Click Logic
@@ -218,25 +227,43 @@ function createCardElement(item, isAddModal = false) {
         searchTimeout = setTimeout(performLocalSearch, 300);
     });
 
-    async function performLocalSearch() {
+    async function performLocalSearch(page = 1) {
+        if (addIsLoading || (!addHasMore && page !== 1)) return;
+        
+        addIsLoading = true;
+        addCurrentPage = page;
         const query = searchInput.value;
-        addGrid.innerHTML = "";
+        
+        if (page === 1) {
+            addGrid.innerHTML = "";
+            addHasMore = true;
+        }
         document.getElementById("add-loading").style.display = "block";
         
         try {
-            const res = await fetch(`/api/collection/${colId}/search-local/?q=${encodeURIComponent(query)}&type=${searchType}`);
+            const res = await fetch(`/api/collection/${colId}/search-local/?q=${encodeURIComponent(query)}&type=${searchType}&page=${page}`);
             const data = await res.json();
             
-            addGrid.innerHTML = "";
+            addHasMore = data.has_more;
+            
             data.items.forEach(item => {
                 addGrid.appendChild(createCardElement(item, true));
             });
         } catch (err) {
             console.error(err);
         } finally {
+            addIsLoading = false;
             document.getElementById("add-loading").style.display = "none";
         }
     }
+
+    // Infinite Scroll trigger for the add modal
+    addGrid.addEventListener('scroll', () => {
+        if (addIsLoading || !addHasMore) return;
+        if (addGrid.scrollTop + addGrid.clientHeight >= addGrid.scrollHeight - 200) {
+            performLocalSearch(addCurrentPage + 1);
+        }
+    });
 
     function updateAddCount() {
         addCountText.textContent = `${selectedForAdd.size} selected`;
@@ -279,11 +306,17 @@ function createCardElement(item, isAddModal = false) {
             deleteBtn.classList.add("active-state");
             floatingBar.classList.remove("hidden");
             
-            // Add circles to all main grid cards
+            // Add circles tightly bound to the cover image specifically 
             document.querySelectorAll("#card-view .card").forEach(card => {
                 const circle = document.createElement("div");
                 circle.className = "select-circle";
-                card.prepend(circle);
+                const imgContainer = card.querySelector('.card-image');
+                
+                if (imgContainer) {
+                    imgContainer.appendChild(circle);
+                } else {
+                    card.prepend(circle);
+                }
             });
         } else {
             document.body.classList.remove('delete-mode');
@@ -329,11 +362,9 @@ function createCardElement(item, isAddModal = false) {
         if (isReorderMode) {
             document.body.classList.add('reorder-mode');
             reorderBtn.classList.add("active-state");
-            reorderBtn.textContent = "Reorder: ON";
         } else {
             document.body.classList.remove('reorder-mode');
             reorderBtn.classList.remove("active-state");
-            reorderBtn.textContent = "Reorder";
         }
 
         document.querySelectorAll("#card-view .card").forEach(card => {
@@ -351,11 +382,20 @@ function createCardElement(item, isAddModal = false) {
 
     grid.addEventListener('dragstart', (e) => {
         if (!isReorderMode) return;
+        document.body.classList.add('drag-active');
+        
         draggedEl = e.target.closest('.card');
-        setTimeout(() => draggedEl.classList.add('dragging'), 0);
+        if (draggedEl) {
+            if (e.dataTransfer) {
+                const rect = draggedEl.getBoundingClientRect();
+                e.dataTransfer.setDragImage(draggedEl, rect.width / 2, rect.height / 2);
+            }
+            setTimeout(() => draggedEl.classList.add('dragging'), 0);
+        }
     });
 
     grid.addEventListener('dragend', () => {
+        document.body.classList.remove('drag-active');
         if (!draggedEl) return;
         draggedEl.classList.remove('dragging');
         draggedEl = null;
@@ -376,18 +416,18 @@ function createCardElement(item, isAddModal = false) {
 
     function getDragAfterElement(container, x, y) {
         const draggables = [...container.querySelectorAll('.card:not(.dragging)')];
-        return draggables.reduce((closest, child) => {
+
+        return draggables.find(child => {
             const box = child.getBoundingClientRect();
-            const offsetX = x - box.left - box.width / 2;
-            const offsetY = y - box.top - box.height / 2;
-            const dist = Math.sqrt(offsetX*offsetX + offsetY*offsetY);
+            // If cursor is above top edge, we are before it
+            if (y < box.top) return true;
+            // If cursor is below bottom edge, we are after it
+            if (y > box.bottom) return false;
+            // If within vertical bounds, check horizontal center
+            if (x < box.left + box.width / 2) return true;
             
-            if (offsetY < 0 && dist < closest.distance) {
-                return { offset: dist, element: child, distance: dist };
-            } else {
-                return closest;
-            }
-        }, { distance: Number.POSITIVE_INFINITY }).element;
+            return false;
+        });
     }
 
     async function saveReorder() {

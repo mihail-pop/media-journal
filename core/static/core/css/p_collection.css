@@ -115,107 +115,134 @@ body {
 .action-btn:hover { filter: brightness(1.2); }
 .action-btn.primary { background: #42A5F5; color: white; }
 .action-btn.delete-btn { background: #E53935; color: white; }
-.action-btn.active-state { background: #ffc107; color: black; }
+
+/* SVG Header Button Styles */
+.header-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.header-icon-btn {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    padding: 0;
+}
+
+.header-icon-btn:hover {
+    background-color: var(--border-color);
+    color: var(--text-light);
+}
+
+.header-icon-btn.primary { color: #42A5F5; border-color: rgba(66, 165, 245, 0.3); }
+.header-icon-btn.primary:hover { background-color: #42A5F5; color: #fff; border-color: #42A5F5; }
+
+.header-icon-btn.delete-btn { color: #e0245e; border-color: rgba(224, 36, 94, 0.3); }
+.header-icon-btn.delete-btn:hover { background-color: #e0245e; color: #fff; border-color: #e0245e; }
+
+.header-icon-btn.active-state { background-color: var(--text-primary); color: var(--bg-primary); border-color: var(--text-primary); }
 
 
 /* ==========================================================================
-   CARD GRID & BASE CARD STYLING (Extracted from History)
+   CARD GRID & BASE CARD STYLING (Matched to Favorites/Home Logic)
    ========================================================================== */
 .card-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 150px));
-    gap: 0.9rem;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 1.5rem;
     width: 100%;
 }
 
 .card {
-    border-radius: 3px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-    overflow: hidden;
+    border-radius: 6px;
     display: flex;
     flex-direction: column;
     position: relative;
-    transition: transform 0.15s ease-in-out;
-    cursor: pointer;
-    width: 150px;
-    height: 210px;
+}
+
+.card a {
+    text-decoration: none;
+}
+
+.card-link {
+    height: 205px;
+    overflow: hidden;
+    border-radius: 4px 4px 0 0;
+    display: block;
+    position: relative;
 }
 
 .card-image {
+    width: 100%;
+    height: 100%;
+    position: relative;
     overflow: hidden;
-    border-radius: 3px;
+    border-radius: 4px 4px 4px 4px;
 }
 
 .card-image:has(img[src*="placeholder"]) {
     background-color: rgb(255 254 254 / 7%);
-    aspect-ratio: 2 / 3;
-    display: block;
 }
 
 .card-image img[src*="placeholder"] {
     opacity: 0;
 }
 
-.card img {
+/* Base logic: Auto height, hidden overflow crop */
+.card-image img {
     width: 100%;
     height: auto;
-    object-fit: cover;
     display: block;
-    overflow: hidden;
-    border-radius: 3px;
+    border-radius: 4px 4px 0 0;
 }
 
-/* Music cards special crop */
-.card[data-media-type="music"] {
-    width: 150px;
-    height: 210px;
-    overflow: hidden;
-    border-radius: 3px;
+body.drag-active .card {
+    transition: none !important;
 }
-.card[data-media-type="music"] .card-image {
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    border-radius: 3px;
-}
-.card[data-media-type="music"] .card-image img {
-    width: 179.8%;
-    height: 100%;
-    object-fit: cover;
-    object-position: center center;
-    transform: translateX(-22.3%);
-    transform-origin: center;
-    border-radius: 3px;
-}
-.card[data-media-type="music"] .card-title-overlay {
-    background: rgba(14, 15, 15, 0.8);
+body.drag-active .card-title {
+    color: var(--text-secondary) !important;
 }
 
-/* Title Overlay */
-.card-title-overlay {
-    background: rgba(14, 15, 15, .8);
-    color: var(--text-light);
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    align-items: flex-start;
-    font-size: 0.8rem;
-    gap: 0.5rem;
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    z-index: 1;
-    min-height: auto;
-    padding: 0.6rem;
-}
-
+/* Title Area */
 .card-title {
-    width: 100%;
-    flex: 1;
+    padding: 0.6rem;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    line-height: 1.3;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-/* Edit Card Button */
+.card:hover .card-title {
+    color: var(--text-light);
+}
+
+/* --- Music Cards Override --- */
+.card[data-media-type="music"] .card-link {
+    height: 150px;
+    margin-top: auto; /* Drops the music square cleanly to the bottom */
+}
+
+.card[data-media-type="music"] .card-image img {
+    width: 178.8%;
+    height: 100%;
+    object-position: center center;
+    display: block;
+    margin-left: -38.8%; 
+    transform-origin: center;
+}
+
+/* --- Edit Card Button --- */
 .edit-card-btn {
     position: absolute;
     top: 5px;
@@ -227,32 +254,27 @@ body {
     padding: 8px 10px;
     cursor: pointer;
     border-radius: 4px;
-    z-index: 5;
-}
-
-.edit-card-btn::before {
-    content: '';
-    position: absolute;
-    top: -10px;
-    left: -10px;
-    right: -10px;
-    bottom: -10px;
+    z-index: 20;
 }
 
 .card:hover .edit-card-btn {
     display: block;
 }
 
-/* Hide edit btn in delete/reorder modes */
 .delete-mode .edit-card-btn,
 .reorder-mode .edit-card-btn {
     display: none !important;
 }
 
-/* Dragging States */
+/* --- Dragging States --- */
 .reorder-mode .card { cursor: grab; }
 .reorder-mode .card:active { cursor: grabbing; }
-.card.dragging { opacity: 0.5; transform: scale(0.95); }
+.card.dragging { 
+    opacity: 0.5;
+    filter: grayscale(0.8);
+    transform: none !important;
+    isolation: isolate;
+}
 
 
 /* ==========================================================================
@@ -384,10 +406,21 @@ body {
 .filter-btn.active { background-color: var(--table-bg); color: var(--text-light); }
 
 .add-results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); 
+    gap: 1rem;
     flex: 1;
     overflow-y: auto;
-    padding: 0 1.5rem 1.5rem;
+    overflow-x: hidden; /* Fully locks children inside the bounds */
     align-content: flex-start;
+}
+
+/* Proportionally shrink card bounds for the modal */
+.add-results-grid .card-link {
+    height: 180px; 
+}
+.add-results-grid .card[data-media-type="music"] .card-link {
+    height: 120px;
 }
 
 /* Add Modal Custom Scrollbar */

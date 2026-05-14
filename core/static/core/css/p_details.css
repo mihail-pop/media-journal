@@ -159,23 +159,35 @@ a:hover {
   min-height: 13rem;
 }
 
-.poster {
+.poster-wrapper {
   width: 210px;
   height: auto;
   max-height: 400px;
-  object-fit: cover;
-  border-radius: 4px;
   top: -110px;
   left: 2rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
   background: #ccc;
+  overflow: hidden; /* This clips the zoomed music image */
+}
+
+.poster {
+  width: 100%;
+  height: auto;
+  max-height: 400px;
+  object-fit: cover;
+  display: block;
+}
+
+body[data-media-type="music"] .poster-wrapper {
+  height: 210px;
+  max-height: 210px;
 }
 
 body[data-media-type="music"] .poster {
-  width: 210px;
-  height: 210px;
-  object-fit: cover;
-  object-position: 49.7% top;
+  width: 179%;
+  max-height: none;
+  object-position: center center;
+  margin-left: -39.5%; /* The magic zoom hack */
 }
 
 .top-content {
@@ -2130,16 +2142,26 @@ body[data-page-type="person-detail"] .overview {
 
 
 
-  .poster {
+  .poster-wrapper {
     width: 24rem;
     max-height: 100rem;
   }
 
-  body[data-media-type="music"] .poster {
-    width: 24rem;
+  .poster {
+    width: 100%;
+    max-height: 100rem;
+  }
+
+  body[data-media-type="music"] .poster-wrapper {
     height: 24rem;
-    object-fit: cover;
-    object-position: 49.7% top;
+    max-height: 24rem;
+  }
+
+  body[data-media-type="music"] .poster {
+    width: 179%;
+    max-height: none;
+    object-position: center center;
+    margin-left: -39.5%;
   }
 
 

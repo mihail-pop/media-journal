@@ -312,6 +312,10 @@ body {
   margin-bottom: 8px;
 }
 
+.home-collection-card:hover .hover-title-overlay {
+  margin-bottom: 16px;
+}
+
 
 /* --- Edit Button --- */
 .edit-card-btn {
@@ -401,7 +405,6 @@ h2 {
   color: var(--text-primary);
   max-width: 530px;
   margin-bottom: 1rem;
-  cursor: default;
 }
 
 .activity-grid {
@@ -911,7 +914,6 @@ h2 {
   align-items: center;
   cursor: pointer;
   width: fit-content;
-  margin-left: 1.5rem;
 }
 
 .section-title-wrapper h3 {
@@ -962,11 +964,12 @@ h2 {
 /* --- Collections Swap View --- */
 .collections-summary-box {
   display: flex;
-  align-items: flex-start; /* Aligns correctly for multiple rows */
+  align-items: flex-start; 
   justify-content: flex-start;
   min-height: 182px; 
-  padding: 1.4rem 1.5rem;
+  padding: 1rem 1.5rem 1rem 1.5rem; /* Reduced bottom padding */
   box-sizing: border-box;
+  overflow: visible;
 }
 
 .home-collections-grid {
@@ -986,6 +989,16 @@ h2 {
   background: none;
 }
 
+/* Brings the hovered collection in front of adjacent ones */
+.home-collection-card:hover {
+  z-index: 10;
+}
+
+/* Deepens the shadow on the slices so it visually pops off the "bookshelf" */
+.home-collection-card:hover .home-stack-item {
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.6);
+}
+
 .home-collection-card a {
   display: block;
   width: 100%;
@@ -1000,11 +1013,12 @@ h2 {
   display: block;
 }
 
-.home-stack-img {
+.home-stack-item {
   position: absolute;
   width: 85px;
   height: 115px;
-  object-fit: cover;
+  max-height: 115px; /* Creates the clipping boundary */
+  overflow: hidden; /* Clips the image cleanly */
   border-radius: 4px;
   box-shadow: 0 3px 8px rgba(0,0,0,0.4);
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
@@ -1012,23 +1026,60 @@ h2 {
   top: 0;
 }
 
-/* Explicit pixel placement replaces buggy percentages */
-.home-stack-img.pos-0 { left: 0; z-index: 3; filter: none; }
-.home-stack-img.pos-1 { left: -12px; transform: rotate(-8deg) scale(0.9); z-index: 2; filter: brightness(0.6); }
-.home-stack-img.pos-2 { left: 12px; transform: rotate(8deg) scale(0.9); z-index: 1; filter: brightness(0.6); }
+.home-stack-item img {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 4px;
+}
 
-.home-collection-card:hover .home-stack-img.pos-0 { transform: translateY(-6px) scale(1.05); }
-.home-collection-card:hover .home-stack-img.pos-1 { transform: rotate(-15deg) scale(0.9) translateX(-10px); filter: brightness(0.8); z-index: 2; }
-.home-collection-card:hover .home-stack-img.pos-2 { transform: rotate(15deg) scale(0.9) translateX(10px); filter: brightness(0.8); }
+/* Glass styling for collections with empty/placeholder covers */
+.home-stack-item:has(img[src*="placeholder"]) {
+  background-color: rgb(255 254 254 / 7%);
+  border: 1px solid rgba(255, 255, 255, 0.08); /* Optional: gives it the same rim as glass-card */
+  backdrop-filter: blur(4px);
+}
+
+.home-stack-item img[src*="placeholder"] {
+  opacity: 0;
+}
+
+/* Explicit pixel placement replaces buggy percentages */
+.home-stack-item.pos-0 { left: 0; z-index: 3; filter: none; }
+.home-stack-item.pos-1 { left: -12px; transform: rotate(-8deg) scale(0.9); z-index: 2; filter: brightness(0.6); }
+.home-stack-item.pos-2 { left: 12px; transform: rotate(8deg) scale(0.9); z-index: 1; filter: brightness(0.6); }
+
+.home-collection-card:hover .home-stack-item.pos-0 { transform: translateY(-6px) scale(1.05); }
+.home-collection-card:hover .home-stack-item.pos-1 { transform: rotate(-15deg) scale(0.9) translateX(-10px); filter: brightness(0.8); z-index: 2; }
+.home-collection-card:hover .home-stack-item.pos-2 { transform: rotate(15deg) scale(0.9) translateX(10px); filter: brightness(0.8); }
 
 /* 1 & 2 Item Adjustments */
-.home-cover-stack.items-1 .home-stack-img.pos-0 { z-index: 3; filter: brightness(1); left: 0; transform: none; }
-.home-collection-card:hover .home-cover-stack.items-1 .home-stack-img.pos-0 { transform: translateY(-6px) scale(1.05); }
+.home-cover-stack.items-1 .home-stack-item.pos-0 { z-index: 3; filter: brightness(1); left: 0; transform: none; }
+.home-collection-card:hover .home-cover-stack.items-1 .home-stack-item.pos-0 { transform: translateY(-6px) scale(1.05); }
 
-.home-cover-stack.items-2 .home-stack-img.pos-0 { left: -5px; transform: rotate(-5deg); z-index: 3; filter: brightness(1); }
-.home-cover-stack.items-2 .home-stack-img.pos-1 { left: 5px; transform: rotate(5deg); z-index: 2; filter: brightness(0.8); }
-.home-collection-card:hover .home-cover-stack.items-2 .home-stack-img.pos-0 { transform: rotate(-8deg) translateX(-5px) translateY(-4px) scale(1.05); }
-.home-collection-card:hover .home-cover-stack.items-2 .home-stack-img.pos-1 { transform: rotate(8deg) translateX(5px) scale(0.95); filter: brightness(0.9); }
+.home-cover-stack.items-2 .home-stack-item.pos-0 { left: -5px; transform: rotate(-5deg); z-index: 3; filter: brightness(1); }
+.home-cover-stack.items-2 .home-stack-item.pos-1 { left: 5px; transform: rotate(5deg); z-index: 2; filter: brightness(0.8); }
+.home-collection-card:hover .home-cover-stack.items-2 .home-stack-item.pos-0 { transform: rotate(-8deg) translateX(-5px) translateY(-4px) scale(1.05); }
+.home-collection-card:hover .home-cover-stack.items-2 .home-stack-item.pos-1 { transform: rotate(8deg) translateX(5px) scale(0.95); filter: brightness(0.9); }
+
+/* --- Music Collection Card Overrides --- */
+.home-stack-item[data-media-type="music"] {
+  height: 85px;
+  max-height: 85px;
+  top: auto; /* Overrides the top: 0 from standard items */
+  bottom: 0; /* Anchors the cover to the bottom edge */
+}
+
+.home-stack-item[data-media-type="music"] img {
+  width: 178.8%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+  display: block;
+  border-radius: 4px;
+  transform: translateX(-21.7%);
+  transform-origin: center;
+}
 
 /* Empty Glass Styles */
 .home-collections-empty {
@@ -1060,11 +1111,32 @@ h2 {
   border-color: rgba(255, 255, 255, 0.15);
 }
 
-/* Button & Link wrapper */
+/* --- All Collections Corner Button --- */
 .all-collections-link-wrapper {
-  text-align: right;
-  margin-top: 0.5rem;
-  margin-right: 0rem;
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  margin: 0;
+  z-index: 5; /* Stays below hovered collections (z-index 10) */
+}
+
+/* Remove the old standard button styles for this specific button */
+a.all-collections-btn {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  width: 55px; /* Size of the corner triangle */
+  height: 55px;
+  padding: 0 8px 8px 0; /* Positions the arrow icon nicely */
+  background: linear-gradient(to bottom right, transparent 50%, var(--button-bg) 50%);
+  color: var(--text-primary);
+  border-bottom-right-radius: 4px; /* Matches the parent container's corner */
+  border-radius: 0 0 4px 0;
+}
+
+a.all-collections-btn:hover {
+  background: linear-gradient(to bottom right, transparent 50%, var(--bg-quaternary) 50%);
+  color: var(--activity-high);
 }
 
 @media (pointer: coarse) and (hover: none) {
