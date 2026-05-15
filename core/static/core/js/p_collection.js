@@ -57,7 +57,6 @@ window.openEditModal = function(element) {
 
     const colId = window.COLLECTION_ID;
     const grid = document.getElementById("card-view");
-    const loadingInd = document.getElementById("loading-indicator");
     const noItemsMsg = document.getElementById("no-items-message");
 
     // Top Buttons
@@ -101,7 +100,6 @@ window.openEditModal = function(element) {
     loadCollectionItems();
 
     async function loadCollectionItems() {
-        loadingInd.style.display = "block";
         grid.innerHTML = "";
         
         try {
@@ -117,7 +115,6 @@ window.openEditModal = function(element) {
         } catch (err) {
             console.error(err);
         } finally {
-            loadingInd.style.display = "none";
         }
     }
 
@@ -204,6 +201,10 @@ function createCardElement(item, isAddModal = false) {
     // ADD ITEMS (MODAL & SEARCH) LOGIC
     // =====================================
     addBtn.addEventListener("click", () => {
+        // Close other modes if they are active
+        if (isReorderMode) toggleReorderMode();
+        if (isDeleteMode) toggleDeleteMode();
+
         addModal.classList.remove("modal-hidden");
         selectedForAdd.clear();
         updateAddCount();
@@ -238,7 +239,6 @@ function createCardElement(item, isAddModal = false) {
             addGrid.innerHTML = "";
             addHasMore = true;
         }
-        document.getElementById("add-loading").style.display = "block";
         
         try {
             const res = await fetch(`/api/collection/${colId}/search-local/?q=${encodeURIComponent(query)}&type=${searchType}&page=${page}`);
@@ -253,7 +253,6 @@ function createCardElement(item, isAddModal = false) {
             console.error(err);
         } finally {
             addIsLoading = false;
-            document.getElementById("add-loading").style.display = "none";
         }
     }
 
@@ -334,7 +333,6 @@ function createCardElement(item, isAddModal = false) {
 
     confirmDeleteBtn.addEventListener("click", async () => {
         if (selectedForDelete.size === 0) return;
-        if (!confirm(`Remove ${selectedForDelete.size} items from this collection?`)) return;
 
         try {
             await fetch(`/api/collection/${colId}/remove/`, {

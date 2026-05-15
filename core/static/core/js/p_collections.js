@@ -189,7 +189,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   
     deleteBtn.addEventListener("click", async () => {
-        if(!confirm("Are you sure you want to delete this collection?")) return;
+        
         
         try {
             const res = await fetch(`/api/collections/delete/${idInput.value}/`, {

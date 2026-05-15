@@ -3,50 +3,56 @@
 :root {
   /* Dark theme (default) */
   --bg-primary: #0b1622;
-  --bg-secondary: #1a2332;
   --bg-tertiary: #151f2e;
   --bg-quaternary: #32445b;
+
   --text-primary: #8596a5;
   --text-secondary: #a8b5c4;
   --text-overview: #728aa1;
+
   --border-color: #32445b;
   --hover-bg: #2a3441;
   --overlay-bg: #101820;
   --button-bg: #1f2a38;
+
   --special-color: #00bfff;
   --special-color-hover: #57d5ff;
   --border: #3DB4F2;
 }
 
 [data-theme="light"] {
-  --bg-primary: #e7f0f8;
-  --bg-secondary: #b7e0f7;
-  --bg-tertiary: #b7e0f7;
-  --bg-quaternary: #b7e0f7;
-  --text-primary: #0b5f97;
-  --text-secondary: #0b5f97;
-  --text-overview: #0b5f97;
-  --border-color: #b7e0f7;
-  --hover-bg: #cfe8f7;
-  --overlay-bg: #e7f0f8;
-  --button-bg: #cfe8f7;
+  --bg-primary: #FFFFFF;
+  --bg-tertiary: #F2F2F2;
+  --bg-quaternary: #FFFFFF;
+
+  --text-primary: #0F0F0F;
+  --text-secondary: #0F0F0F;
+  --text-overview: #0F0F0F;
+
+  --border-color: #E5E5E5;
+  --hover-bg: #F2F2F2;
+  --overlay-bg: #F2F2F2;
+  --button-bg: #E5E5E5;
+
   --special-color: #00bfff;
   --special-color-hover: #57d5ff;
-  --border: #3DB4F2;
+  --border: #E5E5E5;
 }
 
 [data-theme="brown"] {
   --bg-primary: #271c19;
-  --bg-secondary: #55423d;
   --bg-tertiary: #55423d;
   --bg-quaternary: #af7f76;
+
   --text-primary: #faeee7;
   --text-secondary: #faeee7;
   --text-overview: #e2c7b7;
+
   --border-color: #fffffe;
   --hover-bg: #fffffe;
   --overlay-bg: #271c19;
   --button-bg: #55423d;
+
   --special-color: #df5c38;
   --special-color-hover: #dd866e;
   --border: #df5c38;
@@ -138,7 +144,6 @@ html {
 .comment-username-input {
   background: var(--overlay-bg);
   color: #e91e63;
-  border: 1px solid var(--border);
   border-radius: 4px;
   padding: 6px 10px;
   font-size: 1rem;
@@ -165,7 +170,6 @@ html {
 }
 
 .comment-input:focus {
-  box-shadow: 0 0 0 2px var(--border);
   outline: none;
 }
 
@@ -359,7 +363,7 @@ html {
   font-size: 1.1rem;
   border-radius: 6px;
   border: none;
-  background-color: var(--bg-secondary);
+  background-color: var(--bg-tertiary);
   color: var(--text-primary);
   cursor: pointer;
   font-weight: bold;
@@ -500,7 +504,6 @@ html {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  border-left: 4px solid var(--border);
   position: relative;
   overflow-wrap: break-word;
   white-space: normal;
@@ -552,7 +555,6 @@ html {
 }
 
 .comment-tab-btn.active {
-  background: var(--border);
   color: #fff;
 }
 
@@ -599,7 +601,7 @@ html {
   resize: vertical;
   box-sizing: border-box;
   margin-bottom: 8px;
-  scrollbar-color: var(--text-overview) var(--bg-secondary);
+  scrollbar-color: var(--text-overview) var(--bg-tertiary);
 }
 
 .comment-media-buttons {
@@ -725,7 +727,6 @@ html {
 
 .image-btn:hover {
   background: var(--bg-quaternary);
-  color: var(--special-color);
 }
 
 #post-emoji-btn {
@@ -777,8 +778,6 @@ html {
 
 .post-link-input:focus {
   outline: none;
-  border-color: var(--border);
-  box-shadow: 0 0 0 2px rgba(61, 180, 242, 0.1);
 }
 
 .post-link-input-wrapper,
@@ -841,8 +840,6 @@ html {
 
 #post-image-input:focus {
   outline: none;
-  border-color: var(--border);
-  box-shadow: 0 0 0 2px rgba(61, 180, 242, 0.1);
 }
 
 #post-image-send-btn {
@@ -894,12 +891,11 @@ html {
   resize: vertical;
   box-sizing: border-box;
   font-family: inherit;
-  scrollbar-color: var(--text-overview) var(--bg-secondary);
+  scrollbar-color: var(--text-overview) var(--bg-tertiary);
 }
 
 #post-text:focus {
   outline: none;
-  box-shadow: 0 0 0 2px var(--border);
 }
 
 .post-actions {

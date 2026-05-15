@@ -1,57 +1,69 @@
 :root {
   /* Dark theme (default) */
-  --modal-bg-rgb: 21, 31, 46;
   --bg-primary: #0b1622;
+  --bg-tertiary: #151f2e;
+  --modal-bg: #151f2e;
+  --modal-bg-rgb: 21, 31, 46;
+
   --text-tertiary: #9fadbd;
   --text-light: #e0e0e0;
   --text-dark: #333;
   --text-label: #728ab1;
   --text-muted: #666;
   --text-close: #666;
-  --modal-bg: #151f2e;
+
   --button-primary: #3db4f2;
   --button-primary-hover: #0056b3;
   --button-cancel: #6c757d;
   --button-cancel-hover: #5a6268;
   --button-danger: #e74c3c;
+
   --close-hover-bg: #eee;
   --close-hover-text: #222;
 }
 
 [data-theme="light"] {
-  --modal-bg-rgb: 220, 236, 248;
-  --bg-primary: #e7f0f8;
-  --text-tertiary: #0b5f97;
-  --text-light: #ffffff;
-  --text-dark: #07375a;
-  --text-label: #0b5f97;
-  --text-muted: #0b5f97;
-  --text-close: #0b5f97;
-  --modal-bg: #DCECF8;
+  --bg-primary: #FFFFFF;
+  --bg-tertiary: #F2F2F2;
+  --modal-bg: #F2F2F2;
+  --modal-bg-rgb: 242, 242, 242;
+
+  --text-tertiary: #0F0F0F;
+  --text-light: #F2F2F2;
+  --text-dark: #0F0F0F;
+  --text-label: #0F0F0F;
+  --text-muted: #0F0F0F;
+  --text-close: #F2F2F2;
+
   --button-primary: #3db4f2;
   --button-primary-hover: #0056b3;
   --button-cancel: #6c757d;
   --button-cancel-hover: #5a6268;
   --button-danger: #dc3545;
-  --close-hover-bg: #cfe8f7;
-  --close-hover-text: #0b5f97;
+
+  --close-hover-bg: #F2F2F2;
+  --close-hover-text: #0F0F0F;
 }
 
 [data-theme="brown"] {
-  --modal-bg-rgb: 85, 66, 61;
   --bg-primary: #271c19;
+  --bg-tertiary: #55423d;
+  --modal-bg: #55423d;
+  --modal-bg-rgb: 85, 66, 61;
+
   --text-tertiary: #faeee7;
   --text-light: #faeee7;
   --text-dark: #d39f82;
   --text-label: #faeee7;
   --text-muted: #faeee7;
   --text-close: #faeee7;
-  --modal-bg: #55423d;
+
   --button-primary: #8f5b4d;
   --button-primary-hover: #aa6d5c;
   --button-cancel: #6c757d;
   --button-cancel-hover: #5a6268;
   --button-danger: #dc3545;
+
   --close-hover-bg: #f8f9fa;
   --close-hover-text: #495057;
 }
@@ -977,7 +989,7 @@ input[type="number"] {
   max-height: 200px;
   overflow-y: auto;
   margin-top: 0.3rem;
-  scrollbar-color: var(--text-primary) var(--bg-secondary);
+  scrollbar-color: var(--text-primary) var(--bg-tertiary);
 }
 .c-status-options.c-open {
   display: block;

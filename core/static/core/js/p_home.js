@@ -140,17 +140,92 @@ function slugify(text) {
   const notifButton = document.getElementById('notifications-button');
   const notifDropdown = document.getElementById('notifications-dropdown');
 
+  // --- 1. DEFINE YOUR CUSTOM RELEASE NOTIFICATIONS HERE ---
+  const SYSTEM_NOTIFICATIONS = [
+    {
+      id: "sys_1_24_refresh",
+      html: "If you are updating from a release before v1.24.0 go to <a href='/settings/'>Settings > Refresh</a> to get genres and creators for all media items."
+    },
+    {
+      id: "sys_1_24_stats",
+      html: "On home page you can press on the 'Stats' title to swap to Collections."
+    }
+  ];
+
+  // --- 2. INJECT ACTIVE SYSTEM NOTIFICATIONS ---
+  let ul = notifDropdown.querySelector('ul');
+  const noNotifs = notifDropdown.querySelector('.no-notifications');
+  
+  // Get dismissed notifications from the browser
+  const dismissedSysNotifs = JSON.parse(localStorage.getItem('dismissedSysNotifs') || '[]');
+  const activeSysNotifs = SYSTEM_NOTIFICATIONS.filter(n => !dismissedSysNotifs.includes(n.id));
+
+  if (activeSysNotifs.length > 0) {
+    if (noNotifs) noNotifs.remove();
+    if (!ul) {
+      ul = document.createElement('ul');
+      notifDropdown.appendChild(ul);
+    }
+    
+    // Add them to the top of the dropdown
+    activeSysNotifs.forEach(notif => {
+      const li = document.createElement('li');
+      li.id = `notification-${notif.id}`;
+      li.classList.add('system-notification');
+      
+      // Create a span container to hold the mixed text and HTML link
+      const textContainer = document.createElement('span');
+      textContainer.style.flexGrow = '1';
+      textContainer.style.marginRight = '10px';
+      textContainer.innerHTML = notif.html;
+      
+      const btn = document.createElement('button');
+      btn.className = 'dismiss-notification';
+      btn.setAttribute('data-id', notif.id);
+      btn.setAttribute('aria-label', 'Dismiss notification');
+      btn.textContent = '✕';
+      
+      li.appendChild(textContainer);
+      li.appendChild(btn);
+      ul.insertBefore(li, ul.firstChild);
+    });
+  }
+
+  // --- 3. UI TOGGLE & EMPTY CHECK HELPER ---
   notifButton.addEventListener('click', () => {
     const expanded = notifButton.getAttribute('aria-expanded') === 'true';
     notifButton.setAttribute('aria-expanded', String(!expanded));
-    notifDropdown.hidden = expanded;  // toggle
+    notifDropdown.hidden = expanded;  
   });
 
-  // Dismiss notification handler
-  document.querySelectorAll('.dismiss-notification').forEach(button => {
-    button.addEventListener('click', function(event) {
-      event.stopPropagation(); // prevent dropdown toggle
-      const notifId = this.getAttribute('data-id');
+  function checkEmptyNotifications() {
+    if (notifDropdown.querySelectorAll('li').length === 0) {
+      notifDropdown.innerHTML = '<p class="no-notifications">No notifications.</p>';
+      notifButton.classList.remove('has-notifications');
+    }
+  }
+
+  // --- 4. DISMISS HANDLER (Handles both DB and LocalStorage) ---
+  notifDropdown.addEventListener('click', function(event) {
+    if (event.target.classList.contains('dismiss-notification')) {
+      event.stopPropagation(); // prevent dropdown from closing
+      const notifId = event.target.getAttribute('data-id');
+
+      // A. If it's a hardcoded system notification
+      if (notifId.startsWith('sys_')) {
+        const dismissed = JSON.parse(localStorage.getItem('dismissedSysNotifs') || '[]');
+        if (!dismissed.includes(notifId)) {
+          dismissed.push(notifId);
+          localStorage.setItem('dismissedSysNotifs', JSON.stringify(dismissed));
+        }
+        
+        const li = document.getElementById(`notification-${notifId}`);
+        if (li) li.remove();
+        checkEmptyNotifications();
+        return;
+      }
+
+      // B. If it's a backend DB notification (seasons/sequels)
       fetch(`/notifications/dismiss/${notifId}/`, {
         method: 'POST',
         headers: {
@@ -162,21 +237,16 @@ function slugify(text) {
       .then(res => {
         if (res.ok) {
           const li = document.getElementById(`notification-${notifId}`);
-          li.remove();
-
-          // If no notifications left, show 'No notifications.'
-          if (notifDropdown.querySelectorAll('li').length === 0) {
-            notifDropdown.innerHTML = '<p class="no-notifications">No notifications.</p>';
-            notifButton.classList.remove('has-notifications');
-          }
+          if (li) li.remove();
+          checkEmptyNotifications();
         } else {
           alert('Failed to dismiss notification.');
         }
       });
-    });
+    }
   });
 
-  // Add or remove 'has-notifications' class to button depending on notifications count
+  // Add or remove 'has-notifications' styling depending on final count
   if (notifDropdown.querySelectorAll('li').length > 0) {
     notifButton.classList.add('has-notifications');
   }

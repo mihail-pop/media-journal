@@ -4,47 +4,70 @@
 :root {
     /* Dark theme (default) */
     --bg-primary: #0b1622;
-    --bg-secondary: #1a2332;
     --bg-tertiary: #151f2e;
     --bg-quaternary: #32445b;
     --bg-filter: #102031;
+
     --text-primary: #8596a5;
     --text-secondary: #a8b5c4;
     --text-tertiary: #cecece;
     --text-light: #edf1f5;
+
     --border-color: #32445b;
     --hover-bg: #2a3441;
     --table-bg: #1f2a38;
+
+    --activity-high: #abbacd;
+    --button-primary: #3db4f2;
+    --button-primary-hover: #0056b3;
+    --button-danger: #e74c3c;
 }
   
 [data-theme="light"] {
-    --bg-primary: #e7f0f8;
-    --bg-secondary: #b7e0f7;
-    --bg-tertiary: #DCECF8;
-    --bg-quaternary: #ffffff;
-    --bg-filter: #cfe8f7;
-    --text-primary: #0b5f97;
-    --text-secondary: #0b5f97;
-    --text-tertiary: #97cdec;
-    --text-light: #0b5f97;
-    --border-color: #DCECF8;
-    --hover-bg: #cfe8f7;
-    --table-bg: #DCECF8;
+    --bg-primary: #FFFFFF;
+    --bg-tertiary: #F2F2F2;
+    --bg-quaternary: #FFFFFF;
+    --bg-filter: #F2F2F2;
+
+    --text-primary: #0F0F0F;
+    --text-secondary: #0F0F0F;
+    --text-tertiary: #606060;
+    --text-light: #606060;
+
+    --border-color: #E5E5E5;
+    --hover-bg: #F2F2F2;
+    --table-bg: #F2F2F2;
+
+    --activity-high: #b3b3b3;
+    
+    --button-primary: #3db4f2;
+    --button-primary-hover: #0056b3;
+    --button-danger: #dc3545;
 }
 
 [data-theme="brown"] {
     --bg-primary: #271c19;
-    --bg-secondary: #f8f8f8;
     --bg-tertiary: #55423d;
     --bg-quaternary: #af7f76;
     --bg-filter: #3b2b27;
+
     --text-primary: #faeee7;
     --text-secondary: #faeee7;
     --text-tertiary: #af7f76;
     --text-light: #faeee7;
-    --border-color: #fffffe;
+
+    --border-color: #af7f76;
     --hover-bg: #fffffe;
     --table-bg: #55423d;
+    
+    --activity-high: #af7f76;
+    --button-primary: #8f5b4d;
+    --button-primary-hover: #aa6d5c;
+    --button-danger: #dc3545;
+}
+
+html {
+  overflow-y: scroll;
 }
 
 .hidden-items {
@@ -106,15 +129,34 @@ body {
     border-radius: 6px;
     font-size: 1rem;
     cursor: pointer;
-    background: var(--bg-quaternary);
-    color: var(--text-light);
+    color: var(--text-tertiary);
+    background: var(--bg-primary);
     font-weight: bold;
     transition: all 0.2s;
 }
 
-.action-btn:hover { filter: brightness(1.2); }
-.action-btn.primary { background: #42A5F5; color: white; }
-.action-btn.delete-btn { background: #E53935; color: white; }
+.action-btn:hover { 
+    background: var(--border-color);
+    color: var(--text-light); 
+}
+.action-btn.primary { 
+    background: var(--button-primary); 
+    color: white; 
+}
+
+.action-btn.primary:hover { 
+    background: var(--button-primary-hover); 
+}
+
+
+.action-btn.delete-btn { 
+    background: var(--button-danger); 
+    color: white; 
+}
+
+.action-btn.delete-btn:hover {
+    filter: brightness(0.9);
+}
 
 /* SVG Header Button Styles */
 .header-actions {
@@ -123,8 +165,8 @@ body {
 }
 
 .header-icon-btn {
-    background-color: var(--bg-secondary);
-    border: 1px solid var(--border-color);
+    background-color: var(--bg-primary);
+    border: 2px solid var(--text-primary);
     color: var(--text-secondary);
     width: 40px;
     height: 40px;
@@ -138,17 +180,24 @@ body {
 }
 
 .header-icon-btn:hover {
-    background-color: var(--border-color);
-    color: var(--text-light);
+  color: var(--activity-high);
+  border-color: var(--activity-high);
 }
 
-.header-icon-btn.primary { color: #42A5F5; border-color: rgba(66, 165, 245, 0.3); }
-.header-icon-btn.primary:hover { background-color: #42A5F5; color: #fff; border-color: #42A5F5; }
+.header-icon-btn.primary:hover { 
+    color: var(--activity-high); 
+    border-color: var(--activity-high); 
+}
 
-.header-icon-btn.delete-btn { color: #e0245e; border-color: rgba(224, 36, 94, 0.3); }
-.header-icon-btn.delete-btn:hover { background-color: #e0245e; color: #fff; border-color: #e0245e; }
+.header-icon-btn.delete-btn:hover { 
+    color: var(--button-danger);
+    border-color: var(--button-danger);
+}
 
-.header-icon-btn.active-state { background-color: var(--text-primary); color: var(--bg-primary); border-color: var(--text-primary); }
+.header-icon-btn.active-state { 
+color: var(--text-light);
+  border-color: var(--text-light);
+}
 
 
 /* ==========================================================================
@@ -173,7 +222,6 @@ body {
 }
 
 .card-link {
-    height: 205px;
     overflow: hidden;
     border-radius: 4px 4px 0 0;
     display: block;
@@ -218,9 +266,14 @@ body.drag-active .card-title {
     color: var(--text-secondary);
     line-height: 1.3;
     text-align: center;
-    white-space: nowrap;
+
     overflow: hidden;
-    text-overflow: ellipsis;
+
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    height: 2rem;
 }
 
 .card:hover .card-title {
@@ -229,8 +282,12 @@ body.drag-active .card-title {
 
 /* --- Music Cards Override --- */
 .card[data-media-type="music"] .card-link {
-    height: 150px;
+    max-height: 160px;
     margin-top: auto; /* Drops the music square cleanly to the bottom */
+}
+
+.card-link{
+    margin-top:auto;
 }
 
 .card[data-media-type="music"] .card-image img {
@@ -238,7 +295,7 @@ body.drag-active .card-title {
     height: 100%;
     object-position: center center;
     display: block;
-    margin-left: -38.8%; 
+    margin-left: -39.3%; 
     transform-origin: center;
 }
 
@@ -276,6 +333,16 @@ body.drag-active .card-title {
     isolation: isolate;
 }
 
+/* Shrink grid and hide titles during reorder */
+.reorder-mode .card-grid {
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: 0.8rem; /* Optional: slightly tighter gap for smaller cards */
+}
+
+.reorder-mode .card-title {
+    display: none;
+}
+
 
 /* ==========================================================================
    SELECTION CIRCLES & DELETE BAR
@@ -287,7 +354,7 @@ body.drag-active .card-title {
     width: 22px;
     height: 22px;
     border-radius: 50%;
-    border: 2px solid white;
+    border: 2px solid var(--text-tertiary);
     background: rgba(0, 0, 0, 0.5);
     z-index: 10;
     display: flex;
@@ -299,15 +366,24 @@ body.drag-active .card-title {
 }
 
 .select-circle.selected {
-    background: #28a745;
-    border-color: #28a745;
+    background: var(--button-danger);
+    border-color: var(--button-danger);
 }
 
 .select-circle.selected::after {
-    content: "✓";
+    content: "✕";
     color: white;
     font-size: 14px;
     font-weight: bold;
+}
+
+.add-results-grid .select-circle.selected {
+    background: #10b981; 
+    border-color: #10b981;
+}
+
+.add-results-grid .select-circle.selected::after {
+    content: "✓";
 }
 
 .floating-bar {
@@ -315,7 +391,7 @@ body.drag-active .card-title {
     bottom: 30px;
     left: 50%;
     transform: translateX(-50%);
-    background: var(--bg-secondary);
+    background: var(--bg-tertiary);
     padding: 1rem 2rem;
     border-radius: 50px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.5);
@@ -323,7 +399,6 @@ body.drag-active .card-title {
     align-items: center;
     gap: 1.5rem;
     z-index: 1000;
-    border: 1px solid var(--border-color);
     transition: opacity 0.3s, transform 0.3s;
 }
 
@@ -363,19 +438,39 @@ body.drag-active .card-title {
     display: flex;
     justify-content: space-between;
     padding: 1.5rem;
-    border-bottom: 1px solid var(--border-color);
 }
-.add-modal-header h2 { margin: 0; color: var(--text-light); }
-.close-add-modal { background: none; border: none; font-size: 2rem; color: var(--text-primary); cursor: pointer; }
+.add-modal-header h2 { 
+    margin: 0; 
+}
+
+.close-add-modal { 
+    background: none; 
+    border: none; 
+    font-size: 2rem; 
+    color: var(--text-primary); 
+    cursor: pointer;
+    background: rgb(0 0 0 / 0.8);
+    border-radius: 6px;
+    padding: 0px 8px; 
+}
+
+.close-add-modal:hover{
+    color: black;
+    background: white;
+}
 
 #add-search-input {
-    margin: 1.5rem 1.5rem 0;
+    margin: 0rem 1.5rem 0;
     padding: 1rem;
     border-radius: 8px;
-    border: 1px solid var(--border-color);
-    background: var(--bg-secondary);
+    border: 0px solid var(--border-color);
+    background: var(--bg-tertiary);
     color: var(--text-light);
     font-size: 1.1rem;
+}
+
+#add-search-input:focus{
+    outline: none;
 }
 
 /* Filter buttons for the Add Modal */
@@ -403,7 +498,9 @@ body.drag-active .card-title {
 }
 
 .filter-btn:hover { background-color: var(--bg-quaternary); }
-.filter-btn.active { background-color: var(--table-bg); color: var(--text-light); }
+.filter-btn.active { 
+    background-color: var(--table-bg); 
+}
 
 .add-results-grid {
     display: grid;
@@ -413,14 +510,18 @@ body.drag-active .card-title {
     overflow-y: auto;
     overflow-x: hidden; /* Fully locks children inside the bounds */
     align-content: flex-start;
+
+    padding: 0 1.5rem;
+    box-sizing: border-box;
 }
 
-/* Proportionally shrink card bounds for the modal */
-.add-results-grid .card-link {
-    height: 180px; 
-}
 .add-results-grid .card[data-media-type="music"] .card-link {
-    height: 120px;
+    max-height: 129px;
+    margin-top: auto;
+}
+
+.add-results-grid .card-title{
+    height: 1.9rem;
 }
 
 /* Add Modal Custom Scrollbar */
@@ -442,17 +543,15 @@ body.drag-active .card-title {
 
 .add-modal-footer {
     padding: 1.5rem;
-    border-top: 1px solid var(--border-color);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: var(--bg-secondary);
+    background: var(--bg-tertiary);
     border-radius: 0 0 12px 12px;
 }
 
 #add-count-text {
     font-size: 1.1rem;
-    color: var(--text-light);
     font-weight: bold;
 }
 
