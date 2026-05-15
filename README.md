@@ -14,15 +14,15 @@ This is the self-hosted media tracker app I always wanted to have. From now on I
 - Get status for planned movies, tv shows, anime, manga.
 
 ## Demo - [Youtube Demo](https://youtu.be/JXOvpvdVZpY?si=LIvj2CKixBAZ0Pp)
-| <img src="https://github.com/user-attachments/assets/59ff70c5-46ce-4b69-a5ad-70e811b33f0b" width="500" /> | <img src="https://github.com/user-attachments/assets/40c7600f-86ce-492d-8c4a-d720553f0436" width="500" /> |
+| <img src="https://github.com/user-attachments/assets/59ff70c5-46ce-4b69-a5ad-70e811b33f0b" width="500" /> | <img src="https://github.com/user-attachments/assets/48fdb9d3-aa17-4b2f-a8a2-173e5b2a3cb6" width="500" /> |
 | :-----------------------------------------: | :-----------------------------------------: |
 |                 Home                    |               Movies                   |
 
-| <img src="https://github.com/user-attachments/assets/384e1df9-db92-44ee-bf74-5d3237c47fe6" width="500" /> | <img src="https://github.com/user-attachments/assets/f567bff6-c6ad-43f8-87b8-21d2a1cf4295" width="500" /> |
+| <img src="https://github.com/user-attachments/assets/91a077d6-10ed-46a3-af85-9576b21824cd" width="500" /> | <img src="https://github.com/user-attachments/assets/6de5cc3d-bf77-4b0d-90f3-71d33e62bf5f" width="500" /> |
 | :-----------------------------------------: | :-----------------------------------------: |
 |               History                  |               Discover                   |
 
-| <img src="https://github.com/user-attachments/assets/e030c577-5d06-4ffa-927a-646977ab2209"  width="500" /> | <img src="https://github.com/user-attachments/assets/7f265f43-55fe-4767-a2ae-3836a579eb4a" width="500" /> |
+| <img src="https://github.com/user-attachments/assets/613761d3-7ca5-4071-8c11-2aa51eba208f"  width="500" /> | <img src="https://github.com/user-attachments/assets/6b44aaec-4d52-40d6-99e1-08089493c9f5" width="500" /> |
 | :-----------------------------------------: | :-----------------------------------------: |
 |               Details                  |               Edit                   |
 
