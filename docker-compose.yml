@@ -8,8 +8,10 @@ services:
     environment:
       - PYTHONDONTWRITEBYTECODE=1
       - PYTHONUNBUFFERED=1
+      # Add your timezone, otherwise it will default to UTC
+      # - TZ=Europe/Bucharest
       # Add trusted origins if needed
-      #- CSRF_TRUSTED_ORIGINS=https://your-domain.com
+      # - CSRF_TRUSTED_ORIGINS=https://your-domain.com
     volumes:
       - ./media:/app/media
       - ./data:/app/data

@@ -360,8 +360,8 @@ const statusLabelsMap = {
     card.dataset.status = item.status;
     card.dataset.personalRating = item.personal_rating || '0';
     card.dataset.title = item.title;
-    card.dataset.coverUrl = item.cover_url;
-    card.dataset.bannerUrl = item.banner_url;
+    card.dataset.coverUrl = item.cover_url || '';
+    card.dataset.bannerUrl = item.banner_url || '';
     card.dataset.notes = item.notes || '';
     card.dataset.sourceId = item.source_id;
     
@@ -370,10 +370,13 @@ const statusLabelsMap = {
     const linkUrl = getLinkUrl(item);
     const repeatHtml = item.repeats > 0 ? `<div class="repeat-indicator"><span class="repeat-count">${item.repeats}</span><svg class="repeat-icon" viewBox="0 0 512 512"><path fill="currentColor" d="M256.455 8c66.269.119 126.437 26.233 170.859 68.685l35.715-35.715C478.149 25.851 504 36.559 504 57.941V192c0 13.255-10.745 24-24 24H345.941c-21.382 0-32.09-25.851-16.971-40.971l41.75-41.75c-30.864-28.899-70.801-44.907-113.23-45.273-92.398-.798-170.283 73.977-169.484 169.442C88.764 348.009 162.184 424 256 424c41.127 0 79.997-14.678 110.629-41.556 4.743-4.161 11.906-3.908 16.368.553l39.662 39.662c4.872 4.872 4.631 12.815-.482 17.433C378.202 479.813 319.926 504 256 504 119.034 504 8.001 392.967 8 256.002 7.999 119.193 119.646 7.755 256.455 8z"/></svg></div>` : '';
     
+    const coverSrc = item.cover_url || '/static/core/img/placeholder.png';
+    const imgAlt = item.cover_url ? item.title : item.media_type;
+
     card.innerHTML = `
       <a href="${linkUrl}" class="card-link">
         <div class="card-image">
-          <img src="${item.cover_url}" alt="${item.title}" loading="lazy">
+          <img src="${coverSrc}" alt="${imgAlt}" loading="lazy">
           ${repeatHtml}
         </div>
         <div class="card-title-overlay">
@@ -398,8 +401,8 @@ function createListRowElement(item, isDetailed = false) {
     row.dataset.status = item.status;
     row.dataset.personalRating = item.personal_rating || '0';
     row.dataset.title = item.title;
-    row.dataset.coverUrl = item.cover_url;
-    row.dataset.bannerUrl = item.banner_url;
+    row.dataset.coverUrl = item.cover_url || '';
+    row.dataset.bannerUrl = item.banner_url || '';
     row.dataset.notes = item.notes || '';
     row.dataset.sourceId = item.source_id;
 
@@ -420,13 +423,16 @@ function createListRowElement(item, isDetailed = false) {
       </div>
     ` : '';
     
+    const coverSrc = item.cover_url || '/static/core/img/placeholder.png';
+    const imgAlt = item.cover_url ? item.title : item.media_type;
+
     let firstCellHtml = '';
     if (isDetailed) {
       firstCellHtml = `
         <td class="detailed-title-cell">
           <a href="${linkUrl}">
             <div class="mini-card-image">
-              <img src="${item.cover_url}" alt="${item.title}" loading="lazy">
+              <img src="${coverSrc}" alt="${imgAlt}" loading="lazy">
             </div>
             <div class="detailed-text-content">
               <span class="detailed-title">${item.title}</span>

@@ -188,7 +188,12 @@ def create_custom_item(request):
         date_added_input = request.POST.get("date_added", "")
         if date_added_input:
             try:
-                date_added = timezone.datetime.strptime(date_added_input, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+                parsed_date = dt.datetime.strptime(date_added_input, "%Y-%m-%d").date()
+                date_added = timezone.now().replace(
+                    year=parsed_date.year, 
+                    month=parsed_date.month, 
+                    day=parsed_date.day
+                )
             except ValueError:
                 date_added = timezone.now()
         else:
@@ -215,7 +220,7 @@ def create_custom_item(request):
             
             personal_rating=rating_val,
             favorite=request.POST.get("favorite") in ["true", "on", True],
-            notes=request.POST.get("notes", ""),
+            notes=request.POST.get("c-notes", ""),
             date_added=date_added
         )
 

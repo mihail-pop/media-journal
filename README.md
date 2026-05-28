@@ -5,22 +5,22 @@ This is the self-hosted media tracker app I always wanted to have. From now on I
 
 ## Features
 
-- Separate lists for movies, tv shows, games, anime, manga, books and music.
+- Create lists for movies, TV shows, anime, manga, books, games and music.
 - Track progress, ratings, status and notes.
-- Home page shows stats, recent activity and favorites (including actors and characters).
-- Multiple rating systems (3 faces, 5 stars, 1-10, 1-100).
-- Play your saved songs through a YouTube music player while navigating the site.
-- Automated check for sequels and new seasons (tv shows, anime, manga).
-- Get status for planned movies, tv shows, anime, manga.
+- Organize media into collections.
+- View stats, recent activity, collections and favorites on the home page.
+- Share thoughts and updates through the community page.
+- Discover trending or popular media.
+- Play saved songs through a YouTube music player while browsing the site.
 
 ## Demo - [Youtube Demo](https://youtu.be/JXOvpvdVZpY?si=LIvj2CKixBAZ0Pp)
 | <img src="https://github.com/user-attachments/assets/59ff70c5-46ce-4b69-a5ad-70e811b33f0b" width="500" /> | <img src="https://github.com/user-attachments/assets/48fdb9d3-aa17-4b2f-a8a2-173e5b2a3cb6" width="500" /> |
 | :-----------------------------------------: | :-----------------------------------------: |
-|                 Home                    |               Movies                   |
+|                 Home                    |               Lists                   |
 
 | <img src="https://github.com/user-attachments/assets/91a077d6-10ed-46a3-af85-9576b21824cd" width="500" /> | <img src="https://github.com/user-attachments/assets/6de5cc3d-bf77-4b0d-90f3-71d33e62bf5f" width="500" /> |
 | :-----------------------------------------: | :-----------------------------------------: |
-|               History                  |               Discover                   |
+|               Discover                  |               History                   |
 
 | <img src="https://github.com/user-attachments/assets/613761d3-7ca5-4071-8c11-2aa51eba208f"  width="500" /> | <img src="https://github.com/user-attachments/assets/6b44aaec-4d52-40d6-99e1-08089493c9f5" width="500" /> |
 | :-----------------------------------------: | :-----------------------------------------: |
