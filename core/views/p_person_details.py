@@ -32,6 +32,7 @@ def refresh_favorite_person_view(request):
     data = json.loads(request.body)
     api_person_id = data.get("person_id")  # This is the API ID (TMDB/AniList)
     person_type = data.get("person_type")
+    refresh_mode = data.get("refresh_mode", "data")
 
     if not api_person_id or not person_type:
         return JsonResponse({"error": "Missing parameters"}, status=400)
@@ -39,7 +40,7 @@ def refresh_favorite_person_view(request):
     # Find the database record using API ID and type
     try:
         person = FavoritePerson.objects.get(person_id=api_person_id, type=person_type)
-        success = refresh_favorite_person(person.id)  # Pass database ID
+        success = refresh_favorite_person(person.id, refresh_mode)  # Pass database ID and mode
         return JsonResponse({"success": success})
     except FavoritePerson.DoesNotExist:
         return JsonResponse({"error": "Person not found"}, status=404)

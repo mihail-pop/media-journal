@@ -172,7 +172,6 @@ a:hover {
   top: -110px;
   left: 2rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
-  background: #ccc;
   overflow: hidden; /* This clips the zoomed music image */
 }
 

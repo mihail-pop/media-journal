@@ -98,8 +98,9 @@ function openBannerUpload(source, id) {
         .then((data) => {
           const banner = document.querySelector('.banner-section');
           if (data.success && data.url) {
+            window.location.reload(true);
             if (banner) banner.style.backgroundImage = `url("${data.url}")`;
-            showNotification('Banner uploaded successfully.', 'success');
+            sessionStorage.setItem('refreshSuccess', '1');
           } else {
             showNotification('Banner upload failed.', 'warning');
           }
@@ -720,6 +721,14 @@ document.addEventListener("DOMContentLoaded", function() {
         const sourceId = document.body.dataset.itemId;
         if (source && sourceId) {
           openCoverUpload(source, sourceId);
+        }
+      } else if (e.key === 'E' || e.key === 'e') {
+        e.preventDefault();
+        // Edit Metadata - SHIFT + E
+        const editBtn = document.getElementById('edit-button');
+        const itemId = editBtn?.dataset.id;
+        if (itemId) {
+          openMetadataModal(itemId);
         }
       } else if (e.key === 'R' || e.key === 'r') {
         e.preventDefault();

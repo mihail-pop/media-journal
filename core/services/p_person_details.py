@@ -12,16 +12,17 @@ from core.services.m_people import fetch_actor_data, fetch_character_data
 logger = logging.getLogger(__name__)
 
 
-def refresh_favorite_person(person_id):
+def refresh_favorite_person(person_id, refresh_mode="data"):
     try:
         person = FavoritePerson.objects.get(id=person_id)
         old_position = person.position
         person_type = person.type
         name = person.name
         api_person_id = person.person_id  # The actual API ID (TMDB/AniList)
+        old_image_url = person.image_url  # Save the existing image URL
 
-        # Delete old image if it's in favorites directory
-        if person.image_url and person.image_url.startswith(settings.MEDIA_URL):
+        # Delete old image if it's in favorites directory ONLY if refreshing all
+        if refresh_mode == "all" and person.image_url and person.image_url.startswith(settings.MEDIA_URL):
             relative_path = person.image_url.replace(settings.MEDIA_URL, "").lstrip("/")
             if relative_path.startswith("favorites/"):
                 old_path = os.path.join(settings.MEDIA_ROOT, relative_path)
@@ -59,17 +60,19 @@ def refresh_favorite_person(person_id):
                     "voice_actors": character_data.get("voice_actors"),
                 }
 
-        timestamp = int(time.time() * 1000)
-
-        # Download fresh image
-        if fresh_image_url:
-            slug_name = slugify(name)
-            ext = fresh_image_url.split(".")[-1].split("?")[0]
-            relative_path = f"favorites/{person_type}s/{slug_name}_{timestamp}.{ext}"
-            local_url = download_image(fresh_image_url, relative_path)
-            final_image_url = local_url if local_url else fresh_image_url
+        # Download fresh image ONLY if refreshing all
+        if refresh_mode == "all":
+            timestamp = int(time.time() * 1000)
+            if fresh_image_url:
+                slug_name = slugify(name)
+                ext = fresh_image_url.split(".")[-1].split("?")[0]
+                relative_path = f"favorites/{person_type}s/{slug_name}_{timestamp}.{ext}"
+                local_url = download_image(fresh_image_url, relative_path)
+                final_image_url = local_url if local_url else fresh_image_url
+            else:
+                final_image_url = fresh_image_url
         else:
-            final_image_url = fresh_image_url
+            final_image_url = old_image_url
 
         # Recreate with old position and fresh data
         FavoritePerson.objects.create(

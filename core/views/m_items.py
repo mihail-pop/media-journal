@@ -638,29 +638,35 @@ def refresh_item(request):
             'related_titles', 'genres', 'creators', 'total_main', 'total_secondary'
         ]
         
-        # Mark local metadata images of the OLD item for cleanup (since they are replaced)
-        files_to_delete =[]
-        if item.media_type != "music":
-            for member in (item.cast or[]):
+        files_to_delete = []
+        
+        # Determine which item's metadata images to clean up
+        # If updating data: clean the old item's images (they are being replaced)
+        # If NOT updating data: clean the new item's images (they are discarded to prevent orphaned files)
+        item_to_clean = item if refresh_type in ['all', 'data'] else new_item
+
+        if item_to_clean.media_type != "music":
+            for member in (item_to_clean.cast or []):
                 p = member.get("profile_path", "")
                 if p.startswith("/media/"):
                     files_to_delete.append(os.path.join(settings.MEDIA_ROOT, p.replace("/media/", "")))
-        for related in (item.related_titles or[]):
+        for related in (item_to_clean.related_titles or []):
             p = related.get("poster_path", "")
             if p.startswith("/media/"):
                 files_to_delete.append(os.path.join(settings.MEDIA_ROOT, p.replace("/media/", "")))
-        for season in (item.seasons or[]):
+        for season in (item_to_clean.seasons or []):
             p = season.get("poster_path", "")
             if p.startswith("/media/"):
                 files_to_delete.append(os.path.join(settings.MEDIA_ROOT, p.replace("/media/", "")))
-        for episode in (item.episodes or[]):
+        for episode in (item_to_clean.episodes or []):
             p = episode.get("still_path", "")
             if p.startswith("/media/"):
                 files_to_delete.append(os.path.join(settings.MEDIA_ROOT, p.replace("/media/", "")))
 
-        # Apply the new text-based metadata
-        for field in metadata_fields:
-            setattr(item, field, getattr(new_item, field))
+        # Apply the new text-based metadata only if requested
+        if refresh_type in ['all', 'data']:
+            for field in metadata_fields:
+                setattr(item, field, getattr(new_item, field))
 
         # Handle Cover based on refresh_type
         if refresh_type in ['all', 'cover']:

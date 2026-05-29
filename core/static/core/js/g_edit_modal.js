@@ -624,9 +624,28 @@ document.getElementById("edit-delete-btn")?.addEventListener("click", function (
   .then(res => res.json())
   .then(res => {
     if (res.success) {
-      // If on detail page, reload to update UI state
+      // If on detail page, reload or redirect to update UI state
       if (document.getElementById("edit-button")) {
-        window.location.reload();
+        
+        // If it's a custom item, redirect to the respective list page instead of reloading
+        const sourceId = document.body.dataset.sourceId;
+        if (sourceId && sourceId.startsWith('custom_')) {
+          const mediaType = form.dataset.mediaType;
+          const typeMap = {
+            'movie': 'movies',
+            'tv': 'tvshows',
+            'anime': 'anime',
+            'manga': 'manga',
+            'game': 'games',
+            'book': 'books',
+            'music': 'music'
+          };
+          const mappedType = typeMap[mediaType] || 'movies';
+          window.location.href = `/${mappedType}/`;
+        } else {
+          // Normal API items just reload
+          window.location.reload();
+        }
         return;
       }
 

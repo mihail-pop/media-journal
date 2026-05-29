@@ -154,7 +154,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Show/hide refresh button based on favorite status
         checkbox.addEventListener('change', updateRefreshButton);
         
-        refreshBtn.addEventListener('click', function() {
+        window.doPersonRefresh = function(mode) {
             // Prevent multiple concurrent refresh requests
             if (isRefreshing) return;
             isRefreshing = true;
@@ -176,7 +176,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     'Content-Type': 'application/json',
                     'X-CSRFToken': getCookie('csrftoken'),
                 },
-                body: JSON.stringify({ person_id: personId, person_type: personType }),
+                body: JSON.stringify({ person_id: personId, person_type: personType, refresh_mode: mode }),
             })
             .then(res => res.json())
             .then(data => {
@@ -196,6 +196,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 refreshBtn.style.opacity = '1';
                 showNotification('Refresh failed.', 'warning');
             });
+        };
+
+        refreshBtn.addEventListener('click', function() {
+            window.doPersonRefresh('data'); // Default click only refreshes data
         });
     }
     
@@ -292,8 +296,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 e.preventDefault();
                 // Refresh data - SHIFT + R
                 const refreshBtn = document.getElementById('refresh-person-btn');
-                if (refreshBtn && refreshBtn.style.display !== 'none') {
-                    refreshBtn.click();
+                if (refreshBtn && refreshBtn.style.display !== 'none' && window.doPersonRefresh) {
+                    window.doPersonRefresh('data');
+                }
+            } else if (e.key === 'D' || e.key === 'd') {
+                e.preventDefault();
+                // Refresh data and image - SHIFT + D
+                const refreshBtn = document.getElementById('refresh-person-btn');
+                if (refreshBtn && refreshBtn.style.display !== 'none' && window.doPersonRefresh) {
+                    window.doPersonRefresh('all');
                 }
             } else if (e.key === 'C' || e.key === 'c') {
                 e.preventDefault();

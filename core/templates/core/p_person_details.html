@@ -23,7 +23,7 @@
 <div class="top-colored-section">
   <div class="detail-container top-content">
     <div class="left-column">
-      <img class="poster" src="{% if person_data.image %}{{ person_data.image }}{% else %}{% static 'core/img/placeholder.png' %}{% endif %}" alt="{{ person_name }}" />
+      <div class="poster-wrapper"> <img class="poster" src="{% if person_data.image %}{{ person_data.image }}{% else %}{% static 'core/img/placeholder.png' %}{% endif %}" alt="{{ person_name }}" /> </div>
       
       <!-- Favorite heart and refresh -->
       <div class="favorite-refresh-wrapper">
@@ -33,7 +33,7 @@
             <span class="heart"></span>
           </label>
         </form>
-        <button id="refresh-person-btn" class="refresh-person-btn" title="Refresh data (Shift + R)">
+        <button id="refresh-person-btn" class="refresh-person-btn" title="Refresh data (Shift + R) / Refresh data and image (Shift + D)">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
           </svg>
