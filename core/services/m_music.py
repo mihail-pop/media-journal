@@ -463,3 +463,89 @@ def get_music_extra_info(recording_id, artist_id=None, album_id=None):
         f"[MUSIC] Returning tracks={len(album_tracks)}, singles={len(artist_singles)}"
     )
     return {"album_tracks": album_tracks, "artist_singles": artist_singles}
+
+def get_musicbrainz_discover(page=1, query="", sort="trending", genre="", year=""):
+    import requests
+    results = []
+    
+    # 1. If pure trending/popular (no search/genre/year), hit ListenBrainz for Sitewide Stats
+    if not query and not genre and not year:
+        try:
+            offset = (page - 1) * 20
+            if offset >= 100: 
+                return [] # LB stats endpoint currently caps around 100
+            
+            # Trending = This Month. Popular = All Time.
+            lb_range = "this_month" if sort == "trending" else "all_time"
+            
+            url = "https://api.listenbrainz.org/1/stats/sitewide/recordings"
+            resp = requests.get(url, params={"count": 100, "range": lb_range}, timeout=10)
+            
+            if resp.status_code == 200:
+                recordings = resp.json().get("payload", {}).get("recordings", [])
+                chunk = recordings[offset:offset+20]
+                
+                for rec in chunk:
+                    mbid = rec.get("recording_mbid")
+                    release_mbid = rec.get("release_mbid")
+                    
+                    poster_url = f"https://coverartarchive.org/release/{release_mbid}/front-250" if release_mbid else None
+                        
+                    results.append({
+                        "source": "musicbrainz",
+                        "id": mbid,
+                        "title": rec.get("track_name", "Unknown"),
+                        "poster_path": poster_url,
+                        "media_type": "music",
+                        "overview": rec.get("artist_name", ""),
+                    })
+                return results
+        except Exception as e:
+            print(f"ListenBrainz API error: {e}")
+            pass # Fallback to MusicBrainz
+
+    # 2. Otherwise (Filtered/Search), hit MusicBrainz Recording Search
+    try:
+        offset = (page - 1) * 20
+        url = "https://musicbrainz.org/ws/2/recording"
+        
+        q_parts = []
+        if query:
+            q_parts.append(query)
+        if genre: 
+            q_parts.append(f'tag:"{genre.lower()}"')
+        if year: 
+            q_parts.append(f'date:{year}')
+        if not q_parts: 
+            q_parts.append("type:album") # Fallback
+        
+        params = {
+            "query": " AND ".join(q_parts),
+            "fmt": "json",
+            "limit": 20,
+            "offset": offset,
+        }
+        
+        resp = requests.get(url, params=params, timeout=10, headers={"User-Agent": "MediaJournal/1.0"})
+        if resp.status_code == 200:
+            for rec in resp.json().get("recordings", []):
+                artist = ", ".join([a.get("name", "") for a in rec.get("artist-credit", [])])
+                
+                # Try getting Cover Art ID from the first mapped release
+                poster_url = None
+                releases = rec.get("releases", [])
+                if releases and releases[0].get("id"):
+                    poster_url = f"https://coverartarchive.org/release/{releases[0].get('id')}/front-250"
+                        
+                results.append({
+                    "source": "musicbrainz",
+                    "id": rec.get("id"),
+                    "title": rec.get("title", "Unknown"),
+                    "poster_path": poster_url,
+                    "media_type": "music",
+                    "overview": artist,
+                })
+        return results
+    except Exception as e:
+        print(f"MusicBrainz API error: {e}")
+        return []

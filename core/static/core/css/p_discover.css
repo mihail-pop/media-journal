@@ -150,7 +150,9 @@ body {
 #year-input,
 #season-year-input,
 #igdb-year-input,
-#tmdb-year-input {
+#tmdb-year-input,
+#openlib-year-input,
+#musicbrainz-year-input {
   width: 100%;
   padding: 0.5rem;
   font-size: 0.95rem;

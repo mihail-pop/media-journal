@@ -16,6 +16,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const tmdbFilters = document.getElementById('tmdb-filters');
   const anilistFilters = document.getElementById('anilist-filters');
   const igdbFilters = document.getElementById('igdb-filters');
+  const openlibFilters = document.getElementById('openlib-filters');
+  const musicbrainzFilters = document.getElementById('musicbrainz-filters');
   
   function getActiveFilters() {
     const filters = { type: currentType, page: currentPage };
@@ -61,6 +63,25 @@ document.addEventListener('DOMContentLoaded', () => {
       
       const genreSelect = document.getElementById('igdb-genre-select');
       if (genreSelect && genreSelect.dataset.value) filters.genre = genreSelect.dataset.value;
+    } else if (currentType === 'book') {
+      const activeSort = document.querySelector('#openlib-filters .sort-btn.active');
+      if (activeSort) filters.sort = activeSort.dataset.sort;
+      
+      const yearInput = document.getElementById('openlib-year-input');
+      if (yearInput && yearInput.value) filters.year = yearInput.value;
+      
+      const genreSelect = document.getElementById('openlib-genre-select');
+      if (genreSelect && genreSelect.dataset.value) filters.genre = genreSelect.dataset.value;
+      
+    } else if (currentType === 'music') {
+      const activeSort = document.querySelector('#musicbrainz-filters .sort-btn.active');
+      if (activeSort) filters.sort = activeSort.dataset.sort;
+      
+      const yearInput = document.getElementById('musicbrainz-year-input');
+      if (yearInput && yearInput.value) filters.year = yearInput.value;
+      
+      const genreSelect = document.getElementById('musicbrainz-genre-select');
+      if (genreSelect && genreSelect.dataset.value) filters.genre = genreSelect.dataset.value;
     }
     
     return filters;
@@ -85,9 +106,9 @@ document.addEventListener('DOMContentLoaded', () => {
   function restoreFromURL() {
     const params = new URLSearchParams(window.location.search);
     
-    // Restore type
+    // Restore type (ADDED book and music to the allowed list)
     const urlType = params.get('type');
-    if (urlType && ['movie', 'tv', 'anime', 'manga', 'game'].includes(urlType)) {
+    if (urlType && ['movie', 'tv', 'anime', 'manga', 'game', 'book', 'music'].includes(urlType)) {
       currentType = urlType;
       typeButtons.forEach(btn => {
         btn.classList.toggle('active', btn.dataset.type === currentType);
@@ -173,6 +194,32 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         if (yearGroup) yearGroup.style.display = 'none';
       }
+      
+    } else if (currentType === 'book') {
+      const sort = params.get('sort');
+      if (sort) {
+        document.querySelectorAll('#openlib-filters .sort-btn').forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.sort === sort);
+        });
+      }
+      const year = params.get('year');
+      if (year) {
+        const yearInput = document.getElementById('openlib-year-input');
+        if (yearInput) yearInput.value = year;
+      }
+      
+    } else if (currentType === 'music') {
+      const sort = params.get('sort');
+      if (sort) {
+        document.querySelectorAll('#musicbrainz-filters .sort-btn').forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.sort === sort);
+        });
+      }
+      const year = params.get('year');
+      if (year) {
+        const yearInput = document.getElementById('musicbrainz-year-input');
+        if (yearInput) yearInput.value = year;
+      }
     }
   }
   
@@ -180,7 +227,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Reset all filter buttons to default state
     document.querySelectorAll('.sort-btn').forEach(btn => {
       btn.classList.remove('active');
-      if (btn.dataset.sort === 'trending' || btn.dataset.sort === 'TRENDING_DESC' || btn.dataset.sort === 'rating') {
+      if (btn.dataset.sort === 'trending' || btn.dataset.sort === 'TRENDING_DESC' || btn.dataset.sort === 'rating' || btn.dataset.sort === 'readinglog') {
          btn.classList.add('active');
       }
     });
@@ -191,7 +238,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     // Clear all year inputs
-    document.querySelectorAll('#season-year-input, #tmdb-year-input, #igdb-year-input').forEach(input => {
+    document.querySelectorAll('#season-year-input, #tmdb-year-input, #igdb-year-input, #openlib-year-input, #musicbrainz-year-input').forEach(input => {
       input.value = '';
     });
     
@@ -210,10 +257,14 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   
   function showFilterSection(type) {
+    // Hide all filters first
     tmdbFilters.style.display = 'none';
     anilistFilters.style.display = 'none';
     igdbFilters.style.display = 'none';
+    if (openlibFilters) openlibFilters.style.display = 'none';
+    if (musicbrainzFilters) musicbrainzFilters.style.display = 'none';
     
+    // Show the active filter
     if (type === 'movie' || type === 'tv') {
       tmdbFilters.style.display = 'block';
       
@@ -242,6 +293,10 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     } else if (type === 'game') {
       igdbFilters.style.display = 'block';
+    } else if (type === 'book') {
+      if (openlibFilters) openlibFilters.style.display = 'block';
+    } else if (type === 'music') {
+      if (musicbrainzFilters) musicbrainzFilters.style.display = 'block';
     }
   }
   
@@ -253,8 +308,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const sourcePrefix = item.source || (
       item.media_type === 'game' ? 'igdb' :
-      item.media_type === 'movie' || item.media_type === 'tv' ? 'tmdb' : // Default for movies/tv if source not explicitly returned
-      'mal' // Default for anime/manga if source not explicitly returned (should be "anilist" now)
+      item.media_type === 'book' ? 'openlib' :
+      item.media_type === 'music' ? 'musicbrainz' :
+      item.media_type === 'movie' || item.media_type === 'tv' ? 'tmdb' : 
+      'mal'
     );
     
     if (item.media_type === 'movie' || item.media_type === 'tv') {
@@ -263,13 +320,17 @@ document.addEventListener('DOMContentLoaded', () => {
       linkUrl = `/${sourcePrefix}/${item.media_type}/${item.id}/`;
     } else if (item.media_type === 'game') {
       linkUrl = `/igdb/game/${item.id}/`;
+    } else if (item.media_type === 'book') {
+      linkUrl = `/openlib/book/${item.id}/`;
+    } else if (item.media_type === 'music') {
+      linkUrl = `/musicbrainz/music/${item.id}/`;
     }
     
     const posterUrl = item.poster_path || '/static/core/img/placeholder.png';
     
     card.innerHTML = `
       <a href="${linkUrl}" class="card-link">
-        <img src="${posterUrl}" alt="${item.title}" loading="lazy">
+        <img src="${posterUrl}" onerror="this.src='/static/core/img/placeholder.png'" alt="${item.title}" loading="lazy">
       </a>
       <div class="card-title">${item.title}</div>
       <button class="add-to-list-btn" data-id="${item.id}" data-type="${item.media_type}" data-title="${item.title}" data-poster="${posterUrl}" data-item="${encodeURIComponent(JSON.stringify(item))}" style="display: none;">+</button>
@@ -588,7 +649,7 @@ document.addEventListener('DOMContentLoaded', () => {
     searchTimeout = setTimeout(() => loadContent(true), 500);
   });
   
-  document.querySelectorAll('#season-year-input, #tmdb-year-input, #igdb-year-input').forEach(input => {
+  document.querySelectorAll('#season-year-input, #tmdb-year-input, #igdb-year-input, #openlib-year-input, #musicbrainz-year-input').forEach(input => {
     input.addEventListener('input', (e) => {
       e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 4);
       
@@ -653,6 +714,10 @@ document.addEventListener('DOMContentLoaded', () => {
       return 'mal';
     } else if (mediaType === 'game') {
       return 'igdb';
+    } else if (mediaType === 'book') {
+      return 'openlib';
+    } else if (mediaType === 'music') {
+      return 'musicbrainz';
     }
     return '';
   }

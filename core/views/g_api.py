@@ -12,6 +12,8 @@ from core.services.g_api import get_game_screenshots_data
 from core.services.m_games import get_igdb_discover
 from core.services.m_anime_manga import get_anilist_discover
 from core.services.m_movies_tvshows import get_tmdb_discover
+from core.services.m_books import get_openlib_discover
+from core.services.m_music import get_musicbrainz_discover
 
 logger = logging.getLogger(__name__)
 
@@ -1045,6 +1047,10 @@ def discover_api(request):
             results = get_tmdb_discover(media_type, page, query, sort, year, genre)
         elif media_type == "game":
             results = get_igdb_discover(page, query, sort, genre, platform, year)
+        elif media_type == "book":
+            results = get_openlib_discover(page, query, sort, genre, year)
+        elif media_type == "music":
+            results = get_musicbrainz_discover(page, query, sort, genre, year)
         else:
             results = []
 

@@ -20,7 +20,9 @@
       <button class="filter-btn type-btn" data-type="tv">TV Shows</button>
       <button class="filter-btn type-btn" data-type="anime">Anime</button>
       <button class="filter-btn type-btn" data-type="manga">Manga</button>
+      <button class="filter-btn type-btn" data-type="book">Books</button>
       <button class="filter-btn type-btn" data-type="game">Games</button>
+      <button class="filter-btn type-btn" data-type="music">Music</button>
     </div>
 
     <!-- Movie/TV Filters -->
@@ -172,6 +174,80 @@
       <div class="filter-group" id="igdb-year-group">
         <h3>Year</h3>
         <input type="text" id="igdb-year-input" placeholder="Year" inputmode="numeric" pattern="[0-9]*" maxlength="4">
+      </div>
+    </div>
+
+    <!-- Book Filters -->
+    <div id="openlib-filters" class="filter-section" style="display:none;">
+      <h3>Sort</h3>
+      <div class="sort-filter filter-group">
+        <button class="filter-btn sort-btn active" data-sort="readinglog">Popular</button>
+        <button class="filter-btn sort-btn" data-sort="new">New</button>
+      </div>
+      
+      <h3>Genre</h3>
+      <div class="custom-select-wrapper">
+        <div id="openlib-genre-select" class="genre-select custom-select-trigger" data-value="">All Genres</div>
+        <div class="custom-options">
+          <div class="custom-option" data-value="">All Genres</div>
+          <div class="custom-option" data-value="Action & Adventure Fiction">Action & Adventure Fiction</div>
+          <div class="custom-option" data-value="Biography">Biography</div>
+          <div class="custom-option" data-value="Classics">Classics</div>
+          <div class="custom-option" data-value="Fantasy">Fantasy</div>
+          <div class="custom-option" data-value="Historical Fiction">Historical Fiction</div>
+          <div class="custom-option" data-value="History">History</div>
+          <div class="custom-option" data-value="Horror">Horror</div>
+          <div class="custom-option" data-value="Mystery">Mystery</div>
+          <div class="custom-option" data-value="Non-fiction">Non-fiction</div>
+          <div class="custom-option" data-value="Poetry">Poetry</div>
+          <div class="custom-option" data-value="Romance">Romance</div>
+          <div class="custom-option" data-value="Science Fiction">Science Fiction</div>
+          <div class="custom-option" data-value="Thriller">Thriller</div>
+          <div class="custom-option" data-value="Young Adult">Young Adult</div>
+        </div>
+      </div>
+      
+      <div class="filter-group">
+        <h3>Year</h3>
+        <input type="text" id="openlib-year-input" placeholder="Year" inputmode="numeric" pattern="[0-9]*" maxlength="4">
+      </div>
+    </div>
+
+    <!-- Music Filters -->
+    <div id="musicbrainz-filters" class="filter-section" style="display:none;">
+      <h3>Sort</h3>
+      <div class="sort-filter filter-group">
+        <button class="filter-btn sort-btn active" data-sort="trending">Trending</button>
+        <button class="filter-btn sort-btn" data-sort="popular">Popular</button>
+      </div>
+      
+      <h3>Genre</h3>
+      <div class="custom-select-wrapper">
+        <div id="musicbrainz-genre-select" class="genre-select custom-select-trigger" data-value="">All Genres</div>
+        <div class="custom-options">
+          <div class="custom-option" data-value="">All Genres</div>
+          <div class="custom-option" data-value="Alternative">Alternative</div>
+          <div class="custom-option" data-value="Blues">Blues</div>
+          <div class="custom-option" data-value="Classical">Classical</div>
+          <div class="custom-option" data-value="Country">Country</div>
+          <div class="custom-option" data-value="Electronic">Electronic</div>
+          <div class="custom-option" data-value="Folk">Folk</div>
+          <div class="custom-option" data-value="Hip Hop">Hip Hop</div>
+          <div class="custom-option" data-value="Indie">Indie</div>
+          <div class="custom-option" data-value="Jazz">Jazz</div>
+          <div class="custom-option" data-value="Metal">Metal</div>
+          <div class="custom-option" data-value="Pop">Pop</div>
+          <div class="custom-option" data-value="Punk">Punk</div>
+          <div class="custom-option" data-value="R&B">R&B</div>
+          <div class="custom-option" data-value="Reggae">Reggae</div>
+          <div class="custom-option" data-value="Rock">Rock</div>
+          <div class="custom-option" data-value="Soul">Soul</div>
+        </div>
+      </div>
+      
+      <div class="filter-group">
+        <h3>Year</h3>
+        <input type="text" id="musicbrainz-year-input" placeholder="Year" inputmode="numeric" pattern="[0-9]*" maxlength="4">
       </div>
     </div>
   </aside>

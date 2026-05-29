@@ -117,3 +117,109 @@ def save_openlib_item(work_id):
     )
 
     return JsonResponse({"success": True, "message": "Book added to list"})
+
+
+def get_openlib_discover(page=1, query="", sort="readinglog", genre="", year=""):
+    import requests
+    import datetime
+    
+    limit = 20
+    results = []
+    
+    # 1. Pure "Popular" (no filters) -> Hit the much faster Trending API
+    if sort == "readinglog" and not query and not genre and not year:
+        try:
+            # Trending API natively supports 'page' param
+            url = "https://openlibrary.org/trending/yearly.json"
+            resp = requests.get(url, params={"page": page}, timeout=10)
+            if resp.status_code == 200:
+                data = resp.json()
+                for work in data.get("works", []):
+                    cover_i = work.get("cover_i")
+                    poster_url = f"https://covers.openlibrary.org/b/id/{cover_i}-L.jpg" if cover_i else None
+                    
+                    authors = work.get("author_name", [])
+                    author_str = ", ".join(authors) if authors else "Unknown Author"
+                    
+                    key = work.get("key", "").replace("/works/", "")
+                    if not key: 
+                        continue
+                    
+                    results.append({
+                        "source": "openlib",
+                        "id": key,
+                        "title": work.get("title", "Untitled"),
+                        "poster_path": poster_url,
+                        "media_type": "book",
+                        "overview": author_str,
+                        "release_date": str(work.get("first_publish_year", "")),
+                        "genres": [],
+                    })
+                return results
+        except Exception as e:
+            print(f"OpenLibrary Trending API error: {e}")
+            pass # Fallback to search if the trending endpoint fails
+            
+    # 2. Search API (Filtered, "New", or Search string)
+    offset = (page - 1) * limit
+    url = "https://openlibrary.org/search.json"
+    
+    params = {
+        "limit": limit,
+        "offset": offset,
+        "fields": "key,title,author_name,cover_i,first_publish_year,subject",
+        "sort": sort if sort else "readinglog"
+    }
+        
+    q_parts = []
+    if query:
+        q_parts.append(query)
+    if genre:
+        q_parts.append(f'subject:"{genre}"')
+    if year:
+        q_parts.append(f'first_publish_year:{year}')
+        
+    # If no strict query exists, apply a smart fallback
+    if not q_parts:
+        if sort == "new":
+            # For "New", strictly fetch recent years to avoid junk metadata entries without covers
+            current_year = datetime.datetime.now().year
+            q_parts.append(f'first_publish_year:[{current_year-1} TO {current_year}]')
+        else:
+            q_parts.append('language:eng')
+            
+    params["q"] = " AND ".join(q_parts)
+        
+    try:
+        resp = requests.get(url, params=params, timeout=10)
+        if resp.status_code != 200:
+            return []
+            
+        data = resp.json()
+        
+        for doc in data.get("docs", []):
+            cover_i = doc.get("cover_i")
+            poster_url = f"https://covers.openlibrary.org/b/id/{cover_i}-L.jpg" if cover_i else None
+            
+            authors = doc.get("author_name", [])
+            author_str = ", ".join(authors) if authors else "Unknown Author"
+            
+            key = doc.get("key", "").replace("/works/", "")
+            if not key: 
+                continue
+            
+            results.append({
+                "source": "openlib",
+                "id": key,
+                "title": doc.get("title", "Untitled"),
+                "poster_path": poster_url,
+                "media_type": "book",
+                "overview": author_str,
+                "release_date": str(doc.get("first_publish_year", "")),
+                "genres": doc.get("subject", [])[:3],
+            })
+            
+        return results
+    except Exception as e:
+        print(f"OpenLibrary Search API error: {e}")
+        return []

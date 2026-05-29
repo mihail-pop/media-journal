@@ -32,13 +32,15 @@ This is the self-hosted media tracker app I always wanted to have. From now on I
     git clone https://github.com/mihail-pop/media-journal
     ```
 
-2. Open a terminal in the project folder and start the app with:
+2. Open the `docker-compose.yml` file in a text editor, uncomment and update the `TZ` variable to your timezone (e.g., `TZ=Europe/London`). Otherwise, it will default to UTC.
+
+3. Open a terminal in the project folder and start the app with:
     ```sh
     docker-compose up -d
     ```
-  The application will be available at [http://localhost:8090](http://localhost:8090).
+    The application will be available at [http://localhost:8090](http://localhost:8090).
   
-3. Inside the app, navigate to **Settings → API Keys**.  
+4. Inside the app, navigate to **Settings → API Keys**.  
    You will need to add your own API keys. In that section there are instructions on how to obtain them.
 
 ### Configuration
