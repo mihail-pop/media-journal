@@ -67,9 +67,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const activeSort = document.querySelector('#openlib-filters .sort-btn.active');
       if (activeSort) filters.sort = activeSort.dataset.sort;
       
-      const yearInput = document.getElementById('openlib-year-input');
-      if (yearInput && yearInput.value) filters.year = yearInput.value;
-      
       const genreSelect = document.getElementById('openlib-genre-select');
       if (genreSelect && genreSelect.dataset.value) filters.genre = genreSelect.dataset.value;
       
@@ -202,11 +199,6 @@ document.addEventListener('DOMContentLoaded', () => {
           btn.classList.toggle('active', btn.dataset.sort === sort);
         });
       }
-      const year = params.get('year');
-      if (year) {
-        const yearInput = document.getElementById('openlib-year-input');
-        if (yearInput) yearInput.value = year;
-      }
       
     } else if (currentType === 'music') {
       const sort = params.get('sort');
@@ -238,7 +230,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     // Clear all year inputs
-    document.querySelectorAll('#season-year-input, #tmdb-year-input, #igdb-year-input, #openlib-year-input, #musicbrainz-year-input').forEach(input => {
+    document.querySelectorAll('#season-year-input, #tmdb-year-input, #igdb-year-input, #musicbrainz-year-input').forEach(input => {
       input.value = '';
     });
     
@@ -303,6 +295,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function createCard(item) {
     const card = document.createElement('div');
     card.className = 'card';
+    card.setAttribute('data-type', item.media_type); // Sets "movie", "tv", "music", "book", etc.
     
     let linkUrl = '#';
 
@@ -331,9 +324,10 @@ document.addEventListener('DOMContentLoaded', () => {
     card.innerHTML = `
       <a href="${linkUrl}" class="card-link">
         <img src="${posterUrl}" onerror="this.src='/static/core/img/placeholder.png'" alt="${item.title}" loading="lazy">
+        <!-- Button is now inside the link, making its position relative to the image -->
+        <button class="add-to-list-btn" data-id="${item.id}" data-type="${item.media_type}" data-title="${item.title}" data-poster="${posterUrl}" data-item="${encodeURIComponent(JSON.stringify(item))}" style="display: none;">+</button>
       </a>
       <div class="card-title">${item.title}</div>
-      <button class="add-to-list-btn" data-id="${item.id}" data-type="${item.media_type}" data-title="${item.title}" data-poster="${posterUrl}" data-item="${encodeURIComponent(JSON.stringify(item))}" style="display: none;">+</button>
     `;
     
     const btn = card.querySelector('.add-to-list-btn');

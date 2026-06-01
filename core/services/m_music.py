@@ -526,6 +526,9 @@ def get_musicbrainz_discover(page=1, query="", sort="trending", genre="", year="
             "offset": offset,
         }
         
+        # Call wait_for_rate_limit() to guarantee Page 2 doesn't trigger a 503 on MusicBrainz
+        wait_for_rate_limit() 
+        
         resp = requests.get(url, params=params, timeout=10, headers={"User-Agent": "MediaJournal/1.0"})
         if resp.status_code == 200:
             for rec in resp.json().get("recordings", []):

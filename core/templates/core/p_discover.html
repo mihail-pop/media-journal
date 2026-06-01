@@ -181,8 +181,8 @@
     <div id="openlib-filters" class="filter-section" style="display:none;">
       <h3>Sort</h3>
       <div class="sort-filter filter-group">
-        <button class="filter-btn sort-btn active" data-sort="readinglog">Popular</button>
-        <button class="filter-btn sort-btn" data-sort="new">New</button>
+        <button class="filter-btn sort-btn active" data-sort="trending">Trending</button>
+        <button class="filter-btn sort-btn" data-sort="popular">Popular</button>
       </div>
       
       <h3>Genre</h3>
@@ -190,26 +190,21 @@
         <div id="openlib-genre-select" class="genre-select custom-select-trigger" data-value="">All Genres</div>
         <div class="custom-options">
           <div class="custom-option" data-value="">All Genres</div>
-          <div class="custom-option" data-value="Action & Adventure Fiction">Action & Adventure Fiction</div>
-          <div class="custom-option" data-value="Biography">Biography</div>
-          <div class="custom-option" data-value="Classics">Classics</div>
-          <div class="custom-option" data-value="Fantasy">Fantasy</div>
-          <div class="custom-option" data-value="Historical Fiction">Historical Fiction</div>
-          <div class="custom-option" data-value="History">History</div>
-          <div class="custom-option" data-value="Horror">Horror</div>
-          <div class="custom-option" data-value="Mystery">Mystery</div>
-          <div class="custom-option" data-value="Non-fiction">Non-fiction</div>
-          <div class="custom-option" data-value="Poetry">Poetry</div>
-          <div class="custom-option" data-value="Romance">Romance</div>
-          <div class="custom-option" data-value="Science Fiction">Science Fiction</div>
-          <div class="custom-option" data-value="Thriller">Thriller</div>
-          <div class="custom-option" data-value="Young Adult">Young Adult</div>
+          <div class="custom-option" data-value="action_and_adventure">Action & Adventure</div>
+          <div class="custom-option" data-value="biography">Biography</div>
+          <div class="custom-option" data-value="classic_literature">Classics</div>
+          <div class="custom-option" data-value="fantasy">Fantasy</div>
+          <div class="custom-option" data-value="historical_fiction">Historical Fiction</div>
+          <div class="custom-option" data-value="history">History</div>
+          <div class="custom-option" data-value="horror">Horror</div>
+          <div class="custom-option" data-value="mystery_and_detective_stories">Mystery</div>
+          <div class="custom-option" data-value="nonfiction">Non-fiction</div>
+          <div class="custom-option" data-value="poetry">Poetry</div>
+          <div class="custom-option" data-value="romance">Romance</div>
+          <div class="custom-option" data-value="science_fiction">Science Fiction</div>
+          <div class="custom-option" data-value="thriller">Thriller</div>
+          <div class="custom-option" data-value="young_adult_fiction">Young Adult</div>
         </div>
-      </div>
-      
-      <div class="filter-group">
-        <h3>Year</h3>
-        <input type="text" id="openlib-year-input" placeholder="Year" inputmode="numeric" pattern="[0-9]*" maxlength="4">
       </div>
     </div>
 
@@ -245,7 +240,7 @@
         </div>
       </div>
       
-      <div class="filter-group">
+      <div class="filter-group no-gap">
         <h3>Year</h3>
         <input type="text" id="musicbrainz-year-input" placeholder="Year" inputmode="numeric" pattern="[0-9]*" maxlength="4">
       </div>

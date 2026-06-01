@@ -124,6 +124,10 @@ body {
   gap: 0.4rem;
 }
 
+.filter-group.no-gap {
+    gap: 0;
+}
+
 .filter-btn {
   flex: 0 1 auto;
   min-width: 20px;
@@ -167,6 +171,10 @@ body {
   /* For Firefox */
   -moz-appearance: textfield;
   appearance: textfield;
+}
+
+#musicbrainz-year-input::placeholder{
+  color: var(--text-primary);
 }
 
 .genre-select {
@@ -281,12 +289,37 @@ body {
 
 .card img {
   width: 180px;
-  height: 270px;
+  max-height: 270px;
   object-fit: cover;
   display: block;
   border-radius: 6px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
+
+.card[data-type="anime"] img,
+.card[data-type="manga"] img,
+.card[data-type="book"] img,
+.card[data-type="movie"] img,
+.card[data-type="tv"] img {
+  height: 270px;
+}
+
+.card[data-type="game"] img {
+  height: 240px;
+}
+
+.card[data-type="music"] img {
+  height: 180px;
+}
+
+.card[data-type="music"] img[src*="placeholder"] {
+  height: 180px;
+}
+
+.card[data-type="game"] img[src*="placeholder"] {
+  height: 240px;
+}
+
 
 .card-title {
   margin-top: 0.5rem;

@@ -12,7 +12,7 @@ from core.services.g_utils import download_image
 def save_openlib_item(work_id):
     # Fetch main Work details (Title, Description, Covers)
     detail_url = f"https://openlibrary.org/works/{work_id}.json"
-    detail_response = requests.get(detail_url, timeout=10)
+    detail_response = requests.get(detail_url, timeout=60)
 
     if detail_response.status_code == 429:
         raise Exception("HTTP 429 Too Many Requests: Rate Limit Exceeded")
@@ -27,7 +27,7 @@ def save_openlib_item(work_id):
     search_url = f"https://openlibrary.org/search.json?q=key:/works/{work_id}&fields=author_name,number_of_pages_median"
     
     try:
-        search_response = requests.get(search_url, timeout=10)
+        search_response = requests.get(search_url, timeout=60)
         
         # Catch the 429 Rate Limit here
         if search_response.status_code == 429:
@@ -119,107 +119,83 @@ def save_openlib_item(work_id):
     return JsonResponse({"success": True, "message": "Book added to list"})
 
 
-def get_openlib_discover(page=1, query="", sort="readinglog", genre="", year=""):
+def get_openlib_discover(page=1, query="", sort="trending", genre="", year=""):
     import requests
-    import datetime
     
     limit = 20
-    results = []
-    
-    # 1. Pure "Popular" (no filters) -> Hit the much faster Trending API
-    if sort == "readinglog" and not query and not genre and not year:
-        try:
-            # Trending API natively supports 'page' param
-            url = "https://openlibrary.org/trending/yearly.json"
-            resp = requests.get(url, params={"page": page}, timeout=10)
-            if resp.status_code == 200:
-                data = resp.json()
-                for work in data.get("works", []):
-                    cover_i = work.get("cover_i")
-                    poster_url = f"https://covers.openlibrary.org/b/id/{cover_i}-L.jpg" if cover_i else None
-                    
-                    authors = work.get("author_name", [])
-                    author_str = ", ".join(authors) if authors else "Unknown Author"
-                    
-                    key = work.get("key", "").replace("/works/", "")
-                    if not key: 
-                        continue
-                    
-                    results.append({
-                        "source": "openlib",
-                        "id": key,
-                        "title": work.get("title", "Untitled"),
-                        "poster_path": poster_url,
-                        "media_type": "book",
-                        "overview": author_str,
-                        "release_date": str(work.get("first_publish_year", "")),
-                        "genres": [],
-                    })
-                return results
-        except Exception as e:
-            print(f"OpenLibrary Trending API error: {e}")
-            pass # Fallback to search if the trending endpoint fails
-            
-    # 2. Search API (Filtered, "New", or Search string)
     offset = (page - 1) * limit
     url = "https://openlibrary.org/search.json"
     
-    params = {
-        "limit": limit,
-        "offset": offset,
-        "fields": "key,title,author_name,cover_i,first_publish_year,subject",
-        "sort": sort if sort else "readinglog"
-    }
-        
     q_parts = []
+    
+    # 1. Base filters for clean, English results (excluding weird cover warning system tags)
+    q_parts.append('language:eng')
+    q_parts.append('-subject:"content_warning:cover"')
+    
+    # 2. Search Query
     if query:
         q_parts.append(query)
-    if genre:
-        q_parts.append(f'subject:"{genre}"')
-    if year:
-        q_parts.append(f'first_publish_year:{year}')
         
-    # If no strict query exists, apply a smart fallback
-    if not q_parts:
-        if sort == "new":
-            # For "New", strictly fetch recent years to avoid junk metadata entries without covers
-            current_year = datetime.datetime.now().year
-            q_parts.append(f'first_publish_year:[{current_year-1} TO {current_year}]')
-        else:
-            q_parts.append('language:eng')
-            
-    params["q"] = " AND ".join(q_parts)
+    # 3. Genre
+    if genre:
+        clean_genre = genre.replace("_", " ")
+        q_parts.append(f'subject:"{clean_genre}"')
+        
+    # 4. Apply the Solr Sorting & Index optimization
+    ol_sort = "readinglog"
+    
+    if sort == "trending":
+        # Match OpenLibrary homepage query
+        q_parts.append("trending_score_hourly_sum:[1 TO *]")
+        q_parts.append("readinglog_count:[4 TO *]")
+        # Force Solr to use the custom z-score trending sort
+        ol_sort = "trending" 
+        
+    elif sort == "popular":
+        # Constrain Popular to books with at least 100 readinglog saves.
+        # This reduces the search pool from 15 million to ~50k books, making offsets load instantly.
+        q_parts.append("readinglog_count:[100 TO *]")
+        ol_sort = "readinglog"
+    
+    params = {
+        "q": " AND ".join(q_parts),
+        "limit": limit,
+        "offset": offset,
+        "fields": "key,title,author_name,cover_i,first_publish_year,subject"
+    }
+    
+    if ol_sort:
+        params["sort"] = ol_sort
         
     try:
-        resp = requests.get(url, params=params, timeout=10)
-        if resp.status_code != 200:
-            return []
-            
-        data = resp.json()
-        
-        for doc in data.get("docs", []):
-            cover_i = doc.get("cover_i")
-            poster_url = f"https://covers.openlibrary.org/b/id/{cover_i}-L.jpg" if cover_i else None
-            
-            authors = doc.get("author_name", [])
-            author_str = ", ".join(authors) if authors else "Unknown Author"
-            
-            key = doc.get("key", "").replace("/works/", "")
-            if not key: 
-                continue
-            
-            results.append({
-                "source": "openlib",
-                "id": key,
-                "title": doc.get("title", "Untitled"),
-                "poster_path": poster_url,
-                "media_type": "book",
-                "overview": author_str,
-                "release_date": str(doc.get("first_publish_year", "")),
-                "genres": doc.get("subject", [])[:3],
-            })
-            
-        return results
+        resp = requests.get(url, params=params, timeout=100)
+        if resp.status_code == 200:
+            data = resp.json()
+            results = []
+            for doc in data.get("docs", []):
+                cover_i = doc.get("cover_i")
+                authors = doc.get("author_name", [])
+                author_str = ", ".join(authors) if authors else "Unknown Author"
+                key = doc.get("key", "").replace("/works/", "")
+                
+                if not key:
+                    continue
+                
+                subjects = doc.get("subject", [])
+                clean_genres = [s for s in subjects if "content_warning" not in s][:3]
+                
+                results.append({
+                    "source": "openlib",
+                    "id": key,
+                    "title": doc.get("title", "Untitled"),
+                    "poster_path": f"https://covers.openlibrary.org/b/id/{cover_i}-L.jpg" if cover_i else None,
+                    "media_type": "book",
+                    "overview": author_str,
+                    "release_date": str(doc.get("first_publish_year", "")),
+                    "genres": clean_genres,
+                })
+            return results
+        return []
     except Exception as e:
-        print(f"OpenLibrary Search API error: {e}")
+        print(f"OpenLibrary API error: {e}")
         return []
