@@ -1,3 +1,5 @@
+import uuid
+
 from django.db import models
 from django.utils import timezone
 
@@ -71,6 +73,7 @@ class MediaItem(models.Model):
 
     last_updated = models.DateTimeField(default=timezone.now)
     notification = models.BooleanField(default=False)
+    calendar_last_sync = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.title} ({self.media_type})"
@@ -110,6 +113,28 @@ class FavoritePerson(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.type})"
+
+class CalendarEvent(models.Model):
+    item = models.ForeignKey(
+        'MediaItem', 
+        on_delete=models.CASCADE, 
+        related_name='calendar_events'
+    )
+
+    date = models.DateTimeField() 
+    title = models.CharField(max_length=255, blank=True, null=True) 
+    is_custom = models.BooleanField(default=False)
+    notes = models.TextField(blank=True, null=True)
+    
+    notify = models.BooleanField(default=False)
+    notified = models.BooleanField(default=False) 
+    
+    recurring_group = models.UUIDField(default=uuid.uuid4, null=True, blank=True)
+    
+    date_added = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.item.title} - {self.title or 'Event'} on {self.date}"
 
 class Collection(models.Model):
     title = models.CharField(max_length=200)

@@ -912,6 +912,17 @@ def community(request):
         },
     )
 
+def calendar_page(request):
+    AppSettings = apps.get_model("core", "AppSettings")
+    settings = AppSettings.objects.first()
+    theme_mode = settings.theme_mode if settings else "dark"
+    
+    return render(
+        request, 
+        "core/p_calendar.html", 
+        {"theme_mode": theme_mode}
+    )
+
 @ensure_csrf_cookie
 def collections_page(request):
     AppSettings = apps.get_model("core", "AppSettings")
