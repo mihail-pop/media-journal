@@ -425,3 +425,14 @@ body.drag-active .edit-col-btn {
   background: var(--button-danger);
   color: white;
 }
+
+#music-player-container {
+  position: fixed !important;
+  z-index: 9999 !important;
+  line-height: 0 !important;
+}
+
+.music-player-container iframe {
+  display: block !important;
+  border: none !important;
+}

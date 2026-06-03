@@ -12,7 +12,8 @@ from django.utils.timesince import timesince
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET
 
-from core.models import APIKey, NavItem, MediaItem, Collection, FavoritePerson
+from core.models import APIKey, NavItem, MediaItem, Collection, FavoritePerson, CalendarEvent
+from django.utils.timesince import timesince, timeuntil
 from core.services.p_home import (
     start_media_cleanup_loop,
     start_tmdb_background_loop,
@@ -167,6 +168,94 @@ def home(request):
 
     columns = [activity_data[i : i + 7] for i in range(0, len(activity_data), 7)]
 
+    # --- UPCOMING RELEASES ---
+    now = timezone.now()
+    today_date = now.date()
+    cal_start_date = today_date - timedelta(days=7)
+    cal_end_date = today_date + timedelta(days=7)
+
+    calendar_events = CalendarEvent.objects.filter(
+        date__date__gte=cal_start_date, 
+        date__date__lte=cal_end_date
+    ).select_related('item').order_by('date')
+
+    events_by_date = defaultdict(list)
+    for e in calendar_events:
+        if e.title == "__API_SYNC__": continue
+        events_by_date[e.date.date()].append(e)
+
+    upcoming_tiles = []
+    for i in range(15):
+        d = cal_start_date + timedelta(days=i)
+        if d == today_date:
+            day_label = "Today"
+        else:
+            day_label = d.strftime("%A")
+        
+        day_events = []
+        for e in events_by_date.get(d, []):
+            time_str = ""
+            if e.date.strftime("%H:%M") != "00:00":
+                time_str = e.date.strftime("%H:%M")
+            
+            day_events.append({
+                "title": e.item.title,
+                "event_title": e.title,
+                "time_str": time_str,
+                "media_type": e.item.media_type,
+                "cover_url": e.item.cover_url or "/static/core/img/placeholder.png",
+            })
+
+        upcoming_tiles.append({
+            "date_str": d.strftime("%Y-%m-%d"),
+            "display_date": d.strftime("%d %b"),
+            "day_label": day_label,
+            "is_today": d == today_date,
+            "events": day_events
+        })
+
+    future_events = CalendarEvent.objects.filter(
+        date__gte=now
+    ).exclude(title="__API_SYNC__").select_related('item').order_by('date')[:12]
+
+    upcoming_list = []
+    for e in future_events:
+        url = "#"
+        if e.item.source == "tmdb" and e.item.media_type in ["movie", "tv"]:
+            if "_s" in str(e.item.source_id):
+                show_id = str(e.item.source_id).split("_s")[0]
+                season_number = str(e.item.source_id).split("_s")[1]
+                url = reverse("tmdb_season_detail", args=[show_id, season_number])
+            else:
+                url = reverse("tmdb_detail", args=[e.item.media_type, e.item.source_id])
+        elif e.item.media_type in ["anime", "manga"]:
+            url = reverse("anilist_detail", args=[e.item.source, e.item.media_type, e.item.source_id])
+        elif e.item.source == "igdb" and e.item.media_type == "game":
+            url = reverse("igdb_detail", args=[e.item.source_id])
+        elif e.item.source == "openlib" and e.item.media_type == "book":
+            url = reverse("openlib_detail", args=[e.item.source_id])
+        elif e.item.source == "musicbrainz" and e.item.media_type == "music":
+            url = reverse("musicbrainz_detail", args=[e.item.source_id])
+
+        time_until = timeuntil(e.date, now).split(',')[0]
+        
+        if e.title and e.title not in ["Global Release", "Release Date", "Game Release"]:
+            action = f"{e.item.title} {e.title}"
+        else:
+            action = f"{e.item.title}"
+            
+        time_str_list = ""
+        if e.date.strftime("%H:%M") != "00:00":
+            time_str_list = f" ({e.date.strftime('%H:%M')})"
+
+        upcoming_list.append({
+            "message_main": action,
+            "message_time": f"in {time_until}{time_str_list}",
+            "media_type": e.item.media_type,
+            "cover_url": e.item.cover_url or "/static/core/img/placeholder.png",
+            "url": url,
+        })
+
     notifications = MediaItem.objects.filter(notification=True).order_by(
         "-last_updated"
     )
@@ -191,8 +280,44 @@ def home(request):
                 "title": item.title,
                 "url": url,
                 "media_type": item.media_type,
+                "is_calendar": False
             }
         )
+
+    # --- Fetch Calendar Event Notifications ---
+    cal_notifications = CalendarEvent.objects.filter(
+        notify=True, 
+        notified=False, 
+        date__lte=timezone.now()
+    ).exclude(title="__API_SYNC__").select_related('item').order_by('-date')
+
+    for ce in cal_notifications:
+        url = "#"
+        if ce.item.source == "tmdb" and ce.item.media_type in ["movie", "tv"]:
+            if "_s" in str(ce.item.source_id):
+                show_id = str(ce.item.source_id).split("_s")[0]
+                season_number = str(ce.item.source_id).split("_s")[1]
+                url = reverse("tmdb_season_detail", args=[show_id, season_number])
+            else:
+                url = reverse("tmdb_detail", args=[ce.item.media_type, ce.item.source_id])
+        elif ce.item.media_type in ["anime", "manga"]:
+            url = reverse("anilist_detail", args=[ce.item.source, ce.item.media_type, ce.item.source_id])
+        elif ce.item.source == "igdb" and ce.item.media_type == "game":
+            url = reverse("igdb_detail", args=[ce.item.source_id])
+        elif ce.item.source == "openlib" and ce.item.media_type == "book":
+            url = reverse("openlib_detail", args=[ce.item.source_id])
+        elif ce.item.source == "musicbrainz" and ce.item.media_type == "music":
+            url = reverse("musicbrainz_detail", args=[ce.item.source_id])
+
+        title_display = f"{ce.item.title} ({ce.title})" if ce.title and ce.title not in ["Global Release", "Release Date", "Game Release"] else ce.item.title
+        
+        notifications_list.append({
+            "id": f"cal_{ce.id}",
+            "title": title_display,
+            "url": url,
+            "media_type": ce.item.media_type,
+            "is_calendar": True
+        })
 
     favorite_characters = FavoritePerson.objects.filter(type="character").order_by("position")[:limit]
     favorite_actors = FavoritePerson.objects.filter(type="actor").order_by("position")[:limit]
@@ -299,6 +424,8 @@ def home(request):
             "extra_stats": extra_stats,
             "activity_data": activity_data,
             "activity_columns": columns,
+            "upcoming_tiles": upcoming_tiles,
+            "upcoming_list": upcoming_list,
             "notifications": notifications_list,
             "recent_activity": recent_activity,
             "theme_mode": theme_mode,

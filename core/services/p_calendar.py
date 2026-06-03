@@ -64,6 +64,7 @@ def _sync_tmdb_movies(items):
     except APIKey.DoesNotExist:
         return
 
+    # 1. Only do network requests in the fast threads
     def fetch_movie(item):
         try:
             resp = requests.get(f"https://api.themoviedb.org/3/movie/{item.source_id}", params={"api_key": api_key}, timeout=5)
@@ -72,24 +73,29 @@ def _sync_tmdb_movies(items):
                 release_date_str = data.get("release_date")
                 if release_date_str:
                     release_dt = datetime.datetime.strptime(release_date_str, "%Y-%m-%d").replace(tzinfo=datetime.timezone.utc)
-                    
-                    current_utc = datetime.datetime.now(datetime.timezone.utc)
-                    three_months_ago = current_utc - datetime.timedelta(days=90)
-                    
-                    if release_dt >= three_months_ago:
-                        db_date = _normalize_dt(release_dt)
-                        CalendarEvent.objects.update_or_create(
-                            item=item, 
-                            title="Global Release", 
-                            is_custom=False,
-                            defaults={'date': db_date}
-                        )
-            _mark_as_synced(item)
+                    return (item, release_dt)
         except Exception as e:
-            print(f"Error syncing TMDB movie {item.title}: {e}")
+            print(f"Error fetching TMDB movie {item.title}: {e}")
+        return (item, None)
 
+    # Launch threads to grab all the data super fast
     with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
-        executor.map(fetch_movie, items)
+        results = list(executor.map(fetch_movie, items))
+
+    # 2. Save to database sequentially on the main thread to prevent SQLite locking
+    current_utc = datetime.datetime.now(datetime.timezone.utc)
+    three_months_ago = current_utc - datetime.timedelta(days=90)
+
+    for item, release_dt in results:
+        if release_dt and release_dt >= three_months_ago:
+            db_date = _normalize_dt(release_dt)
+            CalendarEvent.objects.update_or_create(
+                item=item, 
+                title="Global Release", 
+                is_custom=False,
+                defaults={'date': db_date}
+            )
+        _mark_as_synced(item)
 
 def _sync_tmdb_tv(items):
     if not items: 
@@ -99,6 +105,7 @@ def _sync_tmdb_tv(items):
     except APIKey.DoesNotExist:
         return
 
+    # 1. Only do network requests in the fast threads
     def fetch_tv(item):
         try:
             is_season = "_s" in str(item.source_id)
@@ -106,30 +113,45 @@ def _sync_tmdb_tv(items):
                 
             resp = requests.get(f"https://api.themoviedb.org/3/tv/{base_id}", params={"api_key": api_key}, timeout=5)
             if resp.status_code == 200:
-                data = resp.json()
-                current_utc = datetime.datetime.now(datetime.timezone.utc)
-                three_months_ago = current_utc - datetime.timedelta(days=90)
-                
-                # Check BOTH last aired and next to air
-                for ep_key in ["last_episode_to_air", "next_episode_to_air"]:
-                    ep_data = data.get(ep_key)
-                    if ep_data and ep_data.get("air_date"):
-                        air_dt = datetime.datetime.strptime(ep_data["air_date"], "%Y-%m-%d").replace(tzinfo=datetime.timezone.utc)
-                        
-                        if air_dt >= three_months_ago:
-                            db_date = _normalize_dt(air_dt)
-                            CalendarEvent.objects.update_or_create(
-                                item=item, 
-                                title=f"Episode {ep_data.get('episode_number')} (S{ep_data.get('season_number')})", 
-                                is_custom=False,
-                                defaults={'date': db_date}
-                            )
-            _mark_as_synced(item)
+                return (item, resp.json())
         except Exception as e:
-            print(f"Error syncing TMDB TV {item.title}: {e}")
+            print(f"Error fetching TMDB TV {item.title}: {e}")
+        return (item, None)
 
+    # Launch threads
     with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
-        executor.map(fetch_tv, items)
+        results = list(executor.map(fetch_tv, items))
+
+    # 2. Save to database sequentially on the main thread
+    current_utc = datetime.datetime.now(datetime.timezone.utc)
+    three_months_ago = current_utc - datetime.timedelta(days=90)
+
+    for item, data in results:
+        if data:
+            # Smart Notifications: Inherit notify state from the most recent episode
+            latest_event = CalendarEvent.objects.filter(item=item, is_custom=False).exclude(title="__API_SYNC__").order_by('-date').first()
+            auto_notify = latest_event.notify if latest_event else False
+
+            for ep_key in ["last_episode_to_air", "next_episode_to_air"]:
+                ep_data = data.get(ep_key)
+                if ep_data and ep_data.get("air_date"):
+                    air_dt = datetime.datetime.strptime(ep_data["air_date"], "%Y-%m-%d").replace(tzinfo=datetime.timezone.utc)
+                    
+                    if air_dt >= three_months_ago:
+                        db_date = _normalize_dt(air_dt)
+                        title_str = f"Episode {ep_data.get('episode_number')} (S{ep_data.get('season_number')})"
+                        
+                        # Use get_or_create so we don't overwrite manual notify toggles on update
+                        ev, created = CalendarEvent.objects.get_or_create(
+                            item=item, 
+                            title=title_str, 
+                            is_custom=False,
+                            defaults={'date': db_date, 'notify': auto_notify}
+                        )
+                        if not created and ev.date != db_date:
+                            ev.date = db_date
+                            ev.save(update_fields=['date'])
+        _mark_as_synced(item)
 
 def _sync_anilist(items):
     if not items: 
@@ -170,16 +192,24 @@ def _sync_anilist(items):
                 current_utc = datetime.datetime.now(datetime.timezone.utc)
                 three_months_ago = current_utc - datetime.timedelta(days=90)
                 
+                # Smart Notifications
+                latest_event = CalendarEvent.objects.filter(item=item, is_custom=False).exclude(title="__API_SYNC__").order_by('-date').first()
+                auto_notify = latest_event.notify if latest_event else False
+                
                 next_ep = m.get("nextAiringEpisode")
                 if next_ep:
                     air_dt = datetime.datetime.fromtimestamp(next_ep["airingAt"], tz=datetime.timezone.utc)
                     db_date = _normalize_dt(air_dt)
-                    CalendarEvent.objects.update_or_create(
+                    
+                    ev, created = CalendarEvent.objects.get_or_create(
                         item=item, 
                         title=f"Episode {next_ep['episode']}", 
                         is_custom=False,
-                        defaults={'date': db_date}
+                        defaults={'date': db_date, 'notify': auto_notify}
                     )
+                    if not created and ev.date != db_date:
+                        ev.date = db_date
+                        ev.save(update_fields=['date'])
                 else:
                     start = m.get("startDate")
                     if start and start.get("year") and start.get("month") and start.get("day"):

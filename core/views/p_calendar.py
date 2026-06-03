@@ -39,6 +39,7 @@ def get_calendar_events(request):
                 "media_type": e.item.media_type,
                 "date": e.date.isoformat(),
                 "is_custom": e.is_custom,
+                "notify": e.notify,
                 "notes": e.notes,
                 "recurring_group": str(e.recurring_group) if e.recurring_group else None,
                 "cover_url": e.item.cover_url or "/static/core/img/placeholder.png",
@@ -171,5 +172,27 @@ def sync_calendar(request):
             sync_items_with_apis(items_to_sync)
 
         return JsonResponse({"success": True, "synced_count": len(items_to_sync)})
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)})
+    
+@ensure_csrf_cookie
+@require_POST
+def toggle_calendar_notify(request, event_id):
+    try:
+        event = CalendarEvent.objects.get(id=event_id)
+        event.notify = not event.notify
+        event.save(update_fields=['notify'])
+        return JsonResponse({"success": True, "notify": event.notify})
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)})
+
+@ensure_csrf_cookie
+@require_POST
+def dismiss_calendar_notify(request, event_id):
+    try:
+        event = CalendarEvent.objects.get(id=event_id)
+        event.notified = True
+        event.save(update_fields=['notified'])
+        return JsonResponse({"success": True})
     except Exception as e:
         return JsonResponse({"success": False, "error": str(e)})

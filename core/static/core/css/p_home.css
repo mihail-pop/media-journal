@@ -404,8 +404,158 @@ h2 {
   color: var(--text-primary);
   max-width: 530px;
   margin-bottom: 1rem;
-  cursor: default;
 }
+
+/* Upcoming Tiles */
+.upcoming-tiles-wrapper {
+  background: var(--bg-tertiary);
+  border-radius: 4px;
+  max-width: 550px; /* Match activity grid width exactly */
+  height: 176px;    /* Match activity grid height exactly */
+  padding-top: 12px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+.upcoming-tiles-container {
+  display: flex;
+  overflow-x: auto;
+  gap: 8px;
+  padding: 0 15px 12px 15px; /* Bottom padding creates space for the scrollbar */
+
+  height: 100%;
+  box-sizing: border-box;
+  scrollbar-color: var(--text-primary) var(--bg-tertiary);
+}
+
+/* Custom Scrollbar for Upcoming Tiles */
+.upcoming-tiles-container::-webkit-scrollbar {
+  height: 6px;
+  display: block; /* Show scrollbar */
+}
+
+.upcoming-tiles-container::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+  border-radius: 4px;
+  margin: 0 15px; /* Keeps track aligned with padding */
+}
+
+.upcoming-tiles-container::-webkit-scrollbar-thumb {
+  background-color: var(--border-color);
+  border-radius: 4px;
+}
+
+.upcoming-tiles-container::-webkit-scrollbar-thumb:hover {
+  background-color: var(--text-secondary);
+}
+
+.upcoming-tile {
+  flex: 0 0 10rem;
+  height: 100%; /* Fill container height above scrollbar */
+  max-width: 10rem;
+  background: var(--bg-primary);
+  border-radius: 6px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+  color: inherit;
+  border: 2px solid transparent;
+  transition: all 0.2s;
+  box-sizing: border-box;
+}
+
+.upcoming-tile:hover {
+  background: var(--hover-bg);
+}
+
+.upcoming-tile.today-tile {
+  border-color: var(--text-secondary);
+}
+
+.upcoming-tile-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.upcoming-day-label {
+  color: var(--text-primary);
+}
+
+.upcoming-tile-events {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow: hidden; /* Removes vertical scrolling to prevent overlaps */
+  align-items: flex-start;
+}
+
+.home-event-pill {
+  flex-shrink: 0;
+  width: fit-content;
+  max-width: 100%; 
+  display: block; /* Ensures text-overflow ellipsis works perfectly */
+  box-sizing: border-box; 
+  font-size: 0.75rem;
+  padding: 3px 6px;
+  border-radius: 4px;
+  color: #ffffff !important;
+  white-space: nowrap;
+  overflow: hidden; 
+  text-overflow: ellipsis; 
+  box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+/* Global Tooltip for Pills */
+.pill-global-tooltip {
+  position: fixed;
+  display: none;
+  background: var(--bg-tertiary);
+  padding: 8px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  z-index: 9999;
+  pointer-events: none;
+  gap: 12px;
+  align-items: center;
+  max-width: 250px;
+}
+.pill-global-tooltip img {
+  width: 60px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+.pill-global-tooltip[data-media-type="music"] img {
+  width: 60px;
+  height: 60px;
+}
+.tooltip-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+.tooltip-info strong {
+  color: var(--text-primary);
+  font-size: 0.95rem;
+}
+
+/* Colors matching your dashboard stats */
+.bg-movie { background-color: #F4B400; }
+.bg-tv { background-color: #E53935; }
+.bg-anime { background-color: #42A5F5; }
+.bg-game { background-color: #66BB6A; }
+.bg-book { background-color: #EC407A; }
+.bg-manga { background-color: #AB47BC; }
+.bg-music { background-color: #FF7043; }
 
 .extra-stats-class h3 {
   color: var(--text-primary);
@@ -714,7 +864,7 @@ h2 {
 .notifications-dropdown li {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start; /* Keeps the X at the top if text goes to a second line */
+  align-items: center; /* Vertically center the text and the X button */
   padding: 8px 6px;
   border-bottom: 2px solid var(--text-primary);
   gap: 10px; /* Separates the X from the text block */
@@ -724,11 +874,16 @@ h2 {
   border-bottom: none;
 }
 
+/* Styling for all links inside notifications (including system links) */
 .notifications-dropdown li a {
   color: var(--text-secondary);
   text-decoration: underline;
+}
+
+/* Let the wrapper span grow to push the X button to the right */
+.notification-text {
   flex-grow: 1;
-  margin-right: 10px;
+  line-height: 1.4;
 }
 
 .notifications-dropdown li a:hover {
@@ -744,7 +899,9 @@ h2 {
   padding: 0 6px;
   user-select: none;
   transition: color 0.3s ease;
-  margin-bottom: 4px;
+  margin-bottom: 0; /* Removed bottom margin offset to allow true vertical centering */
+  display: inline-flex;
+  align-items: center;
 }
 
 .dismiss-notification:hover {
@@ -790,7 +947,8 @@ h2 {
   /* on hover, maybe yellow to match your theme */
 }
 
-.recent-activity-hidden {
+.recent-activity-hidden,
+.upcoming-activity-hidden {
   display: none;
 }
 
@@ -808,7 +966,7 @@ h2 {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 27rem;
+  max-width: 25rem;
 }
 
 .activity-right {
@@ -888,8 +1046,8 @@ h2 {
   background-color: var(--bg-quaternary);
 }
 
-#advanced-activity-btn,
-#toggle-activity-btn,
+.advanced-btn,
+.toggle-btn,
 .all-collections-btn {
   display: inline-block;
   padding: 0.25rem 0.5rem;
@@ -903,8 +1061,8 @@ h2 {
   font-size: 0.85rem;
 }
 
-#advanced-activity-btn:hover,
-#toggle-activity-btn:hover,
+.advanced-btn:hover,
+.toggle-btn:hover,
 .all-collections-btn:hover {
   background-color: var(--bg-quaternary);
   color: var(--text-primary);
@@ -1193,8 +1351,17 @@ a.all-collections-btn:hover {
   }
 
   .extra-stats-class h3,
-  .activity-graph h3 {
+  .activity-graph h3, .activity-graph .panel-header h3 {
     font-size: 1.5rem;
+  }
+
+  /* Activity / Upcoming swap header fix for mobile */
+  .activity-graph .panel-header {
+      max-width: 100% !important;
+  }
+  .upcoming-tiles-container {
+      max-width: 100% !important;
+      padding: 10px;
   }
 
   .stats-section {

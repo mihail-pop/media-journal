@@ -555,6 +555,17 @@ body.drag-active .card-title {
     font-weight: bold;
 }
 
+#music-player-container {
+  position: fixed !important;
+  z-index: 9999 !important;
+  line-height: 0 !important;
+}
+
+.music-player-container iframe {
+  display: block !important;
+  border: none !important;
+}
+
 /* ==========================================================================
    MOBILE OVERRIDES
    ========================================================================== */

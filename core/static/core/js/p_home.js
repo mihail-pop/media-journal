@@ -6,6 +6,106 @@ document.addEventListener("DOMContentLoaded", function () {
   const statsContainer = document.getElementById("stats-view-container");
   const collectionsContainer = document.getElementById("collections-view-container");
   
+  const activityContainer = document.getElementById("activity-view-container");
+  const upcomingContainer = document.getElementById("upcoming-view-container");
+
+  if (activityContainer && upcomingContainer) {
+    const savedActView = localStorage.getItem("homeDashboardActivityView") || "activity";
+    
+    if (savedActView === "upcoming") {
+      activityContainer.style.display = "none";
+      upcomingContainer.style.display = "block";
+    } else {
+      activityContainer.style.display = "block";
+      upcomingContainer.style.display = "none";
+    }
+
+    // Toggle to Upcoming
+    document.querySelectorAll('.swap-to-upcoming').forEach(btn => {
+      btn.addEventListener('click', () => {
+        activityContainer.style.display = "none";
+        upcomingContainer.style.display = "block";
+        localStorage.setItem("homeDashboardActivityView", "upcoming");
+        centerTodayTile();
+      });
+    });
+
+    // Toggle to Activity
+    document.querySelectorAll('.swap-to-activity').forEach(btn => {
+      btn.addEventListener('click', () => {
+        activityContainer.style.display = "block";
+        upcomingContainer.style.display = "none";
+        localStorage.setItem("homeDashboardActivityView", "activity");
+      });
+    });
+
+    // Center the today tile on load if upcoming is active
+    if (savedActView === "upcoming") {
+        setTimeout(centerTodayTile, 100);
+    }
+  }
+
+  function centerTodayTile() {
+      const tilesContainer = document.querySelector('.upcoming-tiles-container');
+      const todayTile = document.querySelector('.today-tile');
+      
+      if (tilesContainer && todayTile) {
+          requestAnimationFrame(() => {
+              const containerRect = tilesContainer.getBoundingClientRect();
+              const tileRect = todayTile.getBoundingClientRect();
+              
+              const containerCenter = tilesContainer.clientWidth / 2;
+              const tileCenter = todayTile.clientWidth / 2;
+              
+              // Calculate accurate absolute scroll position
+              const scrollPos = tilesContainer.scrollLeft + (tileRect.left - containerRect.left) - containerCenter + tileCenter;
+              
+              tilesContainer.scrollTo({ left: scrollPos, behavior: 'smooth' });
+          });
+      }
+  }
+
+  // Convert vertical mouse wheel scrolling into horizontal scrolling for the tiles
+  const tilesContainer = document.querySelector('.upcoming-tiles-container');
+  if (tilesContainer) {
+      tilesContainer.addEventListener('wheel', (e) => {
+          if (e.deltaY !== 0) {
+              e.preventDefault();
+              // Scroll naturally based on the scroll wheel's native delta
+              // This fixes the stuttering caused by overlapping 'smooth' animations
+              tilesContainer.scrollLeft += e.deltaY;
+          }
+      }, { passive: false });
+  }
+
+  // --- Tooltip Logic for Upcoming Pills ---
+  const body = document.body;
+  const tooltip = document.createElement('div');
+  tooltip.className = 'pill-global-tooltip';
+  body.appendChild(tooltip);
+
+  document.querySelectorAll('.home-event-pill').forEach(pill => {
+      pill.addEventListener('mouseenter', (e) => {
+          tooltip.innerHTML = pill.querySelector('.pill-tooltip-content').innerHTML;
+          tooltip.dataset.mediaType = pill.dataset.mediaType;
+          tooltip.style.display = 'flex';
+          
+          const rect = pill.getBoundingClientRect();
+          // Position to the right of the pill
+          tooltip.style.top = `${rect.top - 10}px`;
+          let leftPos = rect.right + 10;
+          
+          // Prevent overflowing screen width
+          if (leftPos + 250 > window.innerWidth) {
+              leftPos = rect.left - 260; // Show on left instead
+          }
+          tooltip.style.left = `${leftPos}px`; 
+      });
+      pill.addEventListener('mouseleave', () => {
+          tooltip.style.display = 'none';
+      });
+  });
+  
   if (statsContainer && collectionsContainer) {
     const savedView = localStorage.getItem("homeDashboardView") || "stats";
     
@@ -143,12 +243,8 @@ function slugify(text) {
   // --- 1. DEFINE YOUR CUSTOM RELEASE NOTIFICATIONS HERE ---
   const SYSTEM_NOTIFICATIONS = [
     {
-      id: "sys_1_24_refresh",
-      html: "If you are updating from a release before v1.24.0 go to <a href='/settings/'>Settings > Refresh</a> to get genres and creators for all media items."
-    },
-    {
-      id: "sys_1_24_stats",
-      html: "On home page you can press on the 'Stats' title to swap to Collections."
+      id: "sys_upcoming_swap_hint",
+      html: "On the home page, you can press on the 'Activity History' title to swap to Upcoming Releases and access the <a href='/calendar/'>Calendar</a> page."
     }
   ];
 
@@ -175,7 +271,7 @@ function slugify(text) {
       
       // Create a span container to hold the mixed text and HTML link
       const textContainer = document.createElement('span');
-      textContainer.style.flexGrow = '1';
+      textContainer.className = 'notification-text';
       textContainer.style.marginRight = '10px';
       textContainer.innerHTML = notif.html;
       
@@ -225,8 +321,16 @@ function slugify(text) {
         return;
       }
 
-      // B. If it's a backend DB notification (seasons/sequels)
-      fetch(`/notifications/dismiss/${notifId}/`, {
+      // B. If it's a backend DB notification
+      let fetchUrl = `/notifications/dismiss/${notifId}/`;
+      
+      // If it's a calendar event notification, use the calendar endpoint
+      if (notifId.startsWith('cal_')) {
+          const trueId = notifId.split('_')[1];
+          fetchUrl = `/api/calendar/dismiss-notify/${trueId}/`;
+      }
+
+      fetch(fetchUrl, {
         method: 'POST',
         headers: {
           'X-CSRFToken': getCookie("csrftoken"),
@@ -269,7 +373,6 @@ function slugify(text) {
 const toggleBtn = document.getElementById("toggle-activity-btn");
 const advancedBtn = document.getElementById("advanced-activity-btn");
 const hiddenActivities = document.querySelectorAll("#recent-activity-list .recent-activity-hidden");
-
 toggleBtn?.addEventListener("click", () => {
   if (toggleBtn.dataset.state === "more") {
     hiddenActivities.forEach(el => el.classList.remove("recent-activity-hidden"));
@@ -284,4 +387,20 @@ toggleBtn?.addEventListener("click", () => {
 
 advancedBtn?.addEventListener("click", () => {
   window.location.href = "/history/";
+});
+
+// Upcoming List toggle
+const upcomingToggleBtn = document.getElementById("toggle-upcoming-btn");
+const hiddenUpcoming = document.querySelectorAll("#upcoming-activity-list .upcoming-activity-hidden");
+
+upcomingToggleBtn?.addEventListener("click", () => {
+  if (upcomingToggleBtn.dataset.state === "more") {
+    hiddenUpcoming.forEach(el => el.classList.remove("upcoming-activity-hidden"));
+    upcomingToggleBtn.textContent = "Show Less";
+    upcomingToggleBtn.dataset.state = "less";
+  } else {
+    hiddenUpcoming.forEach(el => el.classList.add("upcoming-activity-hidden"));
+    upcomingToggleBtn.textContent = "Show More";
+    upcomingToggleBtn.dataset.state = "more";
+  }
 });

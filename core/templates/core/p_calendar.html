@@ -31,12 +31,12 @@
                     </svg>
                 </button>
                 <div class="sync-divider"></div>
-                <button id="sync-ongoing-btn" class="header-icon-btn toggle-btn active-state" title="Watching / Playing">
+                <button id="sync-ongoing-btn" class="header-icon-btn toggle-btn active-state" title="Sync Watching / Reading / Playing">
                     <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
                         <polygon points="5 3 19 12 5 21 5 3"></polygon>
                     </svg>
                 </button>
-                <button id="sync-planned-btn" class="header-icon-btn toggle-btn" title="Planned">
+                <button id="sync-planned-btn" class="header-icon-btn toggle-btn" title="Sync Planned">
                     <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
                     </svg>
@@ -73,21 +73,21 @@
 
 <!-- Add Custom Event Modal -->
 <div id="custom-event-modal" class="modal-hidden">
-    <div class="modal-content">
+    <form id="custom-event-form" class="modal-content">
         <div class="modal-header">
             <h2>Add Custom Release</h2>
-            <button class="close-modal-btn" id="close-custom-modal">✕</button>
+            <button type="button" class="close-modal-btn" id="close-custom-modal">×</button>
         </div>
         <div class="modal-body">
             <div class="form-group">
-                <label>Search Your Library</label>
-                <input type="text" id="event-item-search" placeholder="Search for a show, game, book..." autocomplete="off">
+                <label>Search</label>
+                <input type="text" id="event-item-search" placeholder="Search any media.." autocomplete="off">
                 <div id="event-search-results" class="search-results-dropdown hidden"></div>
                 <!-- Selected Item Preview -->
                 <div id="selected-item-preview" class="selected-preview hidden">
                     <img id="selected-item-cover" src="" alt="Cover">
                     <span id="selected-item-title"></span>
-                    <button id="clear-selected-item" class="clear-btn">✕</button>
+                    <button type="button" id="clear-selected-item" class="clear-btn">✕</button>
                 </div>
             </div>
             
@@ -105,14 +105,20 @@
             </div>
 
             <div class="form-group">
-                <label>Event Title (e.g. "Episode 12", "Volume 5 Release")</label>
+                <label>Event Title (e.g. "Episode 12", "Volume 5")</label>
                 <input type="text" id="event-title" placeholder="Optional">
             </div>
 
             <div class="form-row repeats-row">
-                <div class="form-group checkbox-group">
-                    <input type="checkbox" id="event-is-recurring">
-                    <label for="event-is-recurring">Recurring Event</label>
+                <div class="form-group checkbox-group" style="flex-direction: row; display: flex; gap: 1.5rem;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" id="event-notify">
+                        <label for="event-notify" style="margin-bottom: 0;">Notify</label>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" id="event-is-recurring">
+                        <label for="event-is-recurring" style="margin-bottom: 0;">Recurring Event</label>
+                    </div>
                 </div>
             </div>
 
@@ -129,30 +135,30 @@
 
             <div class="form-group">
                 <label>Notes</label>
-                <textarea id="event-notes" rows="2" placeholder="Any personal notes?"></textarea>
+                <textarea id="event-notes" rows="2" placeholder="Optional"></textarea>
             </div>
         </div>
         <div class="modal-footer">
-            <button id="save-custom-event-btn" class="cal-action-btn primary">Save Event</button>
+            <button type="submit" id="save-custom-event-btn" class="cal-action-btn primary">Save</button>
         </div>
-    </div>
+    </form>
 </div>
 <div id="custom-modal-overlay" class="modal-hidden"></div>
 
 <!-- Custom Delete Confirmation Modal -->
-<div id="delete-confirm-modal" class="modal-hidden">
-    <div class="modal-content small-modal">
+<div id="delete-confirm-modal" class="modal-hidden small-modal">
+    <div class="modal-content">
         <div class="modal-header">
             <h2>Delete Event</h2>
-            <button class="close-modal-btn" id="close-delete-modal">✕</button>
+            <button class="close-modal-btn" id="close-delete-modal">×</button>
         </div>
         <div class="modal-body">
             <p id="delete-modal-text">Are you sure you want to delete this event?</p>
         </div>
         <div class="modal-footer" style="display: flex; gap: 10px; justify-content: flex-end;">
-            <button id="cancel-delete-btn" class="action-btn">Cancel</button>
-            <button id="delete-single-btn" class="action-btn delete-btn">Just This One</button>
-            <button id="delete-all-btn" class="action-btn delete-btn hidden">Delete All Future</button>
+            <button type="button" id="cancel-delete-btn" class="action-btn">Cancel</button>
+            <button type="button" id="delete-single-btn" class="action-btn delete-btn">Delete</button>
+            <button type="button" id="delete-all-btn" class="action-btn delete-btn hidden">Delete All Future</button>
         </div>
     </div>
 </div>

@@ -1,4 +1,37 @@
 document.addEventListener("DOMContentLoaded", function () {
+    // --- Safe Background Scroll Locking (Prevents Layout Shifting) ---
+    const keys = {37: 1, 38: 1, 39: 1, 40: 1, 32: 1, 33: 1, 34: 1, 35: 1, 36: 1};
+    
+    function preventDefault(e) { 
+        // Allow scrolling if the event originates inside the modal body or search results dropdown
+        if (e.target.closest('#event-search-results')) {
+            return;
+        }
+        e.preventDefault(); 
+    }
+    function preventDefaultForScrollKeys(e) {
+        // Do NOT block key presses (like space or arrow keys) if the user is typing inside an input field
+        const targetTag = e.target.tagName.toLowerCase();
+        if (targetTag === 'input' || targetTag === 'textarea' || e.target.isContentEditable) {
+            return true;
+        }
+        if (keys[e.keyCode]) { e.preventDefault(); return false; }
+    }
+    const wheelEvent = 'onwheel' in document.createElement('div') ? 'wheel' : 'mousewheel';
+    
+    function enableScrollLock() {
+        window.addEventListener('DOMMouseScroll', preventDefault, false);
+        window.addEventListener(wheelEvent, preventDefault, { passive: false });
+        window.addEventListener('touchmove', preventDefault, { passive: false });
+        window.addEventListener('keydown', preventDefaultForScrollKeys, false);
+    }
+    function disableScrollLock() {
+        window.removeEventListener('DOMMouseScroll', preventDefault, false);
+        window.removeEventListener(wheelEvent, preventDefault, { passive: false });
+        window.removeEventListener('touchmove', preventDefault, { passive: false });
+        window.removeEventListener('keydown', preventDefaultForScrollKeys, false);
+    }
+
     const calendarGrid = document.getElementById("calendar-grid");
     const monthYearDisplay = document.getElementById("month-year-display");
     const dayDetailsSection = document.getElementById("day-details-section");
@@ -9,6 +42,16 @@ document.addEventListener("DOMContentLoaded", function () {
     let currentMonth = currentDate.getMonth();
     let currentYear = currentDate.getFullYear();
     let selectedDateStr = null;
+
+    // Check if a specific date was passed from the home page
+    const urlParams = new URLSearchParams(window.location.search);
+    const passedDate = urlParams.get('date');
+    if (passedDate) {
+        selectedDateStr = passedDate;
+        const passedObj = new Date(passedDate);
+        currentMonth = passedObj.getMonth();
+        currentYear = passedObj.getFullYear();
+    }
     let eventsCache = {}; // Keys: 'YYYY-MM-DD', Values: Array of events
 
     const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -108,7 +151,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
         cell.innerHTML = `
             <span class="day-number">${day}</span>
-            <div class="day-events-container" id="events-${dateStr}"></div>
+            <div class="day-events-container">
+                <div class="day-events-track" id="events-${dateStr}"></div>
+            </div>
         `;
 
         cell.addEventListener("click", () => {
@@ -121,10 +166,18 @@ document.addEventListener("DOMContentLoaded", function () {
         calendarGrid.appendChild(cell);
     }
 
-    function populateEvents() {
-        // Clear ALL event containers first to remove deleted "ghost" items
+function populateEvents() {
+        // Clear ALL event track containers first to remove deleted "ghost" items
         document.querySelectorAll(".day-events-container").forEach(container => {
-            container.innerHTML = "";
+            if (container.dataset.tickerId) {
+                clearInterval(container.dataset.tickerId);
+            }
+            container.scrollTop = 0; // Reset scroll cleanly
+        });
+
+        document.querySelectorAll(".day-events-track").forEach(track => {
+            track.innerHTML = "";
+            track.style.transform = 'none';
         });
 
         // Populate with fresh data
@@ -139,6 +192,96 @@ document.addEventListener("DOMContentLoaded", function () {
                     pill.title = ev.title; // Shows full title on mouse hover
                     container.appendChild(pill);
                 });
+            }
+        });
+
+        // Initialize Step-Ticker after DOM has painted
+        setTimeout(initStepTicker, 50);
+    }
+
+function initStepTicker() {
+        document.querySelectorAll('.day-events-container').forEach(container => {
+            const track = container.querySelector('.day-events-track');
+            if (!track) return;
+
+            // Only activate ticker if items overflow the container
+            if (track.scrollHeight > container.clientHeight) {
+                
+                let tickerId;
+                let isHovered = false;
+                let animationFrameId = null;
+
+                // Lock tracking on hover, allow user full manual scroll control
+                container.addEventListener('mouseenter', () => {
+                    isHovered = true;
+                    // Instantly stop the animation if the user hovers while it's moving
+                    if (animationFrameId) cancelAnimationFrame(animationFrameId);
+                });
+                
+                // When mouse leaves, reset the timer so it waits before moving again
+                container.addEventListener('mouseleave', () => {
+                    isHovered = false;
+                    resetTicker();
+                });
+
+                function resetTicker() {
+                    clearInterval(tickerId);
+                    tickerId = setInterval(tick, 3500); // 3.5 seconds wait time before next move
+                    container.dataset.tickerId = tickerId;
+                }
+
+                // Custom peaceful scrolling animation
+                function peacefulScrollTo(targetTop, duration) {
+                    const startTop = container.scrollTop;
+                    const distance = targetTop - startTop;
+                    let startTime = null;
+
+                    function animation(currentTime) {
+                        if (isHovered) return; // Abort instantly if user hovers
+
+                        if (startTime === null) startTime = currentTime;
+                        const timeElapsed = currentTime - startTime;
+                        const progress = Math.min(timeElapsed / duration, 1);
+                        
+                        // Easing function (Gentle start, smooth glide, gentle stop)
+                        const ease = progress < 0.5 
+                            ? 2 * progress * progress 
+                            : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+
+                        container.scrollTop = startTop + distance * ease;
+
+                        if (timeElapsed < duration) {
+                            animationFrameId = requestAnimationFrame(animation);
+                        }
+                    }
+                    animationFrameId = requestAnimationFrame(animation);
+                }
+
+                function tick() {
+                    if (isHovered) return;
+
+                    const maxScroll = container.scrollHeight - container.clientHeight;
+
+                    // If we are at or extremely close to the bottom, loop back to the top
+                    if (container.scrollTop >= maxScroll - 2) {
+                        peacefulScrollTo(0, 800); // 800ms duration to glide back to top
+                        return;
+                    }
+
+                    // Find the exact top pixel of the NEXT pill in the list
+                    let nextTop = maxScroll; 
+                    for (let child of track.children) {
+                        if (child.offsetTop > container.scrollTop + 2) {
+                            nextTop = child.offsetTop;
+                            break;
+                        }
+                    }
+
+                    // Glide to the next pill over 800ms
+                    peacefulScrollTo(nextTop, 800); 
+                }
+
+                resetTicker(); // Start!
             }
         });
     }
@@ -204,18 +347,48 @@ document.addEventListener("DOMContentLoaded", function () {
                                 <circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>
                             </svg>${timeString}
                         </div>` : ""}
-                        ${ev.notes ? `<div class="event-card-desc" style="font-style:italic">"${ev.notes}"</div>` : ""}
+                        ${ev.notes ? `<div class="event-card-notes" title="${ev.notes.replace(/"/g, '&quot;')}">"${ev.notes}"</div>` : ""}
                     </div>
                 </a>
-                ${ev.is_custom ? `<button class="event-delete-btn" data-id="${ev.id}" data-group="${ev.recurring_group || ''}" title="Delete Entry">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                </button>` : ""}
+                <div class="event-actions">
+                    <button class="event-action-btn notify-btn ${ev.notify ? 'active' : ''}" data-id="${ev.id}" title="${ev.notify ? 'Disable Notification' : 'Enable Notification'}">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="${ev.notify ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+                            <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+                        </svg>
+                    </button>
+                    ${ev.is_custom ? `<button class="event-action-btn delete-btn" data-id="${ev.id}" data-group="${ev.recurring_group || ''}" title="Delete Entry">
+                        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="19" y1="5" x2="5" y2="19"></line>
+                            <line x1="5" y1="5" x2="19" y2="19"></line>
+                        </svg>
+                    </button>` : ""}
+                </div>
             `;
             dayEventsGrid.appendChild(card);
         });
 
+        // Add Notification Toggle Listeners
+        document.querySelectorAll(".notify-btn").forEach(btn => {
+            btn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                const id = btn.dataset.id;
+                
+                fetch(`/api/calendar/toggle-notify/${id}/`, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': getCookie('csrftoken') }
+                }).then(res => res.json()).then(data => {
+                    if (data.success) {
+                        btn.classList.toggle("active", data.notify);
+                        btn.querySelector('svg').setAttribute('fill', data.notify ? 'currentColor' : 'none');
+                        btn.title = data.notify ? 'Disable Notification' : 'Enable Notification';
+                    }
+                });
+            });
+        });
+
         // Add Delete Listeners for Custom Modals
-        document.querySelectorAll(".event-delete-btn").forEach(btn => {
+        document.querySelectorAll(".delete-btn").forEach(btn => {
             btn.addEventListener("click", (e) => {
                 e.stopPropagation(); // Prevents clicking the link underneath
                 const id = btn.dataset.id;
@@ -229,14 +402,17 @@ document.addEventListener("DOMContentLoaded", function () {
                 
                 if (group && group !== "null") {
                     document.getElementById("delete-modal-text").textContent = "This is a recurring event. How would you like to delete it?";
+                    document.getElementById("delete-single-btn").textContent = "Just This One";
                     document.getElementById("delete-all-btn").classList.remove("hidden");
                 } else {
                     document.getElementById("delete-modal-text").textContent = "Are you sure you want to delete this custom entry?";
+                    document.getElementById("delete-single-btn").textContent = "Delete";
                     document.getElementById("delete-all-btn").classList.add("hidden");
                 }
                 
                 deleteModal.classList.remove("modal-hidden");
                 overlay.classList.remove("modal-hidden");
+                enableScrollLock(); // Lock scroll completely
             });
         });
     }
@@ -248,10 +424,10 @@ document.addEventListener("DOMContentLoaded", function () {
     function closeDeleteModal() {
         document.getElementById("delete-confirm-modal").classList.add("modal-hidden");
         document.getElementById("custom-modal-overlay").classList.add("modal-hidden");
+        disableScrollLock(); // Unlock scroll safely
         pendingDeleteId = null;
         pendingDeleteGroup = null;
     }
-
     document.getElementById("close-delete-modal").addEventListener("click", closeDeleteModal);
     document.getElementById("cancel-delete-btn").addEventListener("click", closeDeleteModal);
     document.getElementById("custom-modal-overlay").addEventListener("click", () => {
@@ -285,6 +461,7 @@ document.addEventListener("DOMContentLoaded", function () {
     openBtn.addEventListener("click", () => {
         modal.classList.remove("modal-hidden");
         overlay.classList.remove("modal-hidden");
+        enableScrollLock(); // Lock scroll
         // Pre-fill date with currently selected date if exists
         if (selectedDateStr) {
             document.getElementById("event-date").value = selectedDateStr;
@@ -294,15 +471,13 @@ document.addEventListener("DOMContentLoaded", function () {
     const closeModal = () => {
         modal.classList.add("modal-hidden");
         overlay.classList.add("modal-hidden");
+        disableScrollLock(); // Unlock scroll
         
-        // Reset form completely on close
+        // Reset form completely
+        document.getElementById("custom-event-form").reset();
         document.getElementById("event-item-id").value = "";
-        document.getElementById("event-date").value = "";
-        document.getElementById("event-time").value = "";
-        document.getElementById("event-title").value = "";
-        document.getElementById("event-notes").value = "";
-        document.getElementById("event-is-recurring").checked = false;
         document.getElementById("recurring-options").classList.add("hidden");
+        searchInput.setCustomValidity(""); // Clear custom validation errors
         
         // Reset Search UI
         searchInput.value = "";
@@ -318,6 +493,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // Search Logic
     let searchTimeout;
     searchInput.addEventListener("input", (e) => {
+        searchInput.setCustomValidity(""); // Clear error when typing
         clearTimeout(searchTimeout);
         const q = e.target.value;
         if (q.length < 2) {
@@ -374,18 +550,25 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
-    // Save Custom Event
-    document.getElementById("save-custom-event-btn").addEventListener("click", () => {
+    // Save Custom Event (Native Form Submission)
+    document.getElementById("custom-event-form").addEventListener("submit", (e) => {
+        e.preventDefault(); // Prevent page reload
+        
         const itemId = document.getElementById("event-item-id").value;
-        const date = document.getElementById("event-date").value;
-        if (!itemId || !date) return alert("Please select an item and a date.");
+        if (!itemId) {
+            searchInput.setCustomValidity("Please search and select an item from your library.");
+            searchInput.reportValidity(); // Show native browser popup
+            return;
+        }
 
+        const date = document.getElementById("event-date").value;
         const payload = {
             item_id: itemId,
             date: date,
             time: document.getElementById("event-time").value,
             title: document.getElementById("event-title").value,
             notes: document.getElementById("event-notes").value,
+            notify: document.getElementById("event-notify").checked,
             repeats: document.getElementById("event-is-recurring").checked ? document.getElementById("event-repeats").value : 1,
             interval_days: document.getElementById("event-interval").value
         };
@@ -453,11 +636,13 @@ document.addEventListener("DOMContentLoaded", function () {
         const statusMsg = document.getElementById("sync-status-msg");
         
         if (force) {
-            syncBtn.classList.add("is-syncing");
             syncBtn.style.pointerEvents = "none";
-            statusMsg.textContent = "Syncing APIs...";
-            statusMsg.classList.add("visible");
         }
+        
+        // Trigger animations/bubbles for BOTH manual and auto sync
+        syncBtn.classList.add("is-syncing");
+        statusMsg.textContent = force ? "Syncing APIs..." : "Auto-syncing...";
+        statusMsg.classList.add("visible");
 
         const payload = {
             sync_ongoing: ongoingBtn.classList.contains("active-state"),
@@ -470,17 +655,17 @@ document.addEventListener("DOMContentLoaded", function () {
             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
             body: JSON.stringify(payload)
         }).then(res => res.json()).then(data => {
-            if (force) {
-                syncBtn.classList.remove("is-syncing");
-                syncBtn.style.pointerEvents = "auto";
-                statusMsg.textContent = "Sync Complete!";
-                
-                // Hide message after 2.5 seconds
-                setTimeout(() => {
-                    statusMsg.classList.remove("visible");
-                }, 2500);
+            syncBtn.classList.remove("is-syncing");
+            if (force) syncBtn.style.pointerEvents = "auto";
+            
+            statusMsg.textContent = "Sync Complete!";
+            setTimeout(() => {
+                statusMsg.classList.remove("visible");
+            }, 2500);
 
-                fetchEvents(currentYear, currentMonth); // Refresh calendar to show new dots
+            // Update calendar if forced OR if auto-sync actually found updates
+            if (force || data.synced_count > 0) {
+                fetchEvents(currentYear, currentMonth);
             }
         });
     }

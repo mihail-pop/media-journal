@@ -76,7 +76,10 @@
         <ul>
           {% for n in notifications %}
             <li id="notification-{{ n.id }}">
-              <a href="{{ n.url }}">{{ n.title }}</a> was updated
+              <span class="notification-text">
+                <a href="{{ n.url }}">{{ n.title }}</a> 
+                {% if n.is_calendar %}has released!{% else %}was updated{% endif %}
+              </span>
               <button class="dismiss-notification" data-id="{{ n.id }}" aria-label="Dismiss notification">✕</button>
             </li>
           {% endfor %}
@@ -202,8 +205,21 @@
   </div>
 </div>
 
-<div class="activity-graph">
-    <h3>Activity History</h3>
+<div class="activity-graph-wrapper" style="display: flex; flex-direction: column; max-width: 600px;">
+  <!-- ACTIVITY VIEW -->
+  <div id="activity-view-container" class="activity-graph">
+    <div class="panel-header" style="max-width: 530px;">
+      <div class="section-title-wrapper swap-to-upcoming">
+        <h3>Activity History</h3>
+        <span class="swap-hint">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/>
+          </svg>
+          Upcoming Releases
+        </span>
+      </div>
+    </div>
+
     <div class="activity-grid">
       {% for column in activity_columns %}
         <div class="activity-column">
@@ -235,12 +251,79 @@
 
 {% if recent_activity|length > 2 %}
   <div class="show-more-activity-wrapper">
-    <button id="advanced-activity-btn">Media History</button>
-    <button id="toggle-activity-btn" data-state="more">Show More</button>
+    <button id="advanced-activity-btn" class="advanced-btn">Media History</button>
+    <button id="toggle-activity-btn" class="toggle-btn" data-state="more">Show More</button>
   </div>
 {% endif %}
 </div>
   </div>
+
+  <!-- UPCOMING RELEASES VIEW -->
+  <div id="upcoming-view-container" class="activity-graph" style="display: none;">
+    <div class="panel-header" style="max-width: 530px;">
+      <div class="section-title-wrapper swap-to-activity">
+        <h3>Upcoming Releases</h3>
+        <span class="swap-hint">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/>
+          </svg>
+          Activity History
+        </span>
+      </div>
+    </div>
+
+    <div class="upcoming-tiles-wrapper">
+        <div class="upcoming-tiles-container">
+            {% for tile in upcoming_tiles %}
+        <a href="/calendar/?date={{ tile.date_str }}" class="upcoming-tile {% if tile.is_today %}today-tile{% endif %}" id="tile-{{ tile.date_str }}">
+            <div class="upcoming-tile-header">
+                <span class="upcoming-day-label">{{ tile.day_label }}</span>
+                <span class="upcoming-day-date">{{ tile.display_date }}</span>
+            </div>
+            <div class="upcoming-tile-events">
+                {% for ev in tile.events %}
+                <div class="home-event-pill bg-{{ ev.media_type }}" data-media-type="{{ ev.media_type }}">
+                    {{ ev.title }}
+                    <div class="pill-tooltip-content" style="display: none;">
+                        <img src="{{ ev.cover_url }}" alt="">
+                        <div class="tooltip-info">
+                            <strong>{{ ev.title }}</strong>
+                            <span>{{ ev.event_title }}</span>
+                            {% if ev.time_str %}<span>at {{ ev.time_str }}</span>{% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </a>
+        {% endfor %}
+        </div>
+    </div>
+
+    <div class="recent-activity">
+      <ul id="upcoming-activity-list">
+        {% for entry in upcoming_list %}
+          <li class="{% if forloop.counter > 2 %}upcoming-activity-hidden{% endif %}">
+            <a href="{{ entry.url }}" class="activity-entry">
+              <span class="activity-left">{{ entry.message_main }}</span>
+              <span class="activity-right">{{ entry.message_time }}</span>
+              <div class="activity-thumbnail" data-media-type="{{ entry.media_type }}">
+                <img src="{{ entry.cover_url }}" alt="">
+              </div>
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+
+      {% if upcoming_list|length > 2 %}
+        <div class="show-more-activity-wrapper">
+          <a href="/calendar/" id="advanced-upcoming-btn" class="advanced-btn">Calendar</a>
+          <button id="toggle-upcoming-btn" class="toggle-btn" data-state="more">Show More</button>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
 </section>
 
 
