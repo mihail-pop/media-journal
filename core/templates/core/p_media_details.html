@@ -122,7 +122,7 @@
         <h2>Prequel{{ prequels|length|pluralize }}</h2>
         <div class="recommendations-list">
           {% for rec in prequels %}
-          <a href="{% url 'anilist_detail' source=rec.source media_type=media_type source_id=rec.id %}" class="rec-card" title="{{ rec.title }}">
+          <a href="{% url 'anilist_detail' source=rec.source media_type=rec.media_type|default:media_type source_id=rec.id %}" class="rec-card" title="{{ rec.title }}">
             <img src="{{ rec.poster_path }}"
      alt="{{ rec.title }}"
      data-placeholder="{% static 'core/img/placeholder.png' %}"
@@ -141,7 +141,7 @@
         <h2>Sequel{{ sequels|length|pluralize }}</h2>
         <div class="recommendations-list">
           {% for rec in sequels %}
-          <a href="{% url 'anilist_detail' source=rec.source media_type=media_type source_id=rec.id %}" class="rec-card" title="{{ rec.title }}">
+          <a href="{% url 'anilist_detail' source=rec.source media_type=rec.media_type|default:media_type source_id=rec.id %}" class="rec-card" title="{{ rec.title }}">
             <img src="{{ rec.poster_path }}" 
      alt="{{ rec.title }}" 
      data-placeholder="{% static 'core/img/placeholder.png' %}" 
@@ -455,9 +455,9 @@
         {% url 'igdb_detail' igdb_id=rec.id %}
       {% elif media_type == 'anime' or media_type == 'manga' %}
         {% if rec.anilist_id %}
-          {% url 'anilist_detail' source='anilist' media_type=media_type source_id=rec.anilist_id %}
+          {% url 'anilist_detail' source='anilist' media_type=rec.media_type|default:media_type source_id=rec.anilist_id %}
         {% else %}
-          {% url 'anilist_detail' source='mal' media_type=media_type source_id=rec.mal_id|default:rec.id %}
+          {% url 'anilist_detail' source='mal' media_type=rec.media_type|default:media_type source_id=rec.mal_id|default:rec.id %}
         {% endif %}
       {% elif media_type == 'book' %}
         {% url 'openlib_detail' work_id=rec.id %}

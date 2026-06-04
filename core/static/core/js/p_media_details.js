@@ -2134,7 +2134,7 @@ if (data.trailers?.length) {
               <div class="recommendations-list">
                 ${data.recommendations.map(rec => `
                   <div class="recommendation">
-                    <a href="/anilist/${mediaType}/${rec.id}/" title="${rec.title}">
+                    <a href="/anilist/${rec.media_type || mediaType}/${rec.id}/" title="${rec.title}">
                       <img src="${rec.poster_path}" 
                            alt="${rec.title}" 
                            data-placeholder="/static/core/img/placeholder.png" 

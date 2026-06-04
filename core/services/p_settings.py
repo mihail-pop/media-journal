@@ -711,6 +711,7 @@ def refresh_anilist_item(media_type, anilist_id=None, mal_id=None, existing_rela
             "title": related["title"],
             "poster_path": local_related_poster,
             "relation": rel_type,
+            "media_type": related.get("media_type"),
         })
 
     new_provider_ids = {"anilist": str(data["anilist_id"])}

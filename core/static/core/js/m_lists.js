@@ -555,15 +555,11 @@ function createListRowElement(item, isDetailed = false) {
   }
 
   function formatListProgress(currentValue, totalValue, options = {}) {
-    const hasCurrent = currentValue !== null && currentValue !== undefined && currentValue !== '';
-    if (!hasCurrent) return '';
-
-    const currentNumber = Number(currentValue);
+    const current = (currentValue !== null && currentValue !== undefined && currentValue !== '') ? Number(currentValue) : 0;
     const totalNumber = Number(totalValue);
-    const current = Number.isFinite(currentNumber) ? currentNumber : currentValue;
     const hasTotal = totalValue !== null && totalValue !== undefined && totalValue !== '' && Number.isFinite(totalNumber) && totalNumber > 0;
 
-    if (!hasTotal || (options.hideTotalWhenOver && Number.isFinite(currentNumber) && currentNumber > totalNumber)) {
+    if (!hasTotal || (options.hideTotalWhenOver && current > totalNumber)) {
       return `${current}`;
     }
 
@@ -747,15 +743,15 @@ function compareItems(a, b) {
           if (da !== db) return da - db;
           return compareTitles(a.title, b.title);
         }
-        // hours / pages
-        if (currentSort === 'hours' || currentSort === 'pages') {
+        // hours
+        if (currentSort === 'hours') {
             const pa = Number(a.progress_main) || 0;
             const pb = Number(b.progress_main) || 0;
             if (pa !== pb) return pa - pb;
             return compareTitles(a.title, b.title);
         }
-        // episodes / seasons / chapters / volumes
-        if (currentSort === 'episodes' || currentSort === 'chapters') {
+        // episodes / chapters / pages
+        if (currentSort === 'episodes' || currentSort === 'chapters' || currentSort === 'pages') {
             const ea = effectiveProgress(a.total_main, a.progress_main);
             const eb = effectiveProgress(b.total_main, b.progress_main);
             if (ea !== eb) return ea - eb;

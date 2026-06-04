@@ -165,6 +165,7 @@ def anilist_detail(request, source, media_type, source_id):
                 "poster_path": related.get("poster_path"),
                 "is_full_url": related.get("poster_path", "").startswith("http")
                 or related.get("poster_path", "").startswith("/media/"),
+                "media_type": related.get("media_type", media_type),
             }
             rel_type = related.get("relation", "").lower()
             if rel_type == "prequel":
@@ -228,7 +229,8 @@ def anilist_detail(request, source, media_type, source_id):
                 "source": r_source,
                 "title": r["title"],
                 "poster_path": r["poster_path"],
-                "is_full_url": True
+                "is_full_url": True,
+                "media_type": r.get("media_type", media_type)
             }
             if r["relation"].lower() == "prequel":
                 prequels.append(entry)

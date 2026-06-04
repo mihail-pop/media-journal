@@ -175,7 +175,20 @@ def tvshows_api(request):
     # 'both' shows everything
 
     queryset = queryset.annotate(
-        status_order=status_ordering, rating_order=rating_ordering
+        status_order=status_ordering,
+        rating_order=rating_ordering,
+        episode_order=Case(
+            When(total_main__isnull=True, then=F("progress_main")),
+            When(total_main=0, then=F("progress_main")),
+            default=F("total_main"),
+            output_field=IntegerField(),
+        ),
+        season_order=Case(
+            When(total_secondary__isnull=True, then=F("progress_secondary")),
+            When(total_secondary=0, then=F("progress_secondary")),
+            default=F("total_secondary"),
+            output_field=IntegerField(),
+        ),
     )
 
     # Apply sorting
@@ -195,10 +208,10 @@ def tvshows_api(request):
         order_fields.append("-release_date" if sort_order == "desc" else "release_date")
         order_fields.extend([Lower("title"), "title"])  # Secondary sort
     elif sort_by == "episodes":
-        order_fields.append("-total_main" if sort_order == "desc" else "total_main")
+        order_fields.append("-episode_order" if sort_order == "desc" else "episode_order")
         order_fields.extend([Lower("title"), "title"])  # Secondary sort
     elif sort_by == "seasons":
-        order_fields.append("-total_secondary" if sort_order == "desc" else "total_secondary")
+        order_fields.append("-season_order" if sort_order == "desc" else "season_order")
         order_fields.extend([Lower("title"), "title"])  # Secondary sort
 
     queryset = queryset.order_by(*order_fields)
@@ -294,7 +307,14 @@ def anime_api(request):
             queryset = queryset.filter(genres__icontains=g)
 
     queryset = queryset.annotate(
-        status_order=status_ordering, rating_order=rating_ordering
+        status_order=status_ordering,
+        rating_order=rating_ordering,
+        episode_order=Case(
+            When(total_main__isnull=True, then=F("progress_main")),
+            When(total_main=0, then=F("progress_main")),
+            default=F("total_main"),
+            output_field=IntegerField(),
+        ),
     )
 
     # Apply sorting
@@ -314,7 +334,7 @@ def anime_api(request):
         order_fields.append("-release_date" if sort_order == "desc" else "release_date")
         order_fields.extend([Lower("title"), "title"])  # Secondary sort
     elif sort_by == "episodes":
-        order_fields.append("-total_main" if sort_order == "desc" else "total_main")
+        order_fields.append("-episode_order" if sort_order == "desc" else "episode_order")
         order_fields.extend([Lower("title"), "title"])  # Secondary sort
 
     queryset = queryset.order_by(*order_fields)
@@ -769,7 +789,14 @@ def books_api(request):
             queryset = queryset.filter(genres__icontains=g)
 
     queryset = queryset.annotate(
-        status_order=status_ordering, rating_order=rating_ordering
+        status_order=status_ordering,
+        rating_order=rating_ordering,
+        page_order=Case(
+            When(total_main__isnull=True, then=F("progress_main")),
+            When(total_main=0, then=F("progress_main")),
+            default=F("total_main"),
+            output_field=IntegerField(),
+        ),
     )
 
     # Apply sorting
@@ -789,7 +816,7 @@ def books_api(request):
         order_fields.append("-release_date" if sort_order == "desc" else "release_date")
         order_fields.extend([Lower("title"), "title"])
     elif sort_by == "pages":
-        order_fields.append("-progress_main" if sort_order == "desc" else "progress_main")
+        order_fields.append("-page_order" if sort_order == "desc" else "page_order")
         order_fields.extend([Lower("title"), "title"])
 
     queryset = queryset.order_by(*order_fields)

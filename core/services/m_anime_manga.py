@@ -70,6 +70,7 @@ def save_anilist_item(media_type, anilist_id=None, mal_id=None):
                     "title": related["title"],
                     "poster_path": local_related_poster,
                     "relation": related["relation"],
+                    "media_type": related.get("media_type"),
                 }
             )
 
@@ -195,6 +196,7 @@ def fetch_anilist_data(media_type, anilist_id=None, mal_id=None):
                 coverImage {
                   large
                 }
+                type
               }
             }
           }
@@ -284,6 +286,7 @@ def fetch_anilist_data(media_type, anilist_id=None, mal_id=None):
                     "poster_path": r_poster,
                     "relation": relation_type.capitalize(),
                     "is_full_url": True,
+                    "media_type": node.get("type", "").lower() if node.get("type") else media_type.lower(),
                 }
             )
 
@@ -314,6 +317,7 @@ def fetch_anilist_data(media_type, anilist_id=None, mal_id=None):
                 "title": rec_title,
                 "poster_path": rec_poster,
                 "is_full_url": True,
+                "media_type": node.get("type", "").lower() if node.get("type") else media_type.lower(),
             }
         )
 
@@ -465,6 +469,7 @@ def get_anime_extra_info(media_type, anilist_id=None, mal_id=None):
                 coverImage {
                   large
                 }
+                type
               }
             }
           }
@@ -572,6 +577,7 @@ def get_anime_extra_info(media_type, anilist_id=None, mal_id=None):
                     "mal_id": node.get("idMal"),
                     "title": node["title"].get("english") or node["title"].get("romaji"),
                     "poster_path": node.get("coverImage", {}).get("large"),
+                    "media_type": node.get("type", "").lower() if node.get("type") else media_type.lower(),
                 })
 
         return {
@@ -675,6 +681,7 @@ def get_manga_extra_info(media_type, anilist_id=None, mal_id=None):
                 coverImage {
                   large
                 }
+                type
               }
             }
           }
@@ -760,6 +767,7 @@ def get_manga_extra_info(media_type, anilist_id=None, mal_id=None):
                     "mal_id": node.get("idMal"),
                     "title": node["title"].get("english") or node["title"].get("romaji"),
                     "poster_path": node.get("coverImage", {}).get("large"),
+                    "media_type": node.get("type", "").lower() if node.get("type") else media_type.lower(),
                 })
 
         return {
@@ -1003,6 +1011,7 @@ def update_anilist_anime_manga(item: MediaItem):
                 "title": rel["title"],
                 "poster_path": local_path,
                 "relation": "Sequel",
+                "media_type": rel.get("media_type"),
             }
         )
 

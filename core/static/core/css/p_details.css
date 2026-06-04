@@ -1848,7 +1848,7 @@ body[data-page-type="person-detail"] .overview {
   width: 100%;
   height: 100%;
   border-radius: 6px;
-  object-fit: cover;
+  /* object-fit: cover; */
   display: block;
   position: relative;
 }
