@@ -101,7 +101,11 @@
       <button type="button" id="sort-order-btn" class="sort-order-btn" data-order="desc" aria-label="Sort descending"></button>
     </div>
 
-    <h3>Filter By</h3>
+    <div class="filter-by-header">
+      <h3>Filter By</h3>
+      <button id="filter-mode-toggle" class="filter-mode-btn">Include</button>
+    </div>
+    
     <div class="genre-filter-container">
       <div class="genre-select-wrapper custom-select-wrapper">
         <div id="genre-select" class="genre-select custom-select-trigger" role="button" tabindex="0">
@@ -114,6 +118,25 @@
         </div>
       </div>
     </div>
+
+    {% if valid_collections %}
+    <div class="collection-filter-container" style="margin-top: 0.5rem;">
+      <div class="collection-select-wrapper custom-select-wrapper">
+        <div id="collection-select" class="genre-select custom-select-trigger" role="button" tabindex="0">
+          <div class="collection-tags genre-tags"></div>
+          <input type="text" id="collection-search" placeholder="Collections">
+          <div id="collection-indicator" class="genre-indicator"></div>
+        </div>
+        <div class="custom-options collection-options" id="collection-options" role="listbox" multiple>
+          {% for col in valid_collections %}
+            <div class="custom-option collection-option" data-value="{{ col.id }}" data-title="{{ col.title }}">
+              <span>{{ col.title }}</span><span class="collection-check">✕</span>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
 
 <h3>View</h3>
     <div class="view-toggle">

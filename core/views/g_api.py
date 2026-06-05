@@ -51,14 +51,34 @@ def movies_api(request):
     if search:
         queryset = queryset.filter(title__icontains=search)
 
+    filter_mode = request.GET.get("filter_mode", "include")
+    collections_param = request.GET.get("collections", "")
+
     if genres_param:
         selected_genres = [g.strip() for g in genres_param.split(",") if g.strip()]
         for g in selected_genres:
-            # Uses __icontains because the JSON is stored as a stringified list in SQLite
-            queryset = queryset.filter(genres__icontains=g)
+            if filter_mode == "exclude":
+                queryset = queryset.exclude(genres__icontains=g)
+            else:
+                queryset = queryset.filter(genres__icontains=g)
+
+    if collections_param:
+        selected_collections = [c.strip() for c in collections_param.split(",") if c.strip()]
+        if filter_mode == "exclude":
+            # Exclude items that are in ANY of the selected collections
+            queryset = queryset.exclude(collections__id__in=selected_collections)
+        else:
+            # Include items that are in AT LEAST ONE of the selected collections
+            queryset = queryset.filter(collections__id__in=selected_collections).distinct()
 
     queryset = queryset.annotate(
-        status_order=status_ordering, rating_order=rating_ordering
+        status_order=status_ordering, 
+        rating_order=rating_ordering,
+        length_order=Case(
+            When(total_main__isnull=True, then=Value(0)),
+            default=F("total_main"),
+            output_field=IntegerField(),
+        )
     )
 
     # Apply sorting
@@ -76,6 +96,9 @@ def movies_api(request):
         order_fields.extend([Lower("title"), "title"])  # Secondary sort
     elif sort_by == "release_date":
         order_fields.append("-release_date" if sort_order == "desc" else "release_date")
+        order_fields.extend([Lower("title"), "title"])  # Secondary sort
+    elif sort_by == "length":
+        order_fields.append("-length_order" if sort_order == "desc" else "length_order")
         order_fields.extend([Lower("title"), "title"])  # Secondary sort
 
     queryset = queryset.order_by(*order_fields)
@@ -100,6 +123,7 @@ def movies_api(request):
                 "notes": item.notes or "",
                 "source_id": item.source_id,
                 "get_status_display": item.get_status_display(),
+                "total_main": item.total_main,
                 "repeats": item.repeats,
                 "date_added": item.date_added.isoformat() if item.date_added else "",
                 "release_date": (
@@ -161,11 +185,25 @@ def tvshows_api(request):
     if search:
         queryset = queryset.filter(title__icontains=search)
 
+    filter_mode = request.GET.get("filter_mode", "include")
+    collections_param = request.GET.get("collections", "")
+
     if genres_param:
         selected_genres = [g.strip() for g in genres_param.split(",") if g.strip()]
         for g in selected_genres:
-            # Uses __icontains because the JSON is stored as a stringified list in SQLite
-            queryset = queryset.filter(genres__icontains=g)
+            if filter_mode == "exclude":
+                queryset = queryset.exclude(genres__icontains=g)
+            else:
+                queryset = queryset.filter(genres__icontains=g)
+
+    if collections_param:
+        selected_collections = [c.strip() for c in collections_param.split(",") if c.strip()]
+        if filter_mode == "exclude":
+            # Exclude items that are in ANY of the selected collections
+            queryset = queryset.exclude(collections__id__in=selected_collections)
+        else:
+            # Include items that are in AT LEAST ONE of the selected collections
+            queryset = queryset.filter(collections__id__in=selected_collections).distinct()
 
     # Type filtering for TV shows vs seasons
     if type_filter == "shows":
@@ -300,11 +338,25 @@ def anime_api(request):
     if search:
         queryset = queryset.filter(title__icontains=search)
 
+    filter_mode = request.GET.get("filter_mode", "include")
+    collections_param = request.GET.get("collections", "")
+
     if genres_param:
         selected_genres = [g.strip() for g in genres_param.split(",") if g.strip()]
         for g in selected_genres:
-            # Uses __icontains because the JSON is stored as a stringified list in SQLite
-            queryset = queryset.filter(genres__icontains=g)
+            if filter_mode == "exclude":
+                queryset = queryset.exclude(genres__icontains=g)
+            else:
+                queryset = queryset.filter(genres__icontains=g)
+
+    if collections_param:
+        selected_collections = [c.strip() for c in collections_param.split(",") if c.strip()]
+        if filter_mode == "exclude":
+            # Exclude items that are in ANY of the selected collections
+            queryset = queryset.exclude(collections__id__in=selected_collections)
+        else:
+            # Include items that are in AT LEAST ONE of the selected collections
+            queryset = queryset.filter(collections__id__in=selected_collections).distinct()
 
     queryset = queryset.annotate(
         status_order=status_ordering,
@@ -423,11 +475,25 @@ def manga_api(request):
     if search:
         queryset = queryset.filter(title__icontains=search)
 
+    filter_mode = request.GET.get("filter_mode", "include")
+    collections_param = request.GET.get("collections", "")
+
     if genres_param:
         selected_genres = [g.strip() for g in genres_param.split(",") if g.strip()]
         for g in selected_genres:
-            # Uses __icontains because the JSON is stored as a stringified list in SQLite
-            queryset = queryset.filter(genres__icontains=g)
+            if filter_mode == "exclude":
+                queryset = queryset.exclude(genres__icontains=g)
+            else:
+                queryset = queryset.filter(genres__icontains=g)
+
+    if collections_param:
+        selected_collections = [c.strip() for c in collections_param.split(",") if c.strip()]
+        if filter_mode == "exclude":
+            # Exclude items that are in ANY of the selected collections
+            queryset = queryset.exclude(collections__id__in=selected_collections)
+        else:
+            # Include items that are in AT LEAST ONE of the selected collections
+            queryset = queryset.filter(collections__id__in=selected_collections).distinct()
 
     queryset = queryset.annotate(
         status_order=status_ordering,
@@ -557,11 +623,25 @@ def games_api(request):
     if search:
         queryset = queryset.filter(title__icontains=search)
 
+    filter_mode = request.GET.get("filter_mode", "include")
+    collections_param = request.GET.get("collections", "")
+
     if genres_param:
         selected_genres = [g.strip() for g in genres_param.split(",") if g.strip()]
         for g in selected_genres:
-            # Uses __icontains because the JSON is stored as a stringified list in SQLite
-            queryset = queryset.filter(genres__icontains=g)
+            if filter_mode == "exclude":
+                queryset = queryset.exclude(genres__icontains=g)
+            else:
+                queryset = queryset.filter(genres__icontains=g)
+
+    if collections_param:
+        selected_collections = [c.strip() for c in collections_param.split(",") if c.strip()]
+        if filter_mode == "exclude":
+            # Exclude items that are in ANY of the selected collections
+            queryset = queryset.exclude(collections__id__in=selected_collections)
+        else:
+            # Include items that are in AT LEAST ONE of the selected collections
+            queryset = queryset.filter(collections__id__in=selected_collections).distinct()
 
     queryset = queryset.annotate(
         status_order=status_ordering, rating_order=rating_ordering
@@ -673,11 +753,25 @@ def music_api(request):
             Q(title__icontains=search) | Q(creators__icontains=search)
         )
 
+    filter_mode = request.GET.get("filter_mode", "include")
+    collections_param = request.GET.get("collections", "")
+
     if genres_param:
         selected_genres = [g.strip() for g in genres_param.split(",") if g.strip()]
         for g in selected_genres:
-            # Uses __icontains because the JSON is stored as a stringified list in SQLite
-            queryset = queryset.filter(genres__icontains=g)
+            if filter_mode == "exclude":
+                queryset = queryset.exclude(genres__icontains=g)
+            else:
+                queryset = queryset.filter(genres__icontains=g)
+
+    if collections_param:
+        selected_collections = [c.strip() for c in collections_param.split(",") if c.strip()]
+        if filter_mode == "exclude":
+            # Exclude items that are in ANY of the selected collections
+            queryset = queryset.exclude(collections__id__in=selected_collections)
+        else:
+            # Include items that are in AT LEAST ONE of the selected collections
+            queryset = queryset.filter(collections__id__in=selected_collections).distinct()
 
     queryset = queryset.annotate(
         status_order=status_ordering, rating_order=rating_ordering
@@ -782,11 +876,25 @@ def books_api(request):
     if search:
         queryset = queryset.filter(title__icontains=search)
 
+    filter_mode = request.GET.get("filter_mode", "include")
+    collections_param = request.GET.get("collections", "")
+
     if genres_param:
         selected_genres = [g.strip() for g in genres_param.split(",") if g.strip()]
         for g in selected_genres:
-            # Uses __icontains because the JSON is stored as a stringified list in SQLite
-            queryset = queryset.filter(genres__icontains=g)
+            if filter_mode == "exclude":
+                queryset = queryset.exclude(genres__icontains=g)
+            else:
+                queryset = queryset.filter(genres__icontains=g)
+
+    if collections_param:
+        selected_collections = [c.strip() for c in collections_param.split(",") if c.strip()]
+        if filter_mode == "exclude":
+            # Exclude items that are in ANY of the selected collections
+            queryset = queryset.exclude(collections__id__in=selected_collections)
+        else:
+            # Include items that are in AT LEAST ONE of the selected collections
+            queryset = queryset.filter(collections__id__in=selected_collections).distinct()
 
     queryset = queryset.annotate(
         status_order=status_ordering,

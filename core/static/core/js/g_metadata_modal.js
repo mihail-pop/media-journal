@@ -233,10 +233,12 @@ document.addEventListener("DOMContentLoaded", function () {
   function updateMetadataFieldVisibility(mediaType) {
     const mainGroup = document.getElementById("metadata_progress_main_group");
     const secondaryGroup = document.getElementById("metadata_progress_secondary_group");
+    const lengthGroup = document.getElementById("metadata_length_group");
     const progressRow2 = document.getElementById("metadata-progress-row-2");
     
     if (mainGroup) mainGroup.style.display = "none";
     if (secondaryGroup) secondaryGroup.style.display = "none";
+    if (lengthGroup) lengthGroup.style.display = "none";
     if (progressRow2) progressRow2.style.display = "none";
 
     const mainLabel = document.getElementById("metadata_progress_main_label");
@@ -248,6 +250,9 @@ document.addEventListener("DOMContentLoaded", function () {
       if (progressRow2) progressRow2.style.display = "flex";
       if (mainLabel) mainLabel.textContent = "Episode Progress";
       if (secondaryLabel) secondaryLabel.textContent = "Season Progress";
+    } else if (mediaType === "movie") {
+      if (lengthGroup) lengthGroup.style.display = "flex";
+      if (progressRow2) progressRow2.style.display = "flex";
     } else if (mediaType === "anime") {
       if (mainGroup) mainGroup.style.display = "flex";
       if (mainLabel) mainLabel.textContent = "Episode Progress";
@@ -328,6 +333,18 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("metadata_total_main").value = item.total_main ?? "";
         document.getElementById("metadata_progress_secondary").value = item.progress_secondary ?? "";
         document.getElementById("metadata_total_secondary").value = item.total_secondary ?? "";
+
+        // Length extraction for movies
+        if (canonicalType === "movie") {
+          let tm = item.total_main;
+          if (tm !== null && tm !== undefined) {
+            document.getElementById("metadata_length_hours").value = Math.floor(tm / 60);
+            document.getElementById("metadata_length_minutes").value = tm % 60;
+          } else {
+            document.getElementById("metadata_length_hours").value = "";
+            document.getElementById("metadata_length_minutes").value = "";
+          }
+        }
 
         // Show Modal
         modal.classList.remove("md-modal-hidden");

@@ -369,7 +369,8 @@ label.music-player-btn.separator-btn {
   color: #ff4444;
 }
 
-#genre-search {
+#genre-search, 
+#collection-search {
   flex: 1;
   min-width: 80px;
   background: transparent;
@@ -380,37 +381,80 @@ label.music-player-btn.separator-btn {
   outline: none;
 }
 
-#genre-search::placeholder {
+#genre-search::placeholder,
+#collection-search::placeholder {
   color: var(--text-tertiary);
 }
 
-.genre-options {
+.genre-options,
+.collection-options {
   max-height: 350px; /* Fits roughly 10 items before scrolling */
 }
 
-.genre-option {
+.genre-option,
+.collection-option {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.genre-option.selected {
+.genre-option.selected,
+.collection-option.selected {
   background-color: var(--bg-quaternary);
   font-weight: bold;
 }
 
-.genre-option.hidden {
+.genre-option.hidden,
+.collection-option.hidden {
   display: none;
 }
 
-.genre-check {
+.genre-check,
+.collection-check {
   display: none;
   font-size: 0.8rem;
 }
 
-.genre-option.selected .genre-check {
+.genre-option.selected .genre-check,
+.collection-option.selected .collection-check {
   display: block;
 }
+
+.filter-by-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.filter-by-header h3 {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.filter-mode-btn {
+  width: max-content;
+  padding: 0.3rem 0.8rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: none;
+  border-radius: 12px; /* Makes it a nice pill shape */
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.filter-mode-btn:hover {
+  background-color: var(--bg-quaternary);
+}
+
+/* Both Include and Exclude will use the exact same background/colors above.
+.filter-mode-btn.exclude-mode {
+   If you want to change it later. 
+}
+*/
 
 /* --- Sidebar --- */
 .sidebar {
@@ -1054,6 +1098,12 @@ body[data-page-type="tv"] .list-table td:nth-child(1) {
   color: var(--text-primary);
   width: 10%;
   text-align: center;
+}
+
+/* Movies page override */
+body[data-media-type="movies"] .list-table th:nth-child(5),
+body[data-media-type="movies"] .list-table td:nth-child(5) {
+  width: 13%;
 }
 
 .list-table th:nth-child(6),

@@ -13,7 +13,7 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET
 
 from core.models import APIKey, NavItem, MediaItem, Collection, FavoritePerson, CalendarEvent
-from django.utils.timesince import timesince, timeuntil
+from django.utils.timesince import timeuntil
 from core.services.p_home import (
     start_media_cleanup_loop,
     start_tmdb_background_loop,
@@ -181,7 +181,8 @@ def home(request):
 
     events_by_date = defaultdict(list)
     for e in calendar_events:
-        if e.title == "__API_SYNC__": continue
+        if e.title == "__API_SYNC__": 
+            continue
         events_by_date[e.date.date()].append(e)
 
     upcoming_tiles = []
@@ -475,6 +476,8 @@ def movies(request):
             "notes": random_item.notes
         }
 
+    valid_collections = list(Collection.objects.filter(items__media_type="movie").distinct().values('id', 'title'))
+
     return render(
         request,
         "core/m_movies.html",
@@ -484,6 +487,7 @@ def movies(request):
             "theme_mode": theme_mode,
             "status_counts": status_counts,
             "initial_banner": initial_banner,
+            "valid_collections": valid_collections,
         },
     )
 
@@ -527,6 +531,8 @@ def tvshows(request):
             "notes": random_item.notes
         }
 
+    valid_collections = list(Collection.objects.filter(items__media_type="tv").distinct().values('id', 'title'))
+
     return render(
         request,
         "core/m_tvshows.html",
@@ -537,6 +543,7 @@ def tvshows(request):
             "theme_mode": theme_mode,
             "status_counts": status_counts,
             "initial_banner": initial_banner,
+            "valid_collections": valid_collections,
         },
     )
 
@@ -581,6 +588,8 @@ def anime(request):
             "notes": random_item.notes
         }
 
+    valid_collections = list(Collection.objects.filter(items__media_type="anime").distinct().values('id', 'title'))
+
     return render(
         request,
         "core/m_anime.html",
@@ -590,6 +599,7 @@ def anime(request):
             "theme_mode": theme_mode,
             "status_counts": status_counts,
             "initial_banner": initial_banner,
+            "valid_collections": valid_collections,
         },
     )
 
@@ -634,6 +644,8 @@ def manga(request):
             "notes": random_item.notes
         }
 
+    valid_collections = list(Collection.objects.filter(items__media_type="manga").distinct().values('id', 'title'))
+
     return render(
         request,
         "core/m_manga.html",
@@ -643,6 +655,7 @@ def manga(request):
             "theme_mode": theme_mode,
             "status_counts": status_counts,
             "initial_banner": initial_banner,
+            "valid_collections": valid_collections,
         },
     )
 
@@ -687,6 +700,8 @@ def games(request):
             "notes": random_item.notes
         }
 
+    valid_collections = list(Collection.objects.filter(items__media_type="game").distinct().values('id', 'title'))
+
     return render(
         request,
         "core/m_games.html",
@@ -696,6 +711,7 @@ def games(request):
             "theme_mode": theme_mode,
             "status_counts": status_counts,
             "initial_banner": initial_banner,
+            "valid_collections": valid_collections,
         },
     )
 
@@ -740,6 +756,8 @@ def music(request):
             "notes": random_item.notes
         }
 
+    valid_collections = list(Collection.objects.filter(items__media_type="music").distinct().values('id', 'title'))    
+
     return render(
         request,
         "core/m_music.html",
@@ -749,6 +767,7 @@ def music(request):
             "theme_mode": theme_mode,
             "status_counts": status_counts,
             "initial_banner": initial_banner,
+            "valid_collections": valid_collections,
         },
     )
 
@@ -793,6 +812,8 @@ def books(request):
             "notes": random_item.notes
         }
 
+    valid_collections = list(Collection.objects.filter(items__media_type="book").distinct().values('id', 'title'))
+
     return render(
         request,
         "core/m_books.html",
@@ -802,6 +823,7 @@ def books(request):
             "theme_mode": theme_mode,
             "status_counts": status_counts,
             "initial_banner": initial_banner,
+            "valid_collections": valid_collections,
         },
     )
 

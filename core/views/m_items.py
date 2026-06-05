@@ -180,7 +180,16 @@ def create_custom_item(request):
         creators = request.POST.get("creators", "")
         creators_list =[c.strip() for c in creators.split(",") if c.strip()]
 
-        total_main = parse_int(request.POST.get("total_main"))
+        if media_type == "movie" and ("length_hours" in request.POST or "length_minutes" in request.POST):
+            h_str = request.POST.get("length_hours", "").strip()
+            m_str = request.POST.get("length_minutes", "").strip()
+            if not h_str and not m_str:
+                total_main = None
+            else:
+                total_main = (parse_int(h_str) or 0) * 60 + (parse_int(m_str) or 0)
+        else:
+            total_main = parse_int(request.POST.get("total_main"))
+
         total_secondary = parse_int(request.POST.get("total_secondary"))
         progress_main = parse_int(request.POST.get("progress_main")) or 0
         progress_secondary = parse_int(request.POST.get("progress_secondary")) or 0
@@ -246,7 +255,9 @@ def create_custom_item(request):
                 "personal_rating": display_rating,
                 "notes": new_item.notes,
                 "progress_main": new_item.progress_main,
+                "total_main": new_item.total_main,
                 "progress_secondary": new_item.progress_secondary,
+                "total_secondary": new_item.total_secondary,
                 "favorite": new_item.favorite,
                 "repeats": new_item.repeats,
                 "date_added": new_item.date_added.isoformat(),
@@ -285,7 +296,18 @@ def edit_metadata(request, item_id):
             if "progress_main" in request.POST:
                 item.progress_main = parse_int(request.POST.get("progress_main")) or 0
             if "total_main" in request.POST:
-                item.total_main = parse_int(request.POST.get("total_main"))
+                if item.media_type != "movie":
+                    item.total_main = parse_int(request.POST.get("total_main"))
+            
+            # Format and convert Length properly for movies
+            if item.media_type == "movie" and ("length_hours" in request.POST or "length_minutes" in request.POST):
+                h_str = request.POST.get("length_hours", "").strip()
+                m_str = request.POST.get("length_minutes", "").strip()
+                if not h_str and not m_str:
+                    item.total_main = None
+                else:
+                    item.total_main = (parse_int(h_str) or 0) * 60 + (parse_int(m_str) or 0)
+
             if "progress_secondary" in request.POST:
                 item.progress_secondary = parse_int(request.POST.get("progress_secondary")) or 0
             if "total_secondary" in request.POST:

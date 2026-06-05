@@ -301,10 +301,12 @@ document.addEventListener("DOMContentLoaded", function () {
   function updateCreateFieldVisibility(mediaType) {
     const mainGroup = document.getElementById("create_progress_main_group");
     const secondaryGroup = document.getElementById("create_progress_secondary_group");
+    const lengthGroup = document.getElementById("create_length_group");
     const progressRow = document.getElementById("create-progress-row");
     
     if (mainGroup) mainGroup.style.display = "none";
     if (secondaryGroup) secondaryGroup.style.display = "none";
+    if (lengthGroup) lengthGroup.style.display = "none";
     if (progressRow) progressRow.style.display = "none";
 
     const mainLabel = document.getElementById("create_progress_main_label");
@@ -316,6 +318,9 @@ document.addEventListener("DOMContentLoaded", function () {
       if (progressRow) progressRow.style.display = "flex";
       if (mainLabel) mainLabel.textContent = "Episode Progress";
       if (secondaryLabel) secondaryLabel.textContent = "Season Progress";
+    } else if (mediaType === "movie") {
+      if (lengthGroup) lengthGroup.style.display = "flex";
+      if (progressRow) progressRow.style.display = "flex";
     } else if (mediaType === "anime") {
       if (mainGroup) mainGroup.style.display = "flex";
       if (progressRow) progressRow.style.display = "flex";

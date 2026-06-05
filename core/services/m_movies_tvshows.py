@@ -199,7 +199,7 @@ def save_tmdb_item(media_type, tmdb_id):
             release_date=data.get("release_date") or data.get("first_air_date") or "",
             cast=cast_data,
             seasons=seasons,
-            total_main=total_episodes if media_type == "tv" else None,
+            total_main=total_episodes if media_type == "tv" else data.get("runtime"),
             total_secondary=total_seasons if media_type == "tv" else None,
             genres=genres,
             creators=creators,

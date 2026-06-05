@@ -628,7 +628,7 @@ def refresh_tmdb_item(media_type, tmdb_id, existing_seasons=None, existing_cast=
         release_date=data.get("release_date") or data.get("first_air_date") or "",
         cast=cast_data,
         seasons=seasons,
-        total_main=total_episodes if media_type == "tv" else None,
+        total_main=total_episodes if media_type == "tv" else data.get("runtime"),
         total_secondary=total_seasons if media_type == "tv" else None,
         notification=has_new_season,
         genres=genres,

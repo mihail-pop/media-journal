@@ -63,6 +63,8 @@ document.addEventListener("DOMContentLoaded", function () {
   let currentType = localStorage.getItem(typeKey) || "both";
   let currentSort = localStorage.getItem(sortKey) || "rating";
   let currentSortOrder = localStorage.getItem(sortOrderKey) || (currentSort === "rating" ? "desc" : "asc");
+  let currentFilterMode = 'include';
+  let currentCollections = [];
 
   const availableSortTypes = Array.from(sortOptions).map(option => option.dataset.sort).filter(Boolean);
   if (availableSortTypes.length && !availableSortTypes.includes(currentSort)) {
@@ -174,6 +176,11 @@ const statusLabelsMap = {
       if (currentGenres.length > 0) {
         params.append('genres', currentGenres.join(','));
       }
+
+      if (currentCollections.length > 0) {
+        params.append('collections', currentCollections.map(c => c.id).join(','));
+      }
+      params.append('filter_mode', currentFilterMode);
       
       // Add type filter for TV shows
       if (mediaType === 'tvshows') {
@@ -318,6 +325,14 @@ const statusLabelsMap = {
             ${th('Rating', 'rating')}
             ${th('Activity Date', 'activity_date')}
             ${th('Release Date', 'release_date')}
+          </tr></thead>`;
+        } else if (mediaType === 'movies') {
+          tableHeaders = `<thead><tr>
+            ${th('Title', 'title')}
+            ${th('Rating', 'rating')}
+            ${th('Activity Date', 'activity_date')}
+            ${th('Release Date', 'release_date')}
+            ${th('Length', 'length')}
           </tr></thead>`;
         } else {
           tableHeaders = `<thead><tr>
@@ -472,13 +487,27 @@ function createListRowElement(item, isDetailed = false) {
     const releaseDate = item.release_date || '';
     tableHtml += `<td>${releaseDate}</td>`;
 
-    // Add episodes and seasons columns
+    // Add columns based on media type
     if (mediaType === 'tvshows') {
       tableHtml += `<td style="text-align: center;">${episodesHtml}</td><td>${seasonsHtml}</td>`;
     } else if (['anime', 'games', 'books'].includes(mediaType)) {
       tableHtml += `<td style="text-align: center;">${episodesHtml}</td>`;
     } else if (mediaType === 'manga') {
       tableHtml += `<td style="text-align: center;">${episodesHtml}</td><td style="text-align: center;">${seasonsHtml}</td>`;
+    } else if (mediaType === 'movies') {
+      let lengthDisplay = '-';
+      if (item.total_main) {
+        const totalMinutes = Number(item.total_main);
+        const h = Math.floor(totalMinutes / 60);
+        const m = totalMinutes % 60;
+        const hStr = h === 1 ? '1 hr' : `${h} hrs`;
+        const mStr = m === 1 ? '1 min' : `${m} mins`;
+        
+        if (h > 0 && m > 0) lengthDisplay = `${hStr} ${mStr}`;
+        else if (h > 0) lengthDisplay = hStr;
+        else lengthDisplay = mStr;
+      }
+      tableHtml += `<td>${lengthDisplay}</td>`;
     }
 
     row.innerHTML = tableHtml;
@@ -675,6 +704,7 @@ function createListRowElement(item, isDetailed = false) {
         else if ((currentSort === 'date' || currentSort === 'activity_date') && oldItem && oldItem.date_added != item.date_added) needsResort = true;
         else if (currentSort === 'release_date' && oldItem && oldItem.release_date != item.release_date) needsResort = true;
         else if ((currentSort === 'hours' || currentSort === 'pages') && oldItem && oldItem.progress_main != item.progress_main) needsResort = true;
+        else if (currentSort === 'length' && oldItem && oldItem.total_main != item.total_main) needsResort = true;
         else if ((currentSort === 'episodes' || currentSort === 'chapters') && oldItem && (oldItem.total_main != item.total_main || oldItem.progress_main != item.progress_main)) needsResort = true;
         else if ((currentSort === 'seasons' || currentSort === 'volumes') && oldItem && (oldItem.total_secondary != item.total_secondary || oldItem.progress_secondary != item.progress_secondary)) needsResort = true;
         else if (currentSort === 'title' && oldItem && oldItem.title != item.title) needsResort = true;
@@ -748,6 +778,13 @@ function compareItems(a, b) {
             const pa = Number(a.progress_main) || 0;
             const pb = Number(b.progress_main) || 0;
             if (pa !== pb) return pa - pb;
+            return compareTitles(a.title, b.title);
+        }
+        // length
+        if (currentSort === 'length') {
+            const la = Number(a.total_main) || 0;
+            const lb = Number(b.total_main) || 0;
+            if (la !== lb) return la - lb;
             return compareTitles(a.title, b.title);
         }
         // episodes / chapters / pages
@@ -1075,6 +1112,7 @@ const defaultSortLabels = {
   volumes: "Volumes",
   hours: "Hours",
   pages: "Pages",
+  length: "Length",
 };
 
 function getSortLabel(sortType) {
@@ -1097,7 +1135,7 @@ function getSortTooltip(sortType) {
   if (sortType === 'date' || sortType === 'activity_date' || sortType === 'release_date') {
     return currentSortOrder === 'asc' ? 'Old-New' : 'New-Old';
   }
-  if (['hours', 'pages', 'episodes', 'seasons', 'chapters', 'volumes'].includes(sortType)) {
+  if (['hours', 'pages', 'episodes', 'seasons', 'chapters', 'volumes', 'length'].includes(sortType)) {
     return currentSortOrder === 'asc' ? 'Low-High' : 'High-Low';
   }
   return '';
@@ -1345,6 +1383,140 @@ updateSortButtons();
     genreSearchInput.addEventListener('keydown', (e) => {
       if (e.key === 'Backspace' && e.target.value === '' && currentGenres.length > 0) {
         toggleGenre(currentGenres[currentGenres.length - 1]);
+      }
+    });
+  }
+
+  // === INCLUDE / EXCLUDE TOGGLE ===
+  const filterModeToggle = document.getElementById('filter-mode-toggle');
+  if (filterModeToggle) {
+    filterModeToggle.addEventListener('click', () => {
+      if (currentFilterMode === 'include') {
+        currentFilterMode = 'exclude';
+        filterModeToggle.textContent = 'Exclude';
+        filterModeToggle.classList.add('exclude-mode');
+      } else {
+        currentFilterMode = 'include';
+        filterModeToggle.textContent = 'Include';
+        filterModeToggle.classList.remove('exclude-mode');
+      }
+      resetAndLoad();
+    });
+  }
+
+  // === COLLECTIONS MULTI-SELECT LOGIC ===
+  const collectionSelectWrapper = document.querySelector('.collection-select-wrapper');
+  const collectionSearchInput = document.getElementById('collection-search');
+  const collectionOptionsContainer = document.getElementById('collection-options');
+  const collectionTagsContainer = document.querySelector('.collection-tags');
+  const collectionIndicator = document.getElementById('collection-indicator');
+
+  if (collectionSelectWrapper && collectionOptionsContainer) {
+    const options = collectionOptionsContainer.querySelectorAll('.collection-option');
+    options.forEach(opt => {
+      opt.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleCollection(opt.dataset.value, opt.dataset.title);
+        collectionSearchInput.value = '';
+        filterCollectionOptions('');
+      });
+    });
+
+    function toggleCollection(id, title) {
+      const existingIdx = currentCollections.findIndex(c => c.id === id);
+      if (existingIdx > -1) {
+        currentCollections.splice(existingIdx, 1);
+      } else {
+        currentCollections.push({id, title});
+      }
+      updateCollectionUI();
+      resetAndLoad();
+    }
+
+    function updateCollectionUI() {
+      collectionTagsContainer.innerHTML = '';
+      currentCollections.forEach(col => {
+        const tag = document.createElement('div');
+        tag.className = 'genre-tag';
+        tag.innerHTML = `<span>${col.title}</span><span class="remove-tag">✕</span>`;
+        tag.querySelector('.remove-tag').addEventListener('click', (e) => {
+          e.stopPropagation();
+          toggleCollection(col.id, col.title);
+        });
+        collectionTagsContainer.appendChild(tag);
+      });
+
+      const options = collectionOptionsContainer.querySelectorAll('.collection-option');
+      options.forEach(opt => {
+        if (currentCollections.find(c => c.id === opt.dataset.value)) {
+          opt.classList.add('selected');
+        } else {
+          opt.classList.remove('selected');
+        }
+      });
+
+      if (currentCollections.length > 0) {
+        collectionSearchInput.placeholder = '';
+        collectionSelectWrapper.classList.add('has-items');
+      } else {
+        collectionSearchInput.placeholder = 'Collections';
+        collectionSelectWrapper.classList.remove('has-items');
+      }
+    }
+
+    collectionSelectWrapper.addEventListener('click', () => {
+      collectionOptionsContainer.classList.add('open');
+      collectionSelectWrapper.classList.add('open');
+      collectionSearchInput.focus();
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!collectionSelectWrapper.contains(e.target)) {
+        collectionOptionsContainer.classList.remove('open');
+        collectionSelectWrapper.classList.remove('open');
+      }
+    });
+
+    collectionIndicator.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (currentCollections.length > 0) {
+        currentCollections = [];
+        updateCollectionUI();
+        collectionOptionsContainer.classList.remove('open');
+        collectionSelectWrapper.classList.remove('open');
+        resetAndLoad();
+      } else {
+        if (collectionOptionsContainer.classList.contains('open')) {
+          collectionOptionsContainer.classList.remove('open');
+          collectionSelectWrapper.classList.remove('open');
+        } else {
+          collectionOptionsContainer.classList.add('open');
+          collectionSelectWrapper.classList.add('open');
+          collectionSearchInput.focus();
+        }
+      }
+    });
+
+    function filterCollectionOptions(query) {
+      const q = query.toLowerCase();
+      const options = collectionOptionsContainer.querySelectorAll('.collection-option');
+      options.forEach(opt => {
+        if (opt.dataset.title.toLowerCase().includes(q)) {
+          opt.classList.remove('hidden');
+        } else {
+          opt.classList.add('hidden');
+        }
+      });
+    }
+
+    collectionSearchInput.addEventListener('input', (e) => {
+      filterCollectionOptions(e.target.value);
+    });
+
+    collectionSearchInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Backspace' && e.target.value === '' && currentCollections.length > 0) {
+        const last = currentCollections[currentCollections.length - 1];
+        toggleCollection(last.id, last.title);
       }
     });
   }
