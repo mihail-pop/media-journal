@@ -730,6 +730,10 @@ input[name="release_date"] {
   color: var(--text-tertiary);
 }
 
+#create-creator-input::placeholder{
+  color: var(--text-tertiary);
+}
+
 /* Progress Inputs */
 .c-progress-inputs {
   display: flex;
@@ -743,6 +747,10 @@ input[name="release_date"] {
   min-width: 0; 
   text-align: center;
   padding: 0.35rem 0.2rem !important;
+}
+
+.c-progress-inputs .c-progress-box::placeholder{
+  color: var(--text-tertiary)
 }
 
 .c-progress-separator {
@@ -765,6 +773,10 @@ input[name="release_date"] {
   max-width: unset !important;
   padding: 0 !important;
   min-width: 60px;
+}
+
+#create-genre-search::placeholder{
+  color:var(--text-tertiary)
 }
 
 .c-form-group.c-vertical-label {

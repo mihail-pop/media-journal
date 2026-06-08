@@ -1,50 +1,11 @@
 import json
 
 from django.http import JsonResponse
-from django.urls import reverse
 from django.db.models import Max
 from django.views.decorators.http import require_GET, require_http_methods
 
 from core.models import MediaItem, CollectionItem
 
-
-@require_GET
-def collection_items_api(request, collection_id):
-    # Get items in the collection, ordered by position
-    items = CollectionItem.objects.filter(collection_id=collection_id).select_related('item').order_by('position', '-date_added')
-    
-    data =[]
-    for ci in items:
-        item = ci.item
-        
-        # Generate the detail URL
-        url = "#"
-        if item.media_type in ["movie", "tv"]:
-            if "_s" in str(item.source_id):
-                parts = str(item.source_id).split("_s")
-                url = reverse("tmdb_season_detail", args=[parts[0], parts[1]])
-            else:
-                url = reverse("tmdb_detail", args=[item.media_type, item.source_id])
-        elif item.media_type in ["anime", "manga"]:
-            url = reverse("anilist_detail", args=[item.source, item.media_type, item.source_id])
-        elif item.media_type == "game":
-            url = reverse("igdb_detail", args=[item.source_id])
-        elif item.media_type == "book":
-            url = reverse("openlib_detail", args=[item.source_id])
-        elif item.media_type == "music":
-            url = reverse("musicbrainz_detail", args=[item.source_id])
-
-        data.append({
-            "id": item.id,
-            "title": item.title,
-            "media_type": item.media_type,
-            "cover_url": item.cover_url or "/static/core/img/placeholder.png",
-            "banner_url": item.banner_url,
-            "position": ci.position,
-            "url": url  # Pass the URL here!
-        })
-        
-    return JsonResponse({"items": data})
 
 @require_GET
 def search_local_items(request, collection_id):

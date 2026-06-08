@@ -1,5 +1,14 @@
 document.addEventListener("DOMContentLoaded", () => {
 
+    let currentSort = "custom";
+    let currentSortOrder = "desc";
+    const ratingMode = document.body.dataset.ratingMode || 'faces';
+
+    // Pagination states for the main grid
+    let currentPage = 1;
+    let hasMore = true;
+    let isLoading = false;
+
     // Initialize Mobile Drag and Drop Polyfill
     if (typeof MobileDragDrop !== 'undefined') {
         MobileDragDrop.polyfill({
@@ -7,7 +16,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-window.openEditModal = function(element) {
+    window.openEditModal = function(element) {
         const itemId = element.dataset.id;
         const coverUrl = element.dataset.coverUrl;
         const bannerUrl = element.dataset.bannerUrl;
@@ -23,12 +32,9 @@ window.openEditModal = function(element) {
         
         if (cover && coverUrl) {
             cover.src = coverUrl;
-            // Pass the media type to the cover image for specific CSS cropping
             cover.setAttribute('data-media-type', mediaType || '');
         }
 
-        // Call your global banner builder from g_edit_modal.js!
-        // This instantly fixes the alt attribute, adds the overlay, and applies the CSS classes.
         if (window.setModalBanner) {
             window.setModalBanner(bannerUrl, mediaType);
         }
@@ -50,27 +56,23 @@ window.openEditModal = function(element) {
             });
     };
 
-    // Fired by g_edit_modal.js after a successful save
     window.replaceHistoryItem = function(updatedItem) {
-        loadCollectionItems(); // Simply refresh the grid
+        loadCollectionItems(1, true); // Refresh from start
     };
 
     const colId = window.COLLECTION_ID;
     const grid = document.getElementById("card-view");
     const noItemsMsg = document.getElementById("no-items-message");
 
-    // Top Buttons
     const reorderBtn = document.getElementById("toggle-reorder-btn");
     const deleteBtn = document.getElementById("toggle-delete-btn");
     const addBtn = document.getElementById("add-items-btn");
 
-    // Floating Delete Bar
     const floatingBar = document.getElementById("floating-delete-bar");
     const delCountText = document.getElementById("delete-count-text");
     const confirmDeleteBtn = document.getElementById("confirm-delete-btn");
     const cancelDeleteBtn = document.getElementById("cancel-delete-btn");
 
-    // Add Modal Elements
     const addModal = document.getElementById("add-modal-overlay");
     const closeAddModal = document.querySelector(".close-add-modal");
     const searchInput = document.getElementById("add-search-input");
@@ -79,17 +81,14 @@ window.openEditModal = function(element) {
     const addCountText = document.getElementById("add-count-text");
     const confirmAddBtn = document.getElementById("confirm-add-btn");
 
-    // States
     let collectionItems = [];
     let isReorderMode = false;
     let isDeleteMode = false;
     
-    // Pagination state for Add Modal
     let addCurrentPage = 1;
     let addHasMore = true;
     let addIsLoading = false;
     
-    // Sets to keep track of multi-selection across searches
     let selectedForAdd = new Set();
     let selectedForDelete = new Set();
     
@@ -97,28 +96,54 @@ window.openEditModal = function(element) {
     let searchTimeout = null;
 
     // Load initial collection items
-    loadCollectionItems();
+    loadCollectionItems(1, true);
 
-    async function loadCollectionItems() {
-        grid.innerHTML = "";
-        
-        try {
-            const res = await fetch(`/api/collection/${colId}/items/`);
-            const data = await res.json();
-            collectionItems = data.items ||[];
-            
-            collectionItems.forEach(item => {
-                grid.appendChild(createCardElement(item, false));
-            });
-
-            noItemsMsg.style.display = collectionItems.length === 0 ? "block" : "none";
-        } catch (err) {
-            console.error(err);
-        } finally {
+    // Infinite scroll for main grid
+    window.addEventListener('scroll', () => {
+        if (isLoading || !hasMore) return;
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        if (scrollTop + window.innerHeight >= document.documentElement.scrollHeight - 500) {
+            loadCollectionItems(currentPage + 1);
         }
+    });
+
+    function getRatingHtml(rating) {
+        if (!rating) return '';
+
+        const rnum = Number(rating);
+        if (isNaN(rnum)) return '';
+
+        let normalized = rnum;
+        if (ratingMode === 'stars_5') {
+            normalized = (rnum > 0 && rnum <= 5) ? (rnum * 20) : rnum;
+        } else if (ratingMode === 'scale_10') {
+            normalized = rnum;
+        }
+
+        const rounded = Math.round(normalized);
+
+        if (ratingMode === 'faces') {
+            if (rounded <= 33) return '<svg aria-hidden="true" focusable="false" data-prefix="far" data-icon="frown" class="svg-inline--fa fa-frown fa-w-16 fa-lg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512" style="width: 1.2em; height: 1.2em; color: grey;"><path fill="currentColor" d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zm0 448c-110.3 0-200-89.7-200-200S137.7 56 248 56s200 89.7 200 200-89.7 200-200 200zm-80-216c17.7 0 32-14.3 32-32s-14.3-32-32-32-32 14.3-32 32 14.3 32 32 32zm160-64c-17.7 0-32 14.3-32 32s14.3 32 32 32 32-14.3 32-32-14.3-32-32-32zm-80 128c-40.2 0-78 17.7-103.8 48.6-8.5 10.2-7.1 25.3 3.1 33.8 10.2 8.4 25.3 7.1 33.8-3.1 16.6-19.9 41-31.4 66.9-31.4s50.3 11.4 66.9 31.4c8.1 9.7 23.1 11.9 33.8 3.1 10.2-8.5 11.5-23.6 3.1-33.8C326 321.7 288.2 304 248 304z"></path></svg>';
+            else if (rounded <= 66) return '<svg aria-hidden="true" focusable="false" data-prefix="far" data-icon="meh" class="svg-inline--fa fa-meh fa-w-16 fa-lg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512" style="width: 1.2em; height: 1.2em; color: grey;"><path fill="currentColor" d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zm0 448c-110.3 0-200-89.7-200-200S137.7 56 248 56s200 89.7 200 200-89.7 200-200 200zm-80-216c17.7 0 32-14.3 32-32s-14.3-32-32-32-32 14.3-32 32 14.3 32 32 32zm160-64c-17.7 0-32 14.3-32 32s14.3 32 32 32 32-14.3 32-32-14.3-32-32-32zm8 144H160c-13.2 0-24 10.8-24 24s10.8 24 24 24h176c13.2 0 24-10.8 24-24s-10.8-24-24-24z"></path></svg>';
+            else return '<svg aria-hidden="true" focusable="false" data-prefix="far" data-icon="smile" class="svg-inline--fa fa-smile fa-w-16 fa-lg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512" style="width: 1.2em; height: 1.2em; color: grey;"><path fill="currentColor" d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zm0 448c-110.3 0-200-89.7-200-200S137.7 56 248 56s200 89.7 200 200-89.7 200-200 200zm-80-216c17.7 0 32-14.3 32-32s-14.3-32-32-32-32 14.3-32 32 14.3 32 32 32zm160 0c17.7 0 32-14.3 32-32s-14.3-32-32-32-32 14.3-32 32 14.3 32 32 32zm4 72.6c-20.8 25-51.5 39.4-84 39.4s-63.2-14.3-84-39.4c-8.5-10.2-23.7-11.5-33.8-3.1-10.2 8.5-11.5 23.6-3.1 33.8 30 36 74.1 56.6 120.9 56.6s90.9-20.6 120.9-56.6c8.5-10.2 7.1-25.3-3.1-33.8-10.1-8.4-25.3-7.1-33.8 3.1z"></path></svg>';
+        } else if (ratingMode === 'stars_5') {
+            let starsCount = (rnum > 0 && rnum <= 5) ? Math.round(rnum) : Math.round(normalized / 20);
+            let starsHtml = '<span style="display:inline-block; height:1.1em; line-height:1;">';
+            for (let i = 1; i <= 5; i++) {
+                if (i <= starsCount) starsHtml += '<svg viewBox="0 0 32 32" style="color:gold; width:1.1em; height:1.1em; margin-left:-0.25em; vertical-align:middle; z-index:1; position:relative;"><path fill="currentColor" stroke="#000" stroke-width="1.2" d="M16 2.5l4.09 8.29 9.16 1.33-6.62 6.45 1.56 9.09L16 23.13l-8.19 4.32 1.56-9.09-6.62-6.45 9.16-1.33L16 2.5z"/></svg>';
+                else starsHtml += '<svg viewBox="0 0 32 32" style="color:#444; opacity:0.4; width:1.1em; height:1.1em; margin-left:-0.25em; vertical-align:middle; z-index:1; position:relative;"><path fill="currentColor" stroke="#000" stroke-width="1.2" d="M16 2.5l4.09 8.29 9.16 1.33-6.62 6.45 1.56 9.09L16 23.13l-8.19 4.32 1.56-9.09-6.62-6.45 9.16-1.33L16 2.5z"/></svg>';
+            }
+            return starsHtml.replace('margin-left:-0.25em;', 'margin-left:0;') + '</span>';
+        } else if (ratingMode === 'scale_10') {
+            let displayVal = rnum > 10 ? Math.round(rnum / 10) : (rnum === 0 ? '' : rnum);
+            return `<span style="font-size: 0.95rem; font-weight:bold;">${displayVal}</span>`;
+        } else if (ratingMode === 'scale_100') {
+            return `<span style="font-size: 0.95rem; font-weight:bold;">${Math.round(rnum)}</span>`;
+        }
+        return '';
     }
 
-function createCardElement(item, isAddModal = false) {
+    function createCardElement(item, isAddModal = false) {
         const card = document.createElement('div');
         card.className = 'card';
         card.dataset.id = item.id;
@@ -137,6 +162,28 @@ function createCardElement(item, isAddModal = false) {
             editBtnHtml = `<button class="edit-card-btn">⋯</button>`;
         }
 
+        // --- Handle sort value display ---
+        let sortValueHtml = "";
+        if (!isAddModal && currentSort !== 'custom' && currentSort !== 'title') {
+            let displayContent = "";
+            if (currentSort === 'rating') {
+                displayContent = getRatingHtml(item.personal_rating);
+            } else if (currentSort === 'activity_date') {
+                if (item.date_added) {
+                    const dateObj = new Date(item.date_added);
+                    displayContent = dateObj.getFullYear();
+                }
+            } else if (currentSort === 'release_date') {
+                if (item.release_date) {
+                    const dateObj = new Date(item.release_date);
+                    displayContent = dateObj.getFullYear();
+                }
+            }
+            if (displayContent) {
+                sortValueHtml = `<div class="card-sort-value">${displayContent}</div>`;
+            }
+        }
+
         card.innerHTML = `
             <a href="${item.url || '#'}" class="card-link" ${isAddModal ? 'draggable="false"' : ''}>
                 <div class="card-image">
@@ -145,12 +192,13 @@ function createCardElement(item, isAddModal = false) {
                     ${editBtnHtml}
                 </div>
             </a>
-            <div class="card-title" title="${item.title}">${item.title}</div>
+            <div style="display: flex; flex-direction: column; justify-content: center;">
+                <div class="card-title" title="${item.title}">${item.title}</div>
+                ${sortValueHtml}
+            </div>
         `;
 
-        // Card Click Logic
         card.addEventListener('click', (e) => {
-            // 1. Edit button bypasses everything
             if (e.target.classList.contains('edit-card-btn')) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -158,15 +206,10 @@ function createCardElement(item, isAddModal = false) {
                 return;
             }
 
-            // 2. Prevent navigation if we are selecting items or reordering
             if (isAddModal || isDeleteMode || isReorderMode || e.target.classList.contains('select-circle')) {
                 e.preventDefault();
-            } else {
-                // Allow the <a> tag to act like a normal link!
-                return;
-            }
+            } else return;
 
-            // Logic for Add Modal Selection
             if (isAddModal) {
                 const idStr = String(item.id);
                 const circle = card.querySelector('.select-circle');
@@ -178,9 +221,7 @@ function createCardElement(item, isAddModal = false) {
                     circle.classList.add('selected');
                 }
                 updateAddCount();
-            } 
-            // Logic for Delete Mode Selection
-            else if (isDeleteMode) {
+            } else if (isDeleteMode) {
                 const idStr = String(item.id);
                 const circle = card.querySelector('.select-circle');
                 if (selectedForDelete.has(idStr)) {
@@ -197,11 +238,145 @@ function createCardElement(item, isAddModal = false) {
         return card;
     }
 
+    async function loadCollectionItems(page = 1, reset = false) {
+        if (isLoading || (!hasMore && !reset)) return;
+        isLoading = true;
+
+        if (reset) {
+            currentPage = 1;
+            hasMore = true;
+            collectionItems = [];
+            grid.innerHTML = "";
+        } else {
+            currentPage = page;
+        }
+
+        try {
+            const res = await fetch(`/api/collection/${colId}/items/?page=${currentPage}&sort_by=${currentSort}&sort_order=${currentSortOrder}`);
+            const data = await res.json();
+            
+            hasMore = data.has_more;
+            const newItems = data.items || [];
+            collectionItems = collectionItems.concat(newItems);
+            
+            newItems.forEach(item => {
+                const card = createCardElement(item, false);
+                
+                if (isReorderMode) {
+                    card.classList.add("draggable-mode");
+                    card.setAttribute("draggable", "true");
+                }
+                
+                if (isDeleteMode) {
+                    const circle = document.createElement("div");
+                    circle.className = "select-circle";
+                    const imgContainer = card.querySelector('.card-image');
+                    if (imgContainer) {
+                        imgContainer.appendChild(circle);
+                    } else {
+                        card.prepend(circle);
+                    }
+                }
+                
+                grid.appendChild(card);
+            });
+
+            noItemsMsg.style.display = collectionItems.length === 0 ? "block" : "none";
+        } catch (err) {
+            console.error(err);
+        } finally {
+            isLoading = false;
+        }
+    }
+
+
+    // =====================================
+    // SORTING DROPDOWN LOGIC
+    // =====================================
+    const sortSelect = document.getElementById("sort-select");
+    const sortOptions = document.querySelectorAll(".sort-option");
+    const sortOrderBtn = document.getElementById("sort-order-btn");
+
+    function updateSortUI() {
+        const activeOption = document.querySelector(`.sort-option[data-sort="${currentSort}"]`);
+        if (activeOption) {
+            sortSelect.textContent = activeOption.textContent;
+            sortSelect.dataset.value = currentSort;
+        }
+
+        sortOptions.forEach(opt => opt.classList.toggle('active', opt.dataset.sort === currentSort));
+
+        if (currentSort === 'custom') {
+            sortOrderBtn.style.display = 'none';
+        } else {
+            sortOrderBtn.style.display = 'block';
+            sortOrderBtn.dataset.order = currentSortOrder;
+            
+            const label = currentSortOrder === 'asc' ? 'Sort ascending' : 'Sort descending';
+            sortOrderBtn.setAttribute('aria-label', label);
+            sortOrderBtn.title = label;
+        }
+    }
+
+    if (sortSelect) {
+        sortSelect.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const optionsList = sortSelect.closest('.custom-select-wrapper')?.querySelector('.custom-options');
+            const isOpen = optionsList?.classList.contains('open');
+            optionsList.classList.toggle('open', !isOpen);
+            sortSelect.setAttribute('aria-expanded', !isOpen ? 'true' : 'false');
+        });
+    }
+
+    sortOptions.forEach(option => {
+        option.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const selectedSort = option.dataset.sort;
+            
+            if (currentSort === selectedSort) {
+                if (currentSort !== 'custom') {
+                    currentSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
+                }
+            } else {
+                currentSort = selectedSort;
+                if (currentSort === 'title') {
+                    currentSortOrder = 'asc';
+                } else if (currentSort !== 'custom') {
+                    currentSortOrder = 'desc'; 
+                }
+            }
+
+            const optionsList = sortSelect.closest('.custom-select-wrapper')?.querySelector('.custom-options');
+            optionsList.classList.remove('open');
+            sortSelect.setAttribute('aria-expanded', 'false');
+
+            updateSortUI();
+            loadCollectionItems(1, true);
+        });
+    });
+
+    if (sortOrderBtn) {
+        sortOrderBtn.addEventListener("click", () => {
+            currentSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
+            updateSortUI();
+            loadCollectionItems(1, true);
+        });
+    }
+
+    document.addEventListener("click", (e) => {
+        if (!e.target.closest || !e.target.closest('.sort-controls')) {
+            const optionsList = document.querySelector('.custom-select-wrapper .custom-options');
+            if (optionsList) {
+                optionsList.classList.remove('open');
+                document.getElementById("sort-select")?.setAttribute('aria-expanded', 'false');
+            }
+        }
+    });
+
     // =====================================
     // ADD ITEMS (MODAL & SEARCH) LOGIC
     // =====================================
     addBtn.addEventListener("click", () => {
-        // Close other modes if they are active
         if (isReorderMode) toggleReorderMode();
         if (isDeleteMode) toggleDeleteMode();
 
@@ -256,7 +431,6 @@ function createCardElement(item, isAddModal = false) {
         }
     }
 
-    // Infinite Scroll trigger for the add modal
     addGrid.addEventListener('scroll', () => {
         if (addIsLoading || !addHasMore) return;
         if (addGrid.scrollTop + addGrid.clientHeight >= addGrid.scrollHeight - 200) {
@@ -279,7 +453,7 @@ function createCardElement(item, isAddModal = false) {
             });
             
             addModal.classList.add("modal-hidden");
-            loadCollectionItems(); // refresh main grid
+            loadCollectionItems(1, true); 
         } catch (err) {
             console.error(err);
         }
@@ -294,7 +468,7 @@ function createCardElement(item, isAddModal = false) {
     });
 
     function toggleDeleteMode() {
-        if (isReorderMode) toggleReorderMode(); // mutually exclusive
+        if (isReorderMode) toggleReorderMode();
 
         isDeleteMode = !isDeleteMode;
         selectedForDelete.clear();
@@ -305,7 +479,6 @@ function createCardElement(item, isAddModal = false) {
             deleteBtn.classList.add("active-state");
             floatingBar.classList.remove("hidden");
             
-            // Add circles tightly bound to the cover image specifically 
             document.querySelectorAll("#card-view .card").forEach(card => {
                 const circle = document.createElement("div");
                 circle.className = "select-circle";
@@ -322,7 +495,6 @@ function createCardElement(item, isAddModal = false) {
             deleteBtn.classList.remove("active-state");
             floatingBar.classList.add("hidden");
             
-            // Remove circles
             document.querySelectorAll("#card-view .select-circle").forEach(el => el.remove());
         }
     }
@@ -342,7 +514,7 @@ function createCardElement(item, isAddModal = false) {
             });
             
             toggleDeleteMode();
-            loadCollectionItems();
+            loadCollectionItems(1, true);
         } catch(err) {
             console.error(err);
         }
@@ -353,10 +525,22 @@ function createCardElement(item, isAddModal = false) {
     // =====================================
     reorderBtn.addEventListener("click", toggleReorderMode);
 
-    function toggleReorderMode() {
+    async function toggleReorderMode() {
         if (isDeleteMode) toggleDeleteMode();
 
+        let needsReload = false;
+        if (!isReorderMode && currentSort !== 'custom') {
+            currentSort = 'custom';
+            updateSortUI();
+            needsReload = true;
+        }
+
         isReorderMode = !isReorderMode;
+        
+        if (needsReload) {
+            await loadCollectionItems(1, true);
+        }
+
         if (isReorderMode) {
             document.body.classList.add('reorder-mode');
             reorderBtn.classList.add("active-state");
@@ -417,11 +601,8 @@ function createCardElement(item, isAddModal = false) {
 
         return draggables.find(child => {
             const box = child.getBoundingClientRect();
-            // If cursor is above top edge, we are before it
             if (y < box.top) return true;
-            // If cursor is below bottom edge, we are after it
             if (y > box.bottom) return false;
-            // If within vertical bounds, check horizontal center
             if (x < box.left + box.width / 2) return true;
             
             return false;

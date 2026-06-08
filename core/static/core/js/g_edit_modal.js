@@ -3,6 +3,162 @@ document.addEventListener("DOMContentLoaded", function () {
   const overlay = document.getElementById("edit-overlay");
   let scrollY = 0;
 
+  // Collection State
+  let editCurrentCollections = [];
+  let editAllCollections = [];
+
+  function initEditCollections(allCols, selectedIds) {
+    editAllCollections = allCols || [];
+    editCurrentCollections = selectedIds || [];
+    
+    const optionsContainer = document.getElementById("edit-collection-options");
+    if (!optionsContainer) return;
+    optionsContainer.innerHTML = "";
+    
+    editAllCollections.forEach(col => {
+      const option = document.createElement("div");
+      option.className = "custom-option collection-option";
+      option.dataset.value = col.id;
+      option.innerHTML = `<span>${col.title}</span><span class="collection-check">✕</span>`;
+      
+      option.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleEditCollection(col.id);
+        const search = document.getElementById("edit-collection-search");
+        if (search) {
+          search.value = "";
+          filterEditCollectionOptions("");
+        }
+      });
+      optionsContainer.appendChild(option);
+    });
+    updateEditCollectionUI();
+  }
+
+  function toggleEditCollection(id) {
+    if (editCurrentCollections.includes(id)) {
+      editCurrentCollections = editCurrentCollections.filter(c => c !== id);
+    } else {
+      editCurrentCollections.push(id);
+    }
+    updateEditCollectionUI();
+  }
+
+  function updateEditCollectionUI() {
+    const tagsContainer = document.getElementById("edit-collection-tags");
+    const search = document.getElementById("edit-collection-search");
+    const wrapper = document.getElementById("edit-collection-wrapper");
+    const optionsContainer = document.getElementById("edit-collection-options");
+    
+    if (!tagsContainer) return;
+    tagsContainer.innerHTML = "";
+    
+    editCurrentCollections.forEach(id => {
+      const col = editAllCollections.find(c => c.id === id);
+      if (!col) return;
+      
+      const tag = document.createElement('div');
+      tag.className = 'collection-tag';
+      tag.innerHTML = `<span>${col.title}</span><span class="remove-tag">✕</span>`;
+      tag.querySelector('.remove-tag').addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleEditCollection(id);
+      });
+      tagsContainer.appendChild(tag);
+    });
+
+    if (optionsContainer) {
+      const options = optionsContainer.querySelectorAll('.collection-option');
+      options.forEach(opt => {
+        if (editCurrentCollections.includes(parseInt(opt.dataset.value))) {
+          opt.classList.add('selected');
+        } else {
+          opt.classList.remove('selected');
+        }
+      });
+    }
+
+    if (search && wrapper) {
+      if (editCurrentCollections.length > 0) {
+        search.placeholder = '';
+        wrapper.classList.add('has-items');
+      } else {
+        search.placeholder = 'Collections';
+        wrapper.classList.remove('has-items');
+      }
+    }
+  }
+
+  function filterEditCollectionOptions(query) {
+    const colOptions = document.getElementById("edit-collection-options");
+    if (!colOptions) return;
+    const q = query.toLowerCase();
+    const options = colOptions.querySelectorAll('.collection-option');
+    options.forEach(opt => {
+      const title = opt.querySelector('span').textContent.toLowerCase();
+      if (title.includes(q)) {
+        opt.classList.remove('hidden');
+      } else {
+        opt.classList.add('hidden');
+      }
+    });
+  }
+
+  // Collection Listeners
+  const colWrapper = document.getElementById("edit-collection-wrapper");
+  if (colWrapper) {
+    colWrapper.addEventListener('click', () => {
+      const colOptions = document.getElementById("edit-collection-options");
+      const colSearch = document.getElementById("edit-collection-search");
+      if (colOptions) colOptions.classList.add('open');
+      colWrapper.classList.add('open');
+      if (colSearch) colSearch.focus();
+    });
+
+    document.addEventListener('click', (e) => {
+      const colOptions = document.getElementById("edit-collection-options");
+      if (!colWrapper.contains(e.target)) {
+        if (colOptions) colOptions.classList.remove('open');
+        colWrapper.classList.remove('open');
+      }
+    });
+
+    const colIndicator = document.getElementById("edit-collection-indicator");
+    if (colIndicator) {
+      colIndicator.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const colOptions = document.getElementById("edit-collection-options");
+        const colSearch = document.getElementById("edit-collection-search");
+        if (editCurrentCollections.length > 0) {
+          editCurrentCollections = [];
+          updateEditCollectionUI();
+          if (colOptions) colOptions.classList.remove('open');
+          colWrapper.classList.remove('open');
+        } else {
+          if (colOptions && colOptions.classList.contains('open')) {
+            colOptions.classList.remove('open');
+            colWrapper.classList.remove('open');
+          } else {
+            if (colOptions) colOptions.classList.add('open');
+            colWrapper.classList.add('open');
+            if (colSearch) colSearch.focus();
+          }
+        }
+      });
+    }
+
+    const colSearch = document.getElementById("edit-collection-search");
+    if (colSearch) {
+      colSearch.addEventListener('input', (e) => filterEditCollectionOptions(e.target.value));
+      colSearch.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') e.preventDefault();
+        if (e.key === 'Backspace' && e.target.value === '' && editCurrentCollections.length > 0) {
+          toggleEditCollection(editCurrentCollections[editCurrentCollections.length - 1]);
+        }
+      });
+    }
+  }
+
   function setModalBanner(bannerUrl, mediaType) {
     const modal = document.getElementById('edit-modal');
     const banner = modal.querySelector('.modal-banner');
@@ -214,6 +370,17 @@ if (dateGroup && dateInput) {
 
     } else {
         dateGroup.style.display = "none";
+    }
+}
+
+// --- Collections ---
+const collectionsGroup = document.getElementById("collections_group");
+if (collectionsGroup) {
+    if (item.show_collections_field) {
+        collectionsGroup.style.display = "block";
+        initEditCollections(item.all_collections, item.selected_collections);
+    } else {
+        collectionsGroup.style.display = "none";
     }
 }
 
@@ -769,6 +936,7 @@ document.getElementById("edit-delete-btn")?.addEventListener("click", function (
 
 
       const formData = Object.fromEntries(new FormData(form));
+      formData.collections = editCurrentCollections; // Append custom array to payload
       // Debug: log the value being sent for personal_rating
 
       fetch(`/edit-item/${itemId}/`, {

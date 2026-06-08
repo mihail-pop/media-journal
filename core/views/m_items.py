@@ -13,7 +13,7 @@ from django.core.files.storage import FileSystemStorage
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_POST
 
-from core.models import MediaItem
+from core.models import MediaItem, Collection
 from core.services.g_utils import display_to_rating, rating_to_display
 from core.services.m_books import save_openlib_item
 from core.services.m_games import save_igdb_item
@@ -467,6 +467,9 @@ def edit_item(request, item_id):
             if "favorite" in data:
                 item.favorite = data["favorite"] in ["true", "on", True]
 
+            if "collections" in data:
+                item.collections.set(data["collections"])
+
             item.save()
 
             # Build a minimal serialized item to return to the client for UI updates
@@ -779,6 +782,9 @@ def get_item(request, item_id):
                     "date_added": item.date_added.isoformat() if item.date_added else None,
                     "show_date_field": settings.show_date_field,
                     "show_repeats_field": settings.show_repeats_field,
+                    "show_collections_field": settings.show_collections_field,
+                    "all_collections": list(Collection.objects.values('id', 'title')),
+                    "selected_collections": list(item.collections.values_list('id', flat=True)),
                     "cover_url": item.cover_url,
                     "banner_url": item.banner_url,
                     "overview": item.overview,

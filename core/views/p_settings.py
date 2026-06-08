@@ -52,6 +52,7 @@ def update_preferences(request):
 
     settings.show_date_field = data.get("show_date_field", False)
     settings.show_repeats_field = data.get("show_repeats_field", False)
+    settings.show_collections_field = data.get("show_collections_field", False)
     settings.save()
 
     return JsonResponse({"success": True})

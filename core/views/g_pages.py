@@ -1090,11 +1090,16 @@ def collection_page(request, collection_id):
     AppSettings = apps.get_model("core", "AppSettings")
     settings = AppSettings.objects.first()
     theme_mode = settings.theme_mode if settings else "dark"
+    rating_mode = settings.rating_mode if settings else "faces"
     
     return render(
         request, 
         "core/p_collection.html", 
-        {"collection": collection, "theme_mode": theme_mode}
+        {
+            "collection": collection, 
+            "theme_mode": theme_mode, 
+            "rating_mode": rating_mode
+        }
     )
 
 
@@ -1127,5 +1132,6 @@ def settings_page(request):
             "theme_mode": settings.theme_mode,
             "show_date_field": settings.show_date_field,
             "show_repeats_field": settings.show_repeats_field,
+            "show_collections_field": settings.show_collections_field,
         },
     )

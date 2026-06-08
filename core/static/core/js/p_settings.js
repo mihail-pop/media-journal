@@ -522,6 +522,7 @@ document.addEventListener("DOMContentLoaded", function() {
   function savePreferences() {
     const showDate = document.getElementById("show-date-field").checked;
     const showRepeats = document.getElementById("show-repeats-field").checked;
+    const showCollections = document.getElementById("show-collections-field").checked;
 
     fetch("/settings/update_preferences/", {
       method: "POST",
@@ -532,6 +533,7 @@ document.addEventListener("DOMContentLoaded", function() {
       body: JSON.stringify({
         show_date_field: showDate,
         show_repeats_field: showRepeats,
+        show_collections_field: showCollections,
       }),
     })
     .then(response => response.json())
@@ -546,9 +548,33 @@ document.addEventListener("DOMContentLoaded", function() {
 
   const dateField = document.getElementById("show-date-field");
   const repeatsField = document.getElementById("show-repeats-field");
-  
-  if (dateField) dateField.addEventListener("change", savePreferences);
-  if (repeatsField) repeatsField.addEventListener("change", savePreferences);
+  const collectionsField = document.getElementById("show-collections-field");
+
+  function updateHoverTitle(checkbox, fieldName) {
+    const label = checkbox.closest('.preference-toggle-label');
+    if (label) {
+      label.title = checkbox.checked ? `Hide ${fieldName} field` : `Show ${fieldName} field`;
+    }
+  }
+
+  if (dateField) {
+    dateField.addEventListener("change", function() {
+      savePreferences();
+      updateHoverTitle(this, "Activity Date");
+    });
+  }
+  if (repeatsField) {
+    repeatsField.addEventListener("change", function() {
+      savePreferences();
+      updateHoverTitle(this, "Repeats");
+    });
+  }
+  if (collectionsField) {
+    collectionsField.addEventListener("change", function() {
+      savePreferences();
+      updateHoverTitle(this, "Collections");
+    });
+  }
 });
 
 // Update tooltip text dynamically for checkboxes

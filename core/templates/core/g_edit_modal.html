@@ -91,6 +91,21 @@
   <label for="repeats">Repeats</label>
   <input type="number" name="repeats" id="repeats" min="0" value="{{ item.repeats|default_if_none:'0' }}">
 </div>
+
+<!-- Collections -->
+<div id="collections_group" class="form-group vertical-label" style="display: {% if show_collections_field %}block{% else %}none{% endif %};">
+  <label>Collections</label>
+  <div class="collection-select-wrapper custom-select-wrapper" id="edit-collection-wrapper">
+    <div class="collection-select custom-select-trigger" id="edit-collection-select" role="button" tabindex="0">
+      <div class="collection-tags" id="edit-collection-tags"></div>
+      <input type="text" id="edit-collection-search" placeholder="Collections" autocomplete="off">
+      <div class="collection-indicator" id="edit-collection-indicator"></div>
+    </div>
+    <div class="custom-options collection-options" id="edit-collection-options" role="listbox" multiple>
+      <!-- Populated by JS -->
+    </div>
+  </div>
+</div>
 </div>
 
 <div class="form-group notes-group">

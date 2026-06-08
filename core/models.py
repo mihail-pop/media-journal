@@ -200,6 +200,7 @@ class AppSettings(models.Model):
     )
     show_date_field = models.BooleanField(default=False)
     show_repeats_field = models.BooleanField(default=False)
+    show_collections_field = models.BooleanField(default=False)
     theme_mode = models.CharField(
         max_length=20,
         choices=[

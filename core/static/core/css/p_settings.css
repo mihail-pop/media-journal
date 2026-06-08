@@ -492,8 +492,8 @@ table td:last-child .delete-btn {
 
 .preferences-form {
   display: flex;
-  flex-direction: column;
-  align-items: center;
+  flex-direction: row;
+  flex-wrap: wrap;
   gap: 0.8rem;
 }
 
@@ -501,8 +501,7 @@ table td:last-child .delete-btn {
   display: block;
   cursor: pointer;
   user-select: none;
-  width: 100%;
-  max-width: 220px;
+  max-width: 200px;
 }
 
 .preference-toggle-label input[type="checkbox"] {
@@ -535,7 +534,8 @@ table td:last-child .delete-btn {
   color: var(--text-primary);
   flex-shrink: 0;
   transition: color 0.2s ease;
-  margin-right: 0.2rem;
+  margin-right: 0.1rem;
+  margin-left: 0.4rem;
 }
 
 .preference-toggle-text {

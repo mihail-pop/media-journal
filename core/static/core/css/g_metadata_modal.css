@@ -161,7 +161,7 @@
 }
 
 .md-custom-option:hover {
-  background-color: var(--modal-bg);
+  background-color: var(--bg-quaternary);
 }
 
 .md-genre-select {
@@ -247,8 +247,8 @@
 }
 
 .md-genre-option.md-selected {
-  background-color: var(--button-primary);
-  color: white;
+  background-color: var(--bg-quaternary);
+  color: var(--text-tertiary);
   font-weight: bold;
 }
 
@@ -846,6 +846,10 @@ html.md-modal-open {
   width: 100%;
 }
 
+#metadata-creator-input::placeholder {
+  color: var(--text-tertiary);
+}
+
 .md-creator-tags {
   display: flex;
   flex-wrap: wrap;
@@ -895,6 +899,10 @@ html.md-modal-open {
   width: 100%;
 }
 
+.md-progress-box::placeholder {
+  color: var(--text-tertiary);
+}
+
 .md-progress-inputs .md-progress-box {
   flex: 1;
   min-width: 0; 
@@ -914,6 +922,10 @@ html.md-modal-open {
   border-radius: 6px;
   min-height: 1.8rem;
   padding: 0.35rem 2.5rem 0.35rem 0.5rem;
+}
+
+#metadata-genre-search::placeholder {
+  color: var(--text-tertiary);
 }
 
 .md-form-group.md-vertical-label {

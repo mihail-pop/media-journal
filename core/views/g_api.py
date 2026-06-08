@@ -1194,6 +1194,89 @@ def discover_api(request):
         return JsonResponse({"error": str(e)}, status=500)
 
 @require_GET
+def collection_items_api(request, collection_id):
+    page = int(request.GET.get("page", 1))
+    sort_by = request.GET.get("sort_by", "custom")
+    sort_order = request.GET.get("sort_order", "desc")
+    page_size = 50
+    
+    # Get items in the collection
+    qs = CollectionItem.objects.filter(collection_id=collection_id).select_related('item')
+    
+    # Annotate sorting parameters from the underlying item
+    qs = qs.annotate(
+        title_lower=Lower('item__title'),
+        rating_order=Case(
+            When(item__personal_rating=None, then=Value(0)),
+            default=F("item__personal_rating"),
+            output_field=IntegerField(),
+        )
+    )
+    
+    # Apply backend sorting
+    order_fields = []
+    if sort_by == "title":
+        if sort_order == "asc":
+            order_fields.extend(["title_lower", "item__title"])
+        else:
+            order_fields.extend(["-title_lower", "-item__title"])
+    elif sort_by == "rating":
+        order_fields.append("-rating_order" if sort_order == "desc" else "rating_order")
+        order_fields.extend(["title_lower", "item__title"])
+    elif sort_by == "activity_date":
+        order_fields.append("-item__date_added" if sort_order == "desc" else "item__date_added")
+        order_fields.extend(["title_lower", "item__title"])
+    elif sort_by == "release_date":
+        order_fields.append("-item__release_date" if sort_order == "desc" else "item__release_date")
+        order_fields.extend(["title_lower", "item__title"])
+    else: # custom
+        order_fields.extend(["position", "-date_added"])
+        
+    qs = qs.order_by(*order_fields)
+    
+    start = (page - 1) * page_size
+    end = start + page_size
+    items = qs[start:end]
+    
+    has_more = qs.count() > end
+    
+    data = []
+    for ci in items:
+        item = ci.item
+        
+        # Generate the detail URL
+        url = "#"
+        if item.media_type in ["movie", "tv"]:
+            if "_s" in str(item.source_id):
+                parts = str(item.source_id).split("_s")
+                url = reverse("tmdb_season_detail", args=[parts[0], parts[1]])
+            else:
+                url = reverse("tmdb_detail", args=[item.media_type, item.source_id])
+        elif item.media_type in ["anime", "manga"]:
+            url = reverse("anilist_detail", args=[item.source, item.media_type, item.source_id])
+        elif item.media_type == "game":
+            url = reverse("igdb_detail", args=[item.source_id])
+        elif item.media_type == "book":
+            url = reverse("openlib_detail", args=[item.source_id])
+        elif item.media_type == "music":
+            url = reverse("musicbrainz_detail", args=[item.source_id])
+
+        data.append({
+            "id": item.id,
+            "title": item.title,
+            "media_type": item.media_type,
+            "cover_url": item.cover_url or "/static/core/img/placeholder.png",
+            "banner_url": item.banner_url,
+            "position": ci.position,
+            "personal_rating": item.personal_rating,
+            "date_added": item.date_added.isoformat() if item.date_added else "",
+            "release_date": item.release_date,
+            "url": url
+        })
+        
+    return JsonResponse({"items": data, "has_more": has_more, "page": page})
+
+@require_GET
 def collections_api(request):
     page = int(request.GET.get("page", 1))
     page_size = 30
