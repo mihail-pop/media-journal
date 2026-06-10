@@ -1,5 +1,4 @@
 import os
-import glob
 import json
 import time
 
@@ -11,7 +10,7 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_POST
 
 from core.models import MediaItem
-from core.services.g_utils import download_image
+from core.services.g_utils import download_image, get_sharded_path
 from core.services.m_games import get_game_extra_info
 from core.services.m_music import get_music_extra_info
 from core.services.m_anime_manga import get_anime_extra_info, get_manga_extra_info
@@ -48,21 +47,23 @@ def upload_banner(request):
     except MediaItem.DoesNotExist:
         return JsonResponse({"error": "Item not found."}, status=404)
 
-    banner_dir = os.path.join(settings.MEDIA_ROOT, "banners")
-    os.makedirs(banner_dir, exist_ok=True)
-
     timestamp = int(time.time() * 1000)
     if media_type and source in ["tmdb", "mal", "anilist"]:
         base_name = f"{source}_{media_type}_{source_id}_{timestamp}"
     else:
         base_name = f"{source}_{source_id}_{timestamp}"
-    new_path = os.path.join(banner_dir, base_name + ext)
+        
+    flat_relative_path = f"banners/{base_name}{ext}"
+    sharded_relative_path = get_sharded_path(flat_relative_path)
+    new_path = os.path.join(settings.MEDIA_ROOT, sharded_relative_path)
+    
+    os.makedirs(os.path.dirname(new_path), exist_ok=True)
 
     with open(new_path, "wb+") as destination:
         for chunk in uploaded_file.chunks():
             destination.write(chunk)
 
-    relative_url = f"/media/banners/{base_name}{ext}"
+    relative_url = f"{settings.MEDIA_URL}{sharded_relative_path}"
     item.banner_url = relative_url
     item.save(update_fields=["banner_url"])
 
@@ -99,21 +100,23 @@ def upload_cover(request):
     except MediaItem.DoesNotExist:
         return JsonResponse({"error": "Item not found."}, status=404)
 
-    poster_dir = os.path.join(settings.MEDIA_ROOT, "posters")
-    os.makedirs(poster_dir, exist_ok=True)
-
     timestamp = int(time.time() * 1000)
     if media_type and source in ["tmdb", "mal", "anilist"]:
         base_name = f"{source}_{media_type}_{source_id}_{timestamp}"
     else:
         base_name = f"{source}_{source_id}_{timestamp}"
-    new_path = os.path.join(poster_dir, base_name + ext)
+        
+    flat_relative_path = f"posters/{base_name}{ext}"
+    sharded_relative_path = get_sharded_path(flat_relative_path)
+    new_path = os.path.join(settings.MEDIA_ROOT, sharded_relative_path)
+    
+    os.makedirs(os.path.dirname(new_path), exist_ok=True)
 
     with open(new_path, "wb+") as destination:
         for chunk in uploaded_file.chunks():
             destination.write(chunk)
 
-    relative_url = f"/media/posters/{base_name}{ext}"
+    relative_url = f"{settings.MEDIA_URL}{sharded_relative_path}"
     item.cover_url = relative_url
     item.save(update_fields=["cover_url"])
 
@@ -190,7 +193,8 @@ def upload_game_screenshots(request):
 
     def generate_unique_filename(index, ext):
         timestamp = int(time.time() * 1000)
-        return f"screenshots/igdb_{igdb_id}_{index}_{timestamp}{ext}"
+        flat_path = f"screenshots/igdb_{igdb_id}_{index}_{timestamp}{ext}"
+        return get_sharded_path(flat_path)
 
     # DELETE action
     if action == "delete":
@@ -204,7 +208,7 @@ def upload_game_screenshots(request):
         new_screenshots = [s for s in screenshots if s.get("url") != screenshot_url]
 
         # Remove actual file from disk
-        filename = screenshot_url.replace("/media/", "")
+        filename = screenshot_url.replace(settings.MEDIA_URL, "")
         file_path = os.path.join(settings.MEDIA_ROOT, filename)
         if os.path.exists(file_path):
             os.remove(file_path)
@@ -227,10 +231,15 @@ def upload_game_screenshots(request):
         )
 
     if action == "replace":
-        # Remove old screenshots from disk
-        pattern = os.path.join(settings.MEDIA_ROOT, f"screenshots/igdb_{igdb_id}_*.*")
-        for path in glob.glob(pattern):
-            os.remove(path)
+        old_screenshots = media_item.screenshots or []
+        # Safely remove old screenshots directly by looking at their DB paths
+        for s in old_screenshots:
+            url = s.get("url")
+            if url:
+                file_path = os.path.join(settings.MEDIA_ROOT, url.replace(settings.MEDIA_URL, ""))
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                    
         start_index = 1
         old_screenshots = []
 

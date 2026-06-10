@@ -16,6 +16,7 @@ from core.services.m_people import (
     delete_favorite_person_and_reorder,
 )
 from core.services.p_person_details import refresh_favorite_person
+from core.services.g_utils import get_sharded_path
 
 logger = logging.getLogger(__name__)
 
@@ -63,14 +64,16 @@ def upload_person_image(request):
     try:
         person = FavoritePerson.objects.get(person_id=person_id, type=person_type)
 
-        favorites_dir = os.path.join(settings.MEDIA_ROOT, f"favorites/{person_type}s")
-        os.makedirs(favorites_dir, exist_ok=True)
-
         # Generate cache-busting filename
         timestamp = int(time.time() * 1000)
         slug_name = slugify(person.name)
         base_name = f"{slug_name}_{timestamp}"
-        new_path = os.path.join(favorites_dir, base_name + ext)
+        
+        flat_relative_path = f"favorites/{person_type}s/{base_name}{ext}"
+        sharded_relative_path = get_sharded_path(flat_relative_path)
+        new_path = os.path.join(settings.MEDIA_ROOT, sharded_relative_path)
+        
+        os.makedirs(os.path.dirname(new_path), exist_ok=True)
 
         # Remove old image if it's in favorites directory
         if person.image_url and person.image_url.startswith(settings.MEDIA_URL):
@@ -85,7 +88,7 @@ def upload_person_image(request):
             for chunk in uploaded_file.chunks():
                 destination.write(chunk)
 
-        relative_url = f"/media/favorites/{person_type}s/{base_name}{ext}"
+        relative_url = f"{settings.MEDIA_URL}{sharded_relative_path}"
         person.image_url = relative_url
         person.save(update_fields=["image_url"])
 

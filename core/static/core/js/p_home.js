@@ -243,8 +243,12 @@ function slugify(text) {
   // --- 1. DEFINE YOUR CUSTOM RELEASE NOTIFICATIONS HERE ---
   const SYSTEM_NOTIFICATIONS = [
     {
-      id: "sys_upcoming_swap_hint",
-      html: "On the home page, you can press on the 'Activity History' title to swap to Upcoming Releases and access the <a href='/calendar/'>Calendar</a> page."
+      id: "sys_1_25_refresh_movies",
+      html: "If you are updating from a release before v1.26.0 go to <a href='/settings/'>Settings > Refresh</a> and do Refresh Movies to get Length/Runtime for your movies."
+    },
+    {
+      id: "sys_1_25_shard",
+      html: "I improved how images are stored to keep the app fast and stable in the long run. Please <a href='#' id='trigger-sharding-btn' style='font-weight:bold; color:#e91e63;'>click here to update your existing images</a>. (Do not close the page until it finishes)"
     }
   ];
 
@@ -402,5 +406,57 @@ upcomingToggleBtn?.addEventListener("click", () => {
     hiddenUpcoming.forEach(el => el.classList.add("upcoming-activity-hidden"));
     upcomingToggleBtn.textContent = "Show More";
     upcomingToggleBtn.dataset.state = "more";
+  }
+});
+
+
+// --- SHARDING MIGRATION LOGIC ---
+document.body.addEventListener('click', function(e) {
+  if (e.target.id === 'trigger-sharding-btn') {
+      e.preventDefault();
+      
+      // 1. Create a dark loading overlay so the user can't click away
+      const overlay = document.createElement('div');
+      overlay.id = 'sharding-overlay';
+      overlay.innerHTML = `
+        <div style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:99999; display:flex; justify-content:center; align-items:center; flex-direction:column; color:white;">
+          <div style="font-size:1.5rem; font-weight:bold; margin-bottom: 15px;">Migrating images to new architecture...</div>
+          <div style="font-size:1.1rem;">Please do not close or refresh this page.</div>
+          <div style="margin-top: 30px; border: 4px solid #f3f3f3; border-top: 4px solid #e91e63; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite;"></div>
+        </div>
+        <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
+      `;
+      document.body.appendChild(overlay);
+
+      // 2. Trigger the API
+      fetch('/api/shard_existing_images/', {
+          method: 'POST',
+          headers: {
+              'X-CSRFToken': getCookie("csrftoken"),
+              'Content-Type': 'application/json'
+          }
+      })
+      .then(res => res.json())
+      .then(data => {
+          document.getElementById('sharding-overlay').remove();
+          if (data.success) {
+              alert("Migration complete! All your existing images are safely sharded.");
+              // Automatically dismiss the notification
+              const dismissed = JSON.parse(localStorage.getItem('dismissedSysNotifs') || '[]');
+              if (!dismissed.includes("sys_1_25_shard")) {
+                  dismissed.push("sys_1_25_shard");
+                  localStorage.setItem('dismissedSysNotifs', JSON.stringify(dismissed));
+              }
+              const notifLi = document.getElementById('notification-sys_1_25_shard');
+              if (notifLi) notifLi.remove();
+              checkEmptyNotifications();
+          } else {
+              alert("An error occurred: " + data.error);
+          }
+      })
+      .catch(err => {
+          document.getElementById('sharding-overlay').remove();
+          alert("A network error occurred. Check the server terminal logs.");
+      });
   }
 });

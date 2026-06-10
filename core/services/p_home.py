@@ -106,20 +106,29 @@ def start_media_cleanup_loop():
                 if not os.path.exists(folder_path):
                     continue
                 
-                for filename in os.listdir(folder_path):
-                    if filename.startswith('.'):
-                        continue
-                    
-                    # Reconstruct the relative path (e.g., "posters/image.jpg")
-                    rel_path = f"{folder_name}/{filename}"
-                    
-                    if rel_path not in valid_files:
-                        file_to_delete = os.path.join(folder_path, filename)
+                for root_dir, dirs, files in os.walk(folder_path):
+                    # Clean empty shard folders while walking
+                    if not dirs and not files and root_dir != folder_path:
                         try:
-                            os.remove(file_to_delete)
-                            deleted_count += 1
-                        except OSError as e:
-                            print(f"Could not delete {file_to_delete}: {e}")
+                            os.rmdir(root_dir)
+                        except OSError:
+                            pass
+                        continue
+
+                    for filename in files:
+                        if filename.startswith('.'):
+                            continue
+                        
+                        file_to_delete = os.path.join(root_dir, filename)
+                        # Calculate accurate relative path (e.g., "posters/e4/image.jpg")
+                        rel_path = os.path.relpath(file_to_delete, settings.MEDIA_ROOT).replace('\\', '/')
+                        
+                        if rel_path not in valid_files:
+                            try:
+                                os.remove(file_to_delete)
+                                deleted_count += 1
+                            except OSError as e:
+                                print(f"Could not delete {file_to_delete}: {e}")
 
             print(f"Media cleanup finished successfully. Deleted {deleted_count} orphaned files.")
 

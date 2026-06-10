@@ -14,7 +14,7 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_POST
 
 from core.models import MediaItem, Collection
-from core.services.g_utils import display_to_rating, rating_to_display
+from core.services.g_utils import display_to_rating, rating_to_display, get_sharded_path
 from core.services.m_books import save_openlib_item
 from core.services.m_games import save_igdb_item
 from core.services.m_music import save_musicbrainz_item
@@ -142,11 +142,12 @@ def create_custom_item(request):
             folder = "posters" if image_type == "poster" else "banners"
             
             if source in ["tmdb", "anilist"]:
-                filename = f"{folder}/{source}_{media_type}_{custom_id}_{cache_bust}{ext}"
+                flat_filename = f"{folder}/{source}_{media_type}_{custom_id}_{cache_bust}{ext}"
             else:
-                filename = f"{folder}/{source}_{custom_id}_{cache_bust}{ext}"
+                flat_filename = f"{folder}/{source}_{custom_id}_{cache_bust}{ext}"
                 
-            saved_name = fs.save(filename, file_obj)
+            sharded_filename = get_sharded_path(flat_filename)
+            saved_name = fs.save(sharded_filename, file_obj)
             return fs.url(saved_name)
 
         cover_url = save_custom_image(request.FILES.get("cover_image"), "poster")
@@ -326,10 +327,12 @@ def edit_metadata(request, item_id):
                 file_obj = request.FILES["cover_image"]
                 ext = os.path.splitext(file_obj.name)[1] or ".jpg"
                 if item.source in ["tmdb", "anilist"]:
-                    filename = f"posters/{item.source}_{item.media_type}_{item.source_id}_{cache_bust}{ext}"
+                    flat_filename = f"posters/{item.source}_{item.media_type}_{item.source_id}_{cache_bust}{ext}"
                 else:
-                    filename = f"posters/{item.source}_{item.source_id}_{cache_bust}{ext}"
-                saved_name = fs.save(filename, file_obj)
+                    flat_filename = f"posters/{item.source}_{item.source_id}_{cache_bust}{ext}"
+                
+                sharded_filename = get_sharded_path(flat_filename)
+                saved_name = fs.save(sharded_filename, file_obj)
                 item.cover_url = fs.url(saved_name)
 
             if "banner_image" in request.FILES:
@@ -341,10 +344,12 @@ def edit_metadata(request, item_id):
                 file_obj = request.FILES["banner_image"]
                 ext = os.path.splitext(file_obj.name)[1] or ".jpg"
                 if item.source in ["tmdb", "anilist"]:
-                    filename = f"banners/{item.source}_{item.media_type}_{item.source_id}_{cache_bust}{ext}"
+                    flat_filename = f"banners/{item.source}_{item.media_type}_{item.source_id}_{cache_bust}{ext}"
                 else:
-                    filename = f"banners/{item.source}_{item.source_id}_{cache_bust}{ext}"
-                saved_name = fs.save(filename, file_obj)
+                    flat_filename = f"banners/{item.source}_{item.source_id}_{cache_bust}{ext}"
+                
+                sharded_filename = get_sharded_path(flat_filename)
+                saved_name = fs.save(sharded_filename, file_obj)
                 item.banner_url = fs.url(saved_name)
 
             item.save()

@@ -1,11 +1,32 @@
+import hashlib
+import os
 from pathlib import Path
 
 import requests
 from django.conf import settings
 
 
+def get_sharded_path(original_path):
+    """
+    Takes 'posters/tmdb_123.jpg'
+    Returns 'posters/e4/tmdb_123.jpg'
+    """
+    directory, filename = os.path.split(original_path)
+    hash_str = hashlib.md5(filename.encode('utf-8')).hexdigest()
+    shard_folder = hash_str[:2]  # 256 possible folders
+    
+    # If the parent folder is ALREADY named the hash, do nothing!
+    if os.path.basename(directory) == shard_folder:
+        return original_path.replace('\\', '/')
+
+    # Combine back and force forward slashes for URLs
+    return os.path.join(directory, shard_folder, filename).replace('\\', '/')
+
+
 def download_image(url, relative_path):
-    local_path = Path(settings.MEDIA_ROOT) / relative_path
+    sharded_relative_path = get_sharded_path(relative_path)
+    
+    local_path = Path(settings.MEDIA_ROOT) / sharded_relative_path
     local_path.parent.mkdir(parents=True, exist_ok=True)  # Ensure folder exists
 
     try:
@@ -13,7 +34,7 @@ def download_image(url, relative_path):
         if response.status_code == 200:
             with open(local_path, "wb") as f:
                 f.write(response.content)
-            return settings.MEDIA_URL + relative_path.replace("\\", "/")
+            return settings.MEDIA_URL + sharded_relative_path
     except Exception as e:
         print("Image download failed:", e)
 
