@@ -145,9 +145,9 @@ function openCoverUpload(source, id) {
             // If there's a poster element, update it
             const poster = document.querySelector('.poster');
             if (poster) poster.src = data.url;
-            showNotification('Cover uploaded successfully.', 'success');
+            showNotification('Poster uploaded successfully.', 'success');
           } else {
-            showNotification('Cover upload failed.', 'warning');
+            showNotification('Poster upload failed.', 'warning');
           }
         });
   };
@@ -714,9 +714,9 @@ document.addEventListener("DOMContentLoaded", function() {
         if (source && sourceId) {
           openBannerUpload(source, sourceId);
         }
-      } else if (e.key === 'C' || e.key === 'c') {
+      } else if (e.key === 'P' || e.key === 'p') {
         e.preventDefault();
-        // Change cover - SHIFT + C
+        // Change poster - SHIFT + P
         const source = document.querySelector('[data-source]')?.dataset.source;
         const sourceId = document.body.dataset.itemId;
         if (source && sourceId) {

@@ -143,9 +143,23 @@ def delete_calendar_event(request, event_id):
 def sync_calendar(request):
     try:
         data = json.loads(request.body)
-        sync_ongoing = data.get('sync_ongoing', True)
-        sync_planned = data.get('sync_planned', False)
+        from django.apps import apps
+        AppSettings = apps.get_model("core", "AppSettings")
+        settings = AppSettings.objects.first()
+
+        # Default to database preferences if frontend doesn't send them (e.g. from Home page)
+        db_ongoing = settings.cal_sync_ongoing if settings else True
+        db_planned = settings.cal_sync_planned if settings else False
+
+        sync_ongoing = data.get('sync_ongoing', db_ongoing)
+        sync_planned = data.get('sync_planned', db_planned)
         force = data.get('force', False)
+
+        # Save preferences to DB if they were explicitly provided in the request
+        if 'sync_ongoing' in data and settings:
+            settings.cal_sync_ongoing = sync_ongoing
+            settings.cal_sync_planned = sync_planned
+            settings.save(update_fields=['cal_sync_ongoing', 'cal_sync_planned'])
 
         statuses_to_sync = []
         if sync_ongoing: 
@@ -160,12 +174,26 @@ def sync_calendar(request):
         items_to_sync = []
 
         now = timezone.now()
+        
+        # Efficiently find all items that currently have a future API event
+        items_with_future_events = set(
+            CalendarEvent.objects.filter(
+                item__in=items_query,
+                date__gt=now,
+                is_custom=False
+            ).exclude(title="__API_SYNC__").values_list('item_id', flat=True)
+        )
+
         for item in items_query:
             if force:
                 items_to_sync.append(item)
             else:
-                # If never synced, or last synced more than 7 days ago, sync it
-                if not item.calendar_last_sync or (now - item.calendar_last_sync).days >= 7:
+                # If it has a known future event, skip it to save an API call
+                if item.id in items_with_future_events:
+                    continue
+                    
+                # If never synced, or last synced >= 1 day ago (and no future event), sync it
+                if not item.calendar_last_sync or (now - item.calendar_last_sync).days >= 1:
                     items_to_sync.append(item)
 
         if items_to_sync:

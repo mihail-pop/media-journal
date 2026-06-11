@@ -112,8 +112,33 @@ def _sync_tmdb_tv(items):
             base_id = str(item.source_id).split("_s")[0] if is_season else item.source_id
                 
             resp = requests.get(f"https://api.themoviedb.org/3/tv/{base_id}", params={"api_key": api_key}, timeout=5)
-            if resp.status_code == 200:
-                return (item, resp.json())
+            if resp.status_code != 200:
+                return (item, None)
+                
+            data = resp.json()
+            seasons_to_fetch = set()
+            
+            # Find out which seasons are currently active
+            if data.get("last_episode_to_air"):
+                seasons_to_fetch.add(data["last_episode_to_air"]["season_number"])
+            if data.get("next_episode_to_air"):
+                seasons_to_fetch.add(data["next_episode_to_air"]["season_number"])
+            
+            # Fetch full episode lists for those seasons and group by date
+            episodes_by_date_season = {}
+            for s_num in seasons_to_fetch:
+                s_resp = requests.get(f"https://api.themoviedb.org/3/tv/{base_id}/season/{s_num}", params={"api_key": api_key}, timeout=5)
+                if s_resp.status_code == 200:
+                    s_data = s_resp.json()
+                    for ep in s_data.get("episodes", []):
+                        ad = ep.get("air_date")
+                        if ad:
+                            key = (ad, s_num)
+                            if key not in episodes_by_date_season:
+                                episodes_by_date_season[key] = []
+                            episodes_by_date_season[key].append(ep)
+                            
+            return (item, episodes_by_date_season)
         except Exception as e:
             print(f"Error fetching TMDB TV {item.title}: {e}")
         return (item, None)
@@ -126,31 +151,53 @@ def _sync_tmdb_tv(items):
     current_utc = datetime.datetime.now(datetime.timezone.utc)
     three_months_ago = current_utc - datetime.timedelta(days=90)
 
-    for item, data in results:
-        if data:
+    for item, episodes_by_date_season in results:
+        if episodes_by_date_season:
             # Smart Notifications: Inherit notify state from the most recent episode
             latest_event = CalendarEvent.objects.filter(item=item, is_custom=False).exclude(title="__API_SYNC__").order_by('-date').first()
             auto_notify = latest_event.notify if latest_event else False
 
-            for ep_key in ["last_episode_to_air", "next_episode_to_air"]:
-                ep_data = data.get(ep_key)
-                if ep_data and ep_data.get("air_date"):
-                    air_dt = datetime.datetime.strptime(ep_data["air_date"], "%Y-%m-%d").replace(tzinfo=datetime.timezone.utc)
+            for (air_date_str, s_num), eps in episodes_by_date_season.items():
+                air_dt = datetime.datetime.strptime(air_date_str, "%Y-%m-%d").replace(tzinfo=datetime.timezone.utc)
+                
+                if air_dt >= three_months_ago:
+                    db_date = _normalize_dt(air_dt)
                     
-                    if air_dt >= three_months_ago:
-                        db_date = _normalize_dt(air_dt)
-                        title_str = f"Episode {ep_data.get('episode_number')} (S{ep_data.get('season_number')})"
+                    # Sort the episodes for this specific date by episode number
+                    eps = sorted(eps, key=lambda x: x.get("episode_number", 0))
+                    
+                    # Create a consolidated title (e.g. "Episode 4" OR "Episodes 4-6")
+                    if len(eps) == 1:
+                        title_str = f"Episode {eps[0].get('episode_number')} (S{s_num})"
+                    else:
+                        first_ep = eps[0]
+                        last_ep = eps[-1]
+                        title_str = f"Episodes {first_ep.get('episode_number')}-{last_ep.get('episode_number')} (S{s_num})"
                         
-                        # Use get_or_create so we don't overwrite manual notify toggles on update
-                        ev, created = CalendarEvent.objects.get_or_create(
-                            item=item, 
-                            title=title_str, 
+                    # Find any existing events for this exact item and date
+                    existing_events = list(CalendarEvent.objects.filter(
+                        item=item, date=db_date, is_custom=False
+                    ).exclude(title="__API_SYNC__"))
+                    
+                    if existing_events:
+                        # Update the title of the primary event if it changed
+                        ev = existing_events[0]
+                        if ev.title != title_str:
+                            ev.title = title_str
+                            ev.save(update_fields=['title'])
+                        
+                        # If the old logic created duplicates on this exact date, delete them
+                        if len(existing_events) > 1:
+                            for dup in existing_events[1:]:
+                                dup.delete()
+                    else:
+                        CalendarEvent.objects.create(
+                            item=item,
+                            date=db_date,
+                            title=title_str,
                             is_custom=False,
-                            defaults={'date': db_date, 'notify': auto_notify}
+                            notify=auto_notify
                         )
-                        if not created and ev.date != db_date:
-                            ev.date = db_date
-                            ev.save(update_fields=['date'])
         _mark_as_synced(item)
 
 def _sync_anilist(items):

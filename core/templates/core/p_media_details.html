@@ -66,13 +66,13 @@
         </button>
         <div class="settings-dropdown" id="settingsDropdown">
           <button onclick="openBannerUpload('{{ source }}', '{{ source_id }}')" class="dropdown-item">Change Banner (Shift + B)</button>
-          <button onclick="openCoverUpload('{{ source }}', '{{ source_id }}')" class="dropdown-item">Change Cover (Shift + C)</button>
+          <button onclick="openCoverUpload('{{ source }}', '{{ source_id }}')" class="dropdown-item">Change Poster (Shift + P)</button>
           <button onclick="openMetadataModal('{{ item_id }}')" class="dropdown-item">Edit Metadata (Shift + E)</button>
           {% if 'custom_' not in source_id %}
-          <button onclick="refreshItem('{{ item_id }}', 'data')" class="dropdown-item" title="Only data; not the cover, banner, screenshots, or videos.">Refresh Data (Shift + R)</button>
-          <button onclick="refreshItem('{{ item_id }}', 'all')" class="dropdown-item" title="Only data, cover, and banner; not screenshots or videos. (Shift + D)">Refresh Data & Images</button>
+          <button onclick="refreshItem('{{ item_id }}', 'data')" class="dropdown-item" title="Only data; not the poster, banner, screenshots, or videos.">Refresh Data (Shift + R)</button>
+          <button onclick="refreshItem('{{ item_id }}', 'all')" class="dropdown-item" title="Only data, poster, and banner; not screenshots or videos. (Shift + D)">Refresh Data & Images</button>
           <button onclick="refreshItem('{{ item_id }}', 'banner')" class="dropdown-item" title="Only the banner.">Refresh Banner</button>
-          <button onclick="refreshItem('{{ item_id }}', 'cover')" class="dropdown-item" title="Only the cover.">Refresh Cover</button>
+          <button onclick="refreshItem('{{ item_id }}', 'cover')" class="dropdown-item" title="Only the poster.">Refresh Poster</button>
           {% endif %}
         </div>
       {% else %}
@@ -242,7 +242,7 @@
           {% if in_my_list %}
           <div class="music-video-controls">
             <button class="music-delete-btn" data-position="{{ link.position }}" title="Delete Video">✕</button>
-            <button class="music-cover-btn" data-position="{{ link.position }}" title="Set thumbnail as banner and cover">
+            <button class="music-cover-btn" data-position="{{ link.position }}" title="Set thumbnail as banner and poster">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="pointer-events: none;">
                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
                 <circle cx="8.5" cy="8.5" r="1.5"></circle>

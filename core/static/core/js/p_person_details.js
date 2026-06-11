@@ -145,7 +145,12 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Function to update refresh button visibility
         function updateRefreshButton() {
-            refreshBtn.style.display = checkbox.checked ? 'flex' : 'none';
+            const isCustom = favForm.dataset.personId && String(favForm.dataset.personId).startsWith('custom_');
+            if (isCustom) {
+                refreshBtn.style.display = 'none';
+            } else {
+                refreshBtn.style.display = checkbox.checked ? 'flex' : 'none';
+            }
         }
         
         // Initial check after favorite status is loaded
@@ -262,7 +267,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         isUploading = false;
                         uploadBtn.disabled = false;
                         uploadBtn.style.opacity = '1';
-                        showNotification(data.error || 'Failed to upload image.', 'warning');
+                        showNotification(data.error || 'Failed to upload poster.', 'warning');
                     }
                 })
                 .catch(() => {
@@ -306,9 +311,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (refreshBtn && refreshBtn.style.display !== 'none' && window.doPersonRefresh) {
                     window.doPersonRefresh('all');
                 }
-            } else if (e.key === 'C' || e.key === 'c') {
+            } else if (e.key === 'P' || e.key === 'p') {
                 e.preventDefault();
-                // Upload image - SHIFT + C
+                // Upload poster - SHIFT + P
                 const uploadBtn = document.getElementById('upload-person-image-btn');
                 if (uploadBtn && uploadBtn.style.display !== 'none') {
                     uploadBtn.click();

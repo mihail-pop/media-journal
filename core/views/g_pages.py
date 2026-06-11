@@ -1076,7 +1076,11 @@ def calendar_page(request):
     return render(
         request, 
         "core/p_calendar.html", 
-        {"theme_mode": theme_mode}
+        {
+            "theme_mode": theme_mode,
+            "cal_sync_ongoing": settings.cal_sync_ongoing if settings else True,
+            "cal_sync_planned": settings.cal_sync_planned if settings else False,
+        }
     )
 
 @ensure_csrf_cookie

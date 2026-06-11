@@ -168,7 +168,7 @@ function openCoverUpload(source, id) {
           sessionStorage.setItem("refreshSuccess", "1");
           window.location.reload(true);
         } else {
-          alert(data.error || "Failed to upload cover.");
+          alert(data.error || "Failed to upload poster.");
         }
       });
   };
@@ -1373,10 +1373,10 @@ swapBtn?.addEventListener("click", function () {
             sessionStorage.setItem('refreshSuccess', '1');
             location.reload();
           } else {
-            alert(data.error || 'Failed to set cover');
+            alert(data.error || 'Failed to set poster');
           }
         })
-        .catch(() => alert('Error setting cover'));
+        .catch(() => alert('Error setting poster'));
       }
       
       // Move up
@@ -1553,9 +1553,9 @@ document.addEventListener('keydown', function(e) {
       if (source && sourceId) {
         openBannerUpload(source, sourceId);
       }
-    } else if (key === 'c') {
+    } else if (key === 'p') {
       e.preventDefault();
-      // Change cover - SHIFT + C
+      // Change poster - SHIFT + P
       if (source && sourceId) {
         openCoverUpload(source, sourceId);
       }

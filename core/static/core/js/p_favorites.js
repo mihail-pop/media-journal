@@ -304,4 +304,103 @@ document.addEventListener('DOMContentLoaded', () => {
   if (savedMode) {
       setMode(savedMode);
   }
+
+  // --- Custom Person Modal ---
+  const cpModal = document.getElementById('custom-person-modal');
+  const cpOverlay = document.getElementById('custom-person-overlay');
+  const cpForm = document.getElementById('custom-person-form');
+  const cpCloseIcons = [
+    document.getElementById('custom-person-close-btn'),
+    document.getElementById('custom-person-close-icon'),
+    cpOverlay
+  ];
+  let currentCpScrollY = 0;
+
+  function openCpModal(personType) {
+    cpForm.reset();
+    document.getElementById('custom-person-type').value = personType;
+    
+    // Reset image preview
+    const coverContainer = document.getElementById('custom-person-cover-container');
+    const coverPreview = document.getElementById('custom-person-cover-preview');
+    coverPreview.src = "/static/core/img/placeholder.png";
+    coverContainer.classList.remove('has-image');
+
+    cpModal.classList.remove('cp-modal-hidden');
+    cpOverlay.classList.remove('cp-modal-hidden');
+    
+    currentCpScrollY = window.scrollY;
+    document.body.style.top = `-${currentCpScrollY}px`;
+    document.body.classList.add('c-modal-open');
+    document.documentElement.classList.add('c-modal-open');
+  }
+
+  function closeCpModal() {
+    cpModal.classList.add('cp-modal-hidden');
+    cpOverlay.classList.add('cp-modal-hidden');
+    document.body.classList.remove('c-modal-open');
+    document.documentElement.classList.remove('c-modal-open');
+    document.body.style.top = '';
+    window.scrollTo(0, currentCpScrollY);
+  }
+
+  document.querySelectorAll('.add-custom-person-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openCpModal(btn.dataset.type);
+    });
+  });
+
+  cpCloseIcons.forEach(icon => {
+    if (icon) {
+      icon.addEventListener('click', closeCpModal);
+    }
+  });
+
+  // Handle image upload preview
+  const cpInput = document.getElementById('custom-person-cover-input');
+  const cpPreview = document.getElementById('custom-person-cover-preview');
+  const cpContainer = document.getElementById('custom-person-cover-container');
+
+  if (cpInput && cpPreview && cpContainer) {
+    cpInput.addEventListener('change', function() {
+      if (this.files && this.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          cpPreview.src = e.target.result;
+          cpContainer.classList.add('has-image');
+        };
+        reader.readAsDataURL(this.files[0]);
+      }
+    });
+  }
+
+  if (cpForm) {
+    cpForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const formData = new FormData(cpForm);
+      
+      fetch('/api/favorites/custom_person/', {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': getCookie('csrftoken') // Function existing globally inside your file
+        },
+        body: formData
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          closeCpModal();
+          window.location.reload();
+        } else {
+          alert("Failed to create custom person: " + data.error);
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        alert("Error saving custom person.");
+      });
+    });
+  }
 });

@@ -213,6 +213,8 @@ class AppSettings(models.Model):
     )
 
     username = models.CharField(max_length=50, blank=True, null=True)
+    cal_sync_ongoing = models.BooleanField(default=True)
+    cal_sync_planned = models.BooleanField(default=False)
 
     def __str__(self):
         return f"App Settings ({self.rating_mode}, theme={self.theme_mode}, username={self.username})"

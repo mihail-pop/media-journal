@@ -12,6 +12,52 @@ document.addEventListener("DOMContentLoaded", function () {
   if (activityContainer && upcomingContainer) {
     const savedActView = localStorage.getItem("homeDashboardActivityView") || "activity";
     
+    function triggerHomeSync() {
+        fetch('/api/calendar/sync/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+            body: JSON.stringify({}) // Empty body uses backend DB preferences!
+        }).then(res => res.json()).then(data => {
+            // ONLY refresh the DOM if the API actually synced/found updates
+            if (data.synced_count > 0) {
+                // Silently fetch the home page again
+                fetch(window.location.href)
+                    .then(response => response.text())
+                    .then(html => {
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, 'text/html');
+                        
+                        // Swap the Tiles Container
+                        const newTiles = doc.querySelector('.upcoming-tiles-container');
+                        const oldTiles = document.querySelector('.upcoming-tiles-container');
+                        if (newTiles && oldTiles) {
+                            oldTiles.innerHTML = newTiles.innerHTML;
+                        }
+
+                        // Swap the List Container
+                        const newList = doc.querySelector('#upcoming-activity-list');
+                        const oldList = document.querySelector('#upcoming-activity-list');
+                        if (newList && oldList) {
+                            oldList.innerHTML = newList.innerHTML;
+                            
+                            // Reset the Show More button state if it exists
+                            const upcToggle = document.getElementById("toggle-upcoming-btn");
+                            if (upcToggle) {
+                                upcToggle.textContent = "Show More";
+                                upcToggle.dataset.state = "more";
+                            }
+                        }
+
+                        // Re-attach the tooltips to the newly injected elements
+                        attachPillTooltips();
+                        
+                        // Recentering today's tile
+                        centerTodayTile();
+                    });
+            }
+        });
+    }
+
     if (savedActView === "upcoming") {
       activityContainer.style.display = "none";
       upcomingContainer.style.display = "block";
@@ -27,6 +73,7 @@ document.addEventListener("DOMContentLoaded", function () {
         upcomingContainer.style.display = "block";
         localStorage.setItem("homeDashboardActivityView", "upcoming");
         centerTodayTile();
+        triggerHomeSync();
       });
     });
 
@@ -42,6 +89,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // Center the today tile on load if upcoming is active
     if (savedActView === "upcoming") {
         setTimeout(centerTodayTile, 100);
+        setTimeout(triggerHomeSync, 300); // trigger slightly after load
     }
   }
 
@@ -84,27 +132,33 @@ document.addEventListener("DOMContentLoaded", function () {
   tooltip.className = 'pill-global-tooltip';
   body.appendChild(tooltip);
 
-  document.querySelectorAll('.home-event-pill').forEach(pill => {
-      pill.addEventListener('mouseenter', (e) => {
-          tooltip.innerHTML = pill.querySelector('.pill-tooltip-content').innerHTML;
-          tooltip.dataset.mediaType = pill.dataset.mediaType;
-          tooltip.style.display = 'flex';
-          
-          const rect = pill.getBoundingClientRect();
-          // Position to the right of the pill
-          tooltip.style.top = `${rect.top - 10}px`;
-          let leftPos = rect.right + 10;
-          
-          // Prevent overflowing screen width
-          if (leftPos + 250 > window.innerWidth) {
-              leftPos = rect.left - 260; // Show on left instead
-          }
-          tooltip.style.left = `${leftPos}px`; 
+  function attachPillTooltips() {
+      document.querySelectorAll('.home-event-pill').forEach(pill => {
+          // Remove old listeners if re-attaching
+          pill.replaceWith(pill.cloneNode(true));
       });
-      pill.addEventListener('mouseleave', () => {
-          tooltip.style.display = 'none';
+
+      document.querySelectorAll('.home-event-pill').forEach(pill => {
+          pill.addEventListener('mouseenter', (e) => {
+              tooltip.innerHTML = pill.querySelector('.pill-tooltip-content').innerHTML;
+              tooltip.dataset.mediaType = pill.dataset.mediaType;
+              tooltip.style.display = 'flex';
+              
+              const rect = pill.getBoundingClientRect();
+              tooltip.style.top = `${rect.top - 10}px`;
+              let leftPos = rect.right + 10;
+              
+              if (leftPos + 250 > window.innerWidth) {
+                  leftPos = rect.left - 260; 
+              }
+              tooltip.style.left = `${leftPos}px`; 
+          });
+          pill.addEventListener('mouseleave', () => {
+              tooltip.style.display = 'none';
+          });
       });
-  });
+  }
+  attachPillTooltips(); // Attach on initial load
   
   if (statsContainer && collectionsContainer) {
     const savedView = localStorage.getItem("homeDashboardView") || "stats";
@@ -376,14 +430,16 @@ function slugify(text) {
 
 const toggleBtn = document.getElementById("toggle-activity-btn");
 const advancedBtn = document.getElementById("advanced-activity-btn");
-const hiddenActivities = document.querySelectorAll("#recent-activity-list .recent-activity-hidden");
+
 toggleBtn?.addEventListener("click", () => {
+  // Dynamically query items > 2 at the exact moment of click
+  const itemsToToggle = document.querySelectorAll("#recent-activity-list li:nth-child(n+3)");
   if (toggleBtn.dataset.state === "more") {
-    hiddenActivities.forEach(el => el.classList.remove("recent-activity-hidden"));
+    itemsToToggle.forEach(el => el.classList.remove("recent-activity-hidden"));
     toggleBtn.textContent = "Show Less";
     toggleBtn.dataset.state = "less";
   } else {
-    hiddenActivities.forEach(el => el.classList.add("recent-activity-hidden"));
+    itemsToToggle.forEach(el => el.classList.add("recent-activity-hidden"));
     toggleBtn.textContent = "Show More";
     toggleBtn.dataset.state = "more";
   }
@@ -395,15 +451,16 @@ advancedBtn?.addEventListener("click", () => {
 
 // Upcoming List toggle
 const upcomingToggleBtn = document.getElementById("toggle-upcoming-btn");
-const hiddenUpcoming = document.querySelectorAll("#upcoming-activity-list .upcoming-activity-hidden");
 
 upcomingToggleBtn?.addEventListener("click", () => {
+  // Dynamically query items > 2 at the exact moment of click
+  const itemsToToggle = document.querySelectorAll("#upcoming-activity-list li:nth-child(n+3)");
   if (upcomingToggleBtn.dataset.state === "more") {
-    hiddenUpcoming.forEach(el => el.classList.remove("upcoming-activity-hidden"));
+    itemsToToggle.forEach(el => el.classList.remove("upcoming-activity-hidden"));
     upcomingToggleBtn.textContent = "Show Less";
     upcomingToggleBtn.dataset.state = "less";
   } else {
-    hiddenUpcoming.forEach(el => el.classList.add("upcoming-activity-hidden"));
+    itemsToToggle.forEach(el => el.classList.add("upcoming-activity-hidden"));
     upcomingToggleBtn.textContent = "Show More";
     upcomingToggleBtn.dataset.state = "more";
   }

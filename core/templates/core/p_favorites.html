@@ -18,20 +18,31 @@
 <div class="separator-bar"></div>
 
 <div class="favorites-container">
-  <div class="favorites-header-bar">
-    <div class="view-controls">
-      <button class="view-btn active" id="view-big" title="Detail View">
-        <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><path d="M14 4h7"></path><path d="M14 9h7"></path><path d="M14 15h7"></path><path d="M14 20h7"></path></svg>
-      </button>
-      <button class="view-btn" id="view-small" title="Compact View">
-        <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-      </button>
-    </div>
-  </div>
 
   {% for section in sections %}
     <section class="favorite-section" data-category="{{ section.slug }}" data-type="{{ section.type }}" data-page="{{ section.page }}" data-has-more="{{ section.has_more|yesno:'true,false' }}">
-      <h2>{{ section.category }}</h2>
+      <div class="section-title-wrapper">
+        <h2>{{ section.category }}</h2>
+        
+        <div class="section-controls">
+          {% if section.slug == 'characters' or section.slug == 'actors' %}
+          <button class="add-custom-person-btn" data-type="{% if section.slug == 'characters' %}character{% else %}actor{% endif %}" title="Add Custom {{ section.category|slice:':-1' }}">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          </button>
+          {% endif %}
+
+          {% if forloop.first %}
+          <div class="view-controls">
+            <button class="view-btn active" id="view-big" title="Detail View">
+              <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><path d="M14 4h7"></path><path d="M14 9h7"></path><path d="M14 15h7"></path><path d="M14 20h7"></path></svg>
+            </button>
+            <button class="view-btn" id="view-small" title="Compact View">
+              <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+            </button>
+          </div>
+          {% endif %}
+        </div>
+      </div>
       <div class="card-grid draggable-container">
         {% for item in section.items %}
         <div class="card draggable" draggable="true" data-id="{{ item.id }}" data-media-type="{{ item.media_type }}">
@@ -51,6 +62,39 @@
   {% endfor %}
 
 </div>
+
+<!-- Custom Person Modal -->
+<div id="custom-person-modal" class="cp-modal cp-modal-hidden">
+  <div class="cp-modal-content">
+    <button type="button" id="custom-person-close-icon" class="cp-close-btn">X</button>
+    <form id="custom-person-form" enctype="multipart/form-data">
+      <div class="cp-modal-body">
+        <div class="cp-cover-container" id="custom-person-cover-container">
+          <img id="custom-person-cover-preview" src="{% static 'core/img/placeholder.png' %}" alt="cover">
+          <label class="cp-upload-overlay" for="custom-person-cover-input" title="Upload Poster">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          </label>
+          <input type="file" id="custom-person-cover-input" name="image" accept="image/*" style="display: none;">
+        </div>
+
+        <div class="cp-form-fields">
+          <input type="hidden" name="person_type" id="custom-person-type">
+          <input type="text" name="name" class="cp-title-input" placeholder="Name" required autocomplete="off">
+          
+          <div class="cp-form-group">
+            <label>Overview</label>
+            <textarea name="overview" placeholder="Biography/Description..." required></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="cp-modal-buttons">
+        <button type="button" id="custom-person-close-btn" class="cp-btn cp-cancel">Cancel</button>
+        <button type="submit" class="cp-btn cp-save-btn">Create</button>
+      </div>
+    </form>
+  </div>
+</div>
+<div id="custom-person-overlay" class="cp-modal-overlay cp-modal-hidden"></div>
 
 {% csrf_token %}
 <script src="{% static 'core/js/p_favorites.js' %}"></script>

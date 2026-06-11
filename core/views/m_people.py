@@ -1,11 +1,17 @@
+import os
 import json
+import time
+import uuid
 
 import requests
+from django.conf import settings
 from django.http import JsonResponse
+from django.utils.text import slugify
 from django.views.decorators.csrf import ensure_csrf_cookie
-from django.views.decorators.http import require_GET
+from django.views.decorators.http import require_GET, require_POST
 
 from core.models import APIKey, FavoritePerson
+from core.services.g_utils import get_sharded_path
 from core.services.m_people import (
     actor_search,
     character_search,
@@ -217,5 +223,66 @@ def load_more_cast(request):
 
         return JsonResponse({"cast": cast_data, "has_more": has_more, "page": page})
 
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+
+@ensure_csrf_cookie
+@require_POST
+def create_custom_person(request):
+    try:
+        name = request.POST.get("name")
+        person_type = request.POST.get("person_type")
+        overview = request.POST.get("overview")
+        image_file = request.FILES.get("image")
+
+        if not name or not person_type:
+            return JsonResponse({"error": "Name and type are required."}, status=400)
+            
+        custom_id = f"custom_{uuid.uuid4().hex}"
+        
+        # Determine position
+        existing_count = FavoritePerson.objects.filter(type=person_type).count()
+        position = existing_count + 1
+        
+        # Prepare fields
+        additional_data = {}
+        if person_type == "actor":
+            additional_data["biography"] = overview
+        elif person_type == "character":
+            additional_data["description"] = overview
+            
+        image_url = None
+        if image_file:
+            ext = os.path.splitext(image_file.name)[1].lower()
+            if ext not in [".jpg", ".jpeg", ".png", ".webp", ".gif"]:
+                return JsonResponse({"error": "Unsupported file type."}, status=400)
+                
+            timestamp = int(time.time() * 1000)
+            slug_name = slugify(name)
+            base_name = f"{slug_name}_{timestamp}"
+            
+            flat_relative_path = f"favorites/{person_type}s/{base_name}{ext}"
+            sharded_relative_path = get_sharded_path(flat_relative_path)
+            new_path = os.path.join(settings.MEDIA_ROOT, sharded_relative_path)
+            
+            os.makedirs(os.path.dirname(new_path), exist_ok=True)
+            
+            with open(new_path, "wb+") as destination:
+                for chunk in image_file.chunks():
+                    destination.write(chunk)
+                    
+            image_url = f"{settings.MEDIA_URL}{sharded_relative_path}"
+            
+        person = FavoritePerson.objects.create(
+            name=name,
+            type=person_type,
+            person_id=custom_id,
+            position=position,
+            image_url=image_url,
+            **additional_data
+        )
+        
+        return JsonResponse({"success": True, "person": {"id": person.id, "name": person.name}})
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)

@@ -121,12 +121,13 @@ def character_detail_api(request, character_id):
         logger.error(f"Invalid character_id received: {character_id}")
         return JsonResponse({"error": "Invalid character ID"}, status=400)
 
-    # Try to convert to int to validate it's a valid ID
-    try:
-        int(character_id)
-    except (ValueError, TypeError):
-        logger.error(f"Character ID cannot be converted to integer: {character_id}")
-        return JsonResponse({"error": "Invalid character ID format"}, status=400)
+    # Validate it's either a custom ID or a valid integer
+    if not str(character_id).startswith("custom_"):
+        try:
+            int(character_id)
+        except (ValueError, TypeError):
+            logger.error(f"Character ID cannot be converted to integer: {character_id}")
+            return JsonResponse({"error": "Invalid character ID format"}, status=400)
 
     try:
         data = fetch_character_data(character_id)

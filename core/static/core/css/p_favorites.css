@@ -44,7 +44,7 @@ body {
 .separator-bar {
   width: 100%;
   height: 45px;
-  margin-bottom: 2rem;
+  margin-bottom: 4rem;
 }
 
 .favorites-container {
@@ -57,13 +57,252 @@ body {
   margin-bottom: 3rem;
 }
 
+.section-title-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 2px solid var(--border-color);
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+}
+
 .favorite-section h2 {
   color: var(--text-secondary);
   font-size: 1.5rem;
-  margin-bottom: 1rem;
-  border-bottom: 2px solid var(--border-color);
-  padding-bottom: 0.5rem;
+  margin-bottom: 0;
+  border-bottom: none;
+  padding-bottom: 0;
   cursor: default;
+}
+
+.section-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto; /* Pushes the buttons to the right side of the flex row */
+}
+
+.add-custom-person-btn {
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.add-custom-person-btn:hover {
+  background-color: var(--border-color);
+  color: var(--text-light);
+}
+
+/* Custom Person Modal Styles */
+.cp-modal-hidden {
+  display: none !important;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.cp-modal-overlay {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  z-index: 20000;
+  animation: modalFade 0.25s ease-in-out forwards;
+}
+
+.cp-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 20001;
+  background: var(--bg-tertiary);
+  border-radius: 12px;
+  max-width: 500px;
+  width: 95%;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  padding: 0;
+  animation: modalPop 0.25s ease-in-out;
+}
+
+.cp-modal-content {
+  position: relative;
+  padding: 2rem;
+}
+
+.cp-close-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: transparent;
+  color: var(--text-secondary);
+  border: none;
+  font-size: 1.2rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.cp-close-btn:hover {
+  color: #ff4444;
+}
+
+.cp-modal-body {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.cp-cover-container {
+  width: 120px;
+  height: 180px;
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+  background-color: rgb(255 254 254 / 7%);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+  flex-shrink: 0;
+}
+
+.cp-cover-container img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cp-cover-container img[src*="placeholder"] {
+  opacity: 0;
+}
+
+.cp-upload-overlay {
+  position: absolute;
+  inset: 0;
+  display: block;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+  opacity: 1;
+}
+
+.cp-cover-container.has-image .cp-upload-overlay {
+  opacity: 0;
+}
+
+.cp-cover-container:hover .cp-upload-overlay {
+  opacity: 1;
+}
+
+.cp-upload-overlay svg {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 50%;
+  padding: 10px;
+  box-sizing: content-box;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.cp-upload-overlay:hover svg {
+  background: #3db4f2;
+  transform: translate(-50%, -50%) scale(1.1);
+}
+
+.cp-form-fields {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.cp-title-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 2px dashed rgba(255, 255, 255, 0.3);
+  color: var(--text-light);
+  font-size: 1.2rem;
+  font-weight: 700;
+  padding: 0.5rem 0;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.cp-title-input:focus {
+  border-bottom: 2px solid #3db4f2;
+}
+
+.cp-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  flex: 1;
+}
+
+.cp-form-group label {
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.cp-form-group textarea {
+  flex: 1;
+  background: var(--bg-primary);
+  border: none;
+  color: var(--text-primary);
+  border-radius: 6px;
+  padding: 0.8rem;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 100px;
+  outline: none;
+}
+
+.cp-form-group textarea:focus {
+  box-shadow: 0 0 0 2px #3db4f2;
+}
+
+.cp-modal-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.cp-btn {
+  padding: 0.6rem 1.2rem;
+  border-radius: 6px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.cp-cancel {
+  background: var(--border-color);
+  color: var(--text-light);
+}
+
+.cp-cancel:hover {
+  background: var(--text-secondary);
+}
+
+.cp-save-btn {
+  background: #3db4f2;
+  color: white;
+}
+
+.cp-save-btn:hover {
+  background: #0056b3;
 }
 
 .card-grid {
@@ -246,14 +485,6 @@ body.drag-active .card-favorite {
 }
 
 /* --- Header & View Controls --- */
-.favorites-header-bar {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: -2rem;
-}
-
 .view-controls {
   display: flex;
   gap: 0.5rem;
@@ -315,6 +546,34 @@ body.drag-active .card-favorite {
   cursor: grab;
 }
 
+body.c-modal-open,
+html.c-modal-open {
+  overflow: hidden !important;
+  position: fixed !important;
+  width: 100% !important;
+  left: 0 !important;
+  right: 0 !important;
+}
+
+@keyframes modalFade {
+  0% { opacity: 0; }
+  60% { opacity: 1; }
+  100% { opacity: 1; }
+}
+
+@keyframes modalPop {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%);
+  }
+  60% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%);
+  }
+}
+
 #music-player-container {
   position: fixed !important;
   z-index: 9999 !important;
@@ -340,6 +599,31 @@ body.drag-active .card-favorite {
   .view-btn svg {
     width: 4rem;
     height: 4rem;
+  }
+
+  .section-title-wrapper {
+    margin-bottom: 1.5rem;
+  }
+  .add-custom-person-btn {
+    width: 4rem;
+    height: 4rem;
+  }
+  .cp-modal-body {
+    flex-direction: column;
+  }
+  .cp-cover-container {
+    width: 150px;
+    height: 225px;
+    margin: 0 auto;
+  }
+  .cp-title-input {
+    font-size: 1.8rem;
+  }
+  .cp-form-group label, .cp-form-group textarea {
+    font-size: 1.5rem;
+  }
+  .cp-btn {
+    font-size: 1.5rem;
   }
 
   .favorite-section h2 {

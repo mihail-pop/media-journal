@@ -31,12 +31,12 @@
                     </svg>
                 </button>
                 <div class="sync-divider"></div>
-                <button id="sync-ongoing-btn" class="header-icon-btn toggle-btn active-state" title="Sync Watching / Reading / Playing">
+                <button id="sync-ongoing-btn" class="header-icon-btn toggle-btn {% if cal_sync_ongoing %}active-state{% endif %}" title="Sync Watching / Reading / Playing">
                     <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
                         <polygon points="5 3 19 12 5 21 5 3"></polygon>
                     </svg>
                 </button>
-                <button id="sync-planned-btn" class="header-icon-btn toggle-btn" title="Sync Planned">
+                <button id="sync-planned-btn" class="header-icon-btn toggle-btn {% if cal_sync_planned %}active-state{% endif %}" title="Sync Planned">
                     <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
                     </svg>

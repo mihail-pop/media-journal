@@ -606,28 +606,18 @@ function initStepTicker() {
         return cookieValue;
     }
 
-    // Sync Button Filters & LocalStorage
+    // Sync Button Filters (State loaded directly from Database)
     const ongoingBtn = document.getElementById("sync-ongoing-btn");
     const plannedBtn = document.getElementById("sync-planned-btn");
-    
-    // Load state (default to ongoing=true, planned=false)
-    const isOngoingActive = localStorage.getItem('cal_sync_ongoing') !== 'false';
-    const isPlannedActive = localStorage.getItem('cal_sync_planned') === 'true';
-    
-    if (isOngoingActive) ongoingBtn.classList.add("active-state");
-    else ongoingBtn.classList.remove("active-state");
-    
-    if (isPlannedActive) plannedBtn.classList.add("active-state");
-    else plannedBtn.classList.remove("active-state");
 
     ongoingBtn.addEventListener("click", () => {
         ongoingBtn.classList.toggle("active-state");
-        localStorage.setItem('cal_sync_ongoing', ongoingBtn.classList.contains("active-state"));
+        triggerSync(false); // Triggers sync and saves preference to database
     });
 
     plannedBtn.addEventListener("click", () => {
         plannedBtn.classList.toggle("active-state");
-        localStorage.setItem('cal_sync_planned', plannedBtn.classList.contains("active-state"));
+        triggerSync(false); // Triggers sync and saves preference to database
     });
 
     // Calendar Auto-Sync Function
