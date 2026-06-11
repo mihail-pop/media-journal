@@ -54,13 +54,9 @@
   <h3>Type</h3>
   <div class="type-filter filter-group">
     <button class="filter-btn type-btn" data-type="all">All</button>
-    <button class="filter-btn type-btn" data-type="movie">Movies</button>
-    <button class="filter-btn type-btn" data-type="tv">TV Shows</button>
-    <button class="filter-btn type-btn" data-type="anime">Anime</button>
-    <button class="filter-btn type-btn" data-type="manga">Manga</button>
-    <button class="filter-btn type-btn" data-type="game">Games</button>
-    <button class="filter-btn type-btn" data-type="music">Music</button>
-    <button class="filter-btn type-btn" data-type="book">Books</button>
+    {% for type_info in ordered_types %}
+    <button class="filter-btn type-btn" data-type="{{ type_info.data_type }}">{{ type_info.label }}</button>
+    {% endfor %}
   </div>
 
   <h3>Status</h3>

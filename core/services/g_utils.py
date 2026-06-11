@@ -1,9 +1,11 @@
-import hashlib
 import os
+import hashlib
 from pathlib import Path
 
 import requests
 from django.conf import settings
+
+from core.models import NavItem
 
 
 def get_sharded_path(original_path):
@@ -107,3 +109,28 @@ def display_to_rating(display_value: int | None, rating_mode: str) -> int | None
         return display_value
 
     return None
+
+def get_ordered_types():
+    nav_items = NavItem.objects.all().order_by("position")
+    
+    mapping = {
+        'movies': {'data_type': 'movie', 'label': 'Movies'},
+        'tvshows': {'data_type': 'tv', 'label': 'TV Shows'},
+        'anime': {'data_type': 'anime', 'label': 'Anime'},
+        'manga': {'data_type': 'manga', 'label': 'Manga'},
+        'games': {'data_type': 'game', 'label': 'Games'},
+        'books': {'data_type': 'book', 'label': 'Books'},
+        'music': {'data_type': 'music', 'label': 'Music'},
+    }
+    
+    ordered = []
+    for item in nav_items:
+        if item.name in mapping:
+            ordered.append(mapping[item.name])
+            
+    # Add any missing types just in case they were not in NavItems
+    for name, data in mapping.items():
+        if data not in ordered:
+            ordered.append(data)
+            
+    return ordered

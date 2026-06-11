@@ -1,7 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
   
   let currentPage = 1;
-  let currentType = 'movie';
+  const initialTypeBtn = document.querySelector('.type-btn.active');
+  let currentType = initialTypeBtn ? initialTypeBtn.dataset.type : 'movie';
   let isLoading = false;
   let hasMorePages = true;
   let pageCache = new Map();

@@ -1325,10 +1325,18 @@ updateSortButtons();
     }
 
     // 4. Open/Close & Clear Logic
-    genreSelectWrapper.addEventListener('click', () => {
+    genreSelectWrapper.addEventListener('click', (e) => {
       genreOptionsContainer.classList.add('open');
       genreSelectWrapper.classList.add('open');
-      genreSearchInput.focus();
+      // Only focus the input if the user didn't explicitly click it or a tag
+      if (e.target !== genreSearchInput && e.target !== genreIndicator && !e.target.closest('.remove-tag')) {
+        genreSearchInput.focus();
+      }
+    });
+    
+    genreSearchInput.addEventListener('focus', () => {
+      genreOptionsContainer.classList.add('open');
+      genreSelectWrapper.classList.add('open');
     });
 
     document.addEventListener('click', (e) => {
@@ -1341,6 +1349,14 @@ updateSortButtons();
     // Handle clicking the arrow / X button
     genreIndicator.addEventListener('click', (e) => {
       e.stopPropagation(); // Prevent opening the wrapper
+      
+      // Manually close others since we stopped propagation
+      const colWrapper = document.querySelector('.list-collection-select-wrapper');
+      if (colWrapper) {
+        document.getElementById('list-collection-options')?.classList.remove('open');
+        colWrapper.classList.remove('open');
+      }
+      setSortSelectOpen(false);
       
       if (currentGenres.length > 0) {
         // If items are selected, clicking clears all and closes dropdown
@@ -1405,14 +1421,14 @@ updateSortButtons();
   }
 
   // === COLLECTIONS MULTI-SELECT LOGIC ===
-  const collectionSelectWrapper = document.querySelector('.collection-select-wrapper');
-  const collectionSearchInput = document.getElementById('collection-search');
-  const collectionOptionsContainer = document.getElementById('collection-options');
-  const collectionTagsContainer = document.querySelector('.collection-tags');
-  const collectionIndicator = document.getElementById('collection-indicator');
+  const collectionSelectWrapper = document.querySelector('.list-collection-select-wrapper');
+  const collectionSearchInput = document.getElementById('list-collection-search');
+  const collectionOptionsContainer = document.getElementById('list-collection-options');
+  const collectionTagsContainer = document.querySelector('.list-collection-tags');
+  const collectionIndicator = document.getElementById('list-collection-indicator');
 
   if (collectionSelectWrapper && collectionOptionsContainer) {
-    const options = collectionOptionsContainer.querySelectorAll('.collection-option');
+    const options = collectionOptionsContainer.querySelectorAll('.list-collection-option');
     options.forEach(opt => {
       opt.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -1446,7 +1462,7 @@ updateSortButtons();
         collectionTagsContainer.appendChild(tag);
       });
 
-      const options = collectionOptionsContainer.querySelectorAll('.collection-option');
+      const options = collectionOptionsContainer.querySelectorAll('.list-collection-option');
       options.forEach(opt => {
         if (currentCollections.find(c => c.id === opt.dataset.value)) {
           opt.classList.add('selected');
@@ -1464,10 +1480,18 @@ updateSortButtons();
       }
     }
 
-    collectionSelectWrapper.addEventListener('click', () => {
+    collectionSelectWrapper.addEventListener('click', (e) => {
       collectionOptionsContainer.classList.add('open');
       collectionSelectWrapper.classList.add('open');
-      collectionSearchInput.focus();
+      // Only focus the input if the user didn't explicitly click it or a tag
+      if (e.target !== collectionSearchInput && e.target !== collectionIndicator && !e.target.closest('.remove-tag')) {
+        collectionSearchInput.focus();
+      }
+    });
+
+    collectionSearchInput.addEventListener('focus', () => {
+      collectionOptionsContainer.classList.add('open');
+      collectionSelectWrapper.classList.add('open');
     });
 
     document.addEventListener('click', (e) => {
@@ -1479,6 +1503,15 @@ updateSortButtons();
 
     collectionIndicator.addEventListener('click', (e) => {
       e.stopPropagation();
+      
+      // Manually close others since we stopped propagation
+      const genreWrapper = document.querySelector('.genre-select-wrapper');
+      if (genreWrapper) {
+        document.getElementById('genre-options')?.classList.remove('open');
+        genreWrapper.classList.remove('open');
+      }
+      setSortSelectOpen(false);
+
       if (currentCollections.length > 0) {
         currentCollections = [];
         updateCollectionUI();
@@ -1499,7 +1532,7 @@ updateSortButtons();
 
     function filterCollectionOptions(query) {
       const q = query.toLowerCase();
-      const options = collectionOptionsContainer.querySelectorAll('.collection-option');
+      const options = collectionOptionsContainer.querySelectorAll('.list-collection-option');
       options.forEach(opt => {
         if (opt.dataset.title.toLowerCase().includes(q)) {
           opt.classList.remove('hidden');
@@ -1554,7 +1587,6 @@ updateSortButtons();
 
   if (sortSelect) {
     sortSelect.addEventListener("click", (e) => {
-      e.stopPropagation();
       const optionsList = sortSelect.closest('.custom-select-wrapper')?.querySelector('.custom-options');
       setSortSelectOpen(!optionsList?.classList.contains('open'));
     });

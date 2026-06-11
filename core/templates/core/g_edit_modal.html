@@ -98,7 +98,7 @@
   <div class="collection-select-wrapper custom-select-wrapper" id="edit-collection-wrapper">
     <div class="collection-select custom-select-trigger" id="edit-collection-select" role="button" tabindex="0">
       <div class="collection-tags" id="edit-collection-tags"></div>
-      <input type="text" id="edit-collection-search" placeholder="Collections" autocomplete="off">
+        <input type="text" id="edit-collection-search" placeholder="Collections" autocomplete="off" onclick="event.stopPropagation();" onfocus="this.closest('.collection-select-wrapper').classList.add('open'); document.getElementById('edit-collection-options').classList.add('open');">
       <div class="collection-indicator" id="edit-collection-indicator"></div>
     </div>
     <div class="custom-options collection-options" id="edit-collection-options" role="listbox" multiple>

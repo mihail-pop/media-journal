@@ -328,12 +328,14 @@ label.music-player-btn.separator-btn {
 }
 
 /* Open state: Rotated Arrow */
-.genre-select-wrapper.open .genre-indicator::after {
+.genre-select-wrapper.open .genre-indicator::after,
+.list-collection-select-wrapper.open .genre-indicator::after {
   transform: rotate(180deg);
 }
 
 /* Selected state + Hover: Turn into 'X' */
-.genre-select-wrapper.has-items .genre-indicator:hover::after {
+.genre-select-wrapper.has-items .genre-indicator:hover::after,
+.list-collection-select-wrapper.has-items .genre-indicator:hover::after {
   content: "✕";
   border: none;
   font-size: 14px;
@@ -370,7 +372,7 @@ label.music-player-btn.separator-btn {
 }
 
 #genre-search, 
-#collection-search {
+#list-collection-search {
   flex: 1;
   min-width: 80px;
   background: transparent;
@@ -382,41 +384,41 @@ label.music-player-btn.separator-btn {
 }
 
 #genre-search::placeholder,
-#collection-search::placeholder {
+#list-collection-search::placeholder {
   color: var(--text-tertiary);
 }
 
 .genre-options,
-.collection-options {
+.list-collection-options {
   max-height: 350px; /* Fits roughly 10 items before scrolling */
 }
 
 .genre-option,
-.collection-option {
+.list-collection-option {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
 .genre-option.selected,
-.collection-option.selected {
+.list-collection-option.selected {
   background-color: var(--bg-quaternary);
   font-weight: bold;
 }
 
 .genre-option.hidden,
-.collection-option.hidden {
+.list-collection-option.hidden {
   display: none;
 }
 
 .genre-check,
-.collection-check {
+.list-collection-check {
   display: none;
   font-size: 0.8rem;
 }
 
 .genre-option.selected .genre-check,
-.collection-option.selected .collection-check {
+.list-collection-option.selected .list-collection-check {
   display: block;
 }
 

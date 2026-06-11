@@ -128,17 +128,17 @@
     </div>
 
     {% if valid_collections %}
-    <div class="collection-filter-container" style="margin-top: 0.5rem;">
-      <div class="collection-select-wrapper custom-select-wrapper">
-        <div id="collection-select" class="genre-select custom-select-trigger" role="button" tabindex="0">
-          <div class="collection-tags genre-tags"></div>
-          <input type="text" id="collection-search" placeholder="Collections">
-          <div id="collection-indicator" class="genre-indicator"></div>
+    <div class="list-collection-filter-container" style="margin-top: 0.5rem;">
+      <div class="list-collection-select-wrapper custom-select-wrapper">
+        <div id="list-collection-select" class="genre-select custom-select-trigger" role="button" tabindex="0">
+          <div class="list-collection-tags genre-tags"></div>
+          <input type="text" id="list-collection-search" placeholder="Collections" autocomplete="off">
+          <div id="list-collection-indicator" class="genre-indicator"></div>
         </div>
-        <div class="custom-options collection-options" id="collection-options" role="listbox" multiple>
+        <div class="custom-options list-collection-options" id="list-collection-options" role="listbox" multiple>
           {% for col in valid_collections %}
-            <div class="custom-option collection-option" data-value="{{ col.id }}" data-title="{{ col.title }}">
-              <span>{{ col.title }}</span><span class="collection-check">✕</span>
+            <div class="custom-option list-collection-option" data-value="{{ col.id }}" data-title="{{ col.title }}">
+              <span>{{ col.title }}</span><span class="list-collection-check">✕</span>
             </div>
           {% endfor %}
         </div>

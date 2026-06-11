@@ -20,6 +20,7 @@ from core.services.p_home import (
     start_anilist_background_loop,
 )
 from core.services.m_people import fetch_actor_data, fetch_character_data
+from core.services.g_utils import get_ordered_types
 
 logger = logging.getLogger(__name__)
 
@@ -838,12 +839,15 @@ def history(request):
     settings = AppSettings.objects.first()
     theme_mode = settings.theme_mode if settings else "dark"
 
+    ordered_types = get_ordered_types()
+
     return render(
         request,
         "core/p_history.html",
         {
             "latest_years": latest_years,
             "theme_mode": theme_mode,
+            "ordered_types": ordered_types,
         },
     )
 
@@ -1023,11 +1027,14 @@ def discover_view(request):
     settings = AppSettings.objects.first()
     theme_mode = settings.theme_mode if settings else "dark"
 
+    ordered_types = get_ordered_types()
+
     return render(
         request,
         "core/p_discover.html",
         {
             "theme_mode": theme_mode,
+            "ordered_types": ordered_types,
         },
     )
 

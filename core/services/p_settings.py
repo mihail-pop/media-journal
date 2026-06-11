@@ -12,7 +12,7 @@ from django.conf import settings
 from django.utils import timezone
 from django.core.serializers import serialize, deserialize
 
-from core.models import APIKey, NavItem, MediaItem, AppSettings, FavoritePerson
+from core.models import APIKey, NavItem, MediaItem, AppSettings, FavoritePerson, Collection, CollectionItem, CalendarEvent
 from core.services.m_books import save_openlib_item
 from core.services.m_movies_tvshows import save_tmdb_season
 
@@ -107,6 +107,9 @@ class BackupTask(threading.Thread):
             APIKey.objects.all(),
             NavItem.objects.all(),
             AppSettings.objects.all(),
+            Collection.objects.all(),
+            CollectionItem.objects.all(),
+            CalendarEvent.objects.all(),
         ]
 
         all_objects = []
