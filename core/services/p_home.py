@@ -14,6 +14,36 @@ _started_tmdb = False
 _started_anilist = False
 _started_cleanup = False
 
+
+def acquire_media_lock():
+    """Attempts to acquire the media operation lock. Returns True if successful."""
+    lock_file = os.path.join(settings.BASE_DIR, '.media_operation_lock')
+    
+    if os.path.exists(lock_file):
+        # Anti-deadlock: If lock is older than 15 mins (e.g. server crashed), remove it
+        if time.time() - os.path.getmtime(lock_file) > 900:
+            try:
+                os.remove(lock_file)
+            except OSError:
+                pass
+                
+    try:
+        # os.O_CREAT | os.O_EXCL ensures the lock is atomic (prevents race conditions)
+        fd = os.open(lock_file, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+        os.close(fd)
+        return True
+    except FileExistsError:
+        return False
+
+def release_media_lock():
+    """Releases the media operation lock."""
+    lock_file = os.path.join(settings.BASE_DIR, '.media_operation_lock')
+    if os.path.exists(lock_file):
+        try:
+            os.remove(lock_file)
+        except OSError:
+            pass
+
 def start_media_cleanup_loop():
     global _started_cleanup
     if _started_cleanup:
@@ -54,6 +84,11 @@ def start_media_cleanup_loop():
         print("Media cleanup task scheduled (runs monthly). Starting in 30 seconds...")
         time.sleep(30)
 
+        # 1. Wait gracefully if migration holds the lock
+        while not acquire_media_lock():
+            print("Media operation in progress. Cleanup waiting 60 seconds...")
+            time.sleep(60)
+
         try:
             print("Running orphan media cleanup...")
             
@@ -69,7 +104,7 @@ def start_media_cleanup_loop():
                     if data.startswith("/media/"):
                         valid_set.add(data.replace("/media/", "", 1).strip('/'))
 
-            # 1. Gather all VALID images currently in use by the database
+            # Gather all VALID images currently in use by the database
             valid_files = set()
             for item in MediaItem.objects.all():
                 # Add Cover
@@ -87,7 +122,7 @@ def start_media_cleanup_loop():
                 extract_valid_media(item.related_titles, valid_files)
                 extract_valid_media(item.cast, valid_files)
 
-            # 2. Define the specific folders we want to clean
+            # Define the specific folders we want to clean
             folders_to_clean =[
                 "posters", 
                 "banners", 
@@ -99,7 +134,7 @@ def start_media_cleanup_loop():
             ]
             deleted_count = 0
 
-            # 3. Scan the folders and delete files NOT in the valid list
+            # Scan the folders and delete files NOT in the valid list
             for folder_name in folders_to_clean:
                 folder_path = os.path.join(settings.MEDIA_ROOT, folder_name)
                 
@@ -134,6 +169,9 @@ def start_media_cleanup_loop():
 
         except Exception as e:
             print(f"Error during media cleanup: {e}")
+        finally:
+            # 2. Always release the lock when finished!
+            release_media_lock()
 
     t = threading.Thread(target=loop, daemon=True)
     t.start()

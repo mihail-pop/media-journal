@@ -8,6 +8,7 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_POST
 
 from core.models import MediaItem
+from core.services.p_home import acquire_media_lock, release_media_lock
 
 logger = logging.getLogger(__name__)
 
@@ -44,33 +45,40 @@ def dismiss_sys_notification(request, sys_id):
 @ensure_csrf_cookie
 @require_POST
 def shard_existing_images_api(request):
-    from core.models import FavoritePerson
-    from core.services.g_utils import get_sharded_path
-    
-    def process_url(db_url):
-        if not db_url or not db_url.startswith(settings.MEDIA_URL):
-            return db_url
-        
-        relative_path = db_url.replace(settings.MEDIA_URL, "").lstrip('/')
-        sharded_relative = get_sharded_path(relative_path)
-        
-        if relative_path == sharded_relative:
-            return db_url
-            
-        old_full = os.path.join(settings.MEDIA_ROOT, relative_path)
-        new_full = os.path.join(settings.MEDIA_ROOT, sharded_relative)
-        
-        if os.path.exists(old_full):
-            try:
-                os.makedirs(os.path.dirname(new_full), exist_ok=True)
-                shutil.move(old_full, new_full)
-            except Exception as e:
-                print(f"Failed to move {old_full}: {e}")
-                return db_url # Return original if failed
-                
-        return settings.MEDIA_URL + sharded_relative
+    # 1. Attempt to acquire lock
+    if not acquire_media_lock():
+        return JsonResponse({
+            "success": False, 
+            "error": "A background media cleanup is currently running. Please wait a minute and try again."
+        })
 
     try:
+        from core.models import FavoritePerson
+        from core.services.g_utils import get_sharded_path
+        
+        def process_url(db_url):
+            if not db_url or not db_url.startswith(settings.MEDIA_URL):
+                return db_url
+            
+            relative_path = db_url.replace(settings.MEDIA_URL, "").lstrip('/')
+            sharded_relative = get_sharded_path(relative_path)
+            
+            if relative_path == sharded_relative:
+                return db_url
+                
+            old_full = os.path.join(settings.MEDIA_ROOT, relative_path)
+            new_full = os.path.join(settings.MEDIA_ROOT, sharded_relative)
+            
+            if os.path.exists(old_full):
+                try:
+                    os.makedirs(os.path.dirname(new_full), exist_ok=True)
+                    shutil.move(old_full, new_full)
+                except Exception as e:
+                    print(f"Failed to move {old_full}: {e}")
+                    return db_url # Return original if failed
+                    
+            return settings.MEDIA_URL + sharded_relative
+
         # Migrate Favorite Persons
         for person in FavoritePerson.objects.all():
             if person.image_url:
@@ -142,4 +150,7 @@ def shard_existing_images_api(request):
     except Exception as e:
         import traceback
         traceback.print_exc()
-        return JsonResponse({"error": str(e)}, status=500)    
+        return JsonResponse({"error": str(e)}, status=500)
+    finally:
+        # 2. Always release the lock!
+        release_media_lock()

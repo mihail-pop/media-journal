@@ -108,6 +108,12 @@ document.addEventListener("DOMContentLoaded", function () {
   const colWrapper = document.getElementById("edit-collection-wrapper");
   if (colWrapper) {
     colWrapper.addEventListener('click', () => {
+      // Close Status dropdown
+      const statusWrapper = document.getElementById("edit-status-wrapper");
+      const statusOptions = document.getElementById("edit-status-options");
+      if (statusWrapper) statusWrapper.classList.remove('open');
+      if (statusOptions) statusOptions.classList.remove('open');
+
       const colOptions = document.getElementById("edit-collection-options");
       const colSearch = document.getElementById("edit-collection-search");
       if (colOptions) colOptions.classList.add('open');
@@ -200,6 +206,13 @@ document.addEventListener('click', (e) => {
   if (editStatusWrapper) {
       editStatusWrapper.addEventListener('click', (e) => {
           e.stopPropagation();
+          
+          // Close Collections dropdown
+          const colWrapper = document.getElementById("edit-collection-wrapper");
+          const colOptions = document.getElementById("edit-collection-options");
+          if (colWrapper) colWrapper.classList.remove('open');
+          if (colOptions) colOptions.classList.remove('open');
+
           const opts = document.getElementById('edit-status-options');
           if(opts) {
               opts.classList.toggle('open');

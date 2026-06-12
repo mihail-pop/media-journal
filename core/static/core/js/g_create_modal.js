@@ -161,6 +161,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
   if (genreWrapper) {
     genreWrapper.addEventListener('click', () => {
+      // Close Status dropdown
+      const statusWrapper = document.getElementById("create-status-wrapper");
+      const statusOptions = document.getElementById("create-status-options");
+      if (statusWrapper) statusWrapper.classList.remove('c-open');
+      if (statusOptions) statusOptions.classList.remove('c-open');
+
       if (genreOptions) genreOptions.classList.add('open');
       genreWrapper.classList.add('open');
       if (genreSearch) genreSearch.focus();
@@ -183,6 +189,13 @@ document.addEventListener("DOMContentLoaded", function () {
     if (statusWrapper) {
       statusWrapper.addEventListener('click', (e) => {
         e.stopPropagation();
+        
+        // Close Genre dropdown
+        const genreOptions = document.getElementById("create-genre-options");
+        const genreWrapper = document.getElementById("create-genre-wrapper");
+        if (genreOptions) genreOptions.classList.remove('open');
+        if (genreWrapper) genreWrapper.classList.remove('open');
+
         const opts = document.getElementById('create-status-options');
         if (opts) {
           opts.classList.toggle('c-open');
