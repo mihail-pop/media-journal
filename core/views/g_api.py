@@ -817,6 +817,9 @@ def music_api(request):
                 "source_id": item.source_id,
                 "get_status_display": item.get_status_display(),
                 "repeats": item.repeats,
+                "provider_ids": item.provider_ids,
+                "is_favorite": item.favorite,
+                "screenshots": item.screenshots,
                 "date_added": item.date_added.isoformat() if item.date_added else "",
                 "release_date": (
                   datetime.strptime(item.release_date, "%Y-%m-%d").strftime("%d %b %Y")

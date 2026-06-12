@@ -4,7 +4,33 @@ let musicCurrentIndex = 0;
 let isMusicPlayerReady = false;
 let isMusicInitialized = false;
 let playedSongs = [];
+let isSequentialMode = false;
+let isRestoringFromBfcache = false;
 const tabId = Date.now() + Math.random();
+
+window.startCustomPlaylist = function(playlist, startIndex) {
+    musicPlaylist = playlist;
+    musicCurrentIndex = startIndex;
+    isSequentialMode = true;
+    playedSongs = [musicPlaylist[startIndex].video_id];
+    
+    localStorage.setItem('musicPlayerEnabled', 'list');
+    localStorage.setItem('music_player_playlist', JSON.stringify(playlist));
+    localStorage.setItem('music_player_index', startIndex);
+    localStorage.setItem('music_player_active_tab', tabId);
+    
+    const toggle = document.getElementById('music-player-toggle');
+    if (toggle) toggle.checked = true;
+    
+    loadYouTubeAPI();
+    if (window.YT && window.YT.Player) {
+        if (musicPlayer && musicPlayer.destroy) {
+            musicPlayer.destroy();
+            isMusicPlayerReady = false;
+        }
+        createPlayer(musicPlaylist[musicCurrentIndex].video_id, 0);
+    }
+};
 
 function getCookie(name) {
   let cookieValue = null;
@@ -43,7 +69,8 @@ function initMusicPlayer() {
   
   if (toggle) {
     const currentMode = toggle.dataset.mode;
-    toggle.checked = savedMode === currentMode;
+    // Ensure the toggle is checked if we are explicitly playing a list AND we are on the music.html page ('filtered')
+    toggle.checked = (savedMode === currentMode) || (savedMode === 'list' && currentMode === 'filtered');
   }
   
   if (savedMode) {
@@ -57,6 +84,54 @@ function initMusicPlayer() {
 
 function loadPlaylist() {
   const savedMode = localStorage.getItem('musicPlayerEnabled');
+  
+  if (savedMode === 'list') {
+      try {
+          const savedList = JSON.parse(localStorage.getItem('music_player_playlist'));
+          if (savedList && savedList.length > 0) {
+              musicPlaylist = savedList;
+              musicCurrentIndex = parseInt(localStorage.getItem('music_player_index')) || 0;
+              isSequentialMode = true;
+              if (musicCurrentIndex >= musicPlaylist.length) musicCurrentIndex = 0;
+              playedSongs = [musicPlaylist[musicCurrentIndex].video_id];
+              
+              const lastTime = parseFloat(localStorage.getItem('music_player_time')) || 0;
+              createPlayer(musicPlaylist[musicCurrentIndex].video_id, lastTime);
+              return;
+          }
+      } catch(e) {}
+  }
+
+  // Handle the new Shuffle/Filtered toggle on the Music list page
+  if (savedMode === 'filtered' && window.getFilteredMusicPlaylist) {
+      window.getFilteredMusicPlaylist().then(playlist => {
+          if (playlist && playlist.length > 0) {
+              musicPlaylist = shuffleArray(playlist);
+              musicCurrentIndex = 0;
+              isSequentialMode = true; // Use sequential mode to play linearly through the shuffled array (no repeats!)
+              playedSongs = [musicPlaylist[0].video_id];
+              
+              // Lock it in as a 'list' so it persists across tabs reliably
+              localStorage.setItem('musicPlayerEnabled', 'list');
+              localStorage.setItem('music_player_playlist', JSON.stringify(musicPlaylist));
+              localStorage.setItem('music_player_index', 0);
+              
+              createPlayer(musicPlaylist[0].video_id, 0);
+          } else {
+              alert("No playable YouTube videos found with current filters.");
+              const toggle = document.getElementById('music-player-toggle');
+              if (toggle) toggle.checked = false;
+              localStorage.removeItem('musicPlayerEnabled');
+          }
+      }).catch(e => {
+          console.error(e);
+          alert("Error generating playlist.");
+      });
+      return;
+  }
+
+  // Fallback for home.html 'favorites' mode or legacy saved states
+  isSequentialMode = false;
   let status = 'all';
   
   if (savedMode === 'status') {
@@ -89,6 +164,14 @@ function loadPlaylist() {
 function createPlayer(videoId, startTime = 0) {
   const container = document.getElementById('music-player-container');
   if (!container) return;
+  
+  // Clean up any suspended player instance before creating a new one
+  if (musicPlayer && musicPlayer.destroy) {
+    try {
+      musicPlayer.destroy();
+    } catch(e) {}
+    isMusicPlayerReady = false;
+  }
   
   const currentData = musicPlaylist.find(v => v.video_id === videoId);
   const isFavorite = currentData ? currentData.is_favorite : false;
@@ -202,12 +285,17 @@ function createPlayer(videoId, startTime = 0) {
         const playlistItem = musicPlaylist.find(v => v.item_id === itemId);
         if (playlistItem) {
           playlistItem.is_favorite = !isFavorite;
+          if (isSequentialMode) {
+          localStorage.setItem('music_player_playlist', JSON.stringify(musicPlaylist));
+          }
         }
       }
     });
   });
   
   document.getElementById('music-player-close').addEventListener('click', () => {
+    localStorage.removeItem('music_player_playlist');
+    localStorage.removeItem('music_player_index');
     if (musicPlayer && musicPlayer.destroy) {
       musicPlayer.destroy();
     }
@@ -246,22 +334,28 @@ function onPlayerStateChange(event) {
 }
 
 function playNext() {
-  if (playedSongs.length >= musicPlaylist.length) {
-    playedSongs = [];
-    musicPlaylist = shuffleArray(musicPlaylist);
-  }
-  
   let nextVideo;
-  const unplayed = musicPlaylist.filter(v => !playedSongs.includes(v.video_id));
-  
-  if (unplayed.length > 0) {
-    nextVideo = unplayed[Math.floor(Math.random() * unplayed.length)];
+
+  if (isSequentialMode) {
+      // Loop sequentially
+      musicCurrentIndex = (musicCurrentIndex + 1) % musicPlaylist.length;
+      nextVideo = musicPlaylist[musicCurrentIndex];
+      playedSongs.push(nextVideo.video_id);
+      localStorage.setItem('music_player_index', musicCurrentIndex);
   } else {
-    nextVideo = musicPlaylist[Math.floor(Math.random() * musicPlaylist.length)];
+      // Standard random shuffle
+      if (playedSongs.length >= musicPlaylist.length) {
+        playedSongs = [];
+        musicPlaylist = shuffleArray(musicPlaylist);
+      }
+      
+      let unplayed = musicPlaylist.filter(v => !playedSongs.includes(v.video_id));
+      if (unplayed.length === 0) unplayed = musicPlaylist;
+      
+      nextVideo = unplayed[Math.floor(Math.random() * unplayed.length)];
+      musicCurrentIndex = musicPlaylist.indexOf(nextVideo);
+      playedSongs.push(nextVideo.video_id);
   }
-  
-  musicCurrentIndex = musicPlaylist.indexOf(nextVideo);
-  playedSongs.push(nextVideo.video_id);
   
   if (musicPlayer && isMusicPlayerReady) {
     musicPlayer.loadVideoById(nextVideo.video_id);
@@ -310,8 +404,15 @@ window.addEventListener('pagehide', () => {
 
 // Detect bfcache restoration
 window.addEventListener('pageshow', (e) => {
-  if (e.persisted && localStorage.getItem('musicPlayerEnabled')) {
-    initMusicPlayer();
+  if (e.persisted) {
+    isRestoringFromBfcache = true;
+    setTimeout(() => {
+      isRestoringFromBfcache = false;
+    }, 100);
+    
+    if (localStorage.getItem('musicPlayerEnabled')) {
+      initMusicPlayer();
+    }
   }
 });
 
@@ -320,6 +421,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const toggle = document.getElementById('music-player-toggle');
   if (toggle) {
     toggle.addEventListener('change', function() {
+      localStorage.removeItem('music_player_playlist');
+      localStorage.removeItem('music_player_index');
       const enabled = this.checked;
       const mode = this.dataset.mode;
       
@@ -370,6 +473,7 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Listen for storage changes from other tabs
   window.addEventListener('storage', (e) => {
+    if (isRestoringFromBfcache) return; // Skip stale queued storage events
     if (e.key === 'music_player_active_tab' && e.newValue && e.newValue !== String(tabId)) {
       const container = document.getElementById('music-player-container');
       if (container && container.style.display !== 'none') {

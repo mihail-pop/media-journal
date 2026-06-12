@@ -385,6 +385,9 @@ const statusLabelsMap = {
     const linkUrl = getLinkUrl(item);
     const repeatHtml = item.repeats > 0 ? `<div class="repeat-indicator"><span class="repeat-count">${item.repeats}</span><svg class="repeat-icon" viewBox="0 0 512 512"><path fill="currentColor" d="M256.455 8c66.269.119 126.437 26.233 170.859 68.685l35.715-35.715C478.149 25.851 504 36.559 504 57.941V192c0 13.255-10.745 24-24 24H345.941c-21.382 0-32.09-25.851-16.971-40.971l41.75-41.75c-30.864-28.899-70.801-44.907-113.23-45.273-92.398-.798-170.283 73.977-169.484 169.442C88.764 348.009 162.184 424 256 424c41.127 0 79.997-14.678 110.629-41.556 4.743-4.161 11.906-3.908 16.368.553l39.662 39.662c4.872 4.872 4.631 12.815-.482 17.433C378.202 479.813 319.926 504 256 504 119.034 504 8.001 392.967 8 256.002 7.999 119.193 119.646 7.755 256.455 8z"/></svg></div>` : '';
     
+    const playSvg = `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`;
+    const playBtnHtml = item.media_type === 'music' ? `<button class="play-card-btn">${playSvg}</button>` : '';
+
     const coverSrc = item.cover_url || '/static/core/img/placeholder.png';
     const imgAlt = item.cover_url ? item.title : item.media_type;
 
@@ -402,6 +405,7 @@ const statusLabelsMap = {
           </div>
         </div>
       </a>
+      ${playBtnHtml}
       <button class="edit-card-btn">⋯</button>
     `;
     
@@ -438,6 +442,9 @@ function createListRowElement(item, isDetailed = false) {
       </div>
     ` : '';
     
+    const playSvg = `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`;
+    const playBtnHtml = item.media_type === 'music' ? `<button class="play-card-btn" title="Play context playlist">${playSvg}</button>` : '';
+
     const coverSrc = item.cover_url || '/static/core/img/placeholder.png';
     const imgAlt = item.cover_url ? item.title : item.media_type;
 
@@ -455,6 +462,7 @@ function createListRowElement(item, isDetailed = false) {
             </div>
             <div class="list-row-actions">
               ${repeatHtml}
+              ${playBtnHtml}
               <button class="edit-card-btn">⋯</button>
             </div>
           </a>
@@ -467,6 +475,7 @@ function createListRowElement(item, isDetailed = false) {
             <span class="simple-title">${item.title}</span>
             <div class="list-row-actions">
               ${repeatHtml}
+              ${playBtnHtml}
               <button class="edit-card-btn">⋯</button>
             </div>
           </a>
@@ -1727,6 +1736,20 @@ updateSortButtons();
   
   // === EVENT DELEGATION FOR EDIT BUTTONS ===
   document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('play-card-btn')) {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const card = e.target.closest('.card, .list-row');
+      if (card) {
+        const itemId = card.dataset.id;
+        if (window.playContextPlaylist) {
+            window.playContextPlaylist(itemId);
+        }
+      }
+      return;
+    }
+
     if (e.target.classList.contains('edit-card-btn')) {
       e.preventDefault();
       e.stopPropagation();
@@ -1738,6 +1761,89 @@ updateSortButtons();
     }
   });
   
+// Extracts the currently filtered items into a clean YouTube playlist
+  window.getFilteredMusicPlaylist = async function() {
+      const params = new URLSearchParams({
+          status: currentStatus,
+          search: currentSearch,
+          sort_by: currentSort,
+          sort_order: currentSortOrder,
+          filter_mode: currentFilterMode
+      });
+      if (currentGenres.length > 0) params.append('genres', currentGenres.join(','));
+      if (currentCollections.length > 0) params.append('collections', currentCollections.map(c => c.id).join(','));
+
+      let page = 1;
+      let hasMore = true;
+      let allMusicItems = [];
+
+      while (hasMore) {
+          params.set('page', page);
+          const res = await fetch(`/api/music/?${params}`);
+          const data = await res.json();
+          allMusicItems = allMusicItems.concat(data.items || []);
+          hasMore = data.has_more;
+          page++;
+      }
+
+      let contextPlaylist = [];
+      allMusicItems.forEach(item => {
+          let videoId = null;
+          
+          if (item.screenshots && item.screenshots.length > 0) {
+              const sortedShots = [...item.screenshots].sort((a, b) => (a.position || 0) - (b.position || 0));
+              for (const shot of sortedShots) {
+                  const match = shot.url ? shot.url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&"'>\s]{11})/) : null;
+                  if (match) {
+                      videoId = match[1];
+                      break;
+                  }
+              }
+          }
+
+          if (videoId) {
+              contextPlaylist.push({
+                  video_id: videoId,
+                  item_id: item.id,
+                  is_favorite: item.is_favorite || false,
+                  source_id: item.source_id
+              });
+          }
+      });
+      
+      return contextPlaylist;
+  };
+
+  // Called when clicking the specific '▶' button on an item card
+  window.playContextPlaylist = async function(startItemId) {
+      const btnList = document.querySelectorAll(`.card[data-id="${startItemId}"] .play-card-btn, .list-row[data-id="${startItemId}"] .play-card-btn`);
+      const playSvg = `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`;
+      const loadingSvg = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/></path></svg>`;
+      
+      btnList.forEach(btn => btn.innerHTML = loadingSvg);
+
+      try {
+          const contextPlaylist = await window.getFilteredMusicPlaylist();
+
+          if (contextPlaylist.length === 0) {
+              alert("No playable YouTube videos found in the current list.");
+              return;
+          }
+
+          let startIndex = contextPlaylist.findIndex(v => v.item_id == startItemId);
+          if (startIndex === -1) startIndex = 0; 
+
+          if (window.startCustomPlaylist) {
+              window.startCustomPlaylist(contextPlaylist, startIndex);
+          }
+      } catch (e) {
+          console.error(e);
+          alert("Error loading playlist.");
+      } finally {
+          btnList.forEach(btn => btn.innerHTML = playSvg);
+      }
+  };
+
   // Restore scroll position after loading
   const savedPage = parseInt(sessionStorage.getItem(pageKey)) || 1;
   const savedScroll = parseInt(sessionStorage.getItem(scrollKey)) || 0;

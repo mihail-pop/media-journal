@@ -294,57 +294,6 @@ function slugify(text) {
   const notifButton = document.getElementById('notifications-button');
   const notifDropdown = document.getElementById('notifications-dropdown');
 
-  // --- 1. DEFINE YOUR CUSTOM RELEASE NOTIFICATIONS HERE ---
-  const SYSTEM_NOTIFICATIONS = [
-    {
-      id: "sys_1_25_refresh_movies",
-      html: "If you are updating from a release before v1.26.0 go to <a href='/settings/'>Settings > Refresh</a> and do Refresh Movies to get Length/Runtime for your movies."
-    },
-    {
-      id: "sys_1_25_shard",
-      html: "I improved how images are stored to keep the app fast and stable in the long run. Please <a href='#' id='trigger-sharding-btn' style='font-weight:bold; color:#e91e63;'>click here to update your existing images</a>. (Do not close the page until it finishes)"
-    }
-  ];
-
-  // --- 2. INJECT ACTIVE SYSTEM NOTIFICATIONS ---
-  let ul = notifDropdown.querySelector('ul');
-  const noNotifs = notifDropdown.querySelector('.no-notifications');
-  
-  // Get dismissed notifications from the browser
-  const dismissedSysNotifs = JSON.parse(localStorage.getItem('dismissedSysNotifs') || '[]');
-  const activeSysNotifs = SYSTEM_NOTIFICATIONS.filter(n => !dismissedSysNotifs.includes(n.id));
-
-  if (activeSysNotifs.length > 0) {
-    if (noNotifs) noNotifs.remove();
-    if (!ul) {
-      ul = document.createElement('ul');
-      notifDropdown.appendChild(ul);
-    }
-    
-    // Add them to the top of the dropdown
-    activeSysNotifs.forEach(notif => {
-      const li = document.createElement('li');
-      li.id = `notification-${notif.id}`;
-      li.classList.add('system-notification');
-      
-      // Create a span container to hold the mixed text and HTML link
-      const textContainer = document.createElement('span');
-      textContainer.className = 'notification-text';
-      textContainer.style.marginRight = '10px';
-      textContainer.innerHTML = notif.html;
-      
-      const btn = document.createElement('button');
-      btn.className = 'dismiss-notification';
-      btn.setAttribute('data-id', notif.id);
-      btn.setAttribute('aria-label', 'Dismiss notification');
-      btn.textContent = '✕';
-      
-      li.appendChild(textContainer);
-      li.appendChild(btn);
-      ul.insertBefore(li, ul.firstChild);
-    });
-  }
-
   // --- 3. UI TOGGLE & EMPTY CHECK HELPER ---
   notifButton.addEventListener('click', () => {
     const expanded = notifButton.getAttribute('aria-expanded') === 'true';
@@ -359,33 +308,22 @@ function slugify(text) {
     }
   }
 
-  // --- 4. DISMISS HANDLER (Handles both DB and LocalStorage) ---
+  // --- 4. DISMISS HANDLER ---
   notifDropdown.addEventListener('click', function(event) {
     if (event.target.classList.contains('dismiss-notification')) {
       event.stopPropagation(); // prevent dropdown from closing
       const notifId = event.target.getAttribute('data-id');
+      
+      let fetchUrl = `/notifications/dismiss/${notifId}/`;
 
       // A. If it's a hardcoded system notification
       if (notifId.startsWith('sys_')) {
-        const dismissed = JSON.parse(localStorage.getItem('dismissedSysNotifs') || '[]');
-        if (!dismissed.includes(notifId)) {
-          dismissed.push(notifId);
-          localStorage.setItem('dismissedSysNotifs', JSON.stringify(dismissed));
-        }
-        
-        const li = document.getElementById(`notification-${notifId}`);
-        if (li) li.remove();
-        checkEmptyNotifications();
-        return;
-      }
-
-      // B. If it's a backend DB notification
-      let fetchUrl = `/notifications/dismiss/${notifId}/`;
-      
-      // If it's a calendar event notification, use the calendar endpoint
-      if (notifId.startsWith('cal_')) {
-          const trueId = notifId.split('_')[1];
-          fetchUrl = `/api/calendar/dismiss-notify/${trueId}/`;
+        fetchUrl = `/notifications/dismiss-sys/${notifId}/`;
+      } 
+      // B. If it's a calendar event notification
+      else if (notifId.startsWith('cal_')) {
+        const trueId = notifId.split('_')[1];
+        fetchUrl = `/api/calendar/dismiss-notify/${trueId}/`;
       }
 
       fetch(fetchUrl, {
@@ -479,7 +417,7 @@ document.body.addEventListener('click', function(e) {
         <div style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:99999; display:flex; justify-content:center; align-items:center; flex-direction:column; color:white;">
           <div style="font-size:1.5rem; font-weight:bold; margin-bottom: 15px;">Migrating images to new architecture...</div>
           <div style="font-size:1.1rem;">Please do not close or refresh this page.</div>
-          <div style="margin-top: 30px; border: 4px solid #f3f3f3; border-top: 4px solid #e91e63; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite;"></div>
+          <div style="margin-top: 30px; border: 4px solid #f3f3f3; border-top: 4px solid #F59E0B; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite;"></div>
         </div>
         <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
       `;
@@ -498,15 +436,15 @@ document.body.addEventListener('click', function(e) {
           document.getElementById('sharding-overlay').remove();
           if (data.success) {
               alert("Migration complete! All your existing images are safely sharded.");
-              // Automatically dismiss the notification
-              const dismissed = JSON.parse(localStorage.getItem('dismissedSysNotifs') || '[]');
-              if (!dismissed.includes("sys_1_25_shard")) {
-                  dismissed.push("sys_1_25_shard");
-                  localStorage.setItem('dismissedSysNotifs', JSON.stringify(dismissed));
-              }
-              const notifLi = document.getElementById('notification-sys_1_25_shard');
-              if (notifLi) notifLi.remove();
-              checkEmptyNotifications();
+              // Automatically dismiss the notification on the backend
+              fetch('/notifications/dismiss-sys/sys_1_25_shard/', {
+                  method: 'POST',
+                  headers: { 'X-CSRFToken': getCookie("csrftoken") }
+              }).then(() => {
+                  const notifLi = document.getElementById('notification-sys_1_25_shard');
+                  if (notifLi) notifLi.remove();
+                  checkEmptyNotifications();
+              });
           } else {
               alert("An error occurred: " + data.error);
           }

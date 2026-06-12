@@ -12,7 +12,7 @@ from django.utils.timesince import timesince
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET
 
-from core.models import APIKey, NavItem, MediaItem, Collection, FavoritePerson, CalendarEvent
+from core.models import APIKey, NavItem, MediaItem, Collection, FavoritePerson, CalendarEvent, AppSettings
 from django.utils.timesince import timeuntil
 from core.services.p_home import (
     start_media_cleanup_loop,
@@ -24,11 +24,25 @@ from core.services.g_utils import get_ordered_types
 
 logger = logging.getLogger(__name__)
 
+
+SYSTEM_NOTIFICATIONS = [
+    {
+        "id": "sys_1_25_refresh_movies",
+        "html": "If you are updating from a release before v1.26.0 go to <a href='/settings/'>Settings > Refresh</a> and do Refresh Movies to get Length/Runtime for your movies."
+    },
+    {
+        "id": "sys_1_25_shard",
+        "html": "I improved how images are stored to keep the app fast and stable in the long run. Please <a href='#' id='trigger-sharding-btn' style='font-weight:bold; color:#F59E0B;'>click here to update your existing images</a>. (Do not close the page until it finishes)"
+    }
+]
+
 @ensure_csrf_cookie
 def home(request):
     start_tmdb_background_loop()
     start_anilist_background_loop()
     start_media_cleanup_loop()
+
+    settings = AppSettings.objects.first()
 
     limit = 25
 
@@ -263,6 +277,16 @@ def home(request):
     )
 
     notifications_list = []
+
+    dismissed_sys = settings.dismissed_system_notifications if settings else []
+    for sys_notif in reversed(SYSTEM_NOTIFICATIONS):  # Reversed so the first item stays at the very top
+        if sys_notif["id"] not in dismissed_sys:
+            notifications_list.insert(0, {
+                "id": sys_notif["id"],
+                "html": sys_notif["html"],
+                "is_system": True
+            })
+
     for item in notifications:
         if item.media_type == "tv":
             # Fail-safe: If item is a season (e.g. '123_s2'), 
@@ -409,8 +433,6 @@ def home(request):
         })
 
     # Get theme mode
-    AppSettings = apps.get_model("core", "AppSettings")
-    settings = AppSettings.objects.first()
     theme_mode = settings.theme_mode if settings else "dark"
 
     return render(

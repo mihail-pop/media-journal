@@ -818,40 +818,69 @@ h2 {
 
 /* Pink icon and text when notifications exist */
 .notifications-button.has-notifications {
-  color: #e91e63;
-  /* pink */
+  color: #F59E0B;
 }
 
 .notifications-button.has-notifications .notification-icon {
-  fill: #e91e63;
+  fill: #F59E0B;
 }
 
 /* Dropdown container */
 .notifications-dropdown {
   position: absolute;
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
+  top: calc(100% + 15px); /* Increased gap for the popover arrow */
+  right: -10px; /* Align to the right side of the bell icon */
+  left: auto;
+  transform: none; /* Removes the old tricky centering */
   background: var(--bg-tertiary);
   color: var(--text-primary);
-  min-width: 190px;
-  max-height: 300px;
+  width: 360px; /* Elegant, readable width */
+  max-width: 90vw; /* Prevents overflow on smaller desktop windows */
+  max-height: 400px;
   overflow-y: auto;
-  border-radius: 4px;
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.6);
-  margin-top: 3px;
-  padding: 10px 10px;
+  border-radius: 8px;
+  border: 2px solid var(--bg-quaternary);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); /* Deep, modern shadow */
   z-index: 1000;
+  padding: 0; /* Removing padding from container so list items stretch edge-to-edge */
+  display: flex;
+  flex-direction: column;
+  font-size: 0.95rem; /* Base font size */
+  scrollbar-color: var(--text-primary) var(--bg-tertiary);
 }
 
-#notifications-dropdown {
-  white-space: normal; /* Changed from nowrap so long texts can wrap */
-  min-width: 400px;    /* Increased slightly for better readability */
-  max-width: 400px;    /* Prevents it from going across the entire screen */
+/* Small triangle pointing up to the bell */
+.notifications-dropdown::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  right: 35px; /* Aligns visually with the bell */
+  width: 10px;
+  height: 10px;
+  background: var(--bg-tertiary);
+  border-top: 1px solid var(--overview-border);
+  border-left: 1px solid var(--overview-border);
+  transform: rotate(45deg);
+  z-index: -1;
 }
 
 #notifications-dropdown[hidden] {
   display: none !important;
+}
+
+/* Custom Scrollbar for the dropdown */
+.notifications-dropdown::-webkit-scrollbar {
+  width: 6px;
+}
+.notifications-dropdown::-webkit-scrollbar-track {
+  background: transparent;
+}
+.notifications-dropdown::-webkit-scrollbar-thumb {
+  background-color: var(--overview-border);
+  border-radius: 4px;
+}
+.notifications-dropdown::-webkit-scrollbar-thumb:hover {
+  background-color: var(--text-secondary);
 }
 
 /* Notification list */
@@ -859,60 +888,99 @@ h2 {
   list-style: none;
   margin: 0;
   padding: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .notifications-dropdown li {
   display: flex;
   justify-content: space-between;
-  align-items: center; /* Vertically center the text and the X button */
-  padding: 8px 6px;
-  border-bottom: 2px solid var(--text-primary);
-  gap: 10px; /* Separates the X from the text block */
+  align-items: flex-start; /* Keeps the X button fixed at the top for multiline text */
+  padding: 14px 18px;
+  border-bottom: 2px solid var(--bg-quaternary); /* Softer divider */
+  gap: 12px; 
+  transition: background-color 0.2s ease;
+  position: relative;
 }
 
+/* Custom highlight specifically for System Notifications 
+.notifications-dropdown li.system-notification {
+  border-left: 3px solid #F59E0B;
+  background: rgba(233, 30, 99, 0.05); 
+}
+*/
+
+/* Hover effects */
+
+/*
+.notifications-dropdown li.system-notification:hover {
+  background: rgba(233, 30, 99, 0.1); 
+}
+*/
 .notifications-dropdown li:last-child {
   border-bottom: none;
 }
 
-/* Styling for all links inside notifications (including system links) */
-.notifications-dropdown li a {
-  color: var(--text-secondary);
-  text-decoration: underline;
-}
-
-/* Let the wrapper span grow to push the X button to the right */
+/* Text styling */
 .notification-text {
   flex-grow: 1;
-  line-height: 1.4;
+  line-height: 1.5;
+  font-size: 1em; /* Inherits safely */
+  word-break: break-word; /* FIX: Forces long text to wrap instead of breaking width */
+  color: var(--text-secondary);
+}
+
+/* Links inside standard notifications */
+.notifications-dropdown li a {
+  color: var(--text-primary);
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s ease;
 }
 
 .notifications-dropdown li a:hover {
-  color: #e91e63;
+  color: var(--activity-high);
+  text-decoration: underline;
 }
 
+/* Links inside system notifications */
+.notifications-dropdown li.system-notification a {
+  color: #F59E0B;
+}
+
+/* X dismiss button */
 .dismiss-notification {
   background: none;
   border: none;
-  color: var(--text-primary);
+  color: var(--text-secondary);
   cursor: pointer;
-  font-size: 1.2rem;
-  padding: 0 6px;
+  font-size: 1.2em;
+  padding: 4px;
+  line-height: 1;
   user-select: none;
-  transition: color 0.3s ease;
-  margin-bottom: 0; /* Removed bottom margin offset to allow true vertical centering */
-  display: inline-flex;
+  transition: all 0.2s ease;
+  display: flex;
   align-items: center;
+  justify-content: center;
+  opacity: 0.6;
+  border-radius: 4px;
+  margin-top: -2px; /* Visual tweak for perfect alignment */
 }
 
 .dismiss-notification:hover {
-  color: var(--activity-high);
+  color: var(--text-primary);
+  opacity: 1;
+  background: var(--bg-primary); /* Gives the X button a little highlight box */
 }
 
+/* Empty State */
 .no-notifications {
   margin: 0;
-  padding: 6px 4px;
+  padding: 30px 20px;
+  text-align: center;
   font-style: italic;
-  color: var(--text-primary);;
+  color: var(--text-secondary);
+  font-size: 1em;
 }
 
 .favorites-section {
@@ -1420,6 +1488,11 @@ a.all-collections-btn:hover {
   .no-notifications,
   .notifications-dropdown {
     font-size: 2.5rem;
+  }
+  
+  /* Give the dropdown room to breathe when font size scales up massively */
+  .notifications-dropdown {
+    width: 85vw;
   }
 
   .stats-summary-box {

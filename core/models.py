@@ -216,5 +216,7 @@ class AppSettings(models.Model):
     cal_sync_ongoing = models.BooleanField(default=True)
     cal_sync_planned = models.BooleanField(default=False)
 
+    dismissed_system_notifications = models.JSONField(default=list, blank=True)
+
     def __str__(self):
         return f"App Settings ({self.rating_mode}, theme={self.theme_mode}, username={self.username})"

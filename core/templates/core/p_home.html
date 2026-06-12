@@ -75,10 +75,14 @@
       {% if notifications %}
         <ul>
           {% for n in notifications %}
-            <li id="notification-{{ n.id }}">
+            <li id="notification-{{ n.id }}" {% if n.is_system %}class="system-notification"{% endif %}>
               <span class="notification-text">
-                <a href="{{ n.url }}">{{ n.title }}</a> 
-                {% if n.is_calendar %}has released!{% else %}was updated{% endif %}
+                {% if n.is_system %}
+                  {{ n.html|safe }}
+                {% else %}
+                  <a href="{{ n.url }}">{{ n.title }}</a> 
+                  {% if n.is_calendar %}has released!{% else %}was updated{% endif %}
+                {% endif %}
               </span>
               <button class="dismiss-notification" data-id="{{ n.id }}" aria-label="Dismiss notification">✕</button>
             </li>

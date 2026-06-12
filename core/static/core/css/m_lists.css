@@ -904,6 +904,77 @@ body[data-media-type="games"] .card {
 }
 
 
+/* Card View play button */
+.play-card-btn {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+  color: var(--text-light);
+  border: none;
+  padding: 8px 8px 5px 8px;
+  cursor: pointer;
+  border-radius: 4px;
+  z-index: 2;
+}
+
+.list-table .play-card-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: var(--table-bg);
+  color: var(--text-primary);
+  border: none;
+  padding: 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  position: static;
+  margin: 0;
+}
+
+.play-card-btn::before {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  right: -10px;
+  bottom: -10px;
+}
+
+.card:hover .play-card-btn {
+  display: block;
+}
+
+.play-card-btn:hover {
+  background: rgba(0, 0, 0, 0.9);
+  color: var(--activity-high);
+}
+
+/* Detailed & Simple list view play button */
+.list-table .play-card-btn {
+  display: none;
+  background: var(--table-bg);
+  color: var(--text-primary);
+  border: none;
+  padding: 4px 8px;
+  font-size: 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  position: static;
+  margin: 0;
+}
+
+.list-table tr:hover .play-card-btn {
+  display: inline-block;
+}
+
+.list-table .play-card-btn:hover {
+  color: var(--activity-high);
+}
+
 /* Edit Button */
 .edit-card-btn {
   position: absolute;
@@ -929,6 +1000,11 @@ body[data-media-type="games"] .card {
 
 .card:hover .edit-card-btn {
   display: block;
+}
+
+.edit-card-btn:hover {
+  background: rgba(0, 0, 0, 0.9);
+  color: var(--activity-high);
 }
 
 .list-table .edit-card-btn {

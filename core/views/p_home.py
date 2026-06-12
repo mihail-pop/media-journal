@@ -23,7 +23,23 @@ def dismiss_notification(request, item_id):
     except MediaItem.DoesNotExist:
         return JsonResponse({"error": "Item not found"}, status=404)
     
-
+@ensure_csrf_cookie
+@require_POST
+def dismiss_sys_notification(request, sys_id):
+    from core.models import AppSettings
+    settings_obj = AppSettings.objects.first()
+    
+    if not settings_obj:
+        settings_obj = AppSettings.objects.create()
+        
+    if not isinstance(settings_obj.dismissed_system_notifications, list):
+        settings_obj.dismissed_system_notifications = []
+        
+    if sys_id not in settings_obj.dismissed_system_notifications:
+        settings_obj.dismissed_system_notifications.append(sys_id)
+        settings_obj.save(update_fields=['dismissed_system_notifications'])
+        
+    return JsonResponse({"success": True})
 
 @ensure_csrf_cookie
 @require_POST
