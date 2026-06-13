@@ -64,37 +64,48 @@
 </div>
 
 <!-- Custom Person Modal -->
-<div id="custom-person-modal" class="cp-modal cp-modal-hidden">
-  <div class="cp-modal-content">
-    <button type="button" id="custom-person-close-icon" class="cp-close-btn">X</button>
+<div id="custom-person-modal" class="pc-modal pc-modal-hidden">
+  <div class="pc-modal-content">
+    <button type="button" id="custom-person-close-icon" class="pc-close-btn">X</button>
     <form id="custom-person-form" enctype="multipart/form-data">
-      <div class="cp-modal-body">
-        <div class="cp-cover-container" id="custom-person-cover-container">
+      <div class="pc-modal-body">
+        <div class="pc-cover-container" id="custom-person-cover-container">
           <img id="custom-person-cover-preview" src="{% static 'core/img/placeholder.png' %}" alt="cover">
-          <label class="cp-upload-overlay" for="custom-person-cover-input" title="Upload Poster">
+          <label class="pc-upload-overlay" for="custom-person-cover-input" title="Upload Poster">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
           </label>
           <input type="file" id="custom-person-cover-input" name="image" accept="image/*" style="display: none;">
         </div>
 
-        <div class="cp-form-fields">
+        <div class="pc-form-fields">
           <input type="hidden" name="person_type" id="custom-person-type">
-          <input type="text" name="name" class="cp-title-input" placeholder="Name" required autocomplete="off">
+          <input type="text" name="name" class="pc-title-input" placeholder="Name" required autocomplete="off">
           
-          <div class="cp-form-group">
+          <div class="pc-form-group">
             <label>Overview</label>
-            <textarea name="overview" placeholder="Biography/Description..." required></textarea>
+            <textarea name="overview" required></textarea>
+          </div>
+          
+          <div class="pc-actor-dates" id="pc-actor-dates" style="display: none;">
+            <div class="pc-form-group">
+              <label>Birthday</label>
+              <input type="date" name="birthday" autocomplete="off">
+            </div>
+            <div class="pc-form-group">
+              <label>Deathday</label>
+              <input type="date" name="deathday" autocomplete="off">
+            </div>
           </div>
         </div>
       </div>
-      <div class="cp-modal-buttons">
-        <button type="button" id="custom-person-close-btn" class="cp-btn cp-cancel">Cancel</button>
-        <button type="submit" class="cp-btn cp-save-btn">Create</button>
+      <div class="pc-modal-buttons">
+        <button type="button" id="custom-person-close-btn" class="pc-btn pc-cancel">Cancel</button>
+        <button type="submit" class="pc-btn pc-save-btn">Create</button>
       </div>
     </form>
   </div>
 </div>
-<div id="custom-person-overlay" class="cp-modal-overlay cp-modal-hidden"></div>
+<div id="custom-person-overlay" class="pc-modal-overlay pc-modal-hidden"></div>
 
 {% csrf_token %}
 <script src="{% static 'core/js/p_favorites.js' %}"></script>

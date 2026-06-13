@@ -249,6 +249,12 @@ def create_custom_person(request):
         additional_data = {}
         if person_type == "actor":
             additional_data["biography"] = overview
+            birthday = request.POST.get("birthday")
+            if birthday:
+                additional_data["birthday"] = birthday
+            deathday = request.POST.get("deathday")
+            if deathday:
+                additional_data["deathday"] = deathday
         elif person_type == "character":
             additional_data["description"] = overview
             
@@ -284,5 +290,65 @@ def create_custom_person(request):
         )
         
         return JsonResponse({"success": True, "person": {"id": person.id, "name": person.name}})
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+
+@ensure_csrf_cookie
+@require_POST
+def edit_custom_person(request):
+    try:
+        person_id = request.POST.get("person_id")
+        name = request.POST.get("name")
+        person_type = request.POST.get("person_type")
+        overview = request.POST.get("overview")
+        image_file = request.FILES.get("image")
+
+        if not person_id or not name or not person_type:
+            return JsonResponse({"error": "Missing required fields."}, status=400)
+
+        # Find the FavoritePerson by person_id (the custom_xxx ID)
+        person = FavoritePerson.objects.filter(person_id=person_id, type=person_type).first()
+        if not person:
+            return JsonResponse({"error": "Person not found."}, status=404)
+
+        person.name = name
+        if person_type == "actor":
+            person.biography = overview
+            person.birthday = request.POST.get("birthday")
+            person.deathday = request.POST.get("deathday")
+        elif person_type == "character":
+            person.description = overview
+
+        if image_file:
+            ext = os.path.splitext(image_file.name)[1].lower()
+            if ext in [".jpg", ".jpeg", ".png", ".webp", ".gif"]:
+                if person.image_url and settings.MEDIA_URL in person.image_url:
+                    old_rel_path = person.image_url.split(settings.MEDIA_URL)[-1]
+                    full_old_path = os.path.join(settings.MEDIA_ROOT, old_rel_path)
+                    if os.path.exists(full_old_path):
+                        try:
+                            os.remove(full_old_path)
+                        except OSError:
+                            pass
+
+                timestamp = int(time.time() * 1000)
+                slug_name = slugify(name)
+                base_name = f"{slug_name}_{timestamp}"
+
+                flat_relative_path = f"favorites/{person_type}s/{base_name}{ext}"
+                sharded_relative_path = get_sharded_path(flat_relative_path)
+                new_path = os.path.join(settings.MEDIA_ROOT, sharded_relative_path)
+
+                os.makedirs(os.path.dirname(new_path), exist_ok=True)
+
+                with open(new_path, "wb+") as destination:
+                    for chunk in image_file.chunks():
+                        destination.write(chunk)
+
+                person.image_url = f"{settings.MEDIA_URL}{sharded_relative_path}"
+
+        person.save()
+        return JsonResponse({"success": True})
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)

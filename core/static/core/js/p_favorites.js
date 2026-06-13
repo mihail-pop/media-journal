@@ -326,8 +326,13 @@ document.addEventListener('DOMContentLoaded', () => {
     coverPreview.src = "/static/core/img/placeholder.png";
     coverContainer.classList.remove('has-image');
 
-    cpModal.classList.remove('cp-modal-hidden');
-    cpOverlay.classList.remove('cp-modal-hidden');
+    const datesContainer = document.getElementById('pc-actor-dates');
+    if (datesContainer) {
+      datesContainer.style.display = personType === 'actor' ? 'flex' : 'none';
+    }
+
+    cpModal.classList.remove('pc-modal-hidden');
+    cpOverlay.classList.remove('pc-modal-hidden');
     
     currentCpScrollY = window.scrollY;
     document.body.style.top = `-${currentCpScrollY}px`;
@@ -336,8 +341,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function closeCpModal() {
-    cpModal.classList.add('cp-modal-hidden');
-    cpOverlay.classList.add('cp-modal-hidden');
+    cpModal.classList.add('pc-modal-hidden');
+    cpOverlay.classList.add('pc-modal-hidden');
     document.body.classList.remove('c-modal-open');
     document.documentElement.classList.remove('c-modal-open');
     document.body.style.top = '';

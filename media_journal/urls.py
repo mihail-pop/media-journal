@@ -52,6 +52,7 @@ urlpatterns = [
     path("favorites/", views.favorites_page, name="favorites"),
     path("api/favorites/", views.favorites_api, name="favorites_api"),
     path('api/favorites/custom_person/', views.create_custom_person, name='create_custom_person'),
+    path('api/edit_custom_person/', views.edit_custom_person, name='edit_custom_person'),
     path("discover/api/", views.discover_api, name="discover_api"),
     path("api/check_in_list/", views.check_in_list, name="check_in_list"),
     path("community/", views.community, name="community"),

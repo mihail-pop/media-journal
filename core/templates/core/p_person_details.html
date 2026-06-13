@@ -43,6 +43,12 @@
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
           </svg>
         </button>
+        <button id="edit-person-btn" class="edit-person-btn" title="Edit Person" style="display: none;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+          </svg>
+        </button>
       </div>
     </div>
 
@@ -134,6 +140,53 @@
 
   </div>
 </div>
+
+<!-- Edit Custom Person Modal -->
+<div id="edit-person-modal" class="pc-modal pc-modal-hidden">
+  <div class="pc-modal-content">
+    <button type="button" id="edit-person-close-icon" class="pc-close-btn">X</button>
+    <form id="edit-person-form" enctype="multipart/form-data">
+      <div class="pc-modal-body">
+        <div class="pc-cover-container {% if person_data.image %}has-image{% endif %}" id="edit-person-cover-container">
+          <img id="edit-person-cover-preview" src="{% if person_data.image %}{{ person_data.image }}{% else %}{% static 'core/img/placeholder.png' %}{% endif %}" alt="cover">
+          <label class="pc-upload-overlay" for="edit-person-cover-input" title="Upload Poster">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          </label>
+          <input type="file" id="edit-person-cover-input" name="image" accept="image/*" style="display: none;">
+        </div>
+
+        <div class="pc-form-fields">
+          <input type="hidden" name="person_id" value="{{ person_data.id }}">
+          <input type="hidden" name="person_type" value="{{ person_type }}">
+          <input type="text" name="name" class="pc-title-input" value="{{ person_name }}" required autocomplete="off">
+          
+          <div class="pc-form-group">
+            <label>Overview</label>
+            <textarea name="overview" required>{% if person_type == 'actor' %}{{ person_data.biography }}{% else %}{{ person_data.description }}{% endif %}</textarea>
+          </div>
+
+          {% if person_type == 'actor' %}
+          <div class="pc-actor-dates" id="edit-actor-dates">
+            <div class="pc-form-group">
+              <label>Birthday</label>
+              <input type="date" name="birthday" data-init-value="{{ person_data.birthday|default:'' }}" autocomplete="off">
+            </div>
+            <div class="pc-form-group">
+              <label>Deathday</label>
+              <input type="date" name="deathday" data-init-value="{{ person_data.deathday|default:'' }}" autocomplete="off">
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      <div class="pc-modal-buttons">
+        <button type="button" id="edit-person-close-btn" class="pc-btn pc-cancel">Cancel</button>
+        <button type="submit" class="pc-btn pc-save-btn">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+<div id="edit-person-overlay" class="pc-modal-overlay pc-modal-hidden"></div>
 {% endblock %}
 
 {% block script %}

@@ -102,13 +102,13 @@ body {
 }
 
 /* Custom Person Modal Styles */
-.cp-modal-hidden {
+.pc-modal-hidden {
   display: none !important;
   opacity: 0;
   pointer-events: none;
 }
 
-.cp-modal-overlay {
+.pc-modal-overlay {
   position: fixed;
   inset: 0;
   width: 100vw;
@@ -119,7 +119,7 @@ body {
   animation: modalFade 0.25s ease-in-out forwards;
 }
 
-.cp-modal {
+.pc-modal {
   position: fixed;
   top: 50%;
   left: 50%;
@@ -134,34 +134,38 @@ body {
   animation: modalPop 0.25s ease-in-out;
 }
 
-.cp-modal-content {
+.pc-modal-content {
   position: relative;
-  padding: 2rem;
+  padding: 3.5rem 2rem 2rem 2rem;
 }
 
-.cp-close-btn {
+.pc-close-btn {
   position: absolute;
   top: 12px;
   right: 12px;
-  background: transparent;
+  background: rgb(0 0 0 / 0.8);
   color: var(--text-secondary);
   border: none;
   font-size: 1.2rem;
   font-weight: bold;
   cursor: pointer;
   transition: color 0.2s;
+  padding: 6px 10px;
+  border-radius: 6px;
 }
 
-.cp-close-btn:hover {
-  color: #ff4444;
+.pc-close-btn:hover {
+  background-color: white;
+  color: black;
+  outline: none;
 }
 
-.cp-modal-body {
+.pc-modal-body {
   display: flex;
   gap: 1.5rem;
 }
 
-.cp-cover-container {
+.pc-cover-container {
   width: 120px;
   height: 180px;
   border-radius: 4px;
@@ -172,17 +176,17 @@ body {
   flex-shrink: 0;
 }
 
-.cp-cover-container img {
+.pc-cover-container img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.cp-cover-container img[src*="placeholder"] {
+.pc-cover-container img[src*="placeholder"] {
   opacity: 0;
 }
 
-.cp-upload-overlay {
+.pc-upload-overlay {
   position: absolute;
   inset: 0;
   display: block;
@@ -191,15 +195,15 @@ body {
   opacity: 1;
 }
 
-.cp-cover-container.has-image .cp-upload-overlay {
+.pc-cover-container.has-image .pc-upload-overlay {
   opacity: 0;
 }
 
-.cp-cover-container:hover .cp-upload-overlay {
+.pc-cover-container:hover .pc-upload-overlay {
   opacity: 1;
 }
 
-.cp-upload-overlay svg {
+.pc-upload-overlay svg {
   position: absolute;
   top: 50%;
   left: 50%;
@@ -212,50 +216,48 @@ body {
   transition: transform 0.2s ease, background 0.2s ease;
 }
 
-.cp-upload-overlay:hover svg {
+.pc-upload-overlay:hover svg {
   background: #3db4f2;
   transform: translate(-50%, -50%) scale(1.1);
 }
 
-.cp-form-fields {
+.pc-form-fields {
   flex: 1;
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
 
-.cp-title-input {
-  width: 100%;
+.pc-title-input {
   background: transparent;
   border: none;
   border-bottom: 2px dashed rgba(255, 255, 255, 0.3);
   color: var(--text-light);
   font-size: 1.2rem;
   font-weight: 700;
-  padding: 0.5rem 0;
   outline: none;
   transition: border-color 0.2s;
 }
 
-.cp-title-input:focus {
+.pc-title-input:focus {
   border-bottom: 2px solid #3db4f2;
 }
 
-.cp-form-group {
+.pc-form-group {
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
-  flex: 1;
 }
 
-.cp-form-group label {
+.pc-form-group label {
   color: var(--text-secondary);
   font-weight: 600;
   font-size: 0.9rem;
 }
 
-.cp-form-group textarea {
-  flex: 1;
+.pc-form-group textarea {
+  width: 100%;
+  box-sizing: border-box;
   background: var(--bg-primary);
   border: none;
   color: var(--text-primary);
@@ -265,20 +267,42 @@ body {
   resize: vertical;
   min-height: 100px;
   outline: none;
+  scrollbar-color: var(--text-primary) var(--bg-tertiary);
 }
 
-.cp-form-group textarea:focus {
-  box-shadow: 0 0 0 2px #3db4f2;
+.pc-actor-dates {
+  display: flex;
+  gap: 1rem;
 }
 
-.cp-modal-buttons {
+.pc-actor-dates .pc-form-group {
+  flex: 1;
+}
+
+.pc-actor-dates input {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--bg-primary);
+  border: none;
+  color: var(--text-primary);
+  border-radius: 6px;
+  padding: 0.8rem;
+  font-family: inherit;
+  outline: none;
+}
+
+body:not([data-theme="light"]) .pc-actor-dates input {
+  color-scheme: dark;
+}
+
+.pc-modal-buttons {
   display: flex;
   justify-content: flex-end;
   gap: 1rem;
   margin-top: 1.5rem;
 }
 
-.cp-btn {
+.pc-btn {
   padding: 0.6rem 1.2rem;
   border-radius: 6px;
   border: none;
@@ -287,21 +311,22 @@ body {
   transition: background 0.2s;
 }
 
-.cp-cancel {
+.pc-cancel {
+  color: var(--text-tertiary);
+  background: var(--bg-primary);
+}
+
+.pc-cancel:hover {
   background: var(--border-color);
   color: var(--text-light);
 }
 
-.cp-cancel:hover {
-  background: var(--text-secondary);
-}
-
-.cp-save-btn {
+.pc-save-btn {
   background: #3db4f2;
   color: white;
 }
 
-.cp-save-btn:hover {
+.pc-save-btn:hover {
   background: #0056b3;
 }
 
@@ -608,22 +633,27 @@ html.c-modal-open {
     width: 4rem;
     height: 4rem;
   }
-  .cp-modal-body {
+  .pc-modal-body {
     flex-direction: column;
   }
-  .cp-cover-container {
+  .pc-cover-container {
     width: 150px;
     height: 225px;
     margin: 0 auto;
   }
-  .cp-title-input {
+  .pc-title-input {
     font-size: 1.8rem;
   }
-  .cp-form-group label, .cp-form-group textarea {
+  .pc-form-group label, .pc-form-group textarea {
     font-size: 1.5rem;
   }
-  .cp-btn {
+  .pc-btn {
     font-size: 1.5rem;
+  }
+
+  .pc-actor-dates {
+    flex-direction: column;
+    gap: 1.5rem;
   }
 
   .favorite-section h2 {

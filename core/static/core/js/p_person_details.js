@@ -214,9 +214,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const favForm = document.getElementById('favorite-form');
         const checkbox = favForm.querySelector('input[name="favorite"]');
         
-        // Show/hide upload button based on favorite status
+        // Show/hide upload and edit button based on favorite status
         function updateUploadButton() {
             uploadBtn.style.display = checkbox.checked ? 'flex' : 'none';
+            const editBtn = document.getElementById('edit-person-btn');
+            if (editBtn) editBtn.style.display = checkbox.checked ? 'flex' : 'none';
         }
         
         setTimeout(updateUploadButton, 100);
@@ -321,4 +323,95 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
+
+    // Edit Person Modal Logic
+    const editModal = document.getElementById('edit-person-modal');
+    const editOverlay = document.getElementById('edit-person-overlay');
+    const editBtn = document.getElementById('edit-person-btn');
+    const editForm = document.getElementById('edit-person-form');
+    const editCloseIcons = [
+        document.getElementById('edit-person-close-icon'),
+        document.getElementById('edit-person-close-btn'),
+        editOverlay
+    ];
+
+    // Format dates for the calendar properly if they came as "DD Month YYYY" text format from TMDB
+    const parseDateString = (inputEl) => {
+        if (!inputEl || !inputEl.dataset.initValue) return;
+        const parsedDate = new Date(inputEl.dataset.initValue);
+        if (!isNaN(parsedDate.getTime())) {
+            // Converts to YYYY-MM-DD
+            inputEl.value = parsedDate.toISOString().split('T')[0];
+        }
+    };
+    
+    parseDateString(document.querySelector('input[name="birthday"]'));
+    parseDateString(document.querySelector('input[name="deathday"]'));
+
+    if (editBtn && editModal) {
+        editBtn.addEventListener('click', () => {
+            editModal.classList.remove('pc-modal-hidden');
+            editOverlay.classList.remove('pc-modal-hidden');
+            document.body.classList.add('c-modal-open');
+            document.documentElement.classList.add('c-modal-open');
+        });
+
+        const closeEditModal = () => {
+            editModal.classList.add('pc-modal-hidden');
+            editOverlay.classList.add('pc-modal-hidden');
+            document.body.classList.remove('c-modal-open');
+            document.documentElement.classList.remove('c-modal-open');
+        };
+
+        editCloseIcons.forEach(icon => {
+            if (icon) icon.addEventListener('click', closeEditModal);
+        });
+
+        // Handle image upload preview
+        const cpInput = document.getElementById('edit-person-cover-input');
+        const cpPreview = document.getElementById('edit-person-cover-preview');
+        const cpContainer = document.getElementById('edit-person-cover-container');
+
+        if (cpInput && cpPreview && cpContainer) {
+            cpInput.addEventListener('change', function() {
+                if (this.files && this.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        cpPreview.src = e.target.result;
+                        cpContainer.classList.add('has-image');
+                    };
+                    reader.readAsDataURL(this.files[0]);
+                }
+            });
+        }
+
+        // Form Submission
+        if (editForm) {
+            editForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const formData = new FormData(editForm);
+                
+                fetch('/api/edit_custom_person/', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: formData
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        sessionStorage.setItem('personRefreshSuccess', '1');
+                        location.reload();
+                    } else {
+                        showNotification("Failed to edit person: " + data.error, "warning");
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    showNotification("Error saving person.", "warning");
+                });
+            });
+        }
+    }
 });
