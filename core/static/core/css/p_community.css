@@ -1,7 +1,5 @@
-/* p_community.css */
-
 :root {
-  /* Dark theme (default) */
+
   --bg-primary: #0b1622;
   --bg-tertiary: #151f2e;
   --bg-quaternary: #32445b;
@@ -96,13 +94,13 @@ html {
   inset: 0;
   z-index: 1001;
   display: flex;
-  /* ensure flex is applied even after JS toggles display */
+
   align-items: center;
   justify-content: center;
   width: 100vw;
   height: 100vh;
   pointer-events: none;
-  /* optional: disable clicks outside the card */
+
 }
 
 
@@ -237,7 +235,7 @@ html {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  /* space between title and button */
+
 }
 
 
@@ -298,12 +296,12 @@ html {
 #search-container {
   width: 100%;
   display: none;
-  /* Initially hidden, shown by JS */
+
   flex-direction: column;
   align-items: center;
   gap: 8px;
   position: relative;
-  /* makes #search-results anchor to this */
+
   max-width: 250px;
   align-items: center;
 }
@@ -323,7 +321,7 @@ html {
   max-width: 250px;
 }
 
-/* Send Post Button */
+
 .search-result-item {
   padding: 8px 12px;
   border-bottom: 1px solid var(--border-color);
@@ -425,7 +423,7 @@ html {
   color: var(--special-color-hover);
 }
 
-/* Likes/Comments row */
+
 .likes-row {
   display: flex;
   align-items: center;
@@ -472,9 +470,9 @@ html {
 
 .comment-icon:hover {
   transform: scale(1.3) rotate(10deg);
-  /* grows slightly and tilts */
+
   filter: brightness(1.2);
-  /* makes it a bit brighter */
+
 }
 
 .comments-count {
@@ -482,7 +480,7 @@ html {
   color: var(--text-primary);
 }
 
-/* Comments section */
+
 .comments-section {
   margin-top: 10px;
   background: var(--overlay-bg);
@@ -562,7 +560,7 @@ html {
   display: none;
   overflow-wrap: break-word;
   word-break: break-word;
-  /* Fallback for older browsers */
+
 }
 
 .comment-tabs {
@@ -669,7 +667,7 @@ html {
   background: var(--bg-tertiary);
 }
 
-/* New Post Box */
+
 .new-post-box {
   background: var(--bg-tertiary);
   border-radius: 8px;
@@ -1022,10 +1020,10 @@ html {
   box-sizing: border-box;
   margin: 10px 0;
   margin: 0;
-  /* Removed vertical margin to fix overflow on scaled mobile view */
+
   overflow-wrap: break-word;
   word-break: break-word;
-  /* Fallback for older browsers */
+
 }
 
 #post-preview a {
@@ -1091,7 +1089,7 @@ html {
     justify-content: center;
     width: 100%;
     height: 100dvh;
-    /* adjusts to real visible height on mobile */
+
     pointer-events: none;
     transform: translateY(-40%);
   }
@@ -1099,7 +1097,7 @@ html {
   #modal-overlay {
     position: fixed;
     inset: 0;
-    /* shorthand for top, right, bottom, left = 0 */
+
     width: 100%;
     height: 100%;
     background: rgba(10, 18, 34, 0.85);
@@ -1129,18 +1127,18 @@ html {
 
   .comment-tabs-right {
     white-space: nowrap;
-    /* keep on one line */
+
     overflow: hidden;
-    /* hide excess text */
+
     text-overflow: ellipsis;
-    /* show … at the end */
+
   }
 
   .community-post iframe {
     height: 12rem;
-    /* new height */
+
     max-width: 100%;
-    /* keep responsive */
+
   }
 
 }

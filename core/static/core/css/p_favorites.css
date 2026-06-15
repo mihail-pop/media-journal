@@ -1,5 +1,5 @@
 :root {
-  /* Dark theme (default) */
+
   --bg-primary: #0b1622;
   --bg-tertiary: #151f2e;
 
@@ -79,7 +79,7 @@ body {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin-left: auto; /* Pushes the buttons to the right side of the flex row */
+  margin-left: auto;
 }
 
 .add-custom-person-btn {
@@ -101,7 +101,7 @@ body {
   color: var(--text-light);
 }
 
-/* Custom Person Modal Styles */
+
 .pc-modal-hidden {
   display: none !important;
   opacity: 0;
@@ -349,10 +349,10 @@ body:not([data-theme="light"]) .pc-actor-dates input {
 .card.dragging {
   opacity: 0.5;
   filter: grayscale(0.8);
-  /* FIX 1: Remove transforms so the bounding box is perfect for the snapshot */
-  transform: none !important; 
-  /* FIX 2: Force a new stacking context so overflow:hidden is respected during drag */
-  isolation: isolate; 
+
+  transform: none !important;
+
+  isolation: isolate;
 }
 
 .card a {
@@ -362,12 +362,12 @@ body:not([data-theme="light"]) .pc-actor-dates input {
 .card-image {
   width: 100%;
   padding-top: 150%;
-  /* Aspect ratio 2:3 */
+
   position: relative;
   overflow: hidden;
   border-radius: 4px 4px 0 0;
 
-  contain: paint; 
+  contain: paint;
 }
 
 .card-image:has(img[src*="placeholder"]) {
@@ -389,22 +389,23 @@ body:not([data-theme="light"]) .pc-actor-dates input {
   object-fit: cover;
 }
 
-/* Prevent text/card flashing while rapidly moving during drag */
+
 body.drag-active .card {
-    transition: none !important;
-}
-body.drag-active .card-title {
-    color: var(--text-secondary) !important;
+  transition: none !important;
 }
 
-/* Fix bounds so drag ghost clips perfectly */
+body.drag-active .card-title {
+  color: var(--text-secondary) !important;
+}
+
+
 .card[data-media-type="music"] .card-image {
   padding-top: 0;
   height: 100%;
 }
 
 .card[data-media-type="music"] .card-image img {
-  position: static; /* Removes the absolute positioning that causes the bleed */
+  position: static;
   width: 179%;
   margin-left: -39.5%;
   object-position: center center;
@@ -509,7 +510,7 @@ body.drag-active .card-favorite {
   cursor: pointer;
 }
 
-/* --- Header & View Controls --- */
+
 .view-controls {
   display: flex;
   gap: 0.5rem;
@@ -540,7 +541,7 @@ body.drag-active .card-favorite {
   border-color: var(--text-primary);
 }
 
-/* --- Small Mode Overrides --- */
+
 .favorites-container.small-mode .card-grid {
   grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
   gap: 0.8rem;
@@ -554,7 +555,7 @@ body.drag-active .card-favorite {
 
 .favorites-container.small-mode .card-image {
   padding-top: 150%;
-  /* Keep aspect ratio */
+
   border-radius: 4px;
 }
 
@@ -566,7 +567,7 @@ body.drag-active .card-favorite {
   display: none;
 }
 
-/* Prevent link interaction in small mode (handled via JS mostly, but cursor help) */
+
 .favorites-container.small-mode .card-link {
   cursor: grab;
 }
@@ -581,9 +582,17 @@ html.c-modal-open {
 }
 
 @keyframes modalFade {
-  0% { opacity: 0; }
-  60% { opacity: 1; }
-  100% { opacity: 1; }
+  0% {
+    opacity: 0;
+  }
+
+  60% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 1;
+  }
 }
 
 @keyframes modalPop {
@@ -591,9 +600,11 @@ html.c-modal-open {
     opacity: 0;
     transform: translate(-50%, -50%);
   }
+
   60% {
     opacity: 1;
   }
+
   100% {
     transform: translate(-50%, -50%);
   }
@@ -629,24 +640,31 @@ html.c-modal-open {
   .section-title-wrapper {
     margin-bottom: 1.5rem;
   }
+
   .add-custom-person-btn {
     width: 4rem;
     height: 4rem;
   }
+
   .pc-modal-body {
     flex-direction: column;
   }
+
   .pc-cover-container {
     width: 150px;
     height: 225px;
     margin: 0 auto;
   }
+
   .pc-title-input {
     font-size: 1.8rem;
   }
-  .pc-form-group label, .pc-form-group textarea {
+
+  .pc-form-group label,
+  .pc-form-group textarea {
     font-size: 1.5rem;
   }
+
   .pc-btn {
     font-size: 1.5rem;
   }

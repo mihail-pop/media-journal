@@ -1,5 +1,5 @@
 :root {
-  /* Dark theme (default) */
+
   --bg-primary: #0b1622;
   --bg-tertiary: #151f2e;
   --modal-bg: #151f2e;
@@ -116,7 +116,7 @@
   border-color: var(--button-primary);
 }
 
-/* Utility class to hide modal elements specifically */
+
 .modal-hidden {
   display: none !important;
   opacity: 0;
@@ -137,7 +137,7 @@ html.modal-open {
   right: 0 !important;
 }
 
-/* Overlay behind the modal to darken the page */
+
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -146,7 +146,7 @@ html.modal-open {
   background: rgba(0, 0, 0, 0.55);
   backdrop-filter: blur(4px);
   z-index: 20000;
-  /* Raised above search overlay */
+
   opacity: 1;
   transition: opacity 0.3s ease;
   animation: modalFade 0.25s ease-in-out forwards;
@@ -167,7 +167,7 @@ html.modal-open {
 }
 
 
-/* Modal container centered on screen */
+
 .modal {
   position: fixed;
   top: 50%;
@@ -209,14 +209,14 @@ html.modal-open {
 }
 
 
-/* Content wrapper inside modal */
+
 .modal-content {
   position: relative;
   overflow: hidden;
   border-radius: 16px;
 }
 
-/* Banner at top of modal */
+
 .modal-banner {
   width: 820px;
   height: 200px;
@@ -227,7 +227,7 @@ html.modal-open {
 .modal-banner img[alt="movie"],
 .modal-banner img[alt="tv"],
 .modal-banner img[alt="music"],
-.modal-banner img[alt="book"]{
+.modal-banner img[alt="book"] {
   width: 100%;
   position: absolute;
   top: 95%;
@@ -237,15 +237,15 @@ html.modal-open {
 }
 
 .modal-banner img[alt="anime"],
-.modal-banner img[alt="manga"]{
+.modal-banner img[alt="manga"] {
   width: 100%;
-  height: 100%; 
-  object-fit: cover; 
+  height: 100%;
+  object-fit: cover;
   object-position: center 15%;
   display: block;
 }
 
-.modal-banner img[alt="game"]{
+.modal-banner img[alt="game"] {
   width: 100%;
   display: block;
 }
@@ -269,12 +269,12 @@ html.modal-open {
   position: absolute;
   inset: 0;
   background-color: rgba(0, 0, 0, 0.45);
-  /* consistent dark tint */
+
   z-index: 0;
 }
 
 
-/* Cover image in top-right of banner */
+
 .modal-cover {
   position: absolute;
   top: 70px;
@@ -305,37 +305,37 @@ html.modal-open {
   overflow: hidden;
 }
 
-/* Special case for music */
+
 .modal-cover[data-media-type="music"] {
   width: 140px;
   height: 140px;
-  /* square for music */
+
   overflow: hidden;
   top: 90px;
-  /* Adjust to overlap banner and body */
+
   left: 15px;
 }
 
 .modal-cover[data-media-type="music"] img {
   width: 200px;
-  /* zoom in by increasing image width */
+
   height: 140px;
-  /* match container height */
+
   object-fit: cover;
   object-position: center;
-  /* adjust to shift left/right */
+
   position: relative;
   left: -1.9rem;
-  /* shift image left to center the zoomed portion */
+
   display: block;
 }
 
 .modal-title-block {
   position: absolute;
   top: 160px;
-  /* Align with cover */
+
   left: 170px;
-  /* To the right of the 120px wide cover + spacing */
+
   z-index: 10;
   max-width: 420px;
   color: rgb(224, 223, 223);
@@ -350,24 +350,24 @@ html.modal-open {
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
 }
 
-/* Body below banner */
+
 .modal-body {
   padding: 1.5rem 2rem 2rem 2rem;
   background: var(--modal-bg);
 }
 
-/* Form group with label and input */
+
 .form-group {
   display: flex;
   flex-direction: column;
-  /* Stack label + input inside */
+
   margin-bottom: 1rem;
   width: 100%;
   max-width: 250px;
-  /* controls how wide each one is in the row */
+
 }
 
-/* Label takes fixed width, right-aligned */
+
 .form-group label {
   font-weight: 600;
   margin-bottom: 0.4rem;
@@ -376,7 +376,7 @@ html.modal-open {
   user-select: none;
 }
 
-/* Inputs, selects, textarea */
+
 .form-group input,
 .form-group select,
 .form-group textarea {
@@ -402,7 +402,7 @@ html.modal-open {
 
 
 
-/* Buttons container */
+
 .modal-buttons {
   display: flex;
   justify-content: flex-end;
@@ -417,7 +417,7 @@ html.modal-open {
   padding-left: 12rem;
 }
 
-/* General button styles */
+
 .btn {
   background-color: var(--button-primary);
   color: white;
@@ -437,7 +437,7 @@ html.modal-open {
   outline: none;
 }
 
-/* Cancel button variant */
+
 .btn.cancel {
   background-color: var(--button-cancel);
   box-shadow: 0 3px 7px rgba(108, 117, 125, 0.4);
@@ -450,7 +450,7 @@ html.modal-open {
   outline: none;
 }
 
-/* Close button positioned top-right inside modal */
+
 .close-btn {
   position: absolute;
   top: 14px;
@@ -477,7 +477,7 @@ html.modal-open {
   box-shadow: 0 0 4px rgba(0, 0, 0, 0.1);
 }
 
-/* Danger button (e.g., delete) */
+
 .danger-btn {
   background-color: var(--bg-primary);
   color: var(--text-tertiary);
@@ -497,9 +497,9 @@ html.modal-open {
 .modal-actions-top {
   position: absolute;
   top: 150px;
-  /* adjust vertical position */
+
   right: 60px;
-  /* adjust horizontal position */
+
   display: flex;
   align-items: center;
   gap: 10px;
@@ -516,7 +516,7 @@ html.modal-open {
   display: flex;
   align-items: center;
   gap: 12px;
-  /* space between heart and Save */
+
 }
 
 .favorite-checkbox {
@@ -530,7 +530,7 @@ html.modal-open {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-/* Hide native checkbox */
+
 .favorite-checkbox input[type="checkbox"] {
   position: absolute;
   opacity: 0;
@@ -539,7 +539,7 @@ html.modal-open {
   pointer-events: none;
 }
 
-/* Unchecked: solid white heart with no stroke */
+
 .favorite-checkbox .heart {
   width: 40px;
   height: 40px;
@@ -549,19 +549,19 @@ html.modal-open {
   transition: background 0.3s ease;
 }
 
-/* Red heart when checked */
+
 .favorite-checkbox input[type="checkbox"]:checked+.heart {
   background: url('data:image/svg+xml;utf8,<svg fill="%23e0245e" stroke="%23e0245e" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 21C12 21 7 16.5 5 12.5C3 8.5 5 5 8.5 5C10.5 5 12 7 12 7C12 7 13.5 5 15.5 5C19 5 21 8.5 19 12.5C17 16.5 12 21 12 21Z"/></svg>') no-repeat center center;
   background-size: contain;
 }
 
-/* Hover effect for unchecked heart (grey/white) */
+
 .favorite-checkbox .heart:hover {
   filter: drop-shadow(0 0 4px #fff) brightness(1.2);
   cursor: pointer;
 }
 
-/* Hover effect for checked heart (red) */
+
 .favorite-checkbox input[type="checkbox"]:checked+.heart:hover {
   filter: drop-shadow(0 0 6px #e0245e) brightness(1.1);
   cursor: pointer;
@@ -598,11 +598,11 @@ html.modal-open {
 #date_added_group label,
 #repeats_group label {
   gap: 0.25rem;
-  /* tightens spacing between items inside label */
+
   display: flex;
   flex-direction: column;
   width: 150px;
-  /* or any specific value you prefer */
+
   max-width: 100%;
 }
 
@@ -612,7 +612,7 @@ html.modal-open {
   max-width: 218px;
 }
 
-/* Collections Input Styling */
+
 .collection-select-wrapper {
   position: relative;
   width: 150px;
@@ -787,19 +787,19 @@ html.modal-open {
 textarea[name="notes"] {
   flex: none;
   min-height: 50px;
-  /* less tall */
+
   width: 100.5%;
-  /* full width */
+
   height: auto;
   max-width: 600px;
-  /* wider */
+
   resize: vertical;
   max-height: 231px;
 
   scrollbar-width: none;
-  /* for Firefox */
+
   -ms-overflow-style: none;
-  /* for IE and Edge */
+
 }
 
 textarea[name="notes"]::-webkit-scrollbar {
@@ -808,7 +808,7 @@ textarea[name="notes"]::-webkit-scrollbar {
 
 .form-group.notes-group {
   max-width: 350px;
-  /* wider max-width just for notes */
+
   width: 100%;
 }
 
@@ -828,23 +828,23 @@ textarea[name="notes"]::-webkit-scrollbar {
   margin-bottom: 1px;
 }
 
-/* Sad face */
+
 .face-bad {
   background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 496 496" xmlns="http://www.w3.org/2000/svg"><path fill="%23777777" d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zm80 168c17.7 0 32 14.3 32 32s-14.3 32-32 32-32-14.3-32-32 14.3-32 32-32zm-160 0c17.7 0 32 14.3 32 32s-14.3 32-32 32-32-14.3-32-32 14.3-32 32-32zm170.2 218.2C315.8 367.4 282.9 352 248 352s-67.8 15.4-90.2 42.2c-13.5 16.3-38.1-4.2-24.6-20.5C161.7 339.6 203.6 320 248 320s86.3 19.6 114.7 53.8c13.6 16.2-11 36.7-24.5 20.4z"/></svg>');
 }
 
-/* Neutral face */
+
 .face-neutral {
   background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 496 496" xmlns="http://www.w3.org/2000/svg"><path fill="%23777777" d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zm-80 168c17.7 0 32 14.3 32 32s-14.3 32-32 32-32-14.3-32-32 14.3-32 32-32zm176 192H152c-21.2 0-21.2-32 0-32h192c21.2 0 21.2 32 0 32zm-16-128c-17.7 0-32-14.3-32-32s14.3-32 32-32 32 14.3 32 32-14.3 32-32 32z"/></svg>');
 }
 
-/* Happy face */
+
 .face-good {
   background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 496 496" xmlns="http://www.w3.org/2000/svg"><path fill="%23777777" d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zm80 168c17.7 0 32 14.3 32 32s-14.3 32-32 32-32-14.3-32-32 14.3-32 32-32zm-160 0c17.7 0 32 14.3 32 32s-14.3 32-32 32-32-14.3-32-32 14.3-32 32-32zm194.8 170.2C334.3 380.4 292.5 400 248 400s-86.3-19.6-114.8-53.8c-13.6-16.3 11-36.7 24.6-20.5 22.4 26.9 55.2 42.2 90.2 42.2s67.8-15.4 90.2-42.2c13.4-16.2 38.1 4.2 24.6 20.5z"/></svg>');
 }
 
 
-/* Selected (pink background) versions */
+
 
 .face.selected.face-bad {
   background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 496 496" xmlns="http://www.w3.org/2000/svg"><path fill="%23e53935" d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zm80 168c17.7 0 32 14.3 32 32s-14.3 32-32 32-32-14.3-32-32 14.3-32 32-32zm-160 0c17.7 0 32 14.3 32 32s-14.3 32-32 32-32-14.3-32-32 14.3-32 32-32zm170.2 218.2C315.8 367.4 282.9 352 248 352s-67.8 15.4-90.2 42.2c-13.5 16.3-38.1-4.2-24.6-20.5C161.7 339.6 203.6 320 248 320s86.3 19.6 114.7 53.8c13.6 16.2-11 36.7-24.5 20.4z"/></svg>');
@@ -890,25 +890,26 @@ textarea[name="notes"]::-webkit-scrollbar {
   padding: 0 !important;
 }
 
-/* Chrome, Safari, Edge, Opera */
+
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
 
-/* Firefox */
+
 input[type="number"] {
   -moz-appearance: textfield;
   appearance: textfield;
 }
 
-/* Custom Status Select */
+
 .status-select-wrapper {
   position: relative;
   width: 150px;
   cursor: pointer;
 }
+
 .status-select {
   background-color: var(--bg-primary);
   border: none;
@@ -923,6 +924,7 @@ input[type="number"] {
   font-size: 0.95rem;
   width: auto;
 }
+
 .status-indicator {
   position: absolute;
   right: 0;
@@ -934,6 +936,7 @@ input[type="number"] {
   justify-content: center;
   color: var(--text-primary);
 }
+
 .status-indicator::after {
   content: "";
   border-left: 0.3rem solid transparent;
@@ -942,9 +945,11 @@ input[type="number"] {
   transition: transform 0.3s ease;
   display: block;
 }
+
 .status-select-wrapper.open .status-indicator::after {
   transform: rotate(180deg);
 }
+
 .status-options {
   display: none;
   position: absolute;
@@ -960,18 +965,22 @@ input[type="number"] {
   margin-top: 0.3rem;
   scrollbar-color: var(--text-primary) var(--bg-tertiary);
 }
+
 .status-options.open {
   display: block;
 }
+
 .status-option {
   padding: 0.5rem;
   color: var(--text-tertiary);
   cursor: pointer;
   transition: background 0.2s;
 }
+
 .status-option:hover {
   background-color: var(--modal-bg);
 }
+
 .status-option.selected {
   background-color: var(--bg-quaternary);
   font-weight: bold;
@@ -979,14 +988,14 @@ input[type="number"] {
 
 @media (pointer: coarse) and (hover: none) {
 
-.modal-banner img[alt="movie"],
-.modal-banner img[alt="tv"],
-.modal-banner img[alt="music"],
-.modal-banner img[alt="book"]{
+  .modal-banner img[alt="movie"],
+  .modal-banner img[alt="tv"],
+  .modal-banner img[alt="music"],
+  .modal-banner img[alt="book"] {
     top: 80%;
-}
+  }
 
-  #date_added{
+  #date_added {
     max-width: 134px;
   }
 
@@ -994,12 +1003,12 @@ input[type="number"] {
 
 @media (orientation: portrait) {
 
-.modal-banner img[alt="movie"],
-.modal-banner img[alt="tv"],
-.modal-banner img[alt="music"],
-.modal-banner img[alt="book"]{
-  top: 60%;
-}
+  .modal-banner img[alt="movie"],
+  .modal-banner img[alt="tv"],
+  .modal-banner img[alt="music"],
+  .modal-banner img[alt="book"] {
+    top: 60%;
+  }
 
   .modal-banner {
     height: 20rem;
@@ -1014,9 +1023,9 @@ input[type="number"] {
 
   .modal-cover[data-media-type="music"] img {
     width: unset;
-    /* zoom in by increasing image width */
+
     height: 100%;
-    /* match container height */
+
     left: -4.6rem;
   }
 
@@ -1105,7 +1114,7 @@ input[type="number"] {
   #collections_group {
     max-width: 20rem;
   }
-  
+
   #collections_group .collection-select {
     width: 20rem;
     padding: 1rem;

@@ -2,7 +2,7 @@
    THEME VARIABLES
    ========================================================================== */
 :root {
-    /* Dark theme (default) */
+
     --bg-primary: #0b1622;
     --bg-tertiary: #151f2e;
     --bg-quaternary: #32445b;
@@ -22,7 +22,7 @@
     --button-primary-hover: #0056b3;
     --button-danger: #e74c3c;
 }
-  
+
 [data-theme="light"] {
     --bg-primary: #FFFFFF;
     --bg-tertiary: #F2F2F2;
@@ -39,7 +39,7 @@
     --table-bg: #F2F2F2;
 
     --activity-high: #b3b3b3;
-    
+
     --button-primary: #3db4f2;
     --button-primary-hover: #0056b3;
     --button-danger: #dc3545;
@@ -59,7 +59,7 @@
     --border-color: #af7f76;
     --hover-bg: #fffffe;
     --table-bg: #55423d;
-    
+
     --activity-high: #af7f76;
     --button-primary: #8f5b4d;
     --button-primary-hover: #aa6d5c;
@@ -67,7 +67,7 @@
 }
 
 html {
-  overflow-y: scroll;
+    overflow-y: scroll;
 }
 
 .hidden-items {
@@ -79,17 +79,17 @@ html {
    ========================================================================== */
 
 body {
-  background-color: var(--bg-primary);
-  margin: 0;
-  padding: 0;
-  color: var(--text-primary);
+    background-color: var(--bg-primary);
+    margin: 0;
+    padding: 0;
+    color: var(--text-primary);
 }
 
 .separator-bar {
-  width: 100%;
-  height: 45px;
-  /* or any height you want */
-  margin-bottom: 5rem;
+    width: 100%;
+    height: 45px;
+
+    margin-bottom: 5rem;
 }
 
 .collection-page-container {
@@ -123,7 +123,7 @@ body {
     gap: 1rem;
 }
 
-/* --- Sort Controls --- */
+
 .sort-select {
     width: 100%;
     padding: 0.5rem;
@@ -227,7 +227,7 @@ body {
     border-top: 0.46rem solid var(--text-secondary);
 }
 
-/* Value under title */
+
 .card-sort-value {
     font-size: 0.85rem;
     color: var(--text-secondary);
@@ -251,30 +251,31 @@ body {
     transition: all 0.2s;
 }
 
-.action-btn:hover { 
+.action-btn:hover {
     background: var(--border-color);
-    color: var(--text-light); 
-}
-.action-btn.primary { 
-    background: var(--button-primary); 
-    color: white; 
+    color: var(--text-light);
 }
 
-.action-btn.primary:hover { 
-    background: var(--button-primary-hover); 
+.action-btn.primary {
+    background: var(--button-primary);
+    color: white;
+}
+
+.action-btn.primary:hover {
+    background: var(--button-primary-hover);
 }
 
 
-.action-btn.delete-btn { 
-    background: var(--button-danger); 
-    color: white; 
+.action-btn.delete-btn {
+    background: var(--button-danger);
+    color: white;
 }
 
 .action-btn.delete-btn:hover {
     filter: brightness(0.9);
 }
 
-/* SVG Header Button Styles */
+
 .header-actions {
     display: flex;
     gap: 0.5rem;
@@ -296,23 +297,23 @@ body {
 }
 
 .header-icon-btn:hover {
-  color: var(--activity-high);
-  border-color: var(--activity-high);
+    color: var(--activity-high);
+    border-color: var(--activity-high);
 }
 
-.header-icon-btn.primary:hover { 
-    color: var(--activity-high); 
-    border-color: var(--activity-high); 
+.header-icon-btn.primary:hover {
+    color: var(--activity-high);
+    border-color: var(--activity-high);
 }
 
-.header-icon-btn.delete-btn:hover { 
+.header-icon-btn.delete-btn:hover {
     color: var(--button-danger);
     border-color: var(--button-danger);
 }
 
-.header-icon-btn.active-state { 
-color: var(--text-light);
-  border-color: var(--text-light);
+.header-icon-btn.active-state {
+    color: var(--text-light);
+    border-color: var(--text-light);
 }
 
 
@@ -360,7 +361,7 @@ color: var(--text-light);
     opacity: 0;
 }
 
-/* Base logic: Auto height, hidden overflow crop */
+
 .card-image img {
     width: 100%;
     height: auto;
@@ -371,11 +372,12 @@ color: var(--text-light);
 body.drag-active .card {
     transition: none !important;
 }
+
 body.drag-active .card-title {
     color: var(--text-secondary) !important;
 }
 
-/* Title Area */
+
 .card-title {
     padding: 0.6rem;
     font-size: 0.9rem;
@@ -404,14 +406,14 @@ body.drag-active .card-title {
     color: var(--text-light);
 }
 
-/* --- Music Cards Override --- */
+
 .card[data-media-type="music"] .card-link {
     max-height: 160px;
-    margin-top: auto; /* Drops the music square cleanly to the bottom */
+    margin-top: auto;
 }
 
-.card-link{
-    margin-top:auto;
+.card-link {
+    margin-top: auto;
 }
 
 .card[data-media-type="music"] .card-image img {
@@ -419,11 +421,11 @@ body.drag-active .card-title {
     height: 100%;
     object-position: center center;
     display: block;
-    margin-left: -39.3%; 
+    margin-left: -39.3%;
     transform-origin: center;
 }
 
-/* --- Edit Card Button --- */
+
 .edit-card-btn {
     position: absolute;
     top: 5px;
@@ -447,20 +449,26 @@ body.drag-active .card-title {
     display: none !important;
 }
 
-/* --- Dragging States --- */
-.reorder-mode .card { cursor: grab; }
-.reorder-mode .card:active { cursor: grabbing; }
-.card.dragging { 
+
+.reorder-mode .card {
+    cursor: grab;
+}
+
+.reorder-mode .card:active {
+    cursor: grabbing;
+}
+
+.card.dragging {
     opacity: 0.5;
     filter: grayscale(0.8);
     transform: none !important;
     isolation: isolate;
 }
 
-/* Shrink grid and hide titles during reorder */
+
 .reorder-mode .card-grid {
     grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-    gap: 0.8rem; /* Optional: slightly tighter gap for smaller cards */
+    gap: 0.8rem;
 }
 
 .reorder-mode .card-title {
@@ -474,7 +482,7 @@ body.drag-active .card-title {
 .select-circle {
     position: absolute;
     top: 8px;
-    left: 8px; 
+    left: 8px;
     width: 22px;
     height: 22px;
     border-radius: 50%;
@@ -486,7 +494,7 @@ body.drag-active .card-title {
     justify-content: center;
     cursor: pointer;
     transition: all 0.2s;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 }
 
 .select-circle.selected {
@@ -502,7 +510,7 @@ body.drag-active .card-title {
 }
 
 .add-results-grid .select-circle.selected {
-    background: #10b981; 
+    background: #10b981;
     border-color: #10b981;
 }
 
@@ -518,7 +526,7 @@ body.drag-active .card-title {
     background: var(--bg-tertiary);
     padding: 1rem 2rem;
     border-radius: 50px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
     display: flex;
     align-items: center;
     gap: 1.5rem;
@@ -550,8 +558,8 @@ body.drag-active .card-title {
     border-radius: 12px;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.7);
-    
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
+
     position: absolute;
     top: 50%;
     left: 50%;
@@ -563,22 +571,23 @@ body.drag-active .card-title {
     justify-content: space-between;
     padding: 1.5rem;
 }
-.add-modal-header h2 { 
-    margin: 0; 
+
+.add-modal-header h2 {
+    margin: 0;
 }
 
-.close-add-modal { 
-    background: none; 
-    border: none; 
-    font-size: 2rem; 
-    color: var(--text-primary); 
+.close-add-modal {
+    background: none;
+    border: none;
+    font-size: 2rem;
+    color: var(--text-primary);
     cursor: pointer;
     background: rgb(0 0 0 / 0.8);
     border-radius: 6px;
-    padding: 0px 8px; 
+    padding: 0px 8px;
 }
 
-.close-add-modal:hover{
+.close-add-modal:hover {
     color: black;
     background: white;
 }
@@ -593,11 +602,11 @@ body.drag-active .card-title {
     font-size: 1.1rem;
 }
 
-#add-search-input:focus{
+#add-search-input:focus {
     outline: none;
 }
 
-/* Filter buttons for the Add Modal */
+
 .type-filters {
     display: flex;
     gap: 0.5rem;
@@ -621,18 +630,21 @@ body.drag-active .card-title {
     transition: background-color 0.3s ease;
 }
 
-.filter-btn:hover { background-color: var(--bg-quaternary); }
-.filter-btn.active { 
-    background-color: var(--table-bg); 
+.filter-btn:hover {
+    background-color: var(--bg-quaternary);
+}
+
+.filter-btn.active {
+    background-color: var(--table-bg);
 }
 
 .add-results-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); 
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
     gap: 1rem;
     flex: 1;
     overflow-y: auto;
-    overflow-x: hidden; /* Fully locks children inside the bounds */
+    overflow-x: hidden;
     align-content: flex-start;
 
     padding: 0 1.5rem;
@@ -644,23 +656,26 @@ body.drag-active .card-title {
     margin-top: auto;
 }
 
-.add-results-grid .card-title{
+.add-results-grid .card-title {
     height: 1.9rem;
 }
 
-/* Add Modal Custom Scrollbar */
+
 .add-results-grid::-webkit-scrollbar {
     width: 14px;
 }
+
 .add-results-grid::-webkit-scrollbar-track {
     background: var(--bg-primary);
     border-radius: 0 0 12px 0;
 }
+
 .add-results-grid::-webkit-scrollbar-thumb {
     background-color: var(--border-color);
     border-radius: 10px;
     border: 4px solid var(--bg-primary);
 }
+
 .add-results-grid::-webkit-scrollbar-thumb:hover {
     background-color: var(--text-primary);
 }
@@ -680,21 +695,34 @@ body.drag-active .card-title {
 }
 
 #music-player-container {
-  position: fixed !important;
-  z-index: 9999 !important;
-  line-height: 0 !important;
+    position: fixed !important;
+    z-index: 9999 !important;
+    line-height: 0 !important;
 }
 
 .music-player-container iframe {
-  display: block !important;
-  border: none !important;
+    display: block !important;
+    border: none !important;
 }
 
 /* ==========================================================================
    MOBILE OVERRIDES
    ========================================================================== */
 @media (orientation: portrait) {
-    .edit-card-btn { padding: 6px 10px; font-size: 2rem; }
-    .card-grid { gap: 0.6rem 0.3rem; }
-    .filter-btn { flex-wrap: wrap; justify-content: center; font-size: 1.2rem; max-width: 30rem; padding: 0.6rem 1rem;}
+    .edit-card-btn {
+        padding: 6px 10px;
+        font-size: 2rem;
+    }
+
+    .card-grid {
+        gap: 0.6rem 0.3rem;
+    }
+
+    .filter-btn {
+        flex-wrap: wrap;
+        justify-content: center;
+        font-size: 1.2rem;
+        max-width: 30rem;
+        padding: 0.6rem 1rem;
+    }
 }

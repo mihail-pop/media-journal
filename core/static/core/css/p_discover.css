@@ -1,5 +1,5 @@
 :root {
-  /* Dark theme (default) */
+
   --bg-primary: #0b1622;
   --bg-secondary-rgb: 26, 35, 50;
   --bg-tertiary: #151f2e;
@@ -18,7 +18,7 @@
   --score-color: #ffd700;
 }
 
-/* Needs more work */
+
 
 [data-theme="light"] {
   --bg-primary: #FFFFFF;
@@ -76,7 +76,7 @@ body {
   margin-bottom: 5rem;
 }
 
-/* --- Page Layout --- */
+
 .list-page-container {
   display: flex;
   max-width: 1400px;
@@ -84,7 +84,7 @@ body {
   padding: 0 10rem 2rem;
 }
 
-/* --- Sidebar --- */
+
 .sidebar {
   width: 15%;
   padding-right: 2.5rem;
@@ -125,7 +125,7 @@ body {
 }
 
 .filter-group.no-gap {
-    gap: 0;
+  gap: 0;
 }
 
 .filter-btn {
@@ -168,12 +168,12 @@ body {
   outline: none;
   transition: background-color 0.3s ease, border-color 0.3s ease;
   margin-bottom: 0.3rem;
-  /* For Firefox */
+
   -moz-appearance: textfield;
   appearance: textfield;
 }
 
-#musicbrainz-year-input::placeholder{
+#musicbrainz-year-input::placeholder {
   color: var(--text-primary);
 }
 
@@ -218,7 +218,7 @@ body {
   width: 100%;
   background-color: var(--table-bg);
   border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   z-index: 1000;
   max-height: 200px;
   overflow-y: auto;
@@ -241,7 +241,7 @@ body {
   background-color: var(--bg-quaternary);
 }
 
-/* For Chrome, Safari, Edge, Opera */
+
 #year-input::-webkit-outer-spin-button,
 #year-input::-webkit-inner-spin-button,
 #season-year-input::-webkit-outer-spin-button,
@@ -262,13 +262,13 @@ body {
   opacity: 1;
 }
 
-/* --- Main List Content --- */
+
 .list-content {
   width: 80%;
   margin-top: -20px;
 }
 
-/* --- Card View Grid --- */
+
 .card-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -276,7 +276,7 @@ body {
   max-width: 63rem;
 }
 
-/* Individual Card */
+
 .card {
   border-radius: 6px;
   display: flex;
@@ -495,21 +495,21 @@ body {
 }
 
 @media (pointer: coarse) and (hover: none) {
-.list-page-container {
-  padding: 0 7rem 2rem;
-}
+  .list-page-container {
+    padding: 0 7rem 2rem;
+  }
 
-.hover-tooltip{
-  display: none;
-}
+  .hover-tooltip {
+    display: none;
+  }
 
-.add-to-list-btn.not-in-list {
-  display:block !important;
-}
+  .add-to-list-btn.not-in-list {
+    display: block !important;
+  }
 
-.add-to-list-btn.in-list {
-  display: none !important;
-}
+  .add-to-list-btn.in-list {
+    display: none !important;
+  }
 
 }
 
@@ -537,9 +537,9 @@ body {
   .sidebar {
     position: fixed;
     left: -100%;
-    /* start off-screen */
+
     bottom: 0;
-    /* anchor to bottom-left corner */
+
     width: 280px;
     background: var(--bg-primary);
     z-index: 999;
@@ -548,13 +548,13 @@ body {
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
-    /* stack elements from bottom up */
+
     padding: 2rem;
 
     max-height: 100vh;
-    /* prevent overflow off-screen */
+
     overflow-y: auto;
-    /* scroll if content taller than screen */
+
 
     transition: left 0.3s ease;
     padding-bottom: 15rem;
@@ -627,7 +627,7 @@ body {
   #year-input {
     font-size: 2.5rem;
   }
-  
+
   .genre-select {
     font-size: 2.5rem;
   }
@@ -636,7 +636,7 @@ body {
     font-size: 2rem;
   }
 
-  .custom-option{
+  .custom-option {
     font-size: 2.5rem;
   }
 
@@ -655,11 +655,11 @@ body {
     font-size: 2rem;
   }
 
-.add-to-list-btn.not-in-list {
-  display:block !important;
- }
+  .add-to-list-btn.not-in-list {
+    display: block !important;
+  }
 
- .add-to-list-btn.in-list {
-   display: none !important;
- }
+  .add-to-list-btn.in-list {
+    display: none !important;
+  }
 }

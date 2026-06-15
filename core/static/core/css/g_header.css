@@ -1,4 +1,3 @@
-/* Reset & basics */
 body {
   margin: 0;
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
@@ -23,7 +22,7 @@ header {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  /* This transition handles the smooth color change if your site swaps out the body */
+
   transition: background-color 0.4s ease, box-shadow 0.4s ease;
 }
 
@@ -37,7 +36,7 @@ header {
   color: var(--text-primary, #8596A5);
 }
 
-.logo:hover{
+.logo:hover {
   color: var(--header-light, #edf1f5);
 }
 
@@ -87,137 +86,115 @@ header {
 /* =========================================================
    2. TRANSPARENT HEADER (Over Banners)
    ========================================================= */
-/* Applies ONLY if the <body> matches these specific media types */
 
-:is(
-  body[data-media-type="home"],
+
+:is(body[data-media-type="home"],
   body[data-media-type="movies"], body[data-media-type="movie"],
   body[data-media-type="tvshows"], body[data-media-type="tv"],
   body[data-media-type="anime"],
   body[data-media-type="manga"],
   body[data-media-type="books"], body[data-media-type="book"],
   body[data-media-type="games"], body[data-media-type="game"],
-  body[data-media-type="music"]
-) header {
+  body[data-media-type="music"]) header {
   background-color: rgba(0, 0, 0, 0.3);
-  box-shadow: none; 
+  box-shadow: none;
 }
 
-:is(
-  body[data-media-type="home"],
+:is(body[data-media-type="home"],
   body[data-media-type="movies"], body[data-media-type="movie"],
   body[data-media-type="tvshows"], body[data-media-type="tv"],
   body[data-media-type="anime"],
   body[data-media-type="manga"],
   body[data-media-type="books"], body[data-media-type="book"],
   body[data-media-type="games"], body[data-media-type="game"],
-  body[data-media-type="music"]
-) header .logo {
+  body[data-media-type="music"]) header .logo {
   color: rgb(236, 236, 236);
 }
 
-:is(
-  body[data-media-type="home"],
+:is(body[data-media-type="home"],
   body[data-media-type="movies"], body[data-media-type="movie"],
   body[data-media-type="tvshows"], body[data-media-type="tv"],
   body[data-media-type="anime"],
   body[data-media-type="manga"],
   body[data-media-type="books"], body[data-media-type="book"],
   body[data-media-type="games"], body[data-media-type="game"],
-  body[data-media-type="music"]
-) header .logo:hover {
+  body[data-media-type="music"]) header .logo:hover {
   color: #fdfcfc;
 }
 
-:is(
-  body[data-media-type="home"],
+:is(body[data-media-type="home"],
   body[data-media-type="movies"], body[data-media-type="movie"],
   body[data-media-type="tvshows"], body[data-media-type="tv"],
   body[data-media-type="anime"],
   body[data-media-type="manga"],
   body[data-media-type="books"], body[data-media-type="book"],
   body[data-media-type="games"], body[data-media-type="game"],
-  body[data-media-type="music"]
-) header .nav-center a,
-:is(
-  body[data-media-type="home"],
+  body[data-media-type="music"]) header .nav-center a,
+:is(body[data-media-type="home"],
   body[data-media-type="movies"], body[data-media-type="movie"],
   body[data-media-type="tvshows"], body[data-media-type="tv"],
   body[data-media-type="anime"],
   body[data-media-type="manga"],
   body[data-media-type="books"], body[data-media-type="book"],
   body[data-media-type="games"], body[data-media-type="game"],
-  body[data-media-type="music"]
-) header .nav-right a,
-:is(
-  body[data-media-type="home"],
+  body[data-media-type="music"]) header .nav-right a,
+:is(body[data-media-type="home"],
   body[data-media-type="movies"], body[data-media-type="movie"],
   body[data-media-type="tvshows"], body[data-media-type="tv"],
   body[data-media-type="anime"],
   body[data-media-type="manga"],
   body[data-media-type="books"], body[data-media-type="book"],
   body[data-media-type="games"], body[data-media-type="game"],
-  body[data-media-type="music"]
-) header .dropbtn {
+  body[data-media-type="music"]) header .dropbtn {
   color: rgb(236, 236, 236);
 }
 
-:is(
-  body[data-media-type="home"],
+:is(body[data-media-type="home"],
   body[data-media-type="movies"], body[data-media-type="movie"],
   body[data-media-type="tvshows"], body[data-media-type="tv"],
   body[data-media-type="anime"],
   body[data-media-type="manga"],
   body[data-media-type="books"], body[data-media-type="book"],
   body[data-media-type="games"], body[data-media-type="game"],
-  body[data-media-type="music"]
-) header .nav-center a:hover,
-:is(
-  body[data-media-type="home"],
+  body[data-media-type="music"]) header .nav-center a:hover,
+:is(body[data-media-type="home"],
   body[data-media-type="movies"], body[data-media-type="movie"],
   body[data-media-type="tvshows"], body[data-media-type="tv"],
   body[data-media-type="anime"],
   body[data-media-type="manga"],
   body[data-media-type="books"], body[data-media-type="book"],
   body[data-media-type="games"], body[data-media-type="game"],
-  body[data-media-type="music"]
-) header .nav-right a:hover,
-:is(
-  body[data-media-type="home"],
+  body[data-media-type="music"]) header .nav-right a:hover,
+:is(body[data-media-type="home"],
   body[data-media-type="movies"], body[data-media-type="movie"],
   body[data-media-type="tvshows"], body[data-media-type="tv"],
   body[data-media-type="anime"],
   body[data-media-type="manga"],
   body[data-media-type="books"], body[data-media-type="book"],
   body[data-media-type="games"], body[data-media-type="game"],
-  body[data-media-type="music"]
-) header .dropbtn:hover {
+  body[data-media-type="music"]) header .dropbtn:hover {
   color: #fdfcfc;
 }
 
-:is(
-  body[data-media-type="home"],
+:is(body[data-media-type="home"],
   body[data-media-type="movies"], body[data-media-type="movie"],
   body[data-media-type="tvshows"], body[data-media-type="tv"],
   body[data-media-type="anime"],
   body[data-media-type="manga"],
   body[data-media-type="books"], body[data-media-type="book"],
   body[data-media-type="games"], body[data-media-type="game"],
-  body[data-media-type="music"]
-) header .search-icon-button svg {
+  body[data-media-type="music"]) header .search-icon-button svg {
   color: rgb(236, 236, 236);
 }
 
-:is(
-  body[data-media-type="home"],
+:is(body[data-media-type="home"],
   body[data-media-type="movies"], body[data-media-type="movie"],
   body[data-media-type="tvshows"], body[data-media-type="tv"],
   body[data-media-type="anime"],
   body[data-media-type="manga"],
   body[data-media-type="books"], body[data-media-type="book"],
   body[data-media-type="games"], body[data-media-type="game"],
-  body[data-media-type="music"]
-) header .search-icon-button:hover svg {
+  body[data-media-type="music"]) header .search-icon-button:hover svg {
   color: #f5f5f5;
 }
 
@@ -252,8 +229,13 @@ header {
   color: var(--header-light, #ececec);
 }
 
-.dropdown:hover .dropdown-content { display: block; }
-.dropdown-content li { padding: 0; }
+.dropdown:hover .dropdown-content {
+  display: block;
+}
+
+.dropdown-content li {
+  padding: 0;
+}
 
 .container {
   max-width: 1100px;
@@ -263,14 +245,52 @@ header {
   justify-content: space-between;
 }
 
-.navbar { display: flex; align-items: center; width: 100%; min-height: 40px; }
-.nav-center { display: flex; justify-content: center; flex: 1; gap: 0.3rem; list-style: none; margin: 0; padding: 0; align-items: center; }
-.nav-right { display: flex; gap: 0.4rem; list-style: none; margin: 0; padding: 0; align-items: center; }
-.nav-center li, .nav-right li { position: relative; }
-.search-container { display: flex; align-items: center; }
-.nav-right .search-container { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; }
+.navbar {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 40px;
+}
 
-/* --- Responsive --- */
+.nav-center {
+  display: flex;
+  justify-content: center;
+  flex: 1;
+  gap: 0.3rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  align-items: center;
+}
+
+.nav-right {
+  display: flex;
+  gap: 0.4rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  align-items: center;
+}
+
+.nav-center li,
+.nav-right li {
+  position: relative;
+}
+
+.search-container {
+  display: flex;
+  align-items: center;
+}
+
+.nav-right .search-container {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
 @media (orientation: portrait) {
   header {
     display: none;
@@ -287,13 +307,13 @@ header {
     gap: 5rem 1rem;
   }
 
-  /* Hide separate containers, let all items flow together */
+
   .nav-center,
   .nav-right {
     display: contents;
   }
 
-  /* MUCH bigger buttons */
+
   .nav-center a,
   .nav-right a,
   .dropbtn,
@@ -305,7 +325,7 @@ header {
     white-space: nowrap;
   }
 
-  /* Bigger search icon */
+
   .search-icon-button svg {
     width: 50px;
     height: 50px;
@@ -317,7 +337,7 @@ header {
   }
 }
 
-/* Music Player Container - Global */
+
 .music-player-container {
   position: sticky;
   z-index: 9999;
@@ -327,7 +347,7 @@ header {
   overflow: hidden;
 }
 
-/* === HEADER MOBILE TOGGLE BUTTON === */
+
 .header-toggle-btn {
   display: none;
 }
@@ -350,7 +370,7 @@ header {
     transition: transform 0.3s ease;
   }
 
-  /* Header Menu Popup */
+
   .header-menu-popup {
     position: fixed;
     bottom: -35rem;

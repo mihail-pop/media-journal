@@ -1,5 +1,5 @@
 :root {
-  /* Dark theme (default) */
+
   --bg-primary: #0b1622;
   --bg-tertiary: #151f2e;
   --bg-quaternary: #32445b;
@@ -77,7 +77,7 @@ a:hover {
   padding: 0 1rem;
 }
 
-/* Add flex only to top-content */
+
 .detail-container.top-content {
   display: flex;
   gap: 40px;
@@ -91,7 +91,7 @@ a:hover {
   gap: 6px;
   align-items: center;
   margin-top: -300px;
-  /* move up by 20px (adjust as needed) */
+
 }
 
 
@@ -104,7 +104,7 @@ a:hover {
   min-height: 13.5rem;
 }
 
-/* --- BANNER SECTION --- */
+
 .banner-section {
   position: relative;
   height: 400px;
@@ -157,7 +157,7 @@ a:hover {
 
 }
 
-/* --- TOP SECTION (under banner) --- */
+
 .top-colored-section {
   background-color: var(--bg-tertiary);
   padding: 1.5rem 1rem 1rem;
@@ -174,7 +174,7 @@ a:hover {
   left: 2rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
   overflow: hidden;
-  /* This clips the zoomed music image */
+
 }
 
 .poster {
@@ -195,7 +195,7 @@ body[data-media-type="music"] .poster {
   max-height: none;
   object-position: center center;
   margin-left: -39.5%;
-  /* The magic zoom hack */
+
 }
 
 .top-content {
@@ -204,7 +204,7 @@ body[data-media-type="music"] .poster {
   padding-top: 140px;
   flex-wrap: wrap;
   align-items: flex-start;
-  /* currently */
+
 }
 
 .text-info {
@@ -299,7 +299,7 @@ body[data-media-type="music"] .poster {
   display: none !important;
 }
 
-/* --- EDIT + FAVORITE --- */
+
 .edit-favorite-wrapper {
   margin-top: 0.6rem;
   display: flex;
@@ -326,7 +326,7 @@ body[data-media-type="music"] .poster {
   ;
 }
 
-/* --- FAVORITE HEART --- */
+
 .favorite-checkbox {
   cursor: pointer;
   user-select: none;
@@ -370,14 +370,14 @@ body[data-media-type="music"] .poster {
   cursor: pointer;
 }
 
-/* --- MAIN PAGE SECTION --- */
+
 .main-colored-section {
   background-color: var(--bg-primary);
   padding: 0.5rem 1rem;
   min-height: calc(100vh - 600px);
 }
 
-/* --- SECTION LAYOUTS --- */
+
 .cast-section,
 .seasons-section,
 .recommendations-section,
@@ -422,7 +422,7 @@ body[data-media-type="music"] .poster {
 }
 
 .person-card-link:hover .person-name {
-    color: var(--special-color-hover);
+  color: var(--special-color-hover);
 }
 
 .season-card[href]:hover .season-name {
@@ -528,7 +528,7 @@ img.poster[src*="placeholder"] {
   text-decoration: none;
 }
 
-/* --- DOUBLE RECOMMENDATIONS LAYOUT --- */
+
 .double-recs {
   display: flex;
   gap: 3rem;
@@ -539,7 +539,7 @@ img.poster[src*="placeholder"] {
   min-width: 5rem;
 }
 
-/* Container for the inline search */
+
 #person-search-container {
   margin-bottom: 1.5rem;
   max-width: 100%;
@@ -580,7 +580,7 @@ img.poster[src*="placeholder"] {
   transition: background-color 0.3s ease;
 }
 
-/* Search results container */
+
 #person-search-results {
   display: flex;
   flex-wrap: wrap;
@@ -588,7 +588,7 @@ img.poster[src*="placeholder"] {
   max-width: 100%;
 }
 
-/* Each person card */
+
 .person-card {
   border-radius: 6px;
   width: 136px;
@@ -604,7 +604,7 @@ img.poster[src*="placeholder"] {
 }
 
 
-/* Person image */
+
 .person-card img {
   width: 136px;
   height: 204px;
@@ -626,7 +626,7 @@ img.poster[src*="placeholder"] {
   border-radius: 6px;
 }
 
-/* Person name */
+
 .person-name {
   font-size: 0.85rem;
   margin: 0;
@@ -639,7 +639,7 @@ img.poster[src*="placeholder"] {
   white-space: normal;
 }
 
-/* Person favorite heart */
+
 .person-favorite {
   position: absolute;
   top: 2px;
@@ -697,7 +697,7 @@ img.poster[src*="placeholder"] {
   cursor: pointer;
 }
 
-/* Cast member favorite heart */
+
 .cast-favorite {
   position: absolute;
   top: 2px;
@@ -781,10 +781,10 @@ img.poster[src*="placeholder"] {
   color: white;
   border: none;
   font-size: 3.5rem;
-  /* bigger arrows */
+
   line-height: 1;
   width: 50px;
-  /* bigger clickable area */
+
   height: 70px;
   cursor: pointer;
   user-select: none;
@@ -930,7 +930,7 @@ img.poster[src*="placeholder"] {
   position: fixed;
   top: 0;
   left: 0;
-  /* missing */
+
   width: 100%;
   height: 100%;
   background: rgba(0, 0, 0, 0.95);
@@ -1009,14 +1009,14 @@ img.poster[src*="placeholder"] {
 .screenshots-list {
   display: flex;
   flex-wrap: wrap;
-  /* allow multiple rows */
+
   gap: 8px;
   max-height: calc((5.4rem * 2) + 1rem);
-  /* 2 rows tall (adjust 150px to your thumbnail height) */
+
   overflow-y: auto;
-  /* vertical scroll when exceeding 2 rows */
+
   overflow-x: hidden;
-  /* disable horizontal scroll */
+
   padding: 0 1rem 1rem 1rem;
   margin-left: 0.4rem;
   scrollbar-color: var(--text-overview) var(--bg-tertiary);
@@ -1063,7 +1063,7 @@ img.poster[src*="placeholder"] {
 .screenshots-list img.active-thumbnail {
   opacity: 1;
   border-color: var(--text-secondary);
-  /* or your accent color */
+
 }
 
 .screenshots-header-buttons {
@@ -1077,9 +1077,9 @@ img.poster[src*="placeholder"] {
   align-items: center;
   justify-content: space-between;
   gap: 1em;
-  /* space between title and buttons */
+
   flex-wrap: wrap;
-  /* if screen is narrow, forms wrap below */
+
   margin-bottom: 1em;
 }
 
@@ -1180,7 +1180,7 @@ img.poster[src*="placeholder"] {
   color: var(--text-title);
 }
 
-/* --- EPISODES SECTION --- */
+
 .episodes-list {
   display: flex;
   flex-direction: column;
@@ -1395,7 +1395,7 @@ img.poster[src*="placeholder"] {
 
 .inline-form {
   margin: 0;
-  /* remove default form margin */
+
 }
 
 .inline-form button {
@@ -1481,7 +1481,7 @@ img.poster[src*="placeholder"] {
 
 .label {
   font-weight: 500;
-  /* medium */
+
 }
 
 .more-info-btn {
@@ -1492,9 +1492,9 @@ img.poster[src*="placeholder"] {
   text-decoration: underline;
   cursor: pointer;
   font: inherit;
-  /* Inherit font styling from surrounding text */
+
   padding: 0;
-  /* Remove default padding */
+
 }
 
 .more-info-btn:hover,
@@ -1502,7 +1502,7 @@ img.poster[src*="placeholder"] {
   background: none;
   text-decoration: underline;
   color: var(--text-secondary);
-  /* Keep the same color on hover/focus */
+
   outline: none;
 }
 
@@ -1565,7 +1565,7 @@ img.poster[src*="placeholder"] {
   margin-bottom: 1rem;
 }
 
-/* Music section controls */
+
 .music-header {
   display: flex;
   justify-content: space-between;
@@ -1697,7 +1697,7 @@ img.poster[src*="placeholder"] {
 
 .relation-list {
   display: inline;
-  /* keeps items on the same line */
+
 }
 
 .relation-item {
@@ -1775,7 +1775,7 @@ img.poster[src*="placeholder"] {
   border: none !important;
 }
 
-/* --- Person Detail Page --- */
+
 
 body[data-page-type="person-detail"] .overview {
   margin-top: 0;
@@ -1848,7 +1848,7 @@ body[data-page-type="person-detail"] .overview {
   color: var(--text-primary);
 }
 
-/* Edit Modal Styles */
+
 .pc-modal-hidden {
   display: none !important;
   opacity: 0;
@@ -2116,7 +2116,7 @@ html.c-modal-open {
   }
 }
 
-/* Related Media & Voice Actor Cards */
+
 .media-card {
   background: var(--bg-tertiary);
   border-radius: 6px;
@@ -2139,7 +2139,7 @@ html.c-modal-open {
   width: 100%;
   height: 100%;
   border-radius: 6px;
-  /* object-fit: cover; */
+
   display: block;
   position: relative;
 }
@@ -2274,7 +2274,7 @@ html.c-modal-open {
   cursor: default;
 }
 
-/* Specific overlay for voice actors */
+
 .voice-actors-list .overlay-type {
   font-size: 0.65rem;
   font-weight: 400;
@@ -2419,7 +2419,7 @@ html.c-modal-open {
     min-height: 18rem;
   }
 
-  /* Only remove margin if there’s a banner that is NOT empty */
+
   .banner-section:not(.no-banner)~.top-colored-section {
     margin-top: 0;
   }

@@ -1,5 +1,5 @@
 :root {
-  /* Dark theme (default) */
+
   --bg-primary: #0b1622;
   --bg-tertiary: #151f2e;
   --bg-quaternary: #32445b;
@@ -58,7 +58,7 @@
   --text-search-hover: #faeee7;
   --text-light: #faeee7;
   --header-light: #eeba9d;
-  
+
 
   --border-color: #fffffe;
   --hover-bg: #fffffe;
@@ -69,7 +69,7 @@
   --scrollbar-thumb: #74544d;
 }
 
-/* Overlay dims the page */
+
 #search-overlay {
   position: fixed;
   top: 0;
@@ -96,10 +96,10 @@
   pointer-events: none;
 }
 
-/* The results panel */
 
 
-/* Scrollbar styling for panel */
+
+
 #search-results-panel::-webkit-scrollbar {
   width: 8px;
 }
@@ -109,7 +109,7 @@
   border-radius: 4px;
 }
 
-/* Search cards grid inside panel */
+
 .search-card-grid {
   width: 100%;
   max-width: 800px;
@@ -132,11 +132,11 @@ body[data-media-type="music"] .search-card-grid {
 
 .search-card-grid::-webkit-scrollbar {
   display: none;
-  /* Chrome, Safari, Opera */
+
 }
 
 
-/* Individual search card */
+
 .search-card {
   background: none;
   padding: 0.5rem;
@@ -217,7 +217,7 @@ body[data-media-type="music"] .search-card:hover .search-card-title {
   color: var(--text-search);
 }
 
-/* Overlay search input styling */
+
 .overlay-search-bar {
   margin-bottom: 1rem;
   text-align: center;

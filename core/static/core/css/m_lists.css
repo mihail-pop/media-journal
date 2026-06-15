@@ -1,5 +1,5 @@
 :root {
-  /* Dark theme (default) */
+
   --bg-primary: #0b1622;
   --bg-tertiary: #151f2e;
   --bg-quaternary: #32445b;
@@ -50,7 +50,7 @@
   --activity-high: #af7f76;
 }
 
-/* --- Star Rating Overlap Effect --- */
+
 .star-rating {
   display: inline-block;
   position: relative;
@@ -65,7 +65,7 @@
   display: inline-block;
   position: relative;
   margin-left: -0.25em;
-  /* strong overlap for cool effect */
+
   z-index: 1;
   vertical-align: middle;
   transition: filter 0.2s;
@@ -93,9 +93,9 @@ html {
 
 .status-header {
   margin-top: 50px;
-  /* adjust this value as you want */
+
   margin-bottom: 10px;
-  /* adjust this value as you want */
+
   font-weight: bold;
   cursor: default;
 }
@@ -107,7 +107,7 @@ html {
   margin-bottom: 1.5rem;
 }
 
-/* --- Separator Bar Actions --- */
+
 .separator-bar {
   display: flex;
   justify-content: flex-end;
@@ -134,7 +134,7 @@ html {
   background: none;
 }
 
-#open-create-modal-btn{
+#open-create-modal-btn {
   stroke: var(--text-primary) !important;
 }
 
@@ -146,7 +146,7 @@ label.music-player-btn:hover .music-icon path {
   fill: var(--activity-high) !important;
 }
 
-#open-create-modal-btn:hover{
+#open-create-modal-btn:hover {
   stroke: var(--activity-high) !important;
 }
 
@@ -169,13 +169,13 @@ label.music-player-btn .music-icon path {
   transition: fill 0.3s ease;
 }
 
-/* Do not delete */
+
 label.music-player-btn.separator-btn {
   margin: 0;
   padding: 0;
 }
 
-/* --- Page Layout --- */
+
 .list-page-container {
   display: flex;
   max-width: 1400px;
@@ -184,7 +184,7 @@ label.music-player-btn.separator-btn {
 
 }
 
-/* --- Banner Rotator --- */
+
 .banner-rotator {
   position: relative;
   width: 100%;
@@ -193,10 +193,10 @@ label.music-player-btn.separator-btn {
 }
 
 .banner-rotator img[alt=""],
-.banner-rotator img:not([alt]){
+.banner-rotator img:not([alt]) {
   width: 100%;
-  height: 100%; 
-  object-fit: cover; 
+  height: 100%;
+  object-fit: cover;
   object-position: center 15%;
   display: block;
   transition: opacity 1s ease-in-out;
@@ -220,17 +220,17 @@ label.music-player-btn.separator-btn {
 
 .banner-rotator img[alt="anime"],
 .banner-rotator img[alt="manga"],
-.banner-rotator img[alt="game"]{
+.banner-rotator img[alt="game"] {
   width: 100%;
-  height: 100%; 
-  object-fit: cover; 
+  height: 100%;
+  object-fit: cover;
   object-position: center 15%;
   display: block;
   transition: opacity 1s ease-in-out;
   opacity: 1;
 }
 
-/* The overlay that covers the whole image */
+
 .banner-overlay {
   position: absolute;
   top: 0;
@@ -247,10 +247,9 @@ label.music-player-btn.separator-btn {
   box-sizing: border-box;
 }
 
-/* The quote container on right side, initially hidden */
+
 .banner-quote {
   display: none;
-  /* toggle via JS */
   color: white;
   font-style: italic;
   padding: 1rem 2rem;
@@ -264,34 +263,26 @@ label.music-player-btn.separator-btn {
   box-sizing: border-box;
   background: rgba(0, 0, 0, 0.4);
   pointer-events: auto;
-  /* allow text selection if needed */
   border-radius: 0 0 0 12px;
-
   margin-top: auto;
-  /* push it down inside flex container */
   margin-bottom: 2rem;
-  /* add some space from bottom */
-
   transition: opacity 1s ease-in-out;
-
   scrollbar-width: none;
-  /* for Firefox */
   -ms-overflow-style: none;
-  /* for IE and Edge */
 }
 
 .banner-quote::-webkit-scrollbar {
   display: none;
 }
 
-/* --- Genres Multi-Select --- */
+
 
 .genre-select {
   display: flex;
   flex-wrap: wrap;
   gap: 0.4rem;
   padding: 0.4rem;
-  padding-right: 2.5rem; /* Make room for the indicator icon */
+  padding-right: 2.5rem;
   background-color: var(--bg-tertiary);
   border-radius: 6px;
   cursor: text;
@@ -299,7 +290,7 @@ label.music-player-btn.separator-btn {
   position: relative;
 }
 
-/* Ensure no inherited arrows appear */
+
 .genre-select::after {
   display: none !important;
 }
@@ -317,7 +308,7 @@ label.music-player-btn.separator-btn {
   color: var(--text-primary);
 }
 
-/* Default state: Triangle Arrow */
+
 .genre-indicator::after {
   content: "";
   border-left: 0.3rem solid transparent;
@@ -327,20 +318,20 @@ label.music-player-btn.separator-btn {
   display: block;
 }
 
-/* Open state: Rotated Arrow */
+
 .genre-select-wrapper.open .genre-indicator::after,
 .list-collection-select-wrapper.open .genre-indicator::after {
   transform: rotate(180deg);
 }
 
-/* Selected state + Hover: Turn into 'X' */
+
 .genre-select-wrapper.has-items .genre-indicator:hover::after,
 .list-collection-select-wrapper.has-items .genre-indicator:hover::after {
   content: "✕";
   border: none;
   font-size: 14px;
   font-weight: bold;
-  transform: none; /* Reset rotation */
+  transform: none;
 }
 
 .genre-tags {
@@ -371,7 +362,7 @@ label.music-player-btn.separator-btn {
   color: #ff4444;
 }
 
-#genre-search, 
+#genre-search,
 #list-collection-search {
   flex: 1;
   min-width: 80px;
@@ -390,7 +381,7 @@ label.music-player-btn.separator-btn {
 
 .genre-options,
 .list-collection-options {
-  max-height: 350px; /* Fits roughly 10 items before scrolling */
+  max-height: 350px;
 }
 
 .genre-option,
@@ -443,7 +434,7 @@ label.music-player-btn.separator-btn {
   background-color: var(--bg-tertiary);
   color: var(--text-primary);
   border: none;
-  border-radius: 12px; /* Makes it a nice pill shape */
+  border-radius: 12px;
   cursor: pointer;
   transition: background-color 0.2s ease;
 }
@@ -458,7 +449,7 @@ label.music-player-btn.separator-btn {
 }
 */
 
-/* --- Sidebar --- */
+
 .sidebar {
   width: 15%;
   padding-right: 2.5rem;
@@ -557,9 +548,9 @@ label.music-player-btn.separator-btn {
 .btn-count {
   opacity: 0;
   transition: opacity 0.3s ease;
-  /* right side */
+
   font-weight: bold;
-  /* optionally add color or spacing */
+
 }
 
 .filter-buttons-wrapper:hover .btn-count {
@@ -695,7 +686,8 @@ label.music-player-btn.separator-btn {
   min-width: 2.35rem;
   height: 2.15rem;
   padding: 0;
-  background-color: var(--bg-tertiary);;
+  background-color: var(--bg-tertiary);
+  ;
   border: none;
   border-radius: 6px;
   color: var(--text-tertiary);
@@ -722,20 +714,20 @@ label.music-player-btn.separator-btn {
   border-top: 0.46rem solid var(--text-primary);
 }
 
-/* --- Main List Content --- */
+
 .list-content {
   width: 80%;
   margin-top: -45px;
 }
 
-/* --- Card View Grid --- */
+
 .card-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 150px));
   gap: 0.9rem;
 }
 
-/* Default card (all media types) */
+
 .card {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
   overflow: hidden;
@@ -749,7 +741,7 @@ label.music-player-btn.separator-btn {
   border-radius: 3px 3px 0 0;
 }
 
-/* Game-specific card height */
+
 body[data-media-type="games"] .card {
   height: 200px;
 }
@@ -761,9 +753,9 @@ body[data-media-type="games"] .card {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  /* ensures image covers container */
+
   object-position: center top;
-  /* default crop */
+
 }
 
 .card-image:has(img[src*="placeholder"]) {
@@ -779,7 +771,7 @@ body[data-media-type="games"] .card {
   opacity: 0;
 }
 
-/* Card Image */
+
 .card img {
   width: 100%;
   height: auto;
@@ -800,7 +792,7 @@ body[data-media-type="games"] .card {
   left: -60px;
 }
 
-/* Override global .card img rule */
+
 .card[data-media-type="music"] .card-image img {
   width: 100%;
   height: 100%;
@@ -848,7 +840,7 @@ body[data-media-type="games"] .card {
 
 
 
-/* Title & Rating Overlay */
+
 .card-title-overlay {
   background: rgba(14, 15, 15, .8);
   color: var(--text-light);
@@ -904,7 +896,7 @@ body[data-media-type="games"] .card {
 }
 
 
-/* Card View play button */
+
 .play-card-btn {
   position: absolute;
   top: 5px;
@@ -953,7 +945,7 @@ body[data-media-type="games"] .card {
   color: var(--activity-high);
 }
 
-/* Detailed & Simple list view play button */
+
 .list-table .play-card-btn {
   display: none;
   background: var(--table-bg);
@@ -975,7 +967,7 @@ body[data-media-type="games"] .card {
   color: var(--activity-high);
 }
 
-/* Edit Button */
+
 .edit-card-btn {
   position: absolute;
   top: 5px;
@@ -1026,7 +1018,7 @@ body[data-media-type="games"] .card {
   display: inline-block;
 }
 
-/* Rating Badge */
+
 .face-field {
   background-color: none;
   padding: 4px 8px;
@@ -1047,34 +1039,35 @@ body[data-media-type="games"] .card {
   height: 1.5em;
 }
 
-/* --- Detailed List View Styles --- */
+
 .list-table tr.detailed-row {
-  /* transition: background-image 0.2s ease, background-color 0.2s ease; */
+
   background-size: cover;
   background-position: center 25%;
   background-repeat: no-repeat;
 }
 
-/* Force the td to become transparent on hover so the TR background shows through */
+
 .list-table tr.detailed-row:hover td {
-   background-color: transparent !important; 
+  background-color: transparent !important;
 }
 
-/* Base dark theme overlay */
+
 .list-table tr.detailed-row:hover {
   background-image: linear-gradient(rgba(11, 22, 34, 0.88), rgba(11, 22, 34, 0.88)), var(--banner-url, none);
-  
+
 }
 
-/* Adjust overlay color automatically for light and brown themes */
+
 [data-theme="light"] .list-table tr.detailed-row:hover {
   background-image: linear-gradient(rgba(100, 100, 148, 0.5)rgba(87, 74, 146, 0.5)), var(--banner-url, none);
 }
+
 [data-theme="brown"] .list-table tr.detailed-row:hover {
   background-image: linear-gradient(rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.75)), var(--banner-url, none);
 }
 
-/* Mini Cover Adjustments */
+
 .detailed-title-cell a {
   display: flex;
   align-items: center;
@@ -1089,7 +1082,7 @@ body[data-media-type="games"] .card {
   flex-shrink: 0;
   border-radius: 4px;
   overflow: hidden;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
   background-color: rgba(255, 255, 255, 0.05);
 }
 
@@ -1101,20 +1094,20 @@ body[data-media-type="games"] .card {
 }
 
 .mini-card-image img[src*="placeholder"] {
-    opacity: 0;
+  opacity: 0;
 }
 
 body[data-media-type="music"] .mini-card-image img {
   height: 100%;
 }
 
-/* Make music images square */
+
 body[data-media-type="games"] .mini-card-image {
   width: 45px;
   height: 60px;
 }
 
-/* Make music images square */
+
 body[data-media-type="music"] .mini-card-image {
   width: 65px;
   height: 65px;
@@ -1127,7 +1120,7 @@ body[data-media-type="music"] .mini-card-image {
   text-overflow: ellipsis;
 }
 
-/* --- List View Table --- */
+
 .list-table {
   width: 100%;
   overflow-x: auto;
@@ -1178,7 +1171,7 @@ body[data-page-type="tv"] .list-table td:nth-child(1) {
   text-align: center;
 }
 
-/* Movies page override */
+
 body[data-media-type="movies"] .list-table th:nth-child(5),
 body[data-media-type="movies"] .list-table td:nth-child(5) {
   width: 13%;
@@ -1244,7 +1237,7 @@ body[data-media-type="movies"] .list-table td:nth-child(5) {
   display: none;
 }
 
-/* --- Text layout & Notes positioning --- */
+
 .detailed-text-content {
   display: flex;
   flex-direction: column;
@@ -1270,7 +1263,7 @@ body[data-media-type="tvshows"] .simple-title-cell a {
   text-overflow: ellipsis;
 }
 
-/* Position notes absolutely below the centered title so it doesn't affect vertical flow */
+
 .detailed-notes {
   display: block;
   font-size: 0.8rem;
@@ -1295,7 +1288,7 @@ body[data-media-type="tvshows"] .simple-title-cell a {
   text-overflow: ellipsis;
 }
 
-/* --- List Row Actions (Repeats + Edit Button) --- */
+
 .list-row-actions {
   position: absolute;
   right: -10px;
@@ -1326,7 +1319,7 @@ body[data-media-type="tvshows"] .simple-title-cell a {
   filter: none;
 }
 
-/* Override the old list edit button rules */
+
 .list-table .edit-card-btn {
   position: static;
   transform: none;
@@ -1341,9 +1334,9 @@ body[data-media-type="tvshows"] .simple-title-cell a {
 .status-dot {
   position: absolute;
   top: -10px;
-  /* align to top edge */
+
   left: -10px;
-  /* align to left edge */
+
   width: 30px;
   height: 30px;
   border-radius: 50%;
@@ -1415,35 +1408,35 @@ body[data-media-type="tvshows"] .simple-title-cell a {
 
 @media (pointer: coarse) and (hover: none) {
 
-.banner-rotator img[alt="movie"],
-.banner-rotator img[alt="tv"],
-.banner-rotator img[alt="music"],
-.banner-rotator img[alt="book"] {
+  .banner-rotator img[alt="movie"],
+  .banner-rotator img[alt="tv"],
+  .banner-rotator img[alt="music"],
+  .banner-rotator img[alt="book"] {
     top: 80%;
-}
+  }
 
-.list-content {
+  .list-content {
     width: 90%;
-}
+  }
 
-.sidebar {
-  width: unset;
-}
+  .sidebar {
+    width: unset;
+  }
 
-.list-page-container {
-padding: 0 5rem 2rem
-}
+  .list-page-container {
+    padding: 0 5rem 2rem
+  }
 
 }
 
 @media(orientation: portrait) {
 
-.banner-rotator img[alt="movie"],
-.banner-rotator img[alt="tv"],
-.banner-rotator img[alt="music"],
-.banner-rotator img[alt="book"] {
-  top: 60%;
-}
+  .banner-rotator img[alt="movie"],
+  .banner-rotator img[alt="tv"],
+  .banner-rotator img[alt="music"],
+  .banner-rotator img[alt="book"] {
+    top: 60%;
+  }
 
 
   .separator-bar {
@@ -1475,9 +1468,9 @@ padding: 0 5rem 2rem
   .sidebar {
     position: fixed;
     left: -100%;
-    /* start off-screen */
+
     bottom: 0;
-    /* anchor to bottom-left corner */
+
     width: 280px;
     background: var(--bg-primary);
     z-index: 999;
@@ -1486,13 +1479,13 @@ padding: 0 5rem 2rem
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
-    /* stack elements from bottom up */
+
     padding: 2rem;
 
     max-height: 100vh;
-    /* prevent overflow off-screen */
+
     overflow-y: auto;
-    /* scroll if content taller than screen */
+
 
     transition: left 0.3s ease;
     padding-bottom: 15rem;
@@ -1749,6 +1742,7 @@ padding: 0 5rem 2rem
     max-height: none;
     padding: 0.2rem;
   }
+
   .toggle-part svg {
     width: 2.8rem;
     height: 2.8rem;
@@ -1758,23 +1752,23 @@ padding: 0 5rem 2rem
     font-size: 2rem;
     padding: 4px 8px;
   }
-  
+
   .list-repeats-indicator svg {
     width: 1.8rem;
     height: 1.8rem;
   }
-  
+
   .list-row-actions {
     gap: 20px;
   }
 
-  .simple-title-cell a ,
+  .simple-title-cell a,
   .detailed-text-content {
     padding-right: 0;
   }
 
-  /* Position notes absolutely below the centered title so it doesn't affect vertical flow */
-.detailed-notes {
-  display: none;
-}
+
+  .detailed-notes {
+    display: none;
+  }
 }

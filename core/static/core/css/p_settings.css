@@ -1,5 +1,5 @@
 :root {
-  /* Dark theme (default) */
+
   --bg-primary: #0b1622;
   --bg-secondary: #1a2332;
   --bg-tertiary: #151f2e;
@@ -20,7 +20,7 @@
   --bg-secondary: #F2F2F2;
   --bg-tertiary: #F2F2F2;
   --bg-quaternary: #E5E5E5;
-    /* --- Change text color for light themes --- */
+
   --text-primary: #0F0F0F;
   --text-secondary: #0F0F0F;
 
@@ -60,7 +60,7 @@ p {
   color: var(--text-primary);
 }
 
-/* --- Scoring System Section --- */
+
 .scoring-system-form {
   display: flex;
   flex-direction: column;
@@ -81,7 +81,7 @@ p {
   margin-bottom: 4.7rem;
 }
 
-/* Custom Select Styles */
+
 .custom-select-wrapper {
   position: relative;
   width: 100%;
@@ -107,7 +107,7 @@ p {
   font-size: 1rem;
 }
 
-.custom-select-trigger > span:first-child {
+.custom-select-trigger>span:first-child {
   margin-right: auto;
 }
 
@@ -184,7 +184,7 @@ p {
   color: gold;
 }
 
-/* p_settings.css */
+
 
 body {
   font-family: "Segoe UI", Tahoma, sans-serif;
@@ -201,7 +201,7 @@ h1 {
 
 
 
-/* Table styling */
+
 table {
   width: 100%;
   border-collapse: collapse;
@@ -552,12 +552,12 @@ table td:last-child .delete-btn {
   border: none;
 }
 
-.preference-toggle-label input:checked + .preference-toggle-content { 
+.preference-toggle-label input:checked+.preference-toggle-content {
   border-color: var(--special-color);
   color: var(--text-secondary);
 }
 
-.preference-toggle-label input:checked + .preference-toggle-content .preference-toggle-icon {
+.preference-toggle-label input:checked+.preference-toggle-content .preference-toggle-icon {
   color: var(--special-color);
 }
 
@@ -601,7 +601,7 @@ table td:last-child .delete-btn {
   gap: 1rem;
 }
 
-.version-information{
+.version-information {
   max-width: 20rem;
 }
 
@@ -688,7 +688,7 @@ table td:last-child .delete-btn {
   }
 }
 
-/* Theme Selector Styles */
+
 .theme-selector {
   display: flex;
   justify-content: center;
@@ -789,7 +789,7 @@ table td:last-child .delete-btn {
   color: var(--text-secondary);
 }
 
-/* Information section link hover effects */
+
 
 
 #music-player-container {
@@ -861,7 +861,7 @@ table td:last-child .delete-btn {
   }
 }
 
-/* Backup Progress Modal */
+
 @keyframes progress-stripes {
   from {
     background-position: 1rem 0;

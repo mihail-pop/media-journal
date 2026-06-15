@@ -1,5 +1,5 @@
 :root {
-  /* Dark theme (default) */
+
   --bg-primary: #0b1622;
   --bg-tertiary: #151f2e;
   --bg-quaternary: #32445b;
@@ -47,7 +47,7 @@
   --table-bg: #55423d;
 }
 
-/* --- Star Rating Overlap Effect --- */
+
 .star-rating {
   display: inline-block;
   position: relative;
@@ -62,7 +62,7 @@
   display: inline-block;
   position: relative;
   margin-left: -0.85em;
-  /* strong overlap for cool effect */
+
   z-index: 1;
   vertical-align: middle;
   transition: filter 0.2s;
@@ -90,20 +90,20 @@ html {
 
 .status-header {
   margin-top: 50px;
-  /* adjust this value as you want */
+
   margin-bottom: 10px;
-  /* adjust this value as you want */
+
   font-weight: bold;
 }
 
 .separator-bar {
   width: 100%;
   height: 45px;
-  /* or any height you want */
+
   margin-bottom: 5rem;
 }
 
-/* --- Page Layout --- */
+
 .list-page-container {
   display: flex;
   max-width: 1400px;
@@ -112,10 +112,10 @@ html {
 
 }
 
-/* --- Banner Rotator --- */
+
 .banner-rotator {
   position: relative;
-  /* Needed to contain the overlay */
+
   width: 100%;
   height: 330px;
   overflow: hidden;
@@ -129,15 +129,15 @@ html {
   border-radius: 0;
   object-position: center 15%;
 
-  /* Add smooth opacity transition */
+
   transition: opacity 1s ease-in-out;
   opacity: 1;
 }
 
-/* The overlay that covers the whole image */
+
 .banner-overlay {
   position: absolute;
-  /* sits over the image */
+
   top: 0;
   left: 0;
   height: 100%;
@@ -145,19 +145,19 @@ html {
   background: linear-gradient(180deg, rgba(6, 13, 34, 0) 40%, rgba(6, 13, 34, 0.6) 100%);
   z-index: 1;
   pointer-events: none;
-  /* let clicks pass through */
+
   display: flex;
   justify-content: flex-end;
-  /* align quote container to right */
+
   align-items: stretch;
   padding-right: 2rem;
   box-sizing: border-box;
 }
 
-/* The quote container on right side, initially hidden */
+
 .banner-quote {
   display: none;
-  /* toggle via JS */
+
   color: white;
   font-style: italic;
   padding: 1rem 2rem;
@@ -171,27 +171,27 @@ html {
   box-sizing: border-box;
   background: rgba(0, 0, 0, 0.4);
   pointer-events: auto;
-  /* allow text selection if needed */
+
   border-radius: 0 0 0 12px;
 
   margin-top: auto;
-  /* push it down inside flex container */
+
   margin-bottom: 2rem;
-  /* add some space from bottom */
+
 
   transition: opacity 1s ease-in-out;
 
   scrollbar-width: none;
-  /* for Firefox */
+
   -ms-overflow-style: none;
-  /* for IE and Edge */
+
 }
 
 .banner-quote::-webkit-scrollbar {
   display: none;
 }
 
-/* --- Sidebar --- */
+
 .sidebar {
   width: 15%;
   padding-right: 2.5rem;
@@ -228,9 +228,9 @@ html {
 .btn-count {
   opacity: 0;
   transition: opacity 0.3s ease;
-  /* right side */
+
   font-weight: bold;
-  /* optionally add color or spacing */
+
 }
 
 .filter-buttons-wrapper:hover .btn-count {
@@ -258,9 +258,9 @@ html {
 .filter-group {
   display: flex;
   flex-wrap: wrap;
-  /* allow wrapping */
+
   gap: 0.4rem;
-  /* space between buttons */
+
 }
 
 .filter-btn {
@@ -308,7 +308,7 @@ html {
 .date-range-filter {
   display: flex;
   gap: 0.5rem;
-  /* space between inputs */
+
 }
 
 #start-date,
@@ -337,7 +337,7 @@ html {
   background-color: var(--bg-quaternary);
 }
 
-/* Optional: small spacing between two inputs */
+
 .date-range-filter input+input {
   margin-top: 0.5rem;
 }
@@ -347,20 +347,20 @@ html {
 }
 
 
-/* --- Main List Content --- */
+
 .list-content {
   width: 80%;
   margin-top: -20px;
 }
 
-/* --- Card View Grid --- */
+
 .card-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 150px));
   gap: 0.9rem;
 }
 
-/* Individual Card */
+
 .card {
   border-radius: 3px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
@@ -389,7 +389,7 @@ html {
   opacity: 0;
 }
 
-/* Card Image */
+
 .card img {
   width: 100%;
   height: auto;
@@ -399,7 +399,7 @@ html {
   border-radius: 3px;
 }
 
-/* Music cards - zoom to fit center portion while maintaining 150x210 ratio */
+
 .card[data-media-type="music"] {
   width: 150px;
   height: 210px;
@@ -416,12 +416,12 @@ html {
 
 .card[data-media-type="music"] .card-image img {
   width: 179.8%;
-  /* Same scale factor as before (152/85 = 1.788) */
+
   height: 100%;
   object-fit: cover;
   object-position: center center;
   transform: translateX(-22.3%);
-  /* Adjust this to center the crop */
+
   transform-origin: center;
   border-radius: 3px;
 }
@@ -430,7 +430,7 @@ html {
   background: rgba(14, 15, 15);
 }
 
-/* Title & Rating Overlay */
+
 .card-title-overlay {
   background: rgba(14, 15, 15, .8);
   color: var(--text-light);
@@ -453,15 +453,15 @@ html {
   font-size: 0.8rem;
   opacity: 0.9;
   white-space: nowrap;
-  /* keep it on one line */
+
   overflow: hidden;
-  /* hide overflow text */
+
   text-overflow: ellipsis;
-  /* add "..." */
+
   max-width: 100%;
-  /* prevent overflow of container */
+
   display: block;
-  /* ensures ellipsis works properly */
+
   text-align: center !important;
   width: 100%;
   display: none;
@@ -469,7 +469,7 @@ html {
 
 .card:hover .card-subtitle {
   display: block;
-  /* appears on hover */
+
 }
 
 .card-date {
@@ -479,7 +479,7 @@ html {
   width: 100%;
 }
 
-/* Status overlay bar */
+
 .status-overlay {
   position: absolute;
   bottom: 0;
@@ -491,27 +491,27 @@ html {
 
 .status-completed {
   background-color: #28a745;
-  /* green */
+
 }
 
 .status-ongoing {
   background-color: #17a2b8;
-  /* light blue */
+
 }
 
 .status-planned {
   background-color: #6c757d;
-  /* gray */
+
 }
 
 .status-on_hold {
   background-color: #ffc107;
-  /* yellow */
+
 }
 
 .status-dropped {
   background-color: #dc3545;
-  /* red */
+
 }
 
 
@@ -546,7 +546,7 @@ html {
 }
 
 
-/* Edit Button */
+
 .edit-card-btn {
   position: absolute;
   top: 5px;
@@ -592,7 +592,7 @@ html {
   display: inline-block;
 }
 
-/* Rating Badge */
+
 .face-field {
   background-color: none;
   padding: 4px 8px;
@@ -608,7 +608,7 @@ html {
   color: grey;
 }
 
-/* --- List View Table --- */
+
 .list-table {
   width: 100%;
   overflow-x: auto;
@@ -693,9 +693,9 @@ html {
 .status-dot {
   position: absolute;
   top: -10px;
-  /* align to top edge */
+
   left: -10px;
-  /* align to left edge */
+
   width: 30px;
   height: 30px;
   border-radius: 50%;
@@ -765,9 +765,9 @@ html {
 
 @media (pointer: coarse) and (hover: none) {
 
-.sidebar {
+  .sidebar {
     width: 22%;
-}
+  }
 
 }
 
@@ -797,9 +797,9 @@ html {
   .sidebar {
     position: fixed;
     left: -100%;
-    /* start off-screen */
+
     bottom: 0;
-    /* anchor to bottom-left corner */
+
     width: 280px;
     background: var(--bg-primary);
     z-index: 999;
@@ -808,13 +808,13 @@ html {
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
-    /* stack elements from bottom up */
+
     padding: 2rem;
 
     max-height: 100vh;
-    /* prevent overflow off-screen */
+
     overflow-y: auto;
-    /* scroll if content taller than screen */
+
 
     transition: left 0.3s ease;
     padding-bottom: 15rem;

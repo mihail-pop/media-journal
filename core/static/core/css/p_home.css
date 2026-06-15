@@ -1,5 +1,5 @@
 :root {
-  /* Dark theme (default) */
+  
   --bg-primary: #0b1622;
   --bg-tertiary: #151f2e;
   --bg-quaternary: #32445b;
@@ -42,12 +42,12 @@
   --overlay-bg: #271c19;
   --overview-border: #3b2b27;
   --button-bg: #6b534c;
-  
+
   --activity-high: #af7f76;
   --activity-low: #74544d;
 }
 
-/* --- Global Styles --- */
+
 
 html {
   overflow-y: scroll;
@@ -60,7 +60,7 @@ body {
   color: var(--text-primary);
 }
 
-/* --- Banner Rotator --- */
+
 .banner-rotator {
   position: relative;
   width: 100%;
@@ -69,11 +69,11 @@ body {
 }
 
 .banner-rotator img[alt=""],
-.banner-rotator img:not([alt]){
+.banner-rotator img:not([alt]) {
   width: 100%;
-  height: 100%; 
-  object-fit: cover; 
-  object-position: center 15%; 
+  height: 100%;
+  object-fit: cover;
+  object-position: center 15%;
   display: block;
   transition: opacity 1s ease-in-out;
   opacity: 1;
@@ -95,11 +95,11 @@ body {
 
 .banner-rotator img[alt="anime"],
 .banner-rotator img[alt="manga"],
-.banner-rotator img[alt="game"]{
+.banner-rotator img[alt="game"] {
   width: 100%;
-  height: 100%; 
-  object-fit: cover; 
-  object-position: center 15%; 
+  height: 100%;
+  object-fit: cover;
+  object-position: center 15%;
   display: block;
   transition: opacity 1s ease-in-out;
   opacity: 1;
@@ -123,10 +123,9 @@ body {
   box-sizing: border-box;
 }
 
-/* The quote container on right side, initially hidden */
+
 .banner-quote {
   display: none;
-  /* toggle via JS */
   color: white;
   font-style: italic;
   padding: 1rem 2rem;
@@ -140,27 +139,24 @@ body {
   box-sizing: border-box;
   background: rgba(0, 0, 0, 0.4);
   pointer-events: auto;
-  /* allow text selection if needed */
   border-radius: 0 0 0 12px;
 
   margin-top: auto;
-  /* push it down inside flex container */
   margin-bottom: 2rem;
-  /* add some space from bottom */
 
   transition: opacity 1s ease-in-out;
 
   scrollbar-width: none;
-  /* for Firefox */
+  
   -ms-overflow-style: none;
-  /* for IE and Edge */
+  
 }
 
 .banner-quote::-webkit-scrollbar {
   display: none;
 }
 
-/* --- Section Separator --- */
+
 .separator-bar {
   height: 45px;
   background-color: var(--bg-tertiary);
@@ -174,7 +170,7 @@ body {
   padding: 0 1rem;
 }
 
-/* --- Card Grid --- */
+
 .card-grid {
   border-radius: 4px;
   display: grid;
@@ -199,7 +195,7 @@ body {
   margin-bottom: 0 !important;
 }
 
-/* --- Card Styles --- */
+
 .card {
   border-radius: 4px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
@@ -261,27 +257,27 @@ body {
 
 .card[data-media-type="music"] .card-image img {
   width: 178.8%;
-  /* 152/85 = 1.788 - scales image to match your 152px container */
+  
   height: 100%;
   object-fit: cover;
   object-position: center center;
   display: block;
   border-radius: 4px;
-  /* Use transform for positioning instead of object-position */
+  
   transform: translateX(-21.7%);
-  /* Centers the zoomed portion: (178.8-100)/2/178.8 ≈ 21.2% */
+  
   transform-origin: center;
 }
 
-/* Override base <a> rule so music cards aren't clipped by 115px limit */
+
 .card[data-media-type="music"] a {
   max-height: 150px;
-  /* match music card height */
+  
   overflow: hidden;
   border-radius: 4px;
 }
 
-/* Hover title overlay */
+
 .hover-title-overlay {
   position: absolute;
   bottom: 100%;
@@ -300,7 +296,7 @@ body {
   max-width: 1000px;
 }
 
-/* Hover title text */
+
 .hover-title-text {
   color: var(--text-primary);
   font-size: 0.85rem;
@@ -311,7 +307,7 @@ body {
   white-space: nowrap;
 }
 
-/* Hovered state */
+
 .card:hover .hover-title-overlay {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
@@ -323,7 +319,7 @@ body {
 }
 
 
-/* --- Edit Button --- */
+
 .edit-card-btn {
   position: absolute;
   top: 5px;
@@ -339,7 +335,7 @@ body {
 
 
 
-/* --- Section Headers --- */
+
 .status-header,
 .favorites-header {
   margin-bottom: 10px;
@@ -348,7 +344,7 @@ body {
   color: var(--text-primary);
 }
 
-/* --- Stats Section Layout --- */
+
 .stats-section {
   display: flex;
   justify-content: center;
@@ -406,12 +402,14 @@ h2 {
   margin-bottom: 1rem;
 }
 
-/* Upcoming Tiles */
+
 .upcoming-tiles-wrapper {
   background: var(--bg-tertiary);
   border-radius: 4px;
-  max-width: 550px; /* Match activity grid width exactly */
-  height: 176px;    /* Match activity grid height exactly */
+  max-width: 550px;
+  
+  height: 176px;
+  
   padding-top: 12px;
   box-sizing: border-box;
   display: flex;
@@ -422,23 +420,26 @@ h2 {
   display: flex;
   overflow-x: auto;
   gap: 8px;
-  padding: 0 15px 12px 15px; /* Bottom padding creates space for the scrollbar */
+  padding: 0 15px 12px 15px;
+  
 
   height: 100%;
   box-sizing: border-box;
   scrollbar-color: var(--text-primary) var(--bg-tertiary);
 }
 
-/* Custom Scrollbar for Upcoming Tiles */
+
 .upcoming-tiles-container::-webkit-scrollbar {
   height: 6px;
-  display: block; /* Show scrollbar */
+  display: block;
+  
 }
 
 .upcoming-tiles-container::-webkit-scrollbar-track {
   background: var(--bg-primary);
   border-radius: 4px;
-  margin: 0 15px; /* Keeps track aligned with padding */
+  margin: 0 15px;
+  
 }
 
 .upcoming-tiles-container::-webkit-scrollbar-thumb {
@@ -452,7 +453,8 @@ h2 {
 
 .upcoming-tile {
   flex: 0 0 10rem;
-  height: 100%; /* Fill container height above scrollbar */
+  height: 100%;
+  
   max-width: 10rem;
   background: var(--bg-primary);
   border-radius: 6px;
@@ -491,51 +493,56 @@ h2 {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  overflow: hidden; /* Removes vertical scrolling to prevent overlaps */
+  overflow: hidden;
+  
   align-items: flex-start;
 }
 
 .home-event-pill {
   flex-shrink: 0;
   width: fit-content;
-  max-width: 100%; 
-  display: block; /* Ensures text-overflow ellipsis works perfectly */
-  box-sizing: border-box; 
+  max-width: 100%;
+  display: block;
+  
+  box-sizing: border-box;
   font-size: 0.75rem;
   padding: 3px 6px;
   border-radius: 4px;
   color: #ffffff !important;
   white-space: nowrap;
-  overflow: hidden; 
-  text-overflow: ellipsis; 
-  box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
   font-weight: 500;
   line-height: 1.2;
 }
 
-/* Global Tooltip for Pills */
+
 .pill-global-tooltip {
   position: fixed;
   display: none;
   background: var(--bg-tertiary);
   padding: 8px;
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
   z-index: 9999;
   pointer-events: none;
   gap: 12px;
   align-items: center;
   max-width: 250px;
 }
+
 .pill-global-tooltip img {
   width: 60px;
   object-fit: cover;
   border-radius: 4px;
 }
+
 .pill-global-tooltip[data-media-type="music"] img {
   width: 60px;
   height: 60px;
 }
+
 .tooltip-info {
   display: flex;
   flex-direction: column;
@@ -543,19 +550,40 @@ h2 {
   font-size: 0.85rem;
   color: var(--text-secondary);
 }
+
 .tooltip-info strong {
   color: var(--text-primary);
   font-size: 0.95rem;
 }
 
-/* Colors matching your dashboard stats */
-.bg-movie { background-color: #F4B400; }
-.bg-tv { background-color: #E53935; }
-.bg-anime { background-color: #42A5F5; }
-.bg-game { background-color: #66BB6A; }
-.bg-book { background-color: #EC407A; }
-.bg-manga { background-color: #AB47BC; }
-.bg-music { background-color: #FF7043; }
+
+.bg-movie {
+  background-color: #F4B400;
+}
+
+.bg-tv {
+  background-color: #E53935;
+}
+
+.bg-anime {
+  background-color: #42A5F5;
+}
+
+.bg-game {
+  background-color: #66BB6A;
+}
+
+.bg-book {
+  background-color: #EC407A;
+}
+
+.bg-manga {
+  background-color: #AB47BC;
+}
+
+.bg-music {
+  background-color: #FF7043;
+}
 
 .extra-stats-class h3 {
   color: var(--text-primary);
@@ -714,7 +742,7 @@ h2 {
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--text-secondary);
-  cursor: default; 
+  cursor: default;
   margin-top: 0.4rem;
 }
 
@@ -805,9 +833,9 @@ h2 {
 .community-button:hover,
 .community-button:hover svg {
   color: var(--activity-high);
-  /* bright yellow/orange for text */
+  
   fill: var(--activity-high);
-  /* same bright color for the flame SVG */
+  
   transition: color 0.3s ease, fill 0.3s ease;
 }
 
@@ -816,7 +844,7 @@ h2 {
   transition: fill 0.3s ease;
 }
 
-/* Pink icon and text when notifications exist */
+
 .notifications-button.has-notifications {
   color: #F59E0B;
 }
@@ -825,36 +853,45 @@ h2 {
   fill: #F59E0B;
 }
 
-/* Dropdown container */
+
 .notifications-dropdown {
   position: absolute;
-  top: calc(100% + 15px); /* Increased gap for the popover arrow */
-  right: -10px; /* Align to the right side of the bell icon */
+  top: calc(100% + 15px);
+  
+  right: -10px;
+  
   left: auto;
-  transform: none; /* Removes the old tricky centering */
+  transform: none;
+  
   background: var(--bg-tertiary);
   color: var(--text-primary);
-  width: 360px; /* Elegant, readable width */
-  max-width: 90vw; /* Prevents overflow on smaller desktop windows */
+  width: 360px;
+  
+  max-width: 90vw;
+  
   max-height: 400px;
   overflow-y: auto;
   border-radius: 8px;
   border: 2px solid var(--bg-quaternary);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); /* Deep, modern shadow */
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  
   z-index: 1000;
-  padding: 0; /* Removing padding from container so list items stretch edge-to-edge */
+  padding: 0;
+  
   display: flex;
   flex-direction: column;
-  font-size: 0.95rem; /* Base font size */
+  font-size: 0.95rem;
+  
   scrollbar-color: var(--text-primary) var(--bg-tertiary);
 }
 
-/* Small triangle pointing up to the bell */
+
 .notifications-dropdown::before {
   content: '';
   position: absolute;
   top: -6px;
-  right: 35px; /* Aligns visually with the bell */
+  right: 35px;
+  
   width: 10px;
   height: 10px;
   background: var(--bg-tertiary);
@@ -868,22 +905,25 @@ h2 {
   display: none !important;
 }
 
-/* Custom Scrollbar for the dropdown */
+
 .notifications-dropdown::-webkit-scrollbar {
   width: 6px;
 }
+
 .notifications-dropdown::-webkit-scrollbar-track {
   background: transparent;
 }
+
 .notifications-dropdown::-webkit-scrollbar-thumb {
   background-color: var(--overview-border);
   border-radius: 4px;
 }
+
 .notifications-dropdown::-webkit-scrollbar-thumb:hover {
   background-color: var(--text-secondary);
 }
 
-/* Notification list */
+
 .notifications-dropdown ul {
   list-style: none;
   margin: 0;
@@ -895,10 +935,12 @@ h2 {
 .notifications-dropdown li {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start; /* Keeps the X button fixed at the top for multiline text */
+  align-items: flex-start;
+  
   padding: 14px 18px;
-  border-bottom: 2px solid var(--bg-quaternary); /* Softer divider */
-  gap: 12px; 
+  border-bottom: 2px solid var(--bg-quaternary);
+  
+  gap: 12px;
   transition: background-color 0.2s ease;
   position: relative;
 }
@@ -910,7 +952,7 @@ h2 {
 }
 */
 
-/* Hover effects */
+
 
 /*
 .notifications-dropdown li.system-notification:hover {
@@ -921,16 +963,18 @@ h2 {
   border-bottom: none;
 }
 
-/* Text styling */
+
 .notification-text {
   flex-grow: 1;
   line-height: 1.5;
-  font-size: 1em; /* Inherits safely */
-  word-break: break-word; /* FIX: Forces long text to wrap instead of breaking width */
+  font-size: 1em;
+  
+  word-break: break-word;
+  
   color: var(--text-secondary);
 }
 
-/* Links inside standard notifications */
+
 .notifications-dropdown li a {
   color: var(--text-primary);
   text-decoration: none;
@@ -943,12 +987,12 @@ h2 {
   text-decoration: underline;
 }
 
-/* Links inside system notifications */
+
 .notifications-dropdown li.system-notification a {
   color: #F59E0B;
 }
 
-/* X dismiss button */
+
 .dismiss-notification {
   background: none;
   border: none;
@@ -964,16 +1008,18 @@ h2 {
   justify-content: center;
   opacity: 0.6;
   border-radius: 4px;
-  margin-top: -2px; /* Visual tweak for perfect alignment */
+  margin-top: -2px;
+  
 }
 
 .dismiss-notification:hover {
   color: var(--text-primary);
   opacity: 1;
-  background: var(--bg-primary); /* Gives the X button a little highlight box */
+  background: var(--bg-primary);
+  
 }
 
-/* Empty State */
+
 .no-notifications {
   margin: 0;
   padding: 30px 20px;
@@ -1012,7 +1058,7 @@ h2 {
 
 .recent-activity a:hover {
   color: var(--activity-high);
-  /* on hover, maybe yellow to match your theme */
+  
 }
 
 .recent-activity-hidden,
@@ -1022,7 +1068,7 @@ h2 {
 
 .activity-entry {
   position: relative;
-  /* Add this */
+  
   display: flex;
   justify-content: space-between;
   gap: 1rem;
@@ -1047,7 +1093,7 @@ h2 {
   border-radius: 0.5rem;
   top: 50%;
   left: calc(100% + 1rem);
-  /* 1rem gap from the right edge of the link box */
+  
   transform: translateY(-50%);
   display: none;
   z-index: 10;
@@ -1070,7 +1116,7 @@ h2 {
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
 }
 
-/* For music thumbnails - apply the same zoomed crop */
+
 .activity-thumbnail[data-media-type="music"] {
   width: 120px;
   height: 120px;
@@ -1080,16 +1126,16 @@ h2 {
 
 .activity-thumbnail[data-media-type="music"] img {
   width: 178.8%;
-  /* Same scale factor as before */
+  
   object-fit: cover;
   object-position: center center;
-  /* Adjust translateX to match your desired crop position */
+  
   transform: translateX(-22.3%);
   transform-origin: center;
   border-radius: 0.5rem;
 }
 
-/* Show thumbnail only on hover */
+
 .activity-entry:hover .activity-thumbnail {
   display: block;
 }
@@ -1136,7 +1182,7 @@ h2 {
   color: var(--text-primary);
 }
 
-/* --- Home Dashboard Swap UI --- */
+
 .panel-header {
   display: flex;
   justify-content: space-between;
@@ -1198,12 +1244,13 @@ h2 {
   background: var(--bg-tertiary);
 }
 
-/* --- Collections Swap View --- */
+
 .collections-summary-box {
   display: flex;
-  align-items: flex-start; 
-  justify-content: flex-start; 
-  padding: 1rem 1.5rem 1rem 1.5rem; /* Reduced bottom padding */
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding: 1rem 1.5rem 1rem 1.5rem;
+  
   box-sizing: border-box;
   overflow: visible;
 }
@@ -1211,26 +1258,30 @@ h2 {
 .home-collections-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 22px 20px; /* 22px row gap, 20px column gap to perfectly fit 5 items */
+  gap: 22px 20px;
+  
   width: 100%;
-  justify-content: flex-start; /* Keeps items aligned to the left */
+  justify-content: flex-start;
+  
 }
 
 .home-collection-card {
   width: 85px;
-  height: 115px; /* Match standard favorites dimensions */
+  height: 115px;
+  
   border-radius: 4px;
   position: relative;
-  box-shadow: none; /* Override standard card shadow */
+  box-shadow: none;
+  
   background: none;
 }
 
-/* Brings the hovered collection in front of adjacent ones */
+
 .home-collection-card:hover {
   z-index: 10;
 }
 
-/* Deepens the shadow on the slices so it visually pops off the "bookshelf" */
+
 .home-collection-card:hover .home-stack-item {
   box-shadow: 0 6px 14px rgba(0, 0, 0, 0.6);
 }
@@ -1239,7 +1290,8 @@ h2 {
   display: block;
   width: 100%;
   height: 100%;
-  overflow: visible !important; /* Allow the fan slices to spill past the 85px border */
+  overflow: visible !important;
+  
 }
 
 .home-cover-stack {
@@ -1253,10 +1305,12 @@ h2 {
   position: absolute;
   width: 85px;
   height: 115px;
-  max-height: 115px; /* Creates the clipping boundary */
-  overflow: hidden; /* Clips the image cleanly */
+  max-height: 115px;
+  
+  overflow: hidden;
+  
   border-radius: 4px;
-  box-shadow: 0 3px 8px rgba(0,0,0,0.4);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   background: var(--bg-tertiary);
   top: 0;
@@ -1269,10 +1323,11 @@ h2 {
   border-radius: 4px;
 }
 
-/* Glass styling for collections with empty/placeholder covers */
+
 .home-stack-item:has(img[src*="placeholder"]) {
   background-color: rgb(255 254 254 / 7%);
-  border: 1px solid rgba(255, 255, 255, 0.08); /* Optional: gives it the same rim as glass-card */
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  
   backdrop-filter: blur(4px);
 }
 
@@ -1280,30 +1335,85 @@ h2 {
   opacity: 0;
 }
 
-/* Explicit pixel placement replaces buggy percentages */
-.home-stack-item.pos-0 { left: 0; z-index: 3; filter: none; }
-.home-stack-item.pos-1 { left: -12px; transform: rotate(-8deg) scale(0.9); z-index: 2; filter: brightness(0.6); }
-.home-stack-item.pos-2 { left: 12px; transform: rotate(8deg) scale(0.9); z-index: 1; filter: brightness(0.6); }
 
-.home-collection-card:hover .home-stack-item.pos-0 { transform: translateY(-6px) scale(1.05); }
-.home-collection-card:hover .home-stack-item.pos-1 { transform: rotate(-15deg) scale(0.9) translateX(-10px); filter: brightness(0.8); z-index: 2; }
-.home-collection-card:hover .home-stack-item.pos-2 { transform: rotate(15deg) scale(0.9) translateX(10px); filter: brightness(0.8); }
+.home-stack-item.pos-0 {
+  left: 0;
+  z-index: 3;
+  filter: none;
+}
 
-/* 1 & 2 Item Adjustments */
-.home-cover-stack.items-1 .home-stack-item.pos-0 { z-index: 3; filter: brightness(1); left: 0; transform: none; }
-.home-collection-card:hover .home-cover-stack.items-1 .home-stack-item.pos-0 { transform: translateY(-6px) scale(1.05); }
+.home-stack-item.pos-1 {
+  left: -12px;
+  transform: rotate(-8deg) scale(0.9);
+  z-index: 2;
+  filter: brightness(0.6);
+}
 
-.home-cover-stack.items-2 .home-stack-item.pos-0 { left: -5px; transform: rotate(-5deg); z-index: 3; filter: brightness(1); }
-.home-cover-stack.items-2 .home-stack-item.pos-1 { left: 5px; transform: rotate(5deg); z-index: 2; filter: brightness(0.8); }
-.home-collection-card:hover .home-cover-stack.items-2 .home-stack-item.pos-0 { transform: rotate(-8deg) translateX(-5px) translateY(-4px) scale(1.05); }
-.home-collection-card:hover .home-cover-stack.items-2 .home-stack-item.pos-1 { transform: rotate(8deg) translateX(5px) scale(0.95); filter: brightness(0.9); }
+.home-stack-item.pos-2 {
+  left: 12px;
+  transform: rotate(8deg) scale(0.9);
+  z-index: 1;
+  filter: brightness(0.6);
+}
 
-/* --- Music Collection Card Overrides --- */
+.home-collection-card:hover .home-stack-item.pos-0 {
+  transform: translateY(-6px) scale(1.05);
+}
+
+.home-collection-card:hover .home-stack-item.pos-1 {
+  transform: rotate(-15deg) scale(0.9) translateX(-10px);
+  filter: brightness(0.8);
+  z-index: 2;
+}
+
+.home-collection-card:hover .home-stack-item.pos-2 {
+  transform: rotate(15deg) scale(0.9) translateX(10px);
+  filter: brightness(0.8);
+}
+
+
+.home-cover-stack.items-1 .home-stack-item.pos-0 {
+  z-index: 3;
+  filter: brightness(1);
+  left: 0;
+  transform: none;
+}
+
+.home-collection-card:hover .home-cover-stack.items-1 .home-stack-item.pos-0 {
+  transform: translateY(-6px) scale(1.05);
+}
+
+.home-cover-stack.items-2 .home-stack-item.pos-0 {
+  left: -5px;
+  transform: rotate(-5deg);
+  z-index: 3;
+  filter: brightness(1);
+}
+
+.home-cover-stack.items-2 .home-stack-item.pos-1 {
+  left: 5px;
+  transform: rotate(5deg);
+  z-index: 2;
+  filter: brightness(0.8);
+}
+
+.home-collection-card:hover .home-cover-stack.items-2 .home-stack-item.pos-0 {
+  transform: rotate(-8deg) translateX(-5px) translateY(-4px) scale(1.05);
+}
+
+.home-collection-card:hover .home-cover-stack.items-2 .home-stack-item.pos-1 {
+  transform: rotate(8deg) translateX(5px) scale(0.95);
+  filter: brightness(0.9);
+}
+
+
 .home-stack-item[data-media-type="music"] {
   height: 85px;
   max-height: 85px;
-  top: auto; /* Overrides the top: 0 from standard items */
-  bottom: 0; /* Anchors the cover to the bottom edge */
+  top: auto;
+  
+  bottom: 0;
+  
 }
 
 .home-stack-item[data-media-type="music"] img {
@@ -1315,7 +1425,7 @@ h2 {
   transform-origin: center;
 }
 
-/* Empty Glass Styles */
+
 .home-collections-empty {
   display: flex;
   justify-content: center;
@@ -1345,26 +1455,30 @@ h2 {
   border-color: rgba(255, 255, 255, 0.15);
 }
 
-/* --- All Collections Corner Button --- */
+
 .all-collections-link-wrapper {
   position: absolute;
   bottom: 0;
   right: 0;
   margin: 0;
-  z-index: 5; /* Stays below hovered collections (z-index 10) */
+  z-index: 5;
+  
 }
 
-/* Remove the old standard button styles for this specific button */
+
 a.all-collections-btn {
   display: flex;
   align-items: flex-end;
   justify-content: flex-end;
-  width: 55px; /* Size of the corner triangle */
+  width: 55px;
+  
   height: 55px;
-  padding: 0 8px 8px 0; /* Positions the arrow icon nicely */
+  padding: 0 8px 8px 0;
+  
   background: linear-gradient(to bottom right, transparent 50%, var(--button-bg) 50%);
   color: var(--text-primary);
-  border-bottom-right-radius: 4px; /* Matches the parent container's corner */
+  border-bottom-right-radius: 4px;
+  
   border-radius: 0 0 4px 0;
 }
 
@@ -1374,40 +1488,40 @@ a.all-collections-btn:hover {
 
 @media (pointer: coarse) and (hover: none) {
 
-.banner-rotator img[alt="movie"],
-.banner-rotator img[alt="tv"],
-.banner-rotator img[alt="music"],
-.banner-rotator img[alt="book"] {
+  .banner-rotator img[alt="movie"],
+  .banner-rotator img[alt="tv"],
+  .banner-rotator img[alt="music"],
+  .banner-rotator img[alt="book"] {
     top: 80%;
-}
+  }
 
   .activity-thumbnail {
     display: none !important;
   }
 
-  .favorites-column{
+  .favorites-column {
     max-width: 43.2%;
   }
 
-  .stats-section{
+  .stats-section {
     gap: 5.3rem;
   }
 
-  .favorites-row{
+  .favorites-row {
     gap: 5rem;
   }
 
 }
 
-/* --- Responsive --- */
+
 @media (orientation: portrait) {
 
-.banner-rotator img[alt="movie"],
-.banner-rotator img[alt="tv"],
-.banner-rotator img[alt="music"],
-.banner-rotator img[alt="book"] {
-  top: 60%;
-}
+  .banner-rotator img[alt="movie"],
+  .banner-rotator img[alt="tv"],
+  .banner-rotator img[alt="music"],
+  .banner-rotator img[alt="book"] {
+    top: 60%;
+  }
 
   .hover-title-overlay {
     display: none;
@@ -1419,27 +1533,29 @@ a.all-collections-btn:hover {
   }
 
   .extra-stats-class h3,
-  .activity-graph h3, .activity-graph .panel-header h3 {
+  .activity-graph h3,
+  .activity-graph .panel-header h3 {
     font-size: 1.5rem;
   }
 
-  /* Activity / Upcoming swap header fix for mobile */
+  
   .activity-graph .panel-header {
-      max-width: 100% !important;
+    max-width: 100% !important;
   }
+
   .upcoming-tiles-container {
-      max-width: 100% !important;
-      padding: 10px;
+    max-width: 100% !important;
+    padding: 10px;
   }
 
   .stats-section {
     display: flex;
     flex-direction: column;
-    /* stack items vertically */
+    
     justify-content: center;
-    /* centers them along main axis (vertical now) */
+    
     gap: 12rem;
-    /* vertical spacing between sections */
+    
     align-items: center;
     margin-top: 6rem;
     margin-bottom: 10rem;
@@ -1462,9 +1578,9 @@ a.all-collections-btn:hover {
   .separator-bar {
     height: 6rem;
     justify-content: center;
-    /* horizontal center */
+    
     align-items: center;
-    /* vertical center */
+    
   }
 
   .notifications-button,
@@ -1489,8 +1605,8 @@ a.all-collections-btn:hover {
   .notifications-dropdown {
     font-size: 2.5rem;
   }
+
   
-  /* Give the dropdown room to breathe when font size scales up massively */
   .notifications-dropdown {
     width: 85vw;
   }
@@ -1501,12 +1617,14 @@ a.all-collections-btn:hover {
     max-width: 70vw;
   }
 
-  #advanced-activity-btn {
+  #advanced-activity-btn,
+  #advanced-upcoming-btn {
     padding: 0.5rem 1rem;
     font-size: 1.2rem;
   }
 
-  #toggle-activity-btn {
+  #toggle-activity-btn,
+  #toggle-upcoming-btn {
     display: none;
   }
 
@@ -1514,7 +1632,7 @@ a.all-collections-btn:hover {
     max-width: 47rem;
   }
 
-  /* Favorites section mobile layout */
+  
   .favorites-row {
     display: flex;
     flex-direction: column;
@@ -1533,7 +1651,7 @@ a.all-collections-btn:hover {
     margin-top: 0;
   }
 
-  /* Single row horizontal scrollable layout for mobile */
+  
   .card-grid {
     display: flex;
     flex-direction: row;
@@ -1548,7 +1666,7 @@ a.all-collections-btn:hover {
     margin-bottom: 2rem;
   }
 
-  /* Larger cards for mobile */
+  
   .card {
     width: 225px;
     height: 300px;
@@ -1586,14 +1704,102 @@ a.all-collections-btn:hover {
     font-size: 0.9rem;
   }
 
-  /* Show thumbnail only on hover */
+  
   .activity-entry:hover .activity-thumbnail {
     display: none;
   }
 
+  
+  .home-collections-grid {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: visible;
+    gap: 1.5rem;
+    padding: 1rem 1.5rem 2.5rem 1.5rem;
+    
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+  }
+
+  
+  .home-collections-grid::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Scale the base cards.
+     With the parent's transform: scale(1.6), a 140px card
+     visually becomes ~224px (matching the 225px favorite cards) */
+  .home-collection-card {
+    width: 140px;
+    height: 189px;
+    flex-shrink: 0;
+    scroll-snap-align: center;
+  }
+
+  .home-stack-item {
+    width: 140px;
+    height: 189px;
+    max-height: 189px;
+  }
+
+  
+  .home-stack-item[data-media-type="music"] {
+    height: 140px;
+    max-height: 140px;
+  }
+
+  
+  .home-stack-item.pos-1 {
+    left: -20px;
+  }
+
+  .home-stack-item.pos-2 {
+    left: 20px;
+  }
+
+  .home-collection-card:hover .home-stack-item.pos-0 {
+    transform: translateY(-10px) scale(1.05);
+  }
+
+  .home-collection-card:hover .home-stack-item.pos-1 {
+    transform: rotate(-15deg) scale(0.9) translateX(-16px);
+  }
+
+  .home-collection-card:hover .home-stack-item.pos-2 {
+    transform: rotate(15deg) scale(0.9) translateX(16px);
+  }
+
+  
+  .home-cover-stack.items-1 .home-stack-item.pos-0 {
+    left: 0;
+  }
+
+  .home-collection-card:hover .home-cover-stack.items-1 .home-stack-item.pos-0 {
+    transform: translateY(-10px) scale(1.05);
+  }
+
+  .home-cover-stack.items-2 .home-stack-item.pos-0 {
+    left: -8px;
+  }
+
+  .home-cover-stack.items-2 .home-stack-item.pos-1 {
+    left: 8px;
+  }
+
+  .home-collection-card:hover .home-cover-stack.items-2 .home-stack-item.pos-0 {
+    transform: rotate(-8deg) translateX(-8px) translateY(-7px) scale(1.05);
+  }
+
+  .home-collection-card:hover .home-cover-stack.items-2 .home-stack-item.pos-1 {
+    transform: rotate(8deg) translateX(8px) scale(0.95);
+  }
+
 }
 
-/* Music Player Button */
+
 .music-player-btn {
   background: none;
   border: 1px solid var(--text-primary);
@@ -1628,7 +1834,7 @@ a.all-collections-btn:hover {
   color: var(--activity-high);
 }
 
-/* Music Player Container */
+
 .music-player-container {
   position: fixed;
   z-index: 9999;
