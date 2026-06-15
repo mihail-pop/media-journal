@@ -718,6 +718,7 @@ html.c-modal-open {
         top: 0;
         left: 0;
         width: 100% !important;
+        height: 100% !important;
         object-fit: cover;
     }
 
@@ -746,19 +747,18 @@ html.c-modal-open {
     }
 
     .card-title {
-        font-size: 1.8rem;
-        padding: 1rem;
-        height: 4.8rem !important;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        box-sizing: border-box;
-        width: 100% !important;
-        min-width: 0 !important;
-    }
+    font-size: 1.8rem;
+    padding: 1rem;
+    
+    width: 100%;
+    box-sizing: border-box;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    text-align: center;
+}
 
     .card-favorite {
         opacity: 1 !important;

@@ -3,6 +3,7 @@ import json
 import uuid
 import datetime
 import tempfile
+import concurrent.futures
 
 import requests
 from django.apps import apps
@@ -268,6 +269,99 @@ def version_info_api(request):
     return JsonResponse(
         {"current_version": current_version, "latest_version": latest_version}
     )
+
+@require_GET
+def api_status_check(request):
+    def check_tmdb():
+        key = APIKey.objects.filter(name="tmdb").first()
+        if not key or not key.key_1: 
+            return "missing_key"
+        try:
+            r = requests.get(f"https://api.themoviedb.org/3/configuration?api_key={key.key_1}", timeout=3)
+            if r.status_code == 200: 
+                return "ok"
+            if r.status_code == 401: 
+                return "invalid_key"
+            if r.status_code == 429: 
+                return "rate_limited"
+            return "down"
+        except Exception: 
+            return "down"
+
+    def check_anilist():
+        try:
+            r = requests.post("https://graphql.anilist.co", json={"query": "{ Media(id: 1) { id } }"}, timeout=3)
+            if r.status_code in [200, 400]: 
+                return "ok"
+            if r.status_code == 429: 
+                return "rate_limited"
+            return "down"
+        except Exception: 
+            return "down"
+
+    def check_igdb():
+        from core.services.m_games import get_igdb_token
+        key = APIKey.objects.filter(name="igdb").first()
+        if not key or not key.key_1 or not key.key_2: 
+            return "missing_key"
+        try:
+            token = get_igdb_token()
+            if not token: 
+                return "auth_error"
+            r = requests.post(
+                "https://api.igdb.com/v4/games",
+                headers={"Client-ID": key.key_1, "Authorization": f"Bearer {token}"},
+                data="fields id; limit 1;",
+                timeout=3
+            )
+            if r.status_code == 200: 
+                return "ok"
+            if r.status_code == 401: 
+                return "invalid_key"
+            if r.status_code == 429: 
+                return "rate_limited"
+            return "down"
+        except Exception: 
+            return "down"
+
+    def check_openlib():
+        try:
+            # Fetch a specific, highly-cached Work instead of doing a heavy DB search
+            r = requests.get("https://openlibrary.org/works/OL45804W.json", timeout=5)
+            if r.status_code == 200: 
+                return "ok"
+            if r.status_code == 429: 
+                return "rate_limited"
+            return "down"
+        except Exception: 
+            return "down"
+
+    def check_musicbrainz():
+        try:
+            headers = {"User-Agent": "MediaJournal/1.0 (https://github.com/mihail-pop/media-journal)"}
+            # Increased timeout to 5 seconds
+            r = requests.get("https://musicbrainz.org/ws/2/recording?query=test&limit=1&fmt=json", headers=headers, timeout=5)
+            if r.status_code == 200: 
+                return "ok"
+            if r.status_code == 429: 
+                return "rate_limited"
+            return "ok" if r.status_code < 500 else "down"
+        except Exception: 
+            return "down"
+
+    # Run checks concurrently to prevent the page from hanging on multiple timeouts
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+        futures = {
+            "tmdb": executor.submit(check_tmdb),
+            "anilist": executor.submit(check_anilist),
+            "igdb": executor.submit(check_igdb),
+            "openlib": executor.submit(check_openlib),
+            "musicbrainz": executor.submit(check_musicbrainz),
+        }
+        
+        statuses = {k: v.result() for k, v in futures.items()}
+
+    return JsonResponse({"statuses": statuses})
 
 @ensure_csrf_cookie
 @require_POST

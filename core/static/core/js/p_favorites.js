@@ -1,10 +1,4 @@
 document.addEventListener('DOMContentLoaded', () => {
-  // Initialize Mobile Drag and Drop Polyfill
-  if (typeof MobileDragDrop !== 'undefined') {
-    MobileDragDrop.polyfill({
-      dragImageTranslateOverride: MobileDragDrop.scrollBehaviourDragImageTranslateOverride
-    });
-  }
 
   const containers = document.querySelectorAll('.draggable-container');
   
@@ -44,12 +38,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Use event delegation on the container
     container.addEventListener('dragstart', e => {
-       document.body.classList.add('drag-active');
-      // Disable drag on phones in portrait mode
-      if (window.matchMedia('(orientation: portrait)').matches) {
+      // Disable native drag on all touch screens
+      if (window.matchMedia('(pointer: coarse)').matches) {
         e.preventDefault();
         return;
       }
+
+      document.body.classList.add('drag-active');
 
       const draggable = e.target.closest('.draggable');
       if (draggable) {

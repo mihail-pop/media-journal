@@ -1,10 +1,4 @@
 document.addEventListener("DOMContentLoaded", () => {
-    // Initialize Mobile Drag and Drop Polyfill
-    if (typeof MobileDragDrop !== 'undefined') {
-        MobileDragDrop.polyfill({
-            dragImageTranslateOverride: MobileDragDrop.scrollBehaviourDragImageTranslateOverride
-        });
-    }
 
     const grid = document.getElementById("collections-grid");
     const loadingIndicator = document.getElementById("loading-indicator");
@@ -236,6 +230,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     grid.addEventListener('dragstart', (e) => {
         if (!isSortMode) return;
+        
+        // Disable native drag on touch screens
+        if (window.matchMedia('(pointer: coarse)').matches) {
+            e.preventDefault();
+            return;
+        }
+
         document.body.classList.add('drag-active');
         
         draggedElement = e.target.closest('.collection-card');

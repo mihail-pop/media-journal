@@ -325,16 +325,34 @@
         </div>
       </div>
 
-      <div class="preferences-section info-section version-information">
-        <h3>Version Information</h3>
-        <div class="version-info-content">
-          <p>Your Release <span id="current-version">Loading...</span></p>
-          <p>Latest Release <span id="latest-version">Loading...</span></p>
-          <p id="update-status"></p>
+      <div class="info-bottom-row">
+        <!-- Version Info (1/3 Width) -->
+        <div class="preferences-section info-section version-information">
+          <h3>Version Information</h3>
+          <div class="version-info-content">
+            <p>Your Release <span id="current-version">Loading...</span></p>
+            <p>Latest Release <span id="latest-version">Loading...</span></p>
+            <p id="update-status"></p>
+          </div>
+          <div class="support-links">
+            <a href="https://github.com/mihail-pop/media-journal/issues" target="_blank" rel="noopener noreferrer">Report an issue</a>
+            <a href="https://github.com/mihail-pop/media-journal/discussions" target="_blank" rel="noopener noreferrer">Ask a question</a>
+          </div>
         </div>
-        <div class="support-links">
-          <a href="https://github.com/mihail-pop/media-journal/issues" target="_blank" rel="noopener noreferrer">Report an issue</a>
-          <a href="https://github.com/mihail-pop/media-journal/discussions" target="_blank" rel="noopener noreferrer">Ask a question</a>
+
+        <!-- API Status (2/3 Width) -->
+        <div class="preferences-section info-section api-status-section">
+          <h3>APIs Status</h3>
+          <div id="api-status-container" class="api-status-grid">
+            <div class="api-status-loading">
+              <div class="spinner"></div>
+              <p style="margin-top: 1rem; color: var(--text-secondary);">Pinging APIs...</p>
+            </div>
+          </div>
+          <div class="api-status-meta">
+            <span id="api-status-timestamp"></span>
+            <button id="refresh-api-status-btn" class="backup-btn" style="padding: 0.4rem 0.8rem; min-width: auto; font-size: 0.85rem;">Check Now</button>
+          </div>
         </div>
       </div>
     </div>

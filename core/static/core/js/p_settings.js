@@ -503,7 +503,90 @@ function startRefresh(mediaType, title) {
     });
 }
 
-// ----- Tab Functionality -----
+// ----- Tab Functionality & API Status Checks -----
+const API_CONFIG = {
+  tmdb: { name: "TMDB", desc: "Movies, TV" },
+  anilist: { name: "AniList", desc: "Anime, Manga" },
+  igdb: { name: "IGDB", desc: "Games" },
+  openlib: { name: "OpenLibrary", desc: "Books" },
+  musicbrainz: { name: "MusicBrainz", desc: "Music" }
+};
+
+const STATUS_CONFIG = {
+  ok: { text: "Operational", class: "ok", color: "#10b981" },
+  down: { text: "Down", class: "down", color: "#ef4444" },
+  rate_limited: { text: "Rate Limited", class: "rate_limited", color: "#f59e0b" },
+  missing_key: { text: "Missing Key", class: "missing_key", color: "#6b7280" },
+  invalid_key: { text: "Invalid Key", class: "invalid_key", color: "#6b7280" },
+  auth_error: { text: "Auth Error", class: "auth_error", color: "#ef4444" },
+};
+
+function renderApiStatuses(statuses) {
+  const container = document.getElementById("api-status-container");
+  container.innerHTML = "";
+  
+  for (const [key, config] of Object.entries(API_CONFIG)) {
+      const statusKey = statuses[key] || "down";
+      const cfg = STATUS_CONFIG[statusKey] || STATUS_CONFIG["down"];
+      
+      const div = document.createElement("div");
+      div.className = "api-status-item";
+      div.innerHTML = `
+          <div class="api-status-name">${config.name}</div>
+          <div style="font-size: 0.75rem; color: var(--text-primary); margin-top: -0.4rem;">${config.desc}</div>
+          <div class="api-status-indicator" style="color: ${cfg.color}">
+              <div class="status-dot ${cfg.class}"></div>
+              ${cfg.text}
+          </div>
+      `;
+      container.appendChild(div);
+  }
+}
+
+function updateTimestampText(ms) {
+  const d = new Date(ms);
+  document.getElementById("api-status-timestamp").textContent = `Last checked: ${d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+}
+
+function checkApiStatusIfNeeded(force = false) {
+  const container = document.getElementById("api-status-container");
+  const timestampEl = document.getElementById("api-status-timestamp");
+  
+  const lastCheck = localStorage.getItem("apiStatusLastCheck");
+  const cachedData = localStorage.getItem("apiStatusData");
+  const now = Date.now();
+  
+  // 10 minutes cache (600,000 ms)
+  if (!force && lastCheck && cachedData && (now - parseInt(lastCheck)) < 600000) {
+      renderApiStatuses(JSON.parse(cachedData));
+      updateTimestampText(parseInt(lastCheck));
+      return;
+  }
+  
+  // Show loading state
+  container.innerHTML = '<div class="api-status-loading"><div class="spinner"></div><p style="margin-top:1rem; color: var(--text-secondary);">Pinging APIs...</p></div>';
+  timestampEl.textContent = "Checking...";
+  
+  fetch("/api/status-check/")
+    .then(res => res.json())
+    .then(data => {
+        localStorage.setItem("apiStatusLastCheck", now.toString());
+        localStorage.setItem("apiStatusData", JSON.stringify(data.statuses));
+        renderApiStatuses(data.statuses);
+        updateTimestampText(now);
+    })
+    .catch(err => {
+        container.innerHTML = '<div class="api-status-loading" style="color:#ef4444;">Failed to check API status.</div>';
+        timestampEl.textContent = "Error";
+    });
+}
+
+// Bind the Check Now button
+document.getElementById("refresh-api-status-btn")?.addEventListener("click", () => {
+  checkApiStatusIfNeeded(true);
+});
+
+// Tab Switcher
 document.querySelectorAll(".tab-button").forEach(button => {
   button.addEventListener("click", () => {
     const tabId = button.dataset.tab;
@@ -515,6 +598,11 @@ document.querySelectorAll(".tab-button").forEach(button => {
     // Add active class to clicked tab and corresponding content
     button.classList.add("active");
     document.getElementById(tabId).classList.add("active");
+
+    // Trigger API check ONLY when the info tab opens
+    if (tabId === "information") {
+        checkApiStatusIfNeeded(false);
+    }
   });
 });
 

@@ -5,8 +5,6 @@
 {% block head %}
 {{ block.super }}
 <title>Favorites - Media Journal</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0-rc.2/default.css">
-<script src="https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0-rc.2/index.min.js"></script>
 <link rel="stylesheet" href="{% static 'core/css/p_favorites.css' %}">
 {% endblock %}
 
@@ -107,6 +105,5 @@
 </div>
 <div id="custom-person-overlay" class="pc-modal-overlay pc-modal-hidden"></div>
 
-{% csrf_token %}
 <script src="{% static 'core/js/p_favorites.js' %}"></script>
 {% endblock %}

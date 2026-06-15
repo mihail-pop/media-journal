@@ -9,13 +9,6 @@ document.addEventListener("DOMContentLoaded", () => {
     let hasMore = true;
     let isLoading = false;
 
-    // Initialize Mobile Drag and Drop Polyfill
-    if (typeof MobileDragDrop !== 'undefined') {
-        MobileDragDrop.polyfill({
-            dragImageTranslateOverride: MobileDragDrop.scrollBehaviourDragImageTranslateOverride
-        });
-    }
-
     window.openEditModal = function(element) {
         const itemId = element.dataset.id;
         const coverUrl = element.dataset.coverUrl;
@@ -564,6 +557,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     grid.addEventListener('dragstart', (e) => {
         if (!isReorderMode) return;
+        
+        // Disable native drag on touch screens
+        if (window.matchMedia('(pointer: coarse)').matches) {
+            e.preventDefault();
+            return;
+        }
+
         document.body.classList.add('drag-active');
         
         draggedEl = e.target.closest('.card');

@@ -65,6 +65,7 @@ urlpatterns = [
     path("settings/update_theme/", views.update_theme, name="update_theme"),
     path("settings/save_username/", views.save_username, name="save_username"),
     path('api/version_info/', views.version_info_api, name='version_info_api'),
+    path('api/status-check/', views.api_status_check, name='api_status_check'),
     path('api/add_key/', views.add_key, name='add_key'),
     path('api/update_key/', views.update_key, name='update_key'),
     path('api/delete_key/', views.delete_key, name='delete_key'),

@@ -601,8 +601,101 @@ table td:last-child .delete-btn {
   gap: 1rem;
 }
 
-.version-information {
-  max-width: 20rem;
+.info-bottom-row {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 2rem;
+  grid-column: 1 / -1;
+}
+
+/* Override the global info-section full width specifically inside this row */
+.info-bottom-row .info-section {
+  grid-column: auto;
+}
+
+.api-status-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.api-status-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1rem;
+  flex: 1;
+  align-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.api-status-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 1rem;
+  text-align: center;
+  gap: 0.6rem;
+}
+
+.api-status-name {
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+.api-status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.status-dot.ok {
+  background-color: #10b981;
+  box-shadow: 0 0 8px #10b981;
+}
+
+.status-dot.down {
+  background-color: #ef4444;
+  box-shadow: 0 0 8px #ef4444;
+}
+
+.status-dot.rate_limited {
+  background-color: #f59e0b;
+  box-shadow: 0 0 8px #f59e0b;
+}
+
+.status-dot.missing_key,
+.status-dot.invalid_key,
+.status-dot.auth_error {
+  background-color: #6b7280;
+}
+
+.api-status-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+  border-top: 1px solid var(--border-color);
+  padding-top: 1rem;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+}
+
+.api-status-loading {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 2rem 0;
 }
 
 .resource-card {
@@ -652,7 +745,9 @@ table td:last-child .delete-btn {
 
 .version-info-content {
   text-align: center;
-  margin: 1.5rem 0;
+  margin-top: 3rem;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
 }
 
 .version-info-content p {
@@ -664,7 +759,7 @@ table td:last-child .delete-btn {
 
 .support-links {
   text-align: center;
-  margin-top: 1.5rem;
+  margin-top: 7rem;
   display: flex;
   gap: 1rem;
   justify-content: center;
@@ -858,6 +953,15 @@ table td:last-child .delete-btn {
   table select {
     font-size: 0.7rem;
     padding: 2px 4px;
+  }
+
+  .info-bottom-row {
+    grid-template-columns: 1fr;
+  }
+
+  .info-bottom-row .info-section {
+    grid-column: 1 / -1;
+    /* Restores full width on mobile */
   }
 }
 

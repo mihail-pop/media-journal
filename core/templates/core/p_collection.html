@@ -4,9 +4,6 @@
 {% block head %}
 {{ block.super }}
 <title>{{ collection.title }} - Media Journal</title>
-<!-- Polyfill for drag and drop -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0-rc.2/default.css">
-<script src="https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0-rc.2/index.min.js"></script>
 <link rel="stylesheet" href="{% static 'core/css/g_edit_modal.css' %}">
 <link rel="stylesheet" href="{% static 'core/css/p_collection.css' %}">
 {% endblock %}
