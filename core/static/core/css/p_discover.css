@@ -46,7 +46,7 @@
   --bg-quaternary: #af7f76;
   --bg-filter: #3b2b27;
 
-  --text-primary: #e2c7b7;
+  --text-primary: #faeee7;
   --text-secondary: #f1dbce;
   --text-tertiary: #af7f76;
   --text-light: #faeee7;
@@ -238,7 +238,7 @@ body {
 }
 
 .custom-option:hover {
-  background-color: var(--hover-bg);
+  background-color: var(--bg-quaternary);
 }
 
 /* For Chrome, Safari, Edge, Opera */

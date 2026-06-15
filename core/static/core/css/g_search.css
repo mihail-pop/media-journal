@@ -11,6 +11,7 @@
   --text-search-link: #728AA1;
   --text-search-hover: #8897AA;
   --text-light: #f8f8f8;
+  --header-light: #f8f8f8;
 
   --border-color: #32445b;
   --hover-bg: #2a3441;
@@ -33,6 +34,7 @@
   --text-search-link: #606060;
   --text-search-hover: #0F0F0F;
   --text-light: #0F0F0F;
+  --header-light: #606060;
 
   --border-color: #606060;
   --hover-bg: #F2F2F2;
@@ -55,6 +57,8 @@
   --text-search-link: #af7f76;
   --text-search-hover: #faeee7;
   --text-light: #faeee7;
+  --header-light: #eeba9d;
+  
 
   --border-color: #fffffe;
   --hover-bg: #fffffe;

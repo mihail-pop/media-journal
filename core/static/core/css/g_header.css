@@ -2,14 +2,15 @@
 body {
   margin: 0;
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  background: #f7f9fc;
-  color: #2e3440;
+  background: var(--bg-primary, #f7f9fc);
+  color: var(--text-primary, #2e3440);
 }
 
-/* Header base */
+/* =========================================================
+   1. DEFAULT HEADER (Solid Background based on Theme)
+   ========================================================= */
 header {
-  background-color: rgba(0, 0, 0, 0.3);
-  /* black with 30% opacity */
+  background-color: var(--bg-tertiary, #151f2e);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
   padding: 0.6rem 1rem;
   position: absolute;
@@ -18,65 +19,32 @@ header {
   width: 100%;
   border-bottom: none;
   box-sizing: border-box;
-}
-
-/* Container for max width */
-.container {
-  max-width: 1100px;
-  margin: 0 auto;
+  min-height: 54px;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  justify-content: center;
+  /* This transition handles the smooth color change if your site swaps out the body */
+  transition: background-color 0.4s ease, box-shadow 0.4s ease;
 }
 
-/* Navbar layout */
-.navbar {
-  display: flex;
-  align-items: center;
-  width: 100%;
-}
-
-/* Logo */
 .logo {
   font-weight: 700;
   font-size: 1.5rem;
-  color: #f7f6f6;
   flex: 0 0 auto;
-  cursor: default;
+  transition: color 0.3s ease;
+  text-decoration: none;
+  transition: color 0.3s ease;
+  color: var(--text-primary, #8596A5);
 }
 
-/* Center navigation links */
-.nav-center {
-  display: flex;
-  justify-content: center;
-  flex: 1;
-  gap: 0.3rem;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  align-items: center;
-}
-
-/* Right-side nav (search, settings) */
-.nav-right {
-  display: flex;
-  gap: 0.4rem;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  align-items: center;
-}
-
-/* Navigation links (center & right) */
-.nav-center li,
-.nav-right li {
-  position: relative;
+.logo:hover{
+  color: var(--header-light, #edf1f5);
 }
 
 .nav-center a,
 .nav-right a,
 .dropbtn {
-  color: rgb(236, 236, 236);
+  color: var(--text-primary, #8596A5);
   text-decoration: none;
   font-weight: 550;
   font-size: 1rem;
@@ -85,56 +53,14 @@ header {
   cursor: pointer;
   padding: 6px 12px;
   border-radius: 6px;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition: background-color 0.2s ease, color 0.3s ease;
 }
 
 .nav-center a:hover,
 .nav-right a:hover,
 .dropbtn:hover {
   background-color: none;
-  color: #fdfcfc;
-}
-
-/* Dropdown menu */
-.dropdown-content {
-  margin: 0;
-  padding-left: 0;
-  list-style: none;
-  display: none;
-  position: absolute;
-  top: 34px;
-  left: 0;
-  background-color: #0b1622;
-  min-width: 130px;
-  box-shadow: 0 4px 12px rgb(0 0 0 / 0.15);
-  border-radius: 6px;
-  z-index: 1200;
-}
-
-.dropdown-content li {
-  padding: 0;
-}
-
-.dropdown-content a {
-  display: block;
-  padding: 10px 16px;
-  color: #8596A5;
-  font-weight: 500;
-}
-
-.dropdown-content a:hover {
-  background-color: #151F2E;
-  color: #ececec;
-}
-
-.dropdown:hover .dropdown-content {
-  display: block;
-}
-
-/* Search icon styles */
-.search-container {
-  display: flex;
-  align-items: center;
+  color: var(--header-light, #edf1f5);
 }
 
 .search-icon-button {
@@ -147,7 +73,7 @@ header {
 }
 
 .search-icon-button svg {
-  color: rgb(236, 236, 236);
+  color: var(--text-primary, #8596A5);
   transition: color 0.3s ease;
   width: 20px;
   height: 20px;
@@ -155,32 +81,194 @@ header {
 }
 
 .search-icon-button:hover svg {
+  color: var(--header-light, #edf1f5);
+}
+
+/* =========================================================
+   2. TRANSPARENT HEADER (Over Banners)
+   ========================================================= */
+/* Applies ONLY if the <body> matches these specific media types */
+
+:is(
+  body[data-media-type="home"],
+  body[data-media-type="movies"], body[data-media-type="movie"],
+  body[data-media-type="tvshows"], body[data-media-type="tv"],
+  body[data-media-type="anime"],
+  body[data-media-type="manga"],
+  body[data-media-type="books"], body[data-media-type="book"],
+  body[data-media-type="games"], body[data-media-type="game"],
+  body[data-media-type="music"]
+) header {
+  background-color: rgba(0, 0, 0, 0.3);
+  box-shadow: none; 
+}
+
+:is(
+  body[data-media-type="home"],
+  body[data-media-type="movies"], body[data-media-type="movie"],
+  body[data-media-type="tvshows"], body[data-media-type="tv"],
+  body[data-media-type="anime"],
+  body[data-media-type="manga"],
+  body[data-media-type="books"], body[data-media-type="book"],
+  body[data-media-type="games"], body[data-media-type="game"],
+  body[data-media-type="music"]
+) header .logo {
+  color: rgb(236, 236, 236);
+}
+
+:is(
+  body[data-media-type="home"],
+  body[data-media-type="movies"], body[data-media-type="movie"],
+  body[data-media-type="tvshows"], body[data-media-type="tv"],
+  body[data-media-type="anime"],
+  body[data-media-type="manga"],
+  body[data-media-type="books"], body[data-media-type="book"],
+  body[data-media-type="games"], body[data-media-type="game"],
+  body[data-media-type="music"]
+) header .logo:hover {
+  color: #fdfcfc;
+}
+
+:is(
+  body[data-media-type="home"],
+  body[data-media-type="movies"], body[data-media-type="movie"],
+  body[data-media-type="tvshows"], body[data-media-type="tv"],
+  body[data-media-type="anime"],
+  body[data-media-type="manga"],
+  body[data-media-type="books"], body[data-media-type="book"],
+  body[data-media-type="games"], body[data-media-type="game"],
+  body[data-media-type="music"]
+) header .nav-center a,
+:is(
+  body[data-media-type="home"],
+  body[data-media-type="movies"], body[data-media-type="movie"],
+  body[data-media-type="tvshows"], body[data-media-type="tv"],
+  body[data-media-type="anime"],
+  body[data-media-type="manga"],
+  body[data-media-type="books"], body[data-media-type="book"],
+  body[data-media-type="games"], body[data-media-type="game"],
+  body[data-media-type="music"]
+) header .nav-right a,
+:is(
+  body[data-media-type="home"],
+  body[data-media-type="movies"], body[data-media-type="movie"],
+  body[data-media-type="tvshows"], body[data-media-type="tv"],
+  body[data-media-type="anime"],
+  body[data-media-type="manga"],
+  body[data-media-type="books"], body[data-media-type="book"],
+  body[data-media-type="games"], body[data-media-type="game"],
+  body[data-media-type="music"]
+) header .dropbtn {
+  color: rgb(236, 236, 236);
+}
+
+:is(
+  body[data-media-type="home"],
+  body[data-media-type="movies"], body[data-media-type="movie"],
+  body[data-media-type="tvshows"], body[data-media-type="tv"],
+  body[data-media-type="anime"],
+  body[data-media-type="manga"],
+  body[data-media-type="books"], body[data-media-type="book"],
+  body[data-media-type="games"], body[data-media-type="game"],
+  body[data-media-type="music"]
+) header .nav-center a:hover,
+:is(
+  body[data-media-type="home"],
+  body[data-media-type="movies"], body[data-media-type="movie"],
+  body[data-media-type="tvshows"], body[data-media-type="tv"],
+  body[data-media-type="anime"],
+  body[data-media-type="manga"],
+  body[data-media-type="books"], body[data-media-type="book"],
+  body[data-media-type="games"], body[data-media-type="game"],
+  body[data-media-type="music"]
+) header .nav-right a:hover,
+:is(
+  body[data-media-type="home"],
+  body[data-media-type="movies"], body[data-media-type="movie"],
+  body[data-media-type="tvshows"], body[data-media-type="tv"],
+  body[data-media-type="anime"],
+  body[data-media-type="manga"],
+  body[data-media-type="books"], body[data-media-type="book"],
+  body[data-media-type="games"], body[data-media-type="game"],
+  body[data-media-type="music"]
+) header .dropbtn:hover {
+  color: #fdfcfc;
+}
+
+:is(
+  body[data-media-type="home"],
+  body[data-media-type="movies"], body[data-media-type="movie"],
+  body[data-media-type="tvshows"], body[data-media-type="tv"],
+  body[data-media-type="anime"],
+  body[data-media-type="manga"],
+  body[data-media-type="books"], body[data-media-type="book"],
+  body[data-media-type="games"], body[data-media-type="game"],
+  body[data-media-type="music"]
+) header .search-icon-button svg {
+  color: rgb(236, 236, 236);
+}
+
+:is(
+  body[data-media-type="home"],
+  body[data-media-type="movies"], body[data-media-type="movie"],
+  body[data-media-type="tvshows"], body[data-media-type="tv"],
+  body[data-media-type="anime"],
+  body[data-media-type="manga"],
+  body[data-media-type="books"], body[data-media-type="book"],
+  body[data-media-type="games"], body[data-media-type="game"],
+  body[data-media-type="music"]
+) header .search-icon-button:hover svg {
   color: #f5f5f5;
 }
 
+/* =========================================================
+   3. DROPDOWN & LAYOUT SPECIFICS (Theme applied)
+   ========================================================= */
 
-/* Lock header height to avoid layout shift */
-header {
-  min-height: 54px;
-  /* consistent height */
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+.dropdown-content {
+  margin: 0;
+  padding-left: 0;
+  list-style: none;
+  display: none;
+  position: absolute;
+  top: 34px;
+  left: 0;
+  background-color: var(--bg-primary, #0b1622);
+  min-width: 130px;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.15);
+  border-radius: 6px;
+  z-index: 1200;
 }
 
-.navbar {
-  min-height: 40px;
+.dropdown-content a {
+  display: block;
+  padding: 10px 16px;
+  color: var(--text-primary, #8596A5);
+  font-weight: 500;
 }
 
-/* Invisible placeholder when search button is hidden */
-.nav-right .search-container {
-  width: 36px;
-  /* Reserve space even if hidden */
-  height: 36px;
+.dropdown-content a:hover {
+  background-color: var(--hover-bg, #151F2E);
+  color: var(--header-light, #ececec);
+}
+
+.dropdown:hover .dropdown-content { display: block; }
+.dropdown-content li { padding: 0; }
+
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
 }
+
+.navbar { display: flex; align-items: center; width: 100%; min-height: 40px; }
+.nav-center { display: flex; justify-content: center; flex: 1; gap: 0.3rem; list-style: none; margin: 0; padding: 0; align-items: center; }
+.nav-right { display: flex; gap: 0.4rem; list-style: none; margin: 0; padding: 0; align-items: center; }
+.nav-center li, .nav-right li { position: relative; }
+.search-container { display: flex; align-items: center; }
+.nav-right .search-container { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; }
 
 /* --- Responsive --- */
 @media (orientation: portrait) {

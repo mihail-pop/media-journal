@@ -51,7 +51,7 @@
   --border-color: #fffffe;
   --hover-bg: #fffffe;
   --overlay-bg: #271c19;
-  --button-bg: #55423d;
+  --button-bg: #86645a;
 
   --special-color: #df5c38;
   --special-color-hover: #dd866e;
@@ -342,7 +342,7 @@ html {
   border-radius: 6px;
   border: none;
   background-color: var(--border);
-  color: #fff;
+  color: var(--text-light);
   cursor: pointer;
   font-weight: bold;
   transition: background-color 0.2s ease-in-out;
@@ -555,7 +555,7 @@ html {
 }
 
 .comment-tab-btn.active {
-  color: #fff;
+  color: var(--text-light);
 }
 
 .comment-tab-content {
@@ -615,7 +615,7 @@ html {
 
 .send-comment-btn {
   background: var(--border);
-  color: #fff;
+  color: var(--text-light);
   border: none;
   border-radius: 4px;
   padding: 7px 18px;
@@ -867,7 +867,7 @@ html {
 
 .tab-btn.active {
   background: var(--border);
-  color: #fff;
+  color: var(--text-light);
 }
 
 .tab-content {
@@ -935,7 +935,7 @@ html {
 
 #send-post-btn {
   background: var(--border);
-  color: #fff;
+  color: var(--text-light);
 }
 
 #send-post-btn:hover {

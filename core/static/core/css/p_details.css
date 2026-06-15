@@ -25,6 +25,7 @@
   --text-secondary: #0F0F0F;
   --text-overview: #0F0F0F;
   --text-title: #0F0F0F;
+  --text-light: #F2F2F2;
 
   --border-color: #E5E5E5;
   --hover-bg: #F2F2F2;
@@ -417,27 +418,31 @@ body[data-media-type="music"] .poster {
 }
 
 .cast-member[href]:hover .actor-name {
-  color: rgb(175, 166, 166);
+  color: var(--special-color-hover);
+}
+
+.person-card-link:hover .person-name {
+    color: var(--special-color-hover);
 }
 
 .season-card[href]:hover .season-name {
-  color: rgb(175, 166, 166);
+  color: var(--special-color-hover);
 }
 
 .recommendation:hover .rec-title {
-  color: rgb(175, 166, 166);
+  color: var(--special-color-hover);
 }
 
 .rec-card:hover .rec-title {
-  color: rgb(175, 166, 166);
+  color: var(--special-color-hover);
 }
 
 .media-card:hover .media-title {
-  color: rgb(175, 166, 166);
+  color: var(--special-color-hover);
 }
 
 .recommendation a:hover .rec-title {
-  color: rgb(175, 166, 166);
+  color: var(--special-color-hover);
 }
 
 .cast-member img,
@@ -1974,7 +1979,7 @@ body[data-page-type="person-detail"] .overview {
   background: transparent;
   border: none;
   border-bottom: 2px dashed rgba(255, 255, 255, 0.3);
-  color: var(--text-light);
+  color: var(--text-secondary);
   font-size: 1.2rem;
   font-weight: 700;
   outline: none;
