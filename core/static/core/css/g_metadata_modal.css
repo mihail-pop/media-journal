@@ -1120,7 +1120,6 @@ input[type="number"] {
 }
 
 @media (orientation: portrait) {
-
   .md-modal-banner img[alt="movie"],
   .md-modal-banner img[alt="tv"],
   .md-modal-banner img[alt="music"],
@@ -1141,9 +1140,7 @@ input[type="number"] {
 
   .md-modal-cover[data-media-type="music"] img {
     width: unset;
-
     height: 100%;
-
     left: -4.6rem;
   }
 
@@ -1155,27 +1152,25 @@ input[type="number"] {
     max-height: 270px;
   }
 
+  .md-upload-overlay svg {
+    width: 64px;
+    height: 64px;
+    stroke-width: 2px;
+  }
+
   .md-modal-title-block {
     top: 15rem;
     left: 15rem;
     max-width: 20rem;
   }
 
-  .md-modal-title {
-    font-size: 2rem;
-    line-height: 1.2;
-
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    -webkit-box-orient: vertical;
-
-    overflow: hidden;
-    text-overflow: ellipsis;
+  .md-title-input {
+    font-size: 2.5rem;
   }
 
   .md-close-btn {
     font-size: 4rem;
+    padding: 10px 15px;
   }
 
   .md-danger-btn {
@@ -1184,122 +1179,152 @@ input[type="number"] {
   }
 
   .md-modal-actions-top {
-    top: 14.5rem;
+    top: 13.5rem;
     right: 2rem;
   }
 
   .md-btn.md-save-btn {
     font-size: 2.5rem;
-  }
-
-  .md-modal-actions-top .md-favorite-checkbox .md-heart {
-    width: 80px;
-    height: 80px;
+    padding: 1rem 2rem;
   }
 
   .md-modal-body form {
     padding-left: 0rem;
   }
 
-  .md-form-group:first-child {
-    margin-right: 7rem;
+  .md-form-row-two,
+  .md-form-row-three {
+    max-width: 50rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3rem 6.5rem;
+    justify-content: flex-start;
+    margin-left: 0;
+    margin-right: 0;
   }
 
-  .md-form-group:nth-child(3) {
-    margin-right: 7rem;
+  .md-form-group {
+    flex: 0 0 20rem;
+    max-width: 20rem !important;
+    min-width: 20rem !important;
+    margin-right: 0 !important;
+  }
+
+  .md-form-group label {
+    font-size: 2rem;
+    margin-bottom: 0.8rem;
   }
 
   .md-form-group input,
   .md-form-group select,
   .md-form-group textarea,
-  #date_area {
-    font-size: 2rem;
-    max-width: 20rem;
-
-    padding: 1rem 1rem;
+  .md-creator-input-container,
+  #metadata-genre-wrapper .md-genre-select {
+    font-size: 2rem !important;
+    width: 20rem !important;
+    max-width: 20rem !important;
+    padding: 1rem !important;
+    min-height: 4.8rem !important;
+    box-sizing: border-box !important;
   }
 
-  #progress_main_group label,
-  #progress_secondary_group label,
-  #date_added_group label,
-  #repeats_group label {
+  input[name="release_date"] {
+    max-height: unset !important;
+    height: 4.8rem !important;
+  }
+
+  .md-creator-input-container,
+  #metadata-genre-wrapper .md-genre-select {
+    height: auto !important;
+  }
+
+  .md-creator-tag, 
+  .md-genre-tag {
+    font-size: 1.5rem;
+    padding: 0.5rem 0.8rem;
+    border-radius: 8px;
+  }
+
+  #metadata-creator-input, 
+  #metadata-genre-search {
+    font-size: 2rem !important;
+    min-width: 80px !important;
+    width: 100% !important;
+    padding: 0 !important;
+    min-height: auto !important;
+  }
+
+  .md-genre-indicator {
+    width: 4rem;
+  }
+  
+  .md-genre-indicator::after {
+    border-left: 0.5rem solid transparent;
+    border-right: 0.5rem solid transparent;
+    border-top: 0.6rem solid var(--text-tertiary);
+  }
+
+  .md-custom-options {
+    max-height: 30rem !important;
+  }
+
+  .md-custom-option {
+    font-size: 2rem !important;
+    padding: 1.5rem !important;
+  }
+
+  .md-progress-inputs {
+    gap: 1rem;
+    width: 20rem;
+    display: flex;
+    align-items: center;
+  }
+
+  .md-progress-inputs .md-progress-box {
+    flex: 1 !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    padding: 1rem 0.5rem !important;
+    font-size: 2rem !important;
+    text-align: center;
+  }
+
+  .md-progress-separator {
+    font-size: 2.2rem;
+    padding: 0 0.2rem;
+  }
+
+  #metadata_length_group .md-progress-inputs {
+    gap: 0.5rem;
+  }
+
+  #metadata_length_group .md-progress-box {
+    padding: 1rem 0.2rem !important;
+  }
+
+  #metadata_progress_main_group label,
+  #metadata_progress_secondary_group label,
+  #metadata_length_group label {
     max-width: 20rem;
     width: 20rem;
-  }
-
-  #date_added_group,
-  #repeats_group {
-    max-width: 20rem;
-  }
-
-  #date_added {
-    width: 18rem;
-    max-width: 18rem;
-  }
-
-  #repeats {
-    width: 18rem;
-  }
-
-  .md-form-group {
-    max-width: 20rem;
-  }
-
-  #status,
-  .md-status-select {
-    width: 20rem;
-  }
-
-  .md-form-row-two,
-  .md-form-row-three {
-    max-width: 50rem;
-  }
-
-  .md-star {
-    font-size: 4rem;
-  }
-
-  .md-face {
-    width: 60px;
-    height: 60px;
-  }
-
-  .md-rating-stars {
-    padding: 0.5rem 0.5rem;
-  }
-
-  .md-rating-faces {
-    gap: 3.7rem;
-    padding: 0.7rem 0.7rem;
-  }
-
-  .md-rating-number input[type="number"] {
-    font-size: 2.5rem;
-    padding: 0.2rem 0.5rem;
-    width: 18rem;
-    height: 4.4rem;
   }
 
   .md-form-group.md-notes-group {
-    max-width: 45rem;
+    flex: 0 0 46.5rem;
+    max-width: 46.5rem !important;
+    padding-left: 0;
   }
 
-  textarea[name="overview"],
-  textarea[name="c-notes"] {
-    width: 45rem;
-    max-width: 45rem;
-  }
-
-  .md-form-group label {
-    font-size: 2rem;
-  }
-
-  .md-progress-total-display {
-    font-size: 2rem;
+  textarea[name="overview"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    font-size: 2rem !important;
+    padding: 1.5rem !important;
+    min-height: 15rem !important;
   }
 
   .md-modal-body {
-    padding: 2rem 2rem 2rem 2rem;
+    padding: 3rem 2rem 4rem 2rem;
   }
-
 }

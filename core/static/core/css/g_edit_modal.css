@@ -1094,49 +1094,89 @@ input[type="number"] {
   .form-group input,
   .form-group select,
   .form-group textarea,
-  #date_area {
-    font-size: 2rem;
-    max-width: 20rem;
+  .status-select,
+  .collection-select {
+    font-size: 2rem !important;
+    width: 20rem;
+    max-width: 20rem ;
+    padding: 1rem !important;
+    min-height: 4.8rem !important;
+    box-sizing: border-box !important;
+  }
 
-    padding: 1rem 1rem;
+  #date_added {
+    max-height: unset !important;
+    height: 4.8rem !important;
+    width: 20rem !important;
+    max-width: 20rem !important;
+  }
+
+  #repeats {
+    width: 20rem !important;
+    max-width: 20rem !important;
   }
 
   #progress_main_group label,
   #progress_secondary_group label,
   #date_added_group label,
-  #repeats_group label {
-    max-width: 20rem;
-    width: 20rem;
+  #repeats_group label,
+  #collections_group label {
+    max-width: 20rem !important;
+    width: 20rem !important;
   }
 
   #date_added_group,
   #repeats_group,
-  #collections_group {
-    max-width: 20rem;
-  }
-
-  #collections_group .collection-select {
-    width: 20rem;
-    padding: 1rem;
-    font-size: 2rem;
-  }
-
-  #date_added {
-    width: 18rem;
-    max-width: 18rem;
-  }
-
-  #repeats {
-    width: 18rem;
-  }
-
+  #collections_group,
   .form-group {
-    max-width: 20rem;
+    max-width: 20rem !important;
+    width: 20rem !important;
   }
 
-  #status,
-  .status-select {
-    width: 20rem;
+  .status-select-wrapper,
+  .collection-select-wrapper {
+    width: 20rem !important;
+  }
+
+  .collection-select {
+    height: auto !important;
+  }
+
+  .collection-tag {
+    font-size: 1.5rem !important;
+    padding: 0.5rem 0.8rem !important;
+    border-radius: 8px !important;
+  }
+
+  #edit-collection-search {
+    font-size: 2rem !important;
+    width: 100% !important;
+    min-width: 60px !important;
+    padding: 0 !important;
+    min-height: auto !important;
+  }
+
+  .status-indicator,
+  .collection-indicator {
+    width: 4rem !important;
+  }
+
+  .status-indicator::after,
+  .collection-indicator::after {
+    border-left: 0.5rem solid transparent !important;
+    border-right: 0.5rem solid transparent !important;
+    border-top: 0.6rem solid var(--text-tertiary) !important;
+  }
+
+  .status-options,
+  .collection-options {
+    max-height: 30rem !important;
+  }
+
+  .status-option,
+  .collection-option {
+    font-size: 2rem !important;
+    padding: 1.5rem !important;
   }
 
   .form-row-two {
@@ -1173,8 +1213,8 @@ input[type="number"] {
   }
 
   textarea[name="notes"] {
-    width: 45rem;
-    max-width: 45rem;
+    width: 47rem;
+    max-width: 47rem;
   }
 
   .form-group label {

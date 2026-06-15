@@ -626,65 +626,235 @@ html.c-modal-open {
 }
 
 @media (orientation: portrait) {
+    .separator-bar {
+        height: 0.5rem;
+    }
 
-  .separator-bar {
-    height: 0px;
-  }
+    .favorites-container {
+        padding: 0 2rem 4rem;
+    }
 
-  .view-btn,
-  .view-btn svg {
-    width: 4rem;
-    height: 4rem;
-  }
+    .favorite-section {
+        margin-bottom: 4rem;
+    }
 
-  .section-title-wrapper {
-    margin-bottom: 1.5rem;
-  }
+    .section-title-wrapper {
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom-width: 3px;
+    }
 
-  .add-custom-person-btn {
-    width: 4rem;
-    height: 4rem;
-  }
+    .favorite-section h2 {
+        font-size: 3.5rem;
+    }
 
-  .pc-modal-body {
-    flex-direction: column;
-  }
+    .section-controls {
+        gap: 1.5rem;
+    }
 
-  .pc-cover-container {
-    width: 150px;
-    height: 225px;
-    margin: 0 auto;
-  }
+    .add-custom-person-btn {
+        width: 6.5rem;
+        height: 6.5rem;
+        border-radius: 12px;
+        border-width: 3px;
+    }
 
-  .pc-title-input {
-    font-size: 1.8rem;
-  }
+    .add-custom-person-btn svg {
+        width: 3.5rem;
+        height: 3.5rem;
+        stroke-width: 2.5;
+    }
 
-  .pc-form-group label,
-  .pc-form-group textarea {
-    font-size: 1.5rem;
-  }
+    .view-controls {
+        gap: 1.5rem;
+    }
 
-  .pc-btn {
-    font-size: 1.5rem;
-  }
+    .view-btn {
+        width: 6.5rem;
+        height: 6.5rem;
+        border-radius: 12px;
+        border-width: 3px;
+    }
 
-  .pc-actor-dates {
-    flex-direction: column;
-    gap: 1.5rem;
-  }
+    .view-btn svg {
+        width: 3.5rem;
+        height: 3.5rem;
+        stroke-width: 2.5;
+    }
 
-  .favorite-section h2 {
-    font-size: 2.5rem;
-  }
+    .card-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.5rem;
+    }
 
-  .card-title {
-    font-size: 1.5rem;
-  }
+    .favorites-container.small-mode .card-grid {
+        grid-template-columns: repeat(5, 1fr);
+        gap: 0.8rem;
+    }
 
-  .card-favorite .heart {
-    width: 4rem;
-    height: 4rem;
-  }
+.card {
+        min-width: 0 !important;
+        width: 100% !important;
+    }
 
+    .card-link {
+        width: 100% !important;
+        min-width: 0 !important;
+        height: auto !important;
+        aspect-ratio: unset !important;
+    }
+
+    .card-image {
+        width: 100% !important;
+        padding-top: 150% !important;
+        height: 0 !important;
+        position: relative;
+        overflow: hidden;
+        border-radius: 12px 12px 0 0;
+    }
+
+    .card-image img {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100% !important;
+        object-fit: cover;
+    }
+
+    .card[data-media-type="music"] .card-image {
+        padding-top: 100% !important;
+        height: 0 !important;
+        border-radius: 12px;
+    }
+
+    .card[data-media-type="music"] .card-image img {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 179% !important;
+        margin-left: -39.5% !important;
+        height: 100% !important;
+        object-fit: cover;
+    }
+
+    .favorites-container.small-mode .card-image {
+        border-radius: 8px;
+    }
+
+    .favorites-container.small-mode .card-link {
+        height: auto !important;
+    }
+
+    .card-title {
+        font-size: 1.8rem;
+        padding: 1rem;
+        height: 4.8rem !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        box-sizing: border-box;
+        width: 100% !important;
+        min-width: 0 !important;
+    }
+
+    .card-favorite {
+        opacity: 1 !important;
+        top: 10px;
+        right: 10px;
+    }
+
+    .card-favorite .heart {
+        width: 6.5rem;
+        height: 6.5rem;
+    }
+
+    .loading-sentinel {
+        font-size: 1.8rem;
+        padding: 2rem;
+    }
+
+    .pc-modal {
+        width: 90vw;
+        max-width: 90vw;
+        border-radius: 24px;
+    }
+
+    .pc-modal-content {
+        padding: 4rem 3rem 3rem 3rem;
+    }
+
+    .pc-close-btn {
+        font-size: 4rem;
+        padding: 10px 15px;
+        border-radius: 12px;
+        top: 20px;
+        right: 20px;
+    }
+
+    .pc-modal-body {
+        flex-direction: column;
+        gap: 3rem;
+    }
+
+    .pc-cover-container {
+        width: 191px;
+        height: 270px;
+        margin: 0 auto;
+        border-radius: 16px;
+    }
+
+    .pc-upload-overlay svg {
+        width: 64px;
+        height: 64px;
+        stroke-width: 2px;
+    }
+
+    .pc-form-fields {
+        gap: 2rem;
+    }
+
+    .pc-title-input {
+        font-size: 2.5rem;
+    }
+
+    .pc-form-group {
+        gap: 1rem;
+    }
+
+    .pc-form-group label {
+        font-size: 2rem;
+    }
+
+    .pc-form-group textarea {
+        font-size: 2rem;
+        padding: 1.5rem;
+        border-radius: 12px;
+        min-height: 15rem;
+    }
+
+    .pc-actor-dates {
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    .pc-actor-dates input {
+        font-size: 2rem;
+        padding: 1.5rem;
+        border-radius: 12px;
+        height: 4.8rem;
+    }
+
+    .pc-modal-buttons {
+        gap: 2rem;
+        margin-top: 3rem;
+    }
+
+    .pc-btn {
+        font-size: 2.2rem;
+        padding: 1.5rem 3rem;
+        border-radius: 16px;
+    }
 }

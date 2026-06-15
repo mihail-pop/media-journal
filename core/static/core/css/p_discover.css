@@ -624,6 +624,7 @@ body {
   #tmdb-year-input,
   #season-year-input,
   #igdb-year-input,
+  #musicbrainz-year-input,
   #year-input {
     font-size: 2.5rem;
   }

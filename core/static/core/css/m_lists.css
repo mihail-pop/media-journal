@@ -1441,12 +1441,17 @@ body[data-media-type="tvshows"] .simple-title-cell a {
 
   .separator-bar {
     margin-bottom: 0.1rem;
-    height: 4rem;
+    height: 5rem;
   }
 
   .edit-card-btn {
     padding: 6px 10px;
     font-size: 4rem;
+  }
+
+  .play-card-btn svg {
+    width: 4rem;
+    height: 4rem;
   }
 
   .sidebar-toggle-btn {
@@ -1672,6 +1677,40 @@ body[data-media-type="tvshows"] .simple-title-cell a {
     border-left-width: 0.55rem;
     border-right-width: 0.55rem;
     border-top-width: 0.65rem;
+  }
+
+  #genre-search,
+  #list-collection-search {
+    padding: 0.8rem;
+    font-size: 2.5rem;
+  }
+
+  .genre-indicator::after {
+    border-left: 0.55rem solid transparent;
+    border-right: 0.55rem solid transparent;
+    border-top: 0.65rem solid currentColor;
+  }
+
+  .genre-tag {
+    font-size: 2.5rem;
+  }
+
+  .genre-check {
+    font-size: 2.5rem;
+  }
+
+  .filter-mode-btn {
+    font-size: 2rem;
+  }
+
+  #open-create-modal-btn svg {
+    width: 3.5rem;
+    height: 3.5rem;
+  }
+
+  .music-icon {
+    width: 3.5rem !important;
+    height: 3.5rem !important;
   }
 
   .custom-option {

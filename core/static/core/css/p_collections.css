@@ -525,3 +525,222 @@ body.drag-active .edit-col-btn {
   display: block !important;
   border: none !important;
 }
+
+@media (pointer: coarse) and (hover: none) {
+
+  #toggle-sort-btn{
+    display:none;
+  }
+  
+}
+
+@media (orientation: portrait) {
+  .separator-bar {
+    height: 0rem;
+  }
+
+  .collections-page-container {
+    padding: 0 2rem 4rem;
+  }
+
+  .collections-header {
+    margin-bottom: 3rem;
+  }
+
+  .collections-header h1 {
+    font-size: 4rem;
+  }
+
+  .header-actions {
+    gap: 2rem;
+  }
+
+  .action-btn {
+    width: 6rem;
+    height: 6rem;
+    border-radius: 12px;
+  }
+
+  .action-btn svg {
+    width: 3.5rem;
+    height: 3.5rem;
+  }
+
+  .collections-grid {
+    grid-template-columns: 1fr;
+    gap: 4rem;
+  }
+
+  .collection-card {
+    padding: 4rem 2rem 3rem;
+    border-radius: 20px;
+  }
+
+  .edit-col-btn {
+    opacity: 1;
+    width: 6rem;
+    height: 6rem;
+    font-size: 3rem;
+    top: 20px;
+    right: 20px;
+  }
+
+  .cover-stack {
+    height: 400px;
+  }
+
+  .stack-item {
+    width: 250px;
+    height: 338px;
+    max-height: 338px;
+    border-radius: 16px;
+  }
+
+  .stack-item img {
+    border-radius: 16px;
+  }
+
+  .stack-item[data-media-type="music"] {
+    height: 250px;
+    max-height: 250px;
+    top: 88px;
+  }
+
+  .stack-item.pos-1 {
+    transform: translateX(calc(-50% - 60px)) rotate(-8deg) scale(0.9);
+  }
+
+  .stack-item.pos-2 {
+    transform: translateX(calc(-50% + 60px)) rotate(8deg) scale(0.9);
+  }
+
+  .stack-item.pos-3 {
+    transform: translateX(calc(-50% - 120px)) rotate(-16deg) scale(0.8);
+  }
+
+  .stack-item.pos-4 {
+    transform: translateX(calc(-50% + 120px)) rotate(16deg) scale(0.8);
+  }
+
+  .collection-card:hover .stack-item.pos-0 {
+    transform: translateX(-50%) translateY(-25px) scale(1.05);
+  }
+
+  .collection-card:hover .stack-item.pos-1 {
+    transform: translateX(calc(-50% - 90px)) rotate(-12deg) scale(0.95);
+  }
+
+  .collection-card:hover .stack-item.pos-2 {
+    transform: translateX(calc(-50% + 90px)) rotate(12deg) scale(0.95);
+  }
+
+  .collection-card:hover .stack-item.pos-3 {
+    transform: translateX(calc(-50% - 170px)) rotate(-24deg) scale(0.85);
+  }
+
+  .collection-card:hover .stack-item.pos-4 {
+    transform: translateX(calc(-50% + 170px)) rotate(24deg) scale(0.85);
+  }
+
+  .cover-stack.items-1 .stack-item.pos-0 {
+    transform: translateX(-50%);
+  }
+
+  .collection-card:hover .cover-stack.items-1 .stack-item.pos-0 {
+    transform: translateX(-50%) translateY(-20px) scale(1.05);
+  }
+
+  .cover-stack.items-2 .stack-item.pos-0 {
+    transform: translateX(calc(-50% - 30px)) rotate(-4deg);
+  }
+
+  .cover-stack.items-2 .stack-item.pos-1 {
+    transform: translateX(calc(-50% + 30px)) rotate(4deg);
+  }
+
+  .collection-card:hover .cover-stack.items-2 .stack-item.pos-0 {
+    transform: translateX(calc(-50% - 50px)) rotate(-8deg) translateY(-10px) scale(1.02);
+  }
+
+  .collection-card:hover .cover-stack.items-2 .stack-item.pos-1 {
+    transform: translateX(calc(-50% + 50px)) rotate(8deg) scale(0.98);
+  }
+
+  .cover-stack.items-3 .stack-item.pos-1 {
+    transform: translateX(calc(-50% - 70px)) rotate(-10deg) scale(0.9);
+  }
+
+  .cover-stack.items-3 .stack-item.pos-2 {
+    transform: translateX(calc(-50% + 70px)) rotate(10deg) scale(0.9);
+  }
+
+  .collection-card:hover .cover-stack.items-3 .stack-item.pos-1 {
+    transform: translateX(calc(-50% - 110px)) rotate(-15deg) scale(0.95);
+  }
+
+  .collection-card:hover .cover-stack.items-3 .stack-item.pos-2 {
+    transform: translateX(calc(-50% + 110px)) rotate(15deg) scale(0.95);
+  }
+
+  .col-info {
+    padding: 0 1rem;
+    margin-top: 3rem;
+  }
+
+  .col-title {
+    font-size: 2.8rem;
+    margin-bottom: 1.2rem;
+  }
+
+  .col-count {
+    font-size: 2rem;
+  }
+
+  .collection-modal {
+    max-width: 90vw;
+    width: 90vw;
+    border-radius: 24px;
+    padding: 4rem 3rem;
+  }
+
+  .collection-modal h2 {
+    font-size: 3.5rem;
+    margin-bottom: 3rem;
+  }
+
+  .form-group {
+    margin-bottom: 3rem;
+  }
+
+  .form-group label {
+    font-size: 2.2rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .form-group input,
+  .form-group textarea {
+    font-size: 2.2rem;
+    padding: 2.5rem 2rem;
+    border-radius: 16px;
+  }
+
+  .modal-actions {
+    margin-top: 4rem;
+  }
+
+  .right-actions {
+    gap: 2rem;
+  }
+
+  .btn-cancel,
+  .btn-save,
+  .btn-delete {
+    font-size: 2.2rem;
+    padding: 2rem 3.5rem;
+    border-radius: 16px;
+  }
+
+  #toggle-sort-btn{
+    display:none;
+  }
+}

@@ -837,3 +837,300 @@ input[type="number"] {
     display: block !important;
     border: none !important;
 }
+
+@media (orientation: portrait) {
+    .separator-bar {
+        height: 0rem;
+    }
+
+    .calendar-page-container {
+        padding: 0 2rem 4rem;
+    }
+
+    .calendar-header {
+        flex-direction: column;
+        gap: 4rem;
+        margin-top: 4rem;
+        margin-bottom: 4rem;
+    }
+
+    .calendar-nav {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    #month-year-display {
+        font-size: 3.5rem;
+        min-width: auto;
+    }
+
+    .cal-nav-btn {
+        width: 6rem;
+        height: 6rem;
+        font-size: 3rem;
+        border-radius: 12px;
+    }
+
+    .calendar-actions {
+        width: 100%;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 2rem;
+    }
+
+    .sync-group {
+        padding: 12px;
+        gap: 12px;
+        border-radius: 16px;
+    }
+
+    .sync-divider {
+        height: 50px;
+        width: 4px;
+    }
+
+    .header-icon-btn {
+        width: 6rem;
+        height: 6rem;
+        border-radius: 12px;
+    }
+
+    .header-icon-btn svg {
+        width: 3.5rem;
+        height: 3.5rem;
+        stroke-width: 2.5;
+    }
+
+    .cal-action-btn {
+        font-size: 2.5rem;
+        padding: 1.5rem 3rem;
+        border-radius: 12px;
+        gap: 12px;
+    }
+
+    .calendar-wrapper {
+        padding: 1.5rem;
+        border-radius: 20px;
+    }
+
+    .calendar-weekdays {
+        font-size: 1.8rem;
+        padding-bottom: 16px;
+        margin-bottom: 16px;
+    }
+
+    .calendar-weekdays div {
+        text-align: center;
+        padding-right: 0;
+    }
+
+    .calendar-grid {
+        grid-auto-rows: 150px;
+        gap: 6px;
+    }
+
+    .calendar-day {
+        padding: 8px;
+        border-radius: 10px;
+        border-width: 3px;
+    }
+
+    .day-number {
+        text-align: center;
+        font-size: 2rem;
+        margin-bottom: 8px;
+    }
+
+    .day-events-track {
+        gap: 8px;
+        align-items: center;
+    }
+
+    .event-pill {
+        font-size: 1.4rem;
+        padding: 6px 10px;
+        border-radius: 8px;
+        width: 95%;
+        text-align: center;
+    }
+
+    .day-details-section {
+        padding: 3rem 2rem;
+        margin-top: 4rem;
+        border-radius: 20px;
+    }
+
+    .day-details-section h3 {
+        font-size: 3rem;
+        margin-bottom: 3rem;
+        text-align: center;
+    }
+
+    .day-events-grid {
+        grid-template-columns: 1fr;
+        gap: 3rem;
+    }
+
+    .event-card {
+        height: 250px;
+        border-radius: 16px;
+    }
+
+    .event-card img {
+        width: 170px;
+        height: 250px;
+    }
+
+    .event-card-info {
+        padding: 1.5rem 2rem;
+    }
+
+    .event-card-title {
+        font-size: 2.5rem;
+        margin-bottom: 12px;
+    }
+
+    .event-card-desc,
+    .event-card-time {
+        font-size: 1.8rem;
+        margin-bottom: 10px;
+    }
+
+    .event-card-notes {
+        font-size: 1.6rem;
+        margin-top: 12px;
+    }
+
+    .event-actions {
+        bottom: 16px;
+        right: 16px;
+        gap: 16px;
+    }
+
+    .event-action-btn {
+        padding: 12px;
+        border-radius: 10px;
+    }
+
+    .event-action-btn svg {
+        width: 32px;
+        height: 32px;
+    }
+
+    #custom-event-modal, 
+    #delete-confirm-modal {
+        max-width: 90vw;
+        width: 90vw;
+        border-radius: 24px;
+    }
+
+    .modal-header {
+        padding: 3rem 3rem 0 3rem;
+    }
+
+    .modal-header h2 {
+        font-size: 3.2rem;
+    }
+
+    .close-modal-btn {
+        font-size: 4.5rem;
+        padding: 0 20px;
+        border-radius: 16px;
+    }
+
+    .modal-body {
+        padding: 3rem;
+        max-height: 70vh;
+    }
+
+    .modal-footer {
+        padding: 0 3rem 3rem 3rem;
+    }
+
+    .form-row {
+        flex-direction: column;
+        gap: 2.5rem;
+    }
+
+    .form-group {
+        margin-bottom: 2.5rem;
+    }
+
+    .form-group label {
+        font-size: 2.2rem;
+        margin-bottom: 16px;
+    }
+
+    .form-group input, 
+    .form-group textarea {
+        font-size: 2.2rem;
+        padding: 2rem;
+        border-radius: 16px;
+    }
+
+    .form-row.repeats-row .checkbox-group {
+        flex-direction: column !important;
+        align-items: flex-start;
+        gap: 2rem !important;
+        margin-top: 1rem;
+    }
+
+    .checkbox-group label {
+        font-size: 2.2rem;
+    }
+
+    .checkbox-group input[type="checkbox"] {
+        width: 3.5rem;
+        height: 3.5rem;
+        border-width: 4px;
+        border-radius: 8px;
+    }
+
+    .checkbox-group input[type="checkbox"]::before {
+        width: 18px;
+        height: 10px;
+        border-width: 4px;
+        transform: rotate(-45deg) translate(2px, -3px);
+    }
+
+    .action-btn {
+        font-size: 2.5rem;
+        padding: 1.8rem 3.5rem;
+        border-radius: 16px;
+    }
+
+    .search-results-dropdown {
+        max-height: 400px;
+        border-radius: 12px;
+    }
+
+    .search-result-item {
+        padding: 2rem;
+        gap: 2rem;
+        font-size: 2.2rem;
+    }
+
+    .search-result-item img {
+        width: 80px;
+        height: 120px;
+        border-radius: 8px;
+    }
+
+    .selected-preview {
+        padding: 2rem;
+        gap: 2rem;
+        font-size: 2.2rem;
+        border-radius: 12px;
+        margin-top: 2rem;
+    }
+
+    .selected-preview img {
+        width: 100px;
+        height: 150px;
+        border-radius: 8px;
+    }
+
+    .clear-btn {
+        font-size: 3rem;
+    }
+}

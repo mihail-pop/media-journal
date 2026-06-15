@@ -1047,7 +1047,6 @@ input[type="number"] {
 }
 
 @media (orientation: portrait) {
-
   .c-modal-banner img[alt="movie"],
   .c-modal-banner img[alt="tv"],
   .c-modal-banner img[alt="music"],
@@ -1068,9 +1067,7 @@ input[type="number"] {
 
   .c-modal-cover[data-media-type="music"] img {
     width: unset;
-
     height: 100%;
-
     left: -4.6rem;
   }
 
@@ -1082,27 +1079,25 @@ input[type="number"] {
     max-height: 270px;
   }
 
+  .c-upload-overlay svg {
+    width: 64px;
+    height: 64px;
+    stroke-width: 2px;
+  }
+
   .c-modal-title-block {
     top: 15rem;
     left: 15rem;
     max-width: 20rem;
   }
 
-  .c-modal-title {
-    font-size: 2rem;
-    line-height: 1.2;
-
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    -webkit-box-orient: vertical;
-
-    overflow: hidden;
-    text-overflow: ellipsis;
+  .c-title-input {
+    font-size: 2.5rem;
   }
 
   .c-close-btn {
     font-size: 4rem;
+    padding: 10px 15px;
   }
 
   .c-danger-btn {
@@ -1111,12 +1106,13 @@ input[type="number"] {
   }
 
   .c-modal-actions-top {
-    top: 14.5rem;
+    top: 13.5rem;
     right: 2rem;
   }
 
   .c-btn.c-save-btn {
     font-size: 2.5rem;
+    padding: 1rem 2rem;
   }
 
   .c-modal-actions-top .c-favorite-checkbox .c-heart {
@@ -1128,104 +1124,174 @@ input[type="number"] {
     padding-left: 0rem;
   }
 
-  .c-form-group:first-child {
-    margin-right: 7rem;
+  .c-form-row-two,
+  .c-form-row-three {
+    max-width: 50rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3rem 6.5rem;
+    justify-content: flex-start;
   }
 
-  .c-form-group:nth-child(3) {
-    margin-right: 7rem;
+  .c-form-group {
+    flex: 0 0 20rem;
+    max-width: 20rem !important;
+    min-width: 20rem !important;
+    margin-right: 0 !important;
+  }
+
+  .c-form-group label {
+    font-size: 2rem;
+    margin-bottom: 0.8rem;
   }
 
   .c-form-group input,
   .c-form-group select,
   .c-form-group textarea,
-  #date_area {
-    font-size: 2rem;
-    max-width: 20rem;
-
-    padding: 1rem 1rem;
+  .c-creator-input-container,
+  #create-genre-wrapper .genre-select,
+  .c-status-select {
+    font-size: 2rem !important;
+    width: 20rem !important;
+    max-width: 20rem !important;
+    padding: 1rem !important;
+    min-height: 4.8rem !important;
+    box-sizing: border-box !important;
   }
 
-  #progress_main_group label,
-  #progress_secondary_group label,
-  #date_added_group label,
-  #repeats_group label {
-    max-width: 20rem;
-    width: 20rem;
+  input[name="release_date"],
+  input[name="date_added"] {
+    max-height: unset !important;
+    height: 4.8rem !important;
   }
 
-  #date_added_group,
-  #repeats_group {
-    max-width: 20rem;
+  .c-creator-input-container,
+  #create-genre-wrapper .genre-select {
+    height: auto !important;
   }
 
-  #date_added {
-    width: 18rem;
-    max-width: 18rem;
+  .c-creator-tag, 
+  .genre-tag {
+    font-size: 1.5rem;
+    padding: 0.5rem 0.8rem;
+    border-radius: 8px;
   }
 
-  #repeats {
-    width: 18rem;
+  #create-creator-input, 
+  #create-genre-search {
+    font-size: 2rem !important;
+    min-width: 80px !important;
+    width: 100% !important;
+    padding: 0 !important;
+    min-height: auto !important;
   }
 
-  .c-form-group {
-    max-width: 20rem;
+  .c-status-indicator,
+  .genre-indicator {
+    width: 4rem;
+  }
+  
+  .c-status-indicator::after,
+  .genre-indicator::after {
+    border-left: 0.5rem solid transparent;
+    border-right: 0.5rem solid transparent;
+    border-top: 0.6rem solid var(--text-tertiary);
   }
 
-  #status,
-  .status-select {
-    width: 20rem;
+  .c-status-options,
+  .genre-options,
+  .custom-options {
+    max-height: 30rem !important;
   }
 
-  .c-form-row-two,
-  .c-form-row-three {
-    max-width: 50rem;
-  }
-
-  .c-star {
-    font-size: 4rem;
-  }
-
-  .c-face {
-    width: 60px;
-    height: 60px;
-  }
-
-  .c-rating-stars {
-    padding: 0.5rem 0.5rem;
+  .c-status-option,
+  .genre-option,
+  .custom-option {
+    font-size: 2rem !important;
+    padding: 1.5rem !important;
   }
 
   .c-rating-faces {
-    gap: 3.7rem;
-    padding: 0.7rem 0.7rem;
+    gap: 3.5rem;
+    padding: 1rem;
+    height: auto;
+    box-sizing: border-box;
+  }
+
+  .c-face {
+    width: 65px;
+    height: 65px;
+    margin: 0;
+  }
+
+  .c-rating-stars {
+    padding: 0.5rem;
+    height: 4.8rem;
+  }
+
+  .c-star {
+    font-size: 4.5rem;
   }
 
   .c-rating-number input[type="number"] {
-    font-size: 2.5rem;
-    padding: 0.2rem 0.5rem;
-    width: 18rem;
-    height: 4.4rem;
+    font-size: 2.5rem !important;
+    padding: 0.5rem !important;
+    width: 20rem !important;
+    height: 4.8rem !important;
+  }
+
+  .c-progress-inputs {
+    gap: 1rem;
+    width: 20rem;
+    display: flex;
+    align-items: center;
+  }
+
+  .c-progress-inputs .c-progress-box {
+    flex: 1 !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    padding: 1rem 0.5rem !important;
+    font-size: 2rem !important;
+    text-align: center;
+  }
+
+  .c-progress-separator {
+    font-size: 2.2rem;
+    padding: 0 0.2rem;
+  }
+
+  #create_length_group .c-progress-inputs {
+    gap: 0.5rem;
+  }
+
+  #create_length_group .c-progress-box {
+    padding: 1rem 0.2rem !important;
+  }
+
+  #create_progress_main_group label,
+  #create_progress_secondary_group label,
+  #create_length_group label {
+    max-width: 20rem;
+    width: 20rem;
   }
 
   .c-form-group.c-notes-group {
-    max-width: 45rem;
+    flex: 0 0 46.5rem;
+    max-width: 46.5rem !important;
+    padding-left: 0;
   }
 
-  textarea[name="c-notes"] {
-    width: 45rem;
-    max-width: 45rem;
-  }
-
-  .c-form-group label {
-    font-size: 2rem;
-  }
-
-  .c-progress-total-display {
-    font-size: 2rem;
+  textarea[name="c-notes"],
+  textarea[name="overview"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    font-size: 2rem !important;
+    padding: 1.5rem !important;
   }
 
   .c-modal-body {
-    padding: 2rem 2rem 2rem 2rem;
+    padding: 3rem 2rem 4rem 2rem;
   }
-
 }

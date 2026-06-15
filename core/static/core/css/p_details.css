@@ -2681,31 +2681,89 @@ html.c-modal-open {
     display: none;
   }
 
+  .media-type, .media-year, .media-language{
+    font-size: 1.5rem;
+  }
+
+  .pc-modal {
+    width: 90vw;
+    max-width: 90vw;
+    border-radius: 24px;
+  }
+
+  .pc-modal-content {
+    padding: 4rem 3rem 3rem 3rem;
+  }
+
+  .pc-close-btn {
+    font-size: 4rem;
+    padding: 10px 15px;
+    border-radius: 12px;
+    top: 20px;
+    right: 20px;
+  }
+
   .pc-modal-body {
     flex-direction: column;
+    gap: 3rem;
   }
 
   .pc-cover-container {
-    width: 150px;
-    height: 225px;
+    width: 191px;
+    height: 270px;
     margin: 0 auto;
+    border-radius: 16px;
+  }
+
+  .pc-upload-overlay svg {
+    width: 64px;
+    height: 64px;
+    stroke-width: 2px;
+  }
+
+  .pc-form-fields {
+    gap: 2rem;
   }
 
   .pc-title-input {
-    font-size: 1.8rem;
+    font-size: 2.5rem;
   }
 
-  .pc-form-group label,
+  .pc-form-group {
+    gap: 1rem;
+  }
+
+  .pc-form-group label {
+    font-size: 2rem;
+  }
+
   .pc-form-group textarea {
-    font-size: 1.5rem;
-  }
-
-  .pc-btn {
-    font-size: 1.5rem;
+    font-size: 2rem;
+    padding: 1.5rem;
+    border-radius: 12px;
+    min-height: 15rem;
   }
 
   .pc-actor-dates {
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 2rem;
+  }
+
+  .pc-actor-dates input {
+    font-size: 2rem;
+    padding: 1.5rem;
+    border-radius: 12px;
+    height: 4.8rem;
+  }
+
+  .pc-modal-buttons {
+    gap: 2rem;
+    margin-top: 3rem;
+  }
+
+  .pc-btn {
+    font-size: 2.2rem;
+    padding: 1.5rem 3rem;
+    border-radius: 16px;
   }
 }
