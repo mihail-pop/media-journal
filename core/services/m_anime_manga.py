@@ -519,7 +519,7 @@ def get_anime_extra_info(media_type, anilist_id=None, mal_id=None):
         # --- External Links & Staff ---
         external_links = [
             {"site": l["site"], "url": l["url"], "language": l.get("language") or ""}
-            for l in data.get("externalLinks", [])
+            for l in data.get("externalLinks", [])  # noqa: E741
             # Ensure the keys exist
             if l.get("site") and l.get("url")
             # Perform security check on the URL
@@ -709,7 +709,7 @@ def get_manga_extra_info(media_type, anilist_id=None, mal_id=None):
         # --- External Links ---
         external_links = [
             {"site": l["site"], "url": l["url"], "language": l.get("language") or ""}
-            for l in data.get("externalLinks", [])
+            for l in data.get("externalLinks", [])  # noqa: E741
             if l.get("site") and l.get("url")
             and l["url"].startswith(('http://', 'https://', '/'))
         ]
@@ -955,10 +955,15 @@ def update_anilist_anime_manga(item: MediaItem):
     if item.media_type not in ["anime", "manga"]:
         return  # Not an anime/manga, skip
 
+    a_id = item.provider_ids.get("anilist")
+    m_id = item.provider_ids.get("mal")
+    
+    if (a_id and str(a_id).startswith("custom_")) or (m_id and str(m_id).startswith("custom_")):
+        item.last_updated = timezone.now()
+        item.save()
+        return
+
     try:
-        a_id = item.provider_ids.get("anilist")
-        m_id = item.provider_ids.get("mal")
-        
         anilist_data = fetch_anilist_data(item.media_type, anilist_id=a_id, mal_id=m_id)
         
         # Heal IDs and source if they were missing/old
@@ -983,6 +988,8 @@ def update_anilist_anime_manga(item: MediaItem):
     existing_mal_ids = {str(r["mal_id"]) for r in existing if r.get("mal_id")}
 
     new_sequels = []
+    cache_bust = int(time.time() * 1000)
+
     for rel in anilist_data.get("related_titles", []):
         if rel["relation"].lower() != "sequel":
             continue
@@ -999,7 +1006,7 @@ def update_anilist_anime_manga(item: MediaItem):
         poster_path = rel.get("poster_path")
         ref_id = r_anilist_id or r_mal_id
         local_path = (
-            download_image(poster_path, f"related/anilist_{ref_id}.jpg")
+            download_image(poster_path, f"related/anilist_{item.media_type}_{ref_id}_{cache_bust}.jpg")
             if poster_path
             else ""
         )

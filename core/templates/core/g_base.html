@@ -7,6 +7,21 @@
   <link rel="stylesheet" href="{% static 'core/css/g_header.css' %}" />
   <link rel="stylesheet" href="{% static 'core/css/g_search.css' %}" />
   <link rel="icon" href="/static/core/icons/favicon.ico" type="image/x-icon">
+  <!-- fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Overpass:ital,wght@0,400;0,600;0,700;0,800&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <script>
+    (function() {
+      let savedFont = localStorage.getItem('user-font') || 'overpass';
+      if (savedFont === 'system') {
+        savedFont = 'segoe';
+        localStorage.setItem('user-font', 'segoe');
+      }
+      document.documentElement.setAttribute('data-font', savedFont);
+    })();
+  </script>
 </head>
 {% endblock %}
 

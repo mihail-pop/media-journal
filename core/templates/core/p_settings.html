@@ -166,6 +166,40 @@
           <b>Click to show/hide • Drag to reorder • Hidden buttons will disappear on the other pages but remain visible here</b>
         </p>
       </div>
+
+      <div class="preferences-section">
+        <h3>App Font</h3>
+        <form id="font-family-form" class="scoring-system-form">
+          <select id="font-family-select" style="display: none;">
+            <option value="overpass">Overpass (Default)</option>
+            <option value="inter">Inter</option>
+            <option value="segoe">Segoe (Old Default)</option>
+          </select>
+
+          <div class="custom-select-wrapper" id="font-select-wrapper">
+            <div class="custom-select" id="font-custom-select">
+              <div class="custom-select-trigger">
+                <span>Select...</span>
+                <div class="arrow"></div>
+              </div>
+              <div class="custom-options">
+                <div class="custom-option" data-value="overpass" style="font-family: 'Overpass', sans-serif;">
+                  <span>Overpass (Default)</span>
+                  <span class="font-preview">Text159</span>
+                </div>
+                <div class="custom-option" data-value="inter" style="font-family: 'Inter', sans-serif;">
+                  <span>Inter</span>
+                  <span class="font-preview">Text159</span>
+                </div>
+                <div class="custom-option" data-value="segoe" style="font-family: 'Segoe UI', Tahoma, sans-serif;">
+                  <span>Segoe (Old Default)</span>
+                  <span class="font-preview">Text159</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
 
@@ -267,28 +301,58 @@
 
 <div class="tab-content" id="refresh">
     <div class="preferences-container">
-      <div class="preferences-section" style="grid-column: 1 / -1; max-width: 600px; margin: 0 auto; text-align: center;">
+      <div class="preferences-section" style="grid-column: 1 / -1; max-width: 800px; margin: 0 auto; text-align: center;">
         <h3>Refresh Data</h3>
-        <p style="margin-bottom: 1.5rem; font-size: 0.9rem; color: var(--text-primary);">
-          Update metadata for your saved items. It will only refresh title, overview, release date, creators, genres and total progress. Some APIs/media types will take longer.
+
+        <div id="refresh-options" style="display: flex; flex-wrap: wrap; gap: 1.2rem; justify-content: center; margin: 0 auto 1.5rem auto; width: 100%; max-width: 700px; padding: 1.2rem; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 6px;">
+          <label class="refresh-checkbox-label">
+            <input type="checkbox" value="title" class="refresh-field-checkbox">
+            <span class="custom-checkbox"></span>
+            Title
+          </label>
+          <label class="refresh-checkbox-label">
+            <input type="checkbox" value="overview" class="refresh-field-checkbox">
+            <span class="custom-checkbox"></span>
+            Overview
+          </label>
+          <label class="refresh-checkbox-label">
+            <input type="checkbox" value="release_date" class="refresh-field-checkbox">
+            <span class="custom-checkbox"></span>
+            Release Date
+          </label>
+          <label class="refresh-checkbox-label">
+            <input type="checkbox" value="genres" class="refresh-field-checkbox">
+            <span class="custom-checkbox"></span>
+            Genres
+          </label>
+          <label class="refresh-checkbox-label">
+            <input type="checkbox" value="creators" class="refresh-field-checkbox">
+            <span class="custom-checkbox"></span>
+            Creators
+          </label>
+          <label class="refresh-checkbox-label">
+            <input type="checkbox" value="progress" class="refresh-field-checkbox">
+            <span class="custom-checkbox"></span>
+            Progress
+          </label>
+        </div>
+
+        <p style="margin-bottom: 2rem; font-size: 0.95rem; color: var(--text-primary); line-height: 1.5;">
+          Update metadata for your saved items. Checked fields will be refreshed. Unchecked fields will be preserved. Some APIs/media types will take longer.
         </p>
-        <div class="refresh-actions" style="display: flex; flex-direction: column; gap: 1rem; align-items: center;">
-          <button class="backup-btn" id="refresh-all-btn" style="width: 100%; max-width: 300px; background-color: var(--special-color); color: white; border-color: var(--special-color);">
-            <svg viewBox="0 0 512 512" style="width: 16px; height: 16px; margin-right: 8px;"><path fill="currentColor" d="M440.65 12.57l4 82.06A247.16 247.16 0 0 0 256 8C119.34 8 7.9 119.53 8 256.19 8.1 393.07 119.1 504 256 504a247.1 247.1 0 0 0 166.18-63.91 12 12 0 0 0 .48-17.43l-34-34a12 12 0 0 0-16.38-.55A176 176 0 1 1 402.1 157.8l-102.18-4.94a12 12 0 0 0-12.57 11.41l-1.07 43.1a12 12 0 0 0 11.41 12.57l163.63 7.92A12 12 0 0 0 474 216l3.52-192a12 12 0 0 0-11.41-12.57l-13.68-.68a12 12 0 0 0-11.78 11.82z"/></svg>
-            Refresh All
+
+        <div class="refresh-actions" style="display: flex; flex-wrap: wrap; gap: 0.8rem; justify-content: center; align-items: center;">
+          {% for item in nav_items %}
+            {% if item.name != 'home' %}
+            <button class="backup-btn refresh-type-btn" data-type="{{ item.name }}" style="min-width: auto; font-size: 0.95rem; padding: 0.6rem 1.2rem;">
+              {% if item.name == 'tvshows' %}TV Shows{% else %}{{ item.name|title }}{% endif %}
+            </button>
+            {% endif %}
+          {% endfor %}
+          <button class="backup-btn" id="refresh-all-btn" style="min-width: auto; font-size: 0.95rem; padding: 0.6rem 1.2rem; background-color: var(--special-color); color: white; border-color: var(--special-color);">
+            <svg viewBox="0 0 512 512" style="width: 14px; height: 14px; margin-right: 6px;"><path fill="currentColor" d="M440.65 12.57l4 82.06A247.16 247.16 0 0 0 256 8C119.34 8 7.9 119.53 8 256.19 8.1 393.07 119.1 504 256 504a247.1 247.1 0 0 0 166.18-63.91 12 12 0 0 0 .48-17.43l-34-34a12 12 0 0 0-16.38-.55A176 176 0 1 1 402.1 157.8l-102.18-4.94a12 12 0 0 0-12.57 11.41l-1.07 43.1a12 12 0 0 0 11.41 12.57l163.63 7.92A12 12 0 0 0 474 216l3.52-192a12 12 0 0 0-11.41-12.57l-13.68-.68a12 12 0 0 0-11.78 11.82z"/></svg>
+            All
           </button>
-          
-          <div class="settings-separator" style="margin: 0.5rem auto; width: 100%; max-width: 300px;"></div>
-          
-          <div id="refresh-media-types" style="display: flex; flex-direction: column; gap: 0.8rem; width: 100%; max-width: 300px;">
-            {% for item in nav_items %}
-              {% if item.name != 'home' %}
-              <button class="backup-btn refresh-type-btn" data-type="{{ item.name }}" style="width: 100%; font-size: 0.95rem; padding: 0.6rem 1rem;">
-                Refresh {{ item.name|title }}
-              </button>
-              {% endif %}
-            {% endfor %}
-          </div>
         </div>
       </div>
     </div>

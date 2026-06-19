@@ -1387,12 +1387,17 @@ updateSortButtons();
       }
     });
 
+    // Helper for normalizing text in JS (removes diacritics/accents)
+    function normalizeSearchText(str) {
+      return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    }
+
     // 5. Search/Filter Typing
     function filterGenreOptions(query) {
-      const q = query.toLowerCase();
+      const q = normalizeSearchText(query);
       const options = genreOptionsContainer.querySelectorAll('.genre-option');
       options.forEach(opt => {
-        if (opt.dataset.value.toLowerCase().includes(q)) {
+        if (normalizeSearchText(opt.dataset.value).includes(q)) {
           opt.classList.remove('hidden');
         } else {
           opt.classList.add('hidden');
@@ -1539,11 +1544,15 @@ updateSortButtons();
       }
     });
 
+    function normalizeSearchText(str) {
+      return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    }
+
     function filterCollectionOptions(query) {
-      const q = query.toLowerCase();
+      const q = normalizeSearchText(query);
       const options = collectionOptionsContainer.querySelectorAll('.list-collection-option');
       options.forEach(opt => {
-        if (opt.dataset.title.toLowerCase().includes(q)) {
+        if (normalizeSearchText(opt.dataset.title).includes(q)) {
           opt.classList.remove('hidden');
         } else {
           opt.classList.add('hidden');

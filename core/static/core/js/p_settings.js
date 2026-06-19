@@ -113,6 +113,71 @@ document.addEventListener("DOMContentLoaded", function () {
   }
   setupCustomSelect();
 
+  // ----- Custom Select for Font Family -----
+  function setupFontCustomSelect() {
+    const wrapper = document.getElementById('font-select-wrapper');
+    if (!wrapper) return;
+
+    const select = wrapper.querySelector('#font-custom-select');
+    const trigger = select.querySelector('.custom-select-trigger');
+    const options = select.querySelectorAll('.custom-option');
+    const originalSelect = document.getElementById('font-family-select');
+
+    // Toggle dropdown
+    trigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      select.classList.toggle('open');
+    });
+
+    // Handle option click
+    options.forEach(option => {
+      option.addEventListener('click', () => {
+        const value = option.dataset.value;
+        originalSelect.value = value;
+
+        // Update trigger
+        trigger.innerHTML = option.innerHTML;
+        const arrow = document.createElement('div');
+        arrow.className = 'arrow';
+        trigger.appendChild(arrow);
+
+        // Update selected class
+        options.forEach(opt => opt.classList.remove('selected'));
+        option.classList.add('selected');
+
+        // Close dropdown
+        select.classList.remove('open');
+
+        // Save preference and apply immediately
+        localStorage.setItem('user-font', value);
+        document.documentElement.setAttribute('data-font', value);
+        showNotification("Font style updated!");
+      });
+    });
+
+    // Close when clicking outside
+    window.addEventListener('click', e => {
+      if (!select.contains(e.target)) {
+        select.classList.remove('open');
+      }
+    });
+
+    // Set initial value from localStorage (handle legacy 'system' key)
+    let savedFont = localStorage.getItem('user-font') || 'overpass';
+    if (savedFont === 'system') savedFont = 'segoe';
+
+    originalSelect.value = savedFont;
+    const initialOption = select.querySelector(`.custom-option[data-value="${savedFont}"]`);
+    if (initialOption) {
+      trigger.innerHTML = initialOption.innerHTML;
+      const arrow = document.createElement('div');
+      arrow.className = 'arrow';
+      trigger.appendChild(arrow);
+      initialOption.classList.add('selected');
+    }
+  }
+  setupFontCustomSelect();
+
   // ----- Navigation Buttons Logic -----
   const navForm = document.getElementById("nav-items-form");
 
@@ -470,12 +535,16 @@ if (refreshAllBtn) {
 document.querySelectorAll(".refresh-type-btn").forEach(btn => {
   btn.addEventListener("click", (e) => {
     const mediaType = e.target.closest('.refresh-type-btn').dataset.type;
-    const title = `Refreshing ${mediaType.charAt(0).toUpperCase() + mediaType.slice(1)}`;
+    const displayType = mediaType === 'tvshows' ? 'TV Shows' : mediaType.charAt(0).toUpperCase() + mediaType.slice(1);
+    const title = `Refreshing ${displayType}`;
     startRefresh(mediaType, title);
   });
 });
 
 function startRefresh(mediaType, title) {
+  // Extract which checkboxes the user has selected
+  const selectedFields = Array.from(document.querySelectorAll('.refresh-field-checkbox:checked')).map(cb => cb.value);
+
   const modal = showProgressModal(title);
   modal.updateMessage("Initializing refresh... Please wait.");
   
@@ -485,7 +554,7 @@ function startRefresh(mediaType, title) {
       "Content-Type": "application/json",
       "X-CSRFToken": getCookie("csrftoken"),
     },
-    body: JSON.stringify({ media_type: mediaType }),
+    body: JSON.stringify({ media_type: mediaType, fields: selectedFields }),
   })
     .then(res => res.json())
     .then(data => {
@@ -545,7 +614,7 @@ function renderApiStatuses(statuses) {
 
 function updateTimestampText(ms) {
   const d = new Date(ms);
-  document.getElementById("api-status-timestamp").textContent = `Last checked: ${d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+  document.getElementById("api-status-timestamp").textContent = `Last checked: ${d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: false})}`;
 }
 
 function checkApiStatusIfNeeded(force = false) {

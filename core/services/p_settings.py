@@ -745,10 +745,11 @@ def refresh_anilist_item(media_type, anilist_id=None, mal_id=None, existing_rela
 # --- REFRESH TASK ---
 
 class RefreshTask(threading.Thread):
-    def __init__(self, task_id, media_type):
+    def __init__(self, task_id, media_type, selected_fields=None):
         super().__init__()
         self.task_id = task_id
         self.media_type = media_type
+        self.selected_fields = selected_fields or []
         self.progress = 0
         self.status = "pending"
         self.message = "Initializing..."
@@ -910,10 +911,23 @@ class RefreshTask(threading.Thread):
                     extract_urls(getattr(new_item, f, None), new_files)
 
                 # Copy strictly API-driven fields
-                metadata_fields =[
-                    'title', 'overview', 'release_date', 'cast', 'seasons', 'episodes',
-                    'related_titles', 'genres', 'creators', 'total_main', 'total_secondary'
-                ]
+                # Base uneditable structural fields that are always safe to overwrite
+                metadata_fields = ['cast', 'seasons', 'episodes', 'related_titles']
+                
+                # Append editable fields only if the user explicitly checked them
+                if 'title' in self.selected_fields: 
+                    metadata_fields.append('title')
+                if 'overview' in self.selected_fields: 
+                    metadata_fields.append('overview')
+                if 'release_date' in self.selected_fields: 
+                    metadata_fields.append('release_date')
+                if 'genres' in self.selected_fields: 
+                    metadata_fields.append('genres')
+                if 'creators' in self.selected_fields: 
+                    metadata_fields.append('creators')
+                if 'progress' in self.selected_fields: 
+                    metadata_fields.extend(['total_main', 'total_secondary'])
+
                 for field in metadata_fields:
                     setattr(item, field, getattr(new_item, field))
                 

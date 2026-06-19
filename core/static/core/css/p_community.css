@@ -64,7 +64,6 @@ body,
 html {
   height: 100%;
   margin: 0;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   display: flex;
   justify-content: center;
   background-color: var(--bg-primary);
@@ -888,7 +887,6 @@ html {
   font-size: 1rem;
   resize: vertical;
   box-sizing: border-box;
-  font-family: inherit;
   scrollbar-color: var(--text-overview) var(--bg-tertiary);
 }
 

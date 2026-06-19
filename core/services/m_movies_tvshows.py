@@ -742,6 +742,12 @@ def update_tmdb_seasons(media_item):
     if media_item.media_type != "tv" or media_item.source != "tmdb":
         return False  # Skip if not a TMDB TV show
 
+    tmdb_id = str(media_item.provider_ids.get("tmdb", ""))
+    if tmdb_id.startswith("custom_"):
+        media_item.last_updated = timezone.now()
+        media_item.save()
+        return False
+
     try:
         api_key = APIKey.objects.get(name="tmdb").key_1
     except APIKey.DoesNotExist:
@@ -750,26 +756,22 @@ def update_tmdb_seasons(media_item):
 
     url = f"https://api.themoviedb.org/3/tv/{media_item.source_id}"
     params = {"api_key": api_key}
-    response = requests.get(url, params=params)
 
     try:
-        # ... your TMDB API call
         response = requests.get(url, params=params, timeout=10)
         response.raise_for_status()
         data = response.json()
-        # proceed with update if valid
     except RequestException as e:
-        print(
-            f"🌐 TMDB update skipped for {media_item.title} — no connection or error: {e}"
-        )
+        print(f"TMDB update skipped for {media_item.title} — no connection or error: {e}")
+        media_item.last_updated = timezone.now()
+        media_item.save()
+        return False
     except Exception as e:
-        print(f"⚠️ Unexpected error while updating {media_item.title}: {e}")
-
-    if response.status_code != 200:
-        print(f"TMDB fetch failed for ID {media_item.source_id}")
+        print(f"Unexpected error while updating {media_item.title}: {e}")
+        media_item.last_updated = timezone.now()
+        media_item.save()
         return False
 
-    data = response.json()
     fetched_seasons = data.get("seasons", [])
 
     # Compare with existing
@@ -777,6 +779,8 @@ def update_tmdb_seasons(media_item):
     existing_numbers = {s["season_number"] for s in existing_seasons}
 
     new_seasons = []
+    cache_bust = int(time.time() * 1000)
+    
     for i, season in enumerate(fetched_seasons):
         season_number = season.get("season_number")
         if season_number in existing_numbers:
@@ -788,7 +792,7 @@ def update_tmdb_seasons(media_item):
         if poster_path:
             full_url = f"https://image.tmdb.org/t/p/w300{poster_path}"
             local_poster = download_image(
-                full_url, f"seasons/tmdb_{media_item.source_id}_s{season_number}.jpg"
+                full_url, f"seasons/tmdb_tv_{media_item.source_id}_s{season_number}_{cache_bust}.jpg"
             )
 
         new_seasons.append(

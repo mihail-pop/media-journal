@@ -335,7 +335,6 @@ body[data-media-type="music"] .poster {
   gap: 0.5rem;
   font-weight: 600;
   color: #bbb;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .favorite-checkbox input[type="checkbox"] {
@@ -2011,7 +2010,6 @@ body[data-page-type="person-detail"] .overview {
   color: var(--text-primary);
   border-radius: 6px;
   padding: 0.8rem;
-  font-family: inherit;
   resize: vertical;
   min-height: 100px;
   outline: none;
@@ -2035,7 +2033,6 @@ body[data-page-type="person-detail"] .overview {
   color: var(--text-primary);
   border-radius: 6px;
   padding: 0.8rem;
-  font-family: inherit;
   outline: none;
 }
 

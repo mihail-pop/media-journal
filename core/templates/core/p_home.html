@@ -340,7 +340,15 @@
       {% for category, items in row %}
         {% if items %}
         <div class="favorites-column">
-          <h2> <a href="{% url 'favorites' %}?section={{ category }}" class="favorites-header">{{ category }}</a></h2>
+          <a href="{% url 'favorites' %}?section={{ category }}" class="section-title-wrapper favorites-link-wrapper">
+            <h2 class="favorites-header">{{ category }}</h2>
+            <span class="swap-hint">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+              Favorites
+            </span>
+          </a>
           <div class="card-grid">
             {% for item in items|slice:":25" %}
             <div class="card"
@@ -383,7 +391,15 @@
   <div class="favorites-row">
     {% if favorite_characters %}
     <div class="favorites-column">
-      <h2> <a href="{% url 'favorites' %}?section=Characters" class="favorites-header">Characters</a></h2>
+      <a href="{% url 'favorites' %}?section=Characters" class="section-title-wrapper favorites-link-wrapper">
+        <h2 class="favorites-header">Characters</h2>
+        <span class="swap-hint">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+          Favorites
+        </span>
+      </a>
       <div class="card-grid">
         {% for person in favorite_characters|slice:":25" %}
         {% if person.person_id %}
@@ -408,7 +424,15 @@
 
     {% if favorite_actors %}
     <div class="favorites-column">
-      <h2><a href="{% url 'favorites' %}?section=Actors" class="favorites-header">Actors</a></h2>
+      <a href="{% url 'favorites' %}?section=Actors" class="section-title-wrapper favorites-link-wrapper">
+        <h2 class="favorites-header">Actors</h2>
+        <span class="swap-hint">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+          Favorites
+        </span>
+      </a>
       <div class="card-grid">
         {% for person in favorite_actors|slice:":25" %}
         {% if person.person_id %}

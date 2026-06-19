@@ -1067,9 +1067,23 @@ def community(request):
     )
 
     # Get only the fields we need for posting
-    items = MediaItem.objects.values(
+    raw_items = MediaItem.objects.values(
         "id", "title", "media_type", "source", "provider_ids", "status"
     ).order_by("title")
+    
+    items = []
+    for item in raw_items:
+        provider_ids = item.get("provider_ids") or {}
+        source = item.get("source")
+        source_id = str(provider_ids.get(source, ""))
+        
+        # Fallback just like the frontend JS does
+        if not source_id and provider_ids:
+            source_id = str(list(provider_ids.values())[0])
+            
+        # Exclude custom user-created media items
+        if not source_id.startswith("custom_"):
+            items.append(item)
 
     media_types = dict(MediaItem.MEDIA_TYPES)
 

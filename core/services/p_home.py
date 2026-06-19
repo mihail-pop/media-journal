@@ -186,19 +186,21 @@ def start_tmdb_background_loop():
         print("TMDB background update loop started")
         while True:
             now = timezone.now()
-            cutoff = now - timedelta(days=30)
+            cutoff = now - timedelta(days=7)
 
             items = MediaItem.objects.filter(media_type="tv", source="tmdb").exclude(
                 provider_ids__tmdb__icontains='_s'
+            ).exclude(
+                provider_ids__tmdb__startswith='custom_'
             )
             eligible = [item for item in items if item.last_updated < cutoff]
 
-            for item in eligible[:30]:
+            for item in eligible[:60]:
                 update_tmdb_seasons(item)
-                time.sleep(60)
+                time.sleep(30)
 
             print("TMDB check loop finished batch. Pausing for 1 hour...")
-            time.sleep(3600)
+            time.sleep(1800)
 
     t = threading.Thread(target=loop, daemon=True)
     t.start()
@@ -214,10 +216,14 @@ def start_anilist_background_loop():
         print("AniList background update loop started")
         while True:
             now = timezone.now()
-            cutoff = now - timedelta(days=30)
+            cutoff = now - timedelta(days=7)
 
             items = MediaItem.objects.filter(
                 media_type__in=["anime", "manga"]
+            ).exclude(
+                provider_ids__anilist__startswith='custom_'
+            ).exclude(
+                provider_ids__mal__startswith='custom_'
             )
             eligible = [
                 item
@@ -225,12 +231,12 @@ def start_anilist_background_loop():
                 if item.last_updated < cutoff and not has_sequel(item)
             ]
 
-            for item in eligible[:30]:
+            for item in eligible[:60]:
                 update_anilist_anime_manga(item)
-                time.sleep(60)
+                time.sleep(30)
 
             print("AniList check loop finished batch. Pausing for 1 hour...")
-            time.sleep(3600)
+            time.sleep(1800)
 
     t = threading.Thread(target=loop, daemon=True)
     t.start()

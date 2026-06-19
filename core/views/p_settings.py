@@ -327,7 +327,7 @@ def api_status_check(request):
     def check_openlib():
         try:
             # Fetch a specific, highly-cached Work instead of doing a heavy DB search
-            r = requests.get("https://openlibrary.org/works/OL45804W.json", timeout=5)
+            r = requests.get("https://openlibrary.org/works/OL45804W.json", timeout=30)
             if r.status_code == 200: 
                 return "ok"
             if r.status_code == 429: 
@@ -339,8 +339,7 @@ def api_status_check(request):
     def check_musicbrainz():
         try:
             headers = {"User-Agent": "MediaJournal/1.0 (https://github.com/mihail-pop/media-journal)"}
-            # Increased timeout to 5 seconds
-            r = requests.get("https://musicbrainz.org/ws/2/recording?query=test&limit=1&fmt=json", headers=headers, timeout=5)
+            r = requests.get("https://musicbrainz.org/ws/2/recording?query=test&limit=1&fmt=json", headers=headers, timeout=20)
             if r.status_code == 200: 
                 return "ok"
             if r.status_code == 429: 
@@ -369,10 +368,11 @@ def refresh_data(request):
     try:
         data = json.loads(request.body)
         media_type = data.get("media_type", "all")
+        fields = data.get("fields", [])
 
         cleanup_old_tasks()
         task_id = uuid.uuid4().hex
-        task = RefreshTask(task_id, media_type)
+        task = RefreshTask(task_id, media_type, fields)
         BACKUP_TASKS[task_id] = task
         task.start()
 

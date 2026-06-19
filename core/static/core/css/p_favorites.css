@@ -263,7 +263,6 @@ body {
   color: var(--text-primary);
   border-radius: 6px;
   padding: 0.8rem;
-  font-family: inherit;
   resize: vertical;
   min-height: 100px;
   outline: none;
@@ -287,7 +286,6 @@ body {
   color: var(--text-primary);
   border-radius: 6px;
   padding: 0.8rem;
-  font-family: inherit;
   outline: none;
 }
 

@@ -1,5 +1,6 @@
 import os
 import hashlib
+import unicodedata
 from pathlib import Path
 
 import requests
@@ -7,6 +8,19 @@ from django.conf import settings
 
 from core.models import NavItem
 
+
+def normalize_search_text(text):
+    """
+    Normalizes text for robust foreign-language searching.
+    1. Casefolds the string (stronger than lower(), handles foreign cases like German ß).
+    2. Decomposes characters (NFD) to separate base letters from accents.
+    3. Drops combining diacritical marks (Mn) to remove the accents safely.
+    """
+    if not text:
+        return ""
+    text = str(text).casefold()
+    text = unicodedata.normalize('NFD', text)
+    return ''.join(c for c in text if unicodedata.category(c) != 'Mn')
 
 def get_sharded_path(original_path):
     """

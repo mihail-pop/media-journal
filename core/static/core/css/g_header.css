@@ -1,8 +1,25 @@
+:root {
+  --font-overpass: 'Overpass', -apple-system, BlinkMacSystemFont, 'Segoe UI', Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  --font-inter: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  --font-segoe: 'Segoe UI', Tahoma, -apple-system, BlinkMacSystemFont, 'Segoe UI', Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+}
+
+html[data-font="overpass"] { --font-user: var(--font-overpass); }
+html[data-font="inter"] { --font-user: var(--font-inter); }
+html[data-font="segoe"] { --font-user: var(--font-segoe); }
+
 body {
   margin: 0;
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-family: var(--font-user, var(--font-overpass));
   background: var(--bg-primary, #f7f9fc);
   color: var(--text-primary, #2e3440);
+
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+input, button, textarea, select {
+  font-family: inherit;
 }
 
 /* =========================================================

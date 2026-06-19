@@ -183,7 +183,6 @@ html.modal-open {
   box-shadow:
     0 8px 20px rgba(0, 0, 0, 0.15),
     0 0 0 1px rgba(0, 0, 0, 0.05);
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   color: var(--text-dark);
   opacity: 1;
   transition: opacity 0.3s ease, transform 0.3s ease;
@@ -387,7 +386,6 @@ html.modal-open {
   box-shadow: 0;
   border-radius: 6px;
   font-size: 0.95rem;
-  font-family: inherit;
   background-color: var(--bg-primary);
   color: var(--text-tertiary);
   outline: none;
@@ -527,7 +525,6 @@ html.modal-open {
   gap: 0.5rem;
   font-weight: 600;
   color: #555;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 

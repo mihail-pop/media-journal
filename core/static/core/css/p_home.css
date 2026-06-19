@@ -789,7 +789,6 @@ h2 {
 .community-button {
   position: relative;
   display: inline-block;
-  font-family: Arial, sans-serif;
 }
 
 .discover-button,
@@ -1171,7 +1170,6 @@ h2 {
   border-radius: 4px;
   cursor: pointer;
   text-decoration: none;
-  font-family: inherit;
   font-size: 0.85rem;
 }
 
@@ -1199,10 +1197,17 @@ h2 {
   width: fit-content;
 }
 
-.section-title-wrapper h3 {
+.section-title-wrapper h3,
+.section-title-wrapper h2 {
   margin-bottom: 0 !important;
   margin-right: 12px;
   transition: color 0.3s;
+}
+
+.section-title-wrapper.favorites-link-wrapper {
+  text-decoration: none;
+  margin-top: 0.7rem;
+  margin-bottom: 0.8rem;
 }
 
 .swap-hint {
@@ -1223,7 +1228,8 @@ h2 {
   transform: translateX(0);
 }
 
-.section-title-wrapper:hover h3 {
+.section-title-wrapper:hover h3,
+.section-title-wrapper:hover .favorites-header {
   color: var(--activity-high);
 }
 

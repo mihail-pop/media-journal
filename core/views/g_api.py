@@ -3,11 +3,12 @@ from datetime import datetime
 
 from django.http import JsonResponse
 from django.urls import reverse
-from django.db.models import F, Case, When, Value, IntegerField, Q, Prefetch
+from django.db.models import F, Case, When, Value, IntegerField, Prefetch
 from django.db.models.functions import Lower
 from django.views.decorators.http import require_GET
 
 from core.models import MediaItem, FavoritePerson, Collection, CollectionItem
+from core.services.g_utils import normalize_search_text
 from core.services.g_api import get_game_screenshots_data
 from core.services.m_games import get_igdb_discover
 from core.services.m_anime_manga import get_anilist_discover
@@ -49,7 +50,13 @@ def movies_api(request):
         queryset = queryset.filter(status=status)
 
     if search:
-        queryset = queryset.filter(title__icontains=search)
+        normalized_query = normalize_search_text(search)
+        search_data = queryset.values_list('id', 'title')
+        matching_ids = [
+            item_id for item_id, title in search_data 
+            if normalized_query in normalize_search_text(title)
+        ]
+        queryset = queryset.filter(id__in=matching_ids)
 
     filter_mode = request.GET.get("filter_mode", "include")
     collections_param = request.GET.get("collections", "")
@@ -183,7 +190,13 @@ def tvshows_api(request):
         queryset = queryset.filter(status=status)
 
     if search:
-        queryset = queryset.filter(title__icontains=search)
+        normalized_query = normalize_search_text(search)
+        search_data = queryset.values_list('id', 'title')
+        matching_ids = [
+            item_id for item_id, title in search_data 
+            if normalized_query in normalize_search_text(title)
+        ]
+        queryset = queryset.filter(id__in=matching_ids)
 
     filter_mode = request.GET.get("filter_mode", "include")
     collections_param = request.GET.get("collections", "")
@@ -336,7 +349,13 @@ def anime_api(request):
         queryset = queryset.filter(status=status)
 
     if search:
-        queryset = queryset.filter(title__icontains=search)
+        normalized_query = normalize_search_text(search)
+        search_data = queryset.values_list('id', 'title')
+        matching_ids = [
+            item_id for item_id, title in search_data 
+            if normalized_query in normalize_search_text(title)
+        ]
+        queryset = queryset.filter(id__in=matching_ids)
 
     filter_mode = request.GET.get("filter_mode", "include")
     collections_param = request.GET.get("collections", "")
@@ -473,7 +492,13 @@ def manga_api(request):
         queryset = queryset.filter(status=status)
 
     if search:
-        queryset = queryset.filter(title__icontains=search)
+        normalized_query = normalize_search_text(search)
+        search_data = queryset.values_list('id', 'title')
+        matching_ids = [
+            item_id for item_id, title in search_data 
+            if normalized_query in normalize_search_text(title)
+        ]
+        queryset = queryset.filter(id__in=matching_ids)
 
     filter_mode = request.GET.get("filter_mode", "include")
     collections_param = request.GET.get("collections", "")
@@ -621,7 +646,13 @@ def games_api(request):
         queryset = queryset.filter(status=status)
 
     if search:
-        queryset = queryset.filter(title__icontains=search)
+        normalized_query = normalize_search_text(search)
+        search_data = queryset.values_list('id', 'title')
+        matching_ids = [
+            item_id for item_id, title in search_data 
+            if normalized_query in normalize_search_text(title)
+        ]
+        queryset = queryset.filter(id__in=matching_ids)
 
     filter_mode = request.GET.get("filter_mode", "include")
     collections_param = request.GET.get("collections", "")
@@ -749,9 +780,19 @@ def music_api(request):
         queryset = queryset.filter(status=status)
 
     if search:
-        queryset = queryset.filter(
-            Q(title__icontains=search) | Q(creators__icontains=search)
-        )
+        normalized_query = normalize_search_text(search)
+        search_data = queryset.values_list('id', 'title', 'creators')
+        matching_ids = []
+        for item_id, title, creators in search_data:
+            target_text = normalize_search_text(title)
+            if creators and isinstance(creators, list):
+                target_text += " " + normalize_search_text(" ".join(creators))
+            elif creators and isinstance(creators, str):
+                target_text += " " + normalize_search_text(creators)
+                
+            if normalized_query in target_text:
+                matching_ids.append(item_id)
+        queryset = queryset.filter(id__in=matching_ids)
 
     filter_mode = request.GET.get("filter_mode", "include")
     collections_param = request.GET.get("collections", "")
@@ -877,7 +918,13 @@ def books_api(request):
         queryset = queryset.filter(status=status)
 
     if search:
-        queryset = queryset.filter(title__icontains=search)
+        normalized_query = normalize_search_text(search)
+        search_data = queryset.values_list('id', 'title')
+        matching_ids = [
+            item_id for item_id, title in search_data 
+            if normalized_query in normalize_search_text(title)
+        ]
+        queryset = queryset.filter(id__in=matching_ids)
 
     filter_mode = request.GET.get("filter_mode", "include")
     collections_param = request.GET.get("collections", "")
@@ -996,7 +1043,13 @@ def history_api(request):
     queryset = MediaItem.objects.all()
 
     if search:
-        queryset = queryset.filter(title__icontains=search)
+        normalized_query = normalize_search_text(search)
+        search_data = queryset.values_list('id', 'title')
+        matching_ids = [
+            item_id for item_id, title in search_data 
+            if normalized_query in normalize_search_text(title)
+        ]
+        queryset = queryset.filter(id__in=matching_ids)
 
     if year:
         queryset = queryset.filter(date_added__year=year)

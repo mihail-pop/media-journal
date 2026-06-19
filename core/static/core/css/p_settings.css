@@ -156,6 +156,17 @@ p {
   transition: background-color 0.2s ease;
 }
 
+.font-preview {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  opacity: 0.6;
+}
+
+/* Hide the preview text when it's copied into the selected value box */
+.custom-select-trigger .font-preview {
+  display: none;
+}
+
 .custom-option:hover {
   background-color: var(--hover-bg);
 }
@@ -187,7 +198,6 @@ p {
 
 
 body {
-  font-family: "Segoe UI", Tahoma, sans-serif;
   background-color: var(--bg-primary);
   color: var(--text-primary);
   overflow-y: scroll;
@@ -1016,4 +1026,52 @@ table td:last-child .delete-btn {
 
 .backup-modal-overlay.visible .backup-modal-content {
   transform: scale(1);
+}
+
+/* Custom Refresh Checkboxes */
+.refresh-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  user-select: none;
+  transition: color 0.2s ease;
+}
+
+.refresh-checkbox-label:hover {
+  color: var(--special-color);
+}
+
+.refresh-checkbox-label input {
+  display: none;
+}
+
+.refresh-checkbox-label .custom-checkbox {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--border-color);
+  border-radius: 4px;
+  display: inline-block;
+  position: relative;
+  background-color: var(--bg-secondary);
+  transition: all 0.2s ease;
+}
+
+.refresh-checkbox-label input:checked + .custom-checkbox {
+  background-color: var(--special-color);
+  border-color: var(--special-color);
+}
+
+.refresh-checkbox-label input:checked + .custom-checkbox::after {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 1px;
+  width: 4px;
+  height: 9px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
 }
