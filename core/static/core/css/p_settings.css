@@ -143,6 +143,11 @@ p {
   overflow-y: auto;
 }
 
+.custom-select.drop-up .custom-options {
+  top: auto;
+  bottom: calc(100% + 4px);
+}
+
 .custom-select.open .custom-options {
   display: block;
 }

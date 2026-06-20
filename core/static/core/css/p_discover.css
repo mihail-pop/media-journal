@@ -230,6 +230,11 @@ body {
   display: block;
 }
 
+.custom-select-wrapper.drop-up .custom-options {
+  top: auto;
+  bottom: calc(100% + 4px);
+}
+
 .custom-option {
   padding: 0.5rem;
   color: var(--text-primary);

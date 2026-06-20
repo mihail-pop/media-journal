@@ -64,8 +64,17 @@ document.addEventListener("DOMContentLoaded", function () {
     const options = select.querySelectorAll('.custom-option');
     const originalSelect = document.getElementById('rating-mode-select');
 
-    // Toggle dropdown
     trigger.addEventListener('click', () => {
+      if (!select.classList.contains('open')) {
+        const rect = trigger.getBoundingClientRect();
+        const spaceBelow = window.innerHeight - rect.bottom;
+        
+        if (spaceBelow < 220 && rect.top > spaceBelow) {
+          select.classList.add('drop-up');
+        } else {
+          select.classList.remove('drop-up');
+        }
+      }
       select.classList.toggle('open');
     });
 
@@ -126,6 +135,16 @@ document.addEventListener("DOMContentLoaded", function () {
     // Toggle dropdown
     trigger.addEventListener('click', (e) => {
       e.stopPropagation();
+      if (!select.classList.contains('open')) {
+        const rect = trigger.getBoundingClientRect();
+        const spaceBelow = window.innerHeight - rect.bottom;
+        
+        if (spaceBelow < 220 && rect.top > spaceBelow) {
+          select.classList.add('drop-up');
+        } else {
+          select.classList.remove('drop-up');
+        }
+      }
       select.classList.toggle('open');
     });
 
@@ -163,7 +182,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     // Set initial value from localStorage (handle legacy 'system' key)
-    let savedFont = localStorage.getItem('user-font') || 'overpass';
+    let savedFont = localStorage.getItem('user-font') || 'segoe';
     if (savedFont === 'system') savedFont = 'segoe';
 
     originalSelect.value = savedFont;

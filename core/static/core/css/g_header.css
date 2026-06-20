@@ -1,16 +1,18 @@
 :root {
-  --font-overpass: 'Overpass', -apple-system, BlinkMacSystemFont, 'Segoe UI', Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
-  --font-inter: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
-  --font-segoe: 'Segoe UI', Tahoma, -apple-system, BlinkMacSystemFont, 'Segoe UI', Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  --font-inter: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', Arial, sans-serif;
+  --font-overpass: 'Overpass', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', Arial, sans-serif;
+  --font-roboto: Roboto, -apple-system, BlinkMacSystemFont, 'Segoe UI', Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', Arial, sans-serif;
+  --font-segoe: 'Segoe UI', Tahoma, Geneva, Verdana, -apple-system, BlinkMacSystemFont, Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', Arial, sans-serif;
 }
 
-html[data-font="overpass"] { --font-user: var(--font-overpass); }
 html[data-font="inter"] { --font-user: var(--font-inter); }
+html[data-font="overpass"] { --font-user: var(--font-overpass); }
+html[data-font="roboto"] { --font-user: var(--font-roboto); }
 html[data-font="segoe"] { --font-user: var(--font-segoe); }
 
 body {
   margin: 0;
-  font-family: var(--font-user, var(--font-overpass));
+  font-family: var(--font-user, var(--font-segoe));
   background: var(--bg-primary, #f7f9fc);
   color: var(--text-primary, #2e3440);
 

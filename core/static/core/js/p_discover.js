@@ -661,6 +661,18 @@ document.addEventListener('DOMContentLoaded', () => {
       e.stopPropagation();
       const wrapper = trigger.closest('.custom-select-wrapper');
       const optionsList = wrapper.querySelector('.custom-options');
+      
+      if (!optionsList.classList.contains('open')) {
+        const rect = trigger.getBoundingClientRect();
+        const spaceBelow = window.innerHeight - rect.bottom;
+        
+        if (spaceBelow < 220 && rect.top > spaceBelow) {
+          wrapper.classList.add('drop-up');
+        } else {
+          wrapper.classList.remove('drop-up');
+        }
+      }
+      
       optionsList.classList.toggle('open');
     });
   });

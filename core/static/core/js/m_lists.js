@@ -1156,8 +1156,20 @@ function persistSortState() {
 }
 
 function setSortSelectOpen(isOpen) {
-  const optionsList = sortSelect?.closest('.custom-select-wrapper')?.querySelector('.custom-options');
-  if (!optionsList) return;
+  const wrapper = sortSelect?.closest('.custom-select-wrapper');
+  const optionsList = wrapper?.querySelector('.custom-options');
+  if (!optionsList || !wrapper) return;
+
+  if (isOpen) {
+    const rect = sortSelect.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    if (spaceBelow < 220 && rect.top > spaceBelow) {
+      wrapper.classList.add('drop-up');
+    } else {
+      wrapper.classList.remove('drop-up');
+    }
+  }
+
   optionsList.classList.toggle('open', isOpen);
   sortSelect.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
 }
@@ -1333,10 +1345,22 @@ updateSortButtons();
       }
     }
 
-    // 4. Open/Close & Clear Logic
-    genreSelectWrapper.addEventListener('click', (e) => {
+    // Helper to open genre select with drop-up check
+    function openGenreSelect() {
+      const rect = genreSelectWrapper.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      if (spaceBelow < 360 && rect.top > spaceBelow) {
+        genreSelectWrapper.classList.add('drop-up');
+      } else {
+        genreSelectWrapper.classList.remove('drop-up');
+      }
       genreOptionsContainer.classList.add('open');
       genreSelectWrapper.classList.add('open');
+    }
+
+    // 4. Open/Close & Clear Logic
+    genreSelectWrapper.addEventListener('click', (e) => {
+      openGenreSelect();
       // Only focus the input if the user didn't explicitly click it or a tag
       if (e.target !== genreSearchInput && e.target !== genreIndicator && !e.target.closest('.remove-tag')) {
         genreSearchInput.focus();
@@ -1344,8 +1368,7 @@ updateSortButtons();
     });
     
     genreSearchInput.addEventListener('focus', () => {
-      genreOptionsContainer.classList.add('open');
-      genreSelectWrapper.classList.add('open');
+      openGenreSelect();
     });
 
     document.addEventListener('click', (e) => {
@@ -1380,8 +1403,7 @@ updateSortButtons();
           genreOptionsContainer.classList.remove('open');
           genreSelectWrapper.classList.remove('open');
         } else {
-          genreOptionsContainer.classList.add('open');
-          genreSelectWrapper.classList.add('open');
+          openGenreSelect();
           genreSearchInput.focus();
         }
       }
@@ -1494,9 +1516,20 @@ updateSortButtons();
       }
     }
 
-    collectionSelectWrapper.addEventListener('click', (e) => {
+    function openCollectionSelect() {
+      const rect = collectionSelectWrapper.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      if (spaceBelow < 360 && rect.top > spaceBelow) {
+        collectionSelectWrapper.classList.add('drop-up');
+      } else {
+        collectionSelectWrapper.classList.remove('drop-up');
+      }
       collectionOptionsContainer.classList.add('open');
       collectionSelectWrapper.classList.add('open');
+    }
+
+    collectionSelectWrapper.addEventListener('click', (e) => {
+      openCollectionSelect();
       // Only focus the input if the user didn't explicitly click it or a tag
       if (e.target !== collectionSearchInput && e.target !== collectionIndicator && !e.target.closest('.remove-tag')) {
         collectionSearchInput.focus();
@@ -1504,8 +1537,7 @@ updateSortButtons();
     });
 
     collectionSearchInput.addEventListener('focus', () => {
-      collectionOptionsContainer.classList.add('open');
-      collectionSelectWrapper.classList.add('open');
+      openCollectionSelect();
     });
 
     document.addEventListener('click', (e) => {
@@ -1537,8 +1569,7 @@ updateSortButtons();
           collectionOptionsContainer.classList.remove('open');
           collectionSelectWrapper.classList.remove('open');
         } else {
-          collectionOptionsContainer.classList.add('open');
-          collectionSelectWrapper.classList.add('open');
+          openCollectionSelect();
           collectionSearchInput.focus();
         }
       }
