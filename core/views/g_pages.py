@@ -27,12 +27,8 @@ logger = logging.getLogger(__name__)
 
 SYSTEM_NOTIFICATIONS = [
     {
-        "id": "sys_1_25_refresh_movies",
-        "html": "If you are updating from a release before v1.26.0 go to <a href='/settings/'>Settings > Refresh</a> and do Refresh Movies to get Length/Runtime for your movies."
-    },
-    {
         "id": "sys_1_25_shard",
-        "html": "I improved how images are stored to keep the app fast and stable in the long run. Please <a href='#' id='trigger-sharding-btn' style='font-weight:bold; color:#F59E0B;'>click here to update your existing images</a>. (Do not close the page until it finishes)"
+        "html": "Relevant only if you are updating from a release before 1.26.0: I improved how images are stored to keep the app fast and stable in the long run. Please <a href='#' id='trigger-sharding-btn' style='font-weight:bold; color:#F59E0B;'>click here to update your existing images</a>. (Do not close the page until it finishes)"
     }
 ]
 
