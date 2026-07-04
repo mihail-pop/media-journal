@@ -7,8 +7,11 @@ class GlobalLoginRequiredMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        # 1. If the toggle is OFF, do nothing. Let everyone in.
+        # 1. If the toggle is OFF, let everyone in.
         if not getattr(settings, 'REQUIRE_LOGIN', False):
+            # If they manually try to visit the login page while it's turned off, bounce them to home
+            if request.path_info == reverse('login'):
+                return redirect('home')
             return self.get_response(request)
 
         # 2. Prevent infinite loops: Always let people see the login page itself!
