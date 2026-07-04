@@ -7,10 +7,7 @@
   <link rel="stylesheet" href="{% static 'core/css/g_header.css' %}" />
   <link rel="stylesheet" href="{% static 'core/css/g_search.css' %}" />
   <link rel="icon" href="/static/core/icons/favicon.ico" type="image/x-icon">
-  <!-- fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Overpass:ital,wght@0,400;0,600;0,700;0,800&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <!-- fonts (Served locally via CSS) -->
 
   <script>
     (function() {
@@ -20,6 +17,20 @@
         localStorage.setItem('user-font', 'segoe');
       }
       document.documentElement.setAttribute('data-font', savedFont);
+
+      // Preload the active custom font immediately to prevent delayed text rendering
+      if (savedFont !== 'segoe' && savedFont !== 'os') {
+        const weights = ['regular', '500', '700'];
+        for (let i = 0; i < weights.length; i++) {
+          let link = document.createElement('link');
+          link.rel = 'preload';
+          link.as = 'font';
+          link.type = 'font/woff2';
+          link.href = '/static/core/fonts/' + savedFont + '-' + weights[i] + '.woff2';
+          link.crossOrigin = 'anonymous';
+          document.head.appendChild(link);
+        }
+      }
     })();
   </script>
 </head>

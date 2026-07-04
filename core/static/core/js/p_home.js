@@ -295,10 +295,25 @@ function slugify(text) {
   const notifDropdown = document.getElementById('notifications-dropdown');
 
   // --- 3. UI TOGGLE & EMPTY CHECK HELPER ---
-  notifButton.addEventListener('click', () => {
+  notifButton.addEventListener('click', (event) => {
     const expanded = notifButton.getAttribute('aria-expanded') === 'true';
     notifButton.setAttribute('aria-expanded', String(!expanded));
     notifDropdown.hidden = expanded;  
+  });
+
+  // Close the notification dropdown when clicking outside of it
+  document.addEventListener('click', (event) => {
+    if (notifButton && notifDropdown) {
+      const isClickInsideButton = notifButton.contains(event.target);
+      const isClickInsideDropdown = notifDropdown.contains(event.target);
+
+      if (!isClickInsideButton && !isClickInsideDropdown) {
+        if (notifButton.getAttribute('aria-expanded') === 'true') {
+          notifButton.setAttribute('aria-expanded', 'false');
+          notifDropdown.hidden = true;
+        }
+      }
+    }
   });
 
   function checkEmptyNotifications() {

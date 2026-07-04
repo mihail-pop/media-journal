@@ -188,18 +188,30 @@ def anilist_detail(request, source, media_type, source_id):
             alt_anilist = api_data.get("anilist_id")
             alt_mal = api_data.get("mal_id")
             
-            item = MediaItem.objects.filter(
-                Q(provider_ids__anilist=str(alt_anilist)) | Q(provider_ids__mal=str(alt_mal)),
-                media_type=media_type
-            ).first()
+            query = Q()
+            if alt_anilist:
+                query |= Q(provider_ids__anilist=str(alt_anilist))
+            if alt_mal:
+                query |= Q(provider_ids__mal=str(alt_mal))
+            
+            item = None
+            if query:
+                item = MediaItem.objects.filter(query, media_type=media_type).first()
 
             if item:
-                # Silently update the item with the missing ID and redirect/reload
-                item.provider_ids["anilist"] = str(alt_anilist)
-                if alt_mal:
-                    item.provider_ids["mal"] = str(alt_mal)
-                item.save()
-                return redirect(request.path)
+                existing_anilist = item.provider_ids.get("anilist")
+                
+                # If the item already has a DIFFERENT anilist ID, do NOT heal!
+                # It means these are two different AniList entries sharing a MAL ID.
+                if existing_anilist and str(existing_anilist) != str(alt_anilist):
+                    item = None
+                else:
+                    # Silently update the item with the missing ID and redirect/reload
+                    item.provider_ids["anilist"] = str(alt_anilist)
+                    if alt_mal:
+                        item.provider_ids["mal"] = str(alt_mal)
+                    item.save()
+                    return redirect(request.path)
 
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)

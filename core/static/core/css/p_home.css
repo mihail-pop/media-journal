@@ -744,6 +744,10 @@ h2 {
   color: var(--text-secondary);
   cursor: default;
   margin-top: 0.4rem;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .extra-stats {
