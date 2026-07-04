@@ -1,0 +1,92 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Media Journal</title>
+    <style>
+        /* Hardcoded to app's default dark theme (bg-primary and bg-tertiary) */
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #0b1622; 
+            color: #8596a5;
+            margin: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+        .login-container {
+            background-color: #151f2e;
+            padding: 40px;
+            border-radius: 6px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            max-width: 350px;
+            width: 100%;
+        }
+        h2 {
+            color: #ececec;
+            margin-top: 0;
+            font-size: 1.8rem;
+            margin-bottom: 25px;
+        }
+        .login-container input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border: 0px solid #32445b;
+            background-color: #0b1622;
+            color: #ececec;
+            box-sizing: border-box;
+            font-size: 1rem;
+        }
+        .login-container input:focus {
+            outline: none;
+        }
+        .login-container button {
+            width: 6rem;
+            padding: 12px;
+            margin-top: 20px;
+            background-color: #32445b;
+            color: #ececec;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            transition: background-color 0.2s, color 0.2s;
+        }
+        .login-container button:hover {
+            background-color: #abbacd;
+            color: #0b1622;
+        }
+        .error-message {
+            color: #E53935;
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-container">
+        <h2>Media Journal</h2>
+
+        {% if form.errors %}
+            <p class="error-message">Invalid username or password.</p>
+        {% endif %}
+
+        <form method="POST" action="{% url 'login' %}">
+            {% csrf_token %}
+            <input type="text" name="username" placeholder="Username" required autofocus>
+            <input type="password" name="password" placeholder="Password" required>
+            
+            <button type="submit">Login</button>
+        </form>
+    </div>
+
+</body>
+</html>

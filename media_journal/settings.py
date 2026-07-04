@@ -54,13 +54,14 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'core.middleware.GlobalLoginRequiredMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 
 ROOT_URLCONF = 'media_journal.urls'
@@ -163,3 +164,11 @@ DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000  # Increase field limit for multiple files
 
 # Firebase Configuration
 FIREBASE_URL = "https://media-journal-6c8cf-default-rtdb.europe-west1.firebasedatabase.app"
+
+# --- LOGIN TOGGLE SETTINGS ---
+# Reads REQUIRE_LOGIN from .env or Docker. Defaults to False if not set.
+REQUIRE_LOGIN = os.environ.get('REQUIRE_LOGIN', 'False').lower() in ('true', '1', 't')
+
+# Tell Django where to send unauthenticated users
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = 'home' # Sends them to the home page after successful login

@@ -2,10 +2,13 @@ from django.conf import settings
 from django.urls import path, re_path
 from django.contrib import admin
 from django.views.static import serve
+from django.contrib.auth import views as auth_views
 
 from core import views
 
 urlpatterns = [
+    path('login/', auth_views.LoginView.as_view(template_name='core/p_login.html'), name='login'),
+    path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
     path('admin/', admin.site.urls),
     path('api/tmdb_search/', views.tmdb_search, name='tmdb_search'),
     path('update-rating-mode/', views.update_rating_mode, name='update_rating_mode'),

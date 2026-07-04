@@ -27,6 +27,14 @@
         {% endif %}
       </li>
       <li><a href="/settings">Settings</a></li>
+      {% if request.user.is_authenticated %}
+            <li>
+                <form action="{% url 'logout' %}" method="post" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="dropbtn">Logout</button>
+                </form>
+            </li>
+            {% endif %}
     </ul>
   </div>
 </header>
