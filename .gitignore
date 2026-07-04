@@ -4,6 +4,7 @@ __pycache__/
 .env
 *.log
 
+site/
 /staticfiles/
 .vscode/
 .cleanup_runs

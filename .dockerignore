@@ -9,6 +9,7 @@ __pycache__/
 
 .vscode/
 /staticfiles/
+site/
 .git/
 .github/
 .vscode/
