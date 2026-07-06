@@ -2,23 +2,29 @@ site_name: Media Journal
 site_description: Official documentation for Media Journal
 site_author: Mihail Pop
 site_url: https://mihail-pop.github.io/media-journal/ 
+repo_name: media-journal
+repo_url: https://github.com/mihail-pop/media-journal
 
 theme:
   name: material
+  custom_dir: overrides
+  icon:
+    repo: fontawesome/brands/github
   features:
-    - navigation.expand
     - search.suggest
     - search.highlight
+    - content.code.copy
+    - navigation.tabs
   palette:
     - scheme: slate
-      primary: blue grey
+      primary: black
       accent: light blue
       toggle:
         icon: material/weather-night
         name: Switch to light mode
 
     - scheme: default
-      primary: blue grey
+      primary: white
       accent: light blue
       toggle:
         icon: material/weather-sunny
@@ -40,3 +46,18 @@ nav:
   - Developer Guide:
     - Architecture: developer/architecture.md
     - Database: developer/database.md
+
+markdown_extensions:
+  - pymdownx.superfences
+  - pymdownx.highlight
+
+copyright: "Copyright &copy; 2026 Media Journal"
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/mihail-pop/media-journal
+      name: Media Journal on GitHub
+
+extra_css:
+  - stylesheets/custom.css

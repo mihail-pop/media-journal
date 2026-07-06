@@ -1,0 +1,64 @@
+
+/* =========================================
+   1. Stop GitHub Button Animations & Shifting
+   ========================================= */
+/* Kill all height/slide animations on the repository title and stats */
+.md-source__info,
+.md-source__repository,
+.md-source__facts,
+.md-source__fact {
+  animation: none !important;
+  transition: none !important;
+}
+
+/* =========================================
+   2. Fix the Windows Scrollbar Flash
+   ========================================= */
+/* Hide the scrollbar track on the sidebars completely */
+.md-sidebar__scrollwrap {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.md-sidebar__scrollwrap::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+/* =========================================
+   3. Make Title Clickable, Hide Logo, & Fix Spacing
+   ========================================= */
+/* Hide the old, unclickable title container */
+.md-header__title {
+  display: none !important;
+}
+
+/* Hide the SVG icon inside the clickable home link */
+.md-header__button.md-logo svg,
+.md-header__button.md-logo img {
+  display: none !important;
+}
+
+/* Make the new clickable logo take up the empty middle space 
+   so the search bar is pushed perfectly back to the right! */
+.md-header__button.md-logo {
+  flex-grow: 1;
+  justify-content: flex-start !important;
+  padding-left: 0.2rem;
+}
+
+/* Inject your title directly into the clickable home link */
+.md-header__button.md-logo::after {
+  content: "Media Journal";
+  font-size: 1.05rem; 
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* =========================================
+   4. Prevent Scrollbar Layout Shift
+   ========================================= */
+/* Forces the vertical scrollbar space to always exist, 
+   applied ONLY to the body to prevent double scrollbars */
+html {
+  overflow-y: scroll !important;
+}

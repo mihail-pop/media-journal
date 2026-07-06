@@ -1,4 +1,5 @@
 <h1 align="center">Media Journal</h1>
+<p align="center"> <a href="https://mihail-pop.github.io/media-journal/">Documentation</a>
 
 This is the self-hosted media tracker app I always wanted to have. From now on I will use it and keep it maintained. I will never ask for donations or try to monetize the app in any form. People using it is more than enough!
 > **Note:** I added the open source AGPL license to make contributing easier, hoping nobody would try to monetize the app with the "commercial use" clause. I personally disapprove of that.
