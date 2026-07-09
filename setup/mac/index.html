@@ -82,7 +82,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#work-in-progress" class="md-skip">
+        <a href="#setup-for-mac" class="md-skip">
           Skip to content
         </a>
       
@@ -235,7 +235,7 @@
   
     
   
-  Welcome
+  Introduction
 
       </a>
     </li>
@@ -383,7 +383,7 @@
   <span class="md-ellipsis">
     
   
-    Welcome
+    Introduction
   
 
     
@@ -570,13 +570,52 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#work-in-progress" class="md-nav__link">
+  <a href="#setup-for-mac" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Work in progress :)
+        Setup for Mac
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Setup for Mac">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#access-from-other-devices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Access from Other Devices
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#run-automatically-on-startup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Run Automatically on Startup
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#run-automatically-on-boot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Run Automatically on Boot
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -702,6 +741,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../configuration/remote-access/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Remote Access
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -774,62 +841,6 @@
     
   
     Home
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../app-guide/lists/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Lists
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../app-guide/details/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Details
   
 
     
@@ -988,13 +999,52 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#work-in-progress" class="md-nav__link">
+  <a href="#setup-for-mac" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Work in progress :)
+        Setup for Mac
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Setup for Mac">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#access-from-other-devices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Access from Other Devices
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#run-automatically-on-startup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Run Automatically on Startup
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#run-automatically-on-boot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Run Automatically on Boot
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1020,7 +1070,130 @@
 
   <h1>Mac</h1>
 
-<h2 id="work-in-progress">Work in progress :)</h2>
+<h2 id="setup-for-mac">Setup for Mac<a class="headerlink" href="#setup-for-mac" title="Permanent link">#</a></h2>
+<ol>
+<li>
+<p>Download <a href="https://www.python.org/downloads/release/python-3130/">Python 3.13.0</a>.<br />
+    Run the installer. <em>(Note: After installation finishes, open your </em><em>Applications</em><em> folder, open the </em><em>Python 3.13</em><em> folder and double-click <code>Install Certificates.command</code>. This ensures the app can safely connect to APIs).</em></p>
+</li>
+<li>
+<p>Open a terminal inside the folder where you want the app installed:<br />
+    Press <code>Cmd + Space</code>, type <strong>Terminal</strong> and press Enter. 
+    Type <code>cd</code> <em>(with a space after it)</em>, drag the folder you want to use from Finder directly into the terminal window and press <strong>Enter</strong>.</p>
+</li>
+<li>
+<p>Clone the repository:<br />
+    <div class="highlight"><pre><span></span><code>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/mihail-pop/media-journal
+</code></pre></div>
+    <em>(Note: If you don't have Git installed, your Mac will automatically pop up a window asking to install "Command Line Developer Tools". Click Install, wait for it to finish and run the command again).</em></p>
+<p>Then navigate into the newly created folder:
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>media-journal
+</code></pre></div></p>
+</li>
+<li>
+<p>Create and activate a Virtual Environment:
+    <em>(macOS requires apps to use their own isolated Python environments).</em>
+    <div class="highlight"><pre><span></span><code>python3<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>venv
+<span class="nb">source</span><span class="w"> </span>venv/bin/activate
+</code></pre></div></p>
+</li>
+<li>
+<p>Install the dependencies:<br />
+    <div class="highlight"><pre><span></span><code>pip3<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
+</code></pre></div></p>
+</li>
+<li>
+<p>Create the database:<br />
+    <div class="highlight"><pre><span></span><code>python3<span class="w"> </span>manage.py<span class="w"> </span>migrate
+</code></pre></div></p>
+</li>
+<li>
+<p>Generate static files (required after every update):<br />
+    <div class="highlight"><pre><span></span><code>python3<span class="w"> </span>manage.py<span class="w"> </span>collectstatic<span class="w"> </span>--noinput
+</code></pre></div></p>
+</li>
+<li>
+<p>Start the app:<br />
+    <div class="highlight"><pre><span></span><code><span class="nv">TZ</span><span class="o">=</span>Europe/London<span class="w"> </span>python3<span class="w"> </span>manage.py<span class="w"> </span>runserver<span class="w"> </span><span class="m">0</span>.0.0.0:8000<span class="w"> </span>--noreload
+</code></pre></div>
+    Or use this command if you plan to run it on a machine 24/7:<br />
+    <div class="highlight"><pre><span></span><code><span class="nv">TZ</span><span class="o">=</span>Europe/London<span class="w"> </span>python3<span class="w"> </span>-m<span class="w"> </span>waitress<span class="w"> </span>--listen<span class="o">=</span><span class="m">0</span>.0.0.0:8000<span class="w"> </span>--threads<span class="o">=</span><span class="m">8</span><span class="w"> </span>media_journal.wsgi:application
+</code></pre></div>
+    <em>(Replace <code>Europe/London</code> with your local timezone. You can find a clean list of supported timezones <a href="https://www.php.net/manual/en/timezones.php">here</a>).</em></p>
+</li>
+<li>
+<p>Open the app in your browser at: <a href="http://localhost:8000">http://localhost:8000</a></p>
+</li>
+<li>
+<p>Inside the app navigate to <strong>Settings → API Keys</strong>.
+    You will need to add your own API keys. In that section there are instructions on how to obtain them.</p>
+</li>
+</ol>
+<hr />
+<h3 id="access-from-other-devices">Access from Other Devices<a class="headerlink" href="#access-from-other-devices" title="Permanent link">#</a></h3>
+<p>To access the app from your phone, tablet or other devices on the same Wi-Fi network, use your Mac's IP address instead of <code>localhost</code>. </p>
+<p>You can easily find your IP Address by holding down the <strong>Option (⌥)</strong> key and clicking the <strong>Wi-Fi icon</strong> in your top menu bar. Look for <code>IP Address</code>.<br />
+<em>(Example: Once you find it, you would type <code>http://192.168.1.15:8000</code> into your phone's browser).</em></p>
+<hr />
+<h3 id="run-automatically-on-startup">Run Automatically on Startup<a class="headerlink" href="#run-automatically-on-startup" title="Permanent link">#</a></h3>
+<p>To make the app start automatically and silently in the background when you log into your Mac, you can use the built-in macOS service manager (<code>launchd</code>). No third-party apps are needed.</p>
+<p><strong>1. Create the Service File:</strong><br />
+Open a plain text editor (like TextEdit) and create a file called <code>com.mediajournal.plist</code>. Paste the following code into it, replacing <code>/PATH/TO/YOUR/</code> with the actual path to your <code>media-journal</code> folder.</p>
+<div class="highlight"><pre><span></span><code><span class="cp">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;</span>
+<span class="cp">&lt;!DOCTYPE plist PUBLIC &quot;-//Apple//DTD PLIST 1.0//EN&quot; &quot;http://www.apple.com/DTDs/PropertyList-1.0.dtd&quot;&gt;</span>
+<span class="nt">&lt;plist</span><span class="w"> </span><span class="na">version=</span><span class="s">&quot;1.0&quot;</span><span class="nt">&gt;</span>
+<span class="nt">&lt;dict&gt;</span>
+<span class="w">    </span><span class="nt">&lt;key&gt;</span>Label<span class="nt">&lt;/key&gt;</span>
+<span class="w">    </span><span class="nt">&lt;string&gt;</span>com.mediajournal<span class="nt">&lt;/string&gt;</span>
+<span class="w">    </span><span class="nt">&lt;key&gt;</span>WorkingDirectory<span class="nt">&lt;/key&gt;</span>
+<span class="w">    </span><span class="nt">&lt;string&gt;</span>/PATH/TO/YOUR/media-journal<span class="nt">&lt;/string&gt;</span>
+<span class="w">    </span><span class="nt">&lt;key&gt;</span>EnvironmentVariables<span class="nt">&lt;/key&gt;</span>
+<span class="w">    </span><span class="nt">&lt;dict&gt;</span>
+<span class="w">        </span><span class="cm">&lt;!-- Replace Europe/London with your local timezone --&gt;</span>
+<span class="w">        </span><span class="nt">&lt;key&gt;</span>TZ<span class="nt">&lt;/key&gt;</span>
+<span class="w">        </span><span class="nt">&lt;string&gt;</span>Europe/London<span class="nt">&lt;/string&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/dict&gt;</span>
+<span class="w">    </span><span class="nt">&lt;key&gt;</span>ProgramArguments<span class="nt">&lt;/key&gt;</span>
+<span class="w">    </span><span class="nt">&lt;array&gt;</span>
+<span class="w">        </span><span class="nt">&lt;string&gt;</span>/PATH/TO/YOUR/media-journal/venv/bin/python3<span class="nt">&lt;/string&gt;</span>
+<span class="w">        </span><span class="nt">&lt;string&gt;</span>-m<span class="nt">&lt;/string&gt;</span>
+<span class="w">        </span><span class="nt">&lt;string&gt;</span>waitress<span class="nt">&lt;/string&gt;</span>
+<span class="w">        </span><span class="nt">&lt;string&gt;</span>--listen=0.0.0.0:8000<span class="nt">&lt;/string&gt;</span>
+<span class="w">        </span><span class="nt">&lt;string&gt;</span>--threads=8<span class="nt">&lt;/string&gt;</span>
+<span class="w">        </span><span class="nt">&lt;string&gt;</span>media_journal.wsgi:application<span class="nt">&lt;/string&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/array&gt;</span>
+<span class="w">    </span><span class="nt">&lt;key&gt;</span>RunAtLoad<span class="nt">&lt;/key&gt;</span>
+<span class="w">    </span><span class="nt">&lt;true/&gt;</span>
+<span class="nt">&lt;/dict&gt;</span>
+<span class="nt">&lt;/plist&gt;</span>
+</code></pre></div>
+<blockquote>
+<p>For timezone you can find a clean list of supported timezones <a href="https://www.php.net/manual/en/timezones.php">here</a>.  </p>
+</blockquote>
+<p><strong>2. Move the file to your hidden LaunchAgents folder:</strong><br />
+In Finder, press <code>Cmd + Shift + G</code>, type <code>~/Library/LaunchAgents/</code> and press Enter. Drag your <code>com.mediajournal.plist</code> file into this folder.</p>
+<p><strong>3. Activate the Service:</strong><br />
+Open Terminal and run this command:
+<div class="highlight"><pre><span></span><code>launchctl<span class="w"> </span>load<span class="w"> </span>~/Library/LaunchAgents/com.mediajournal.plist
+</code></pre></div>
+The app will now run silently in the background every time you log in! <em>(To stop it manually, run the same command but replace <code>load</code> with <code>unload</code>)</em>.</p>
+<hr />
+<h3 id="run-automatically-on-boot">Run Automatically on Boot<a class="headerlink" href="#run-automatically-on-boot" title="Permanent link">#</a></h3>
+<p>If you want the app to start before you log into your Mac, you can start it as a system service. You can do this by using the exact same <code>.plist</code> file from the previous step, but placing it in the System Daemon folder instead.</p>
+<ol>
+<li>Follow <strong>Step 1</strong> above to create the <code>.plist</code> file.</li>
+<li>In Finder, press <code>Cmd + Shift + G</code> and go to <code>/Library/LaunchDaemons/</code> <em>(Notice there is no <code>~</code> at the start of this path!)</em>.</li>
+<li>Drag the <code>.plist</code> file into this folder. It will ask for your Mac admin password to confirm.</li>
+<li>Activate the background boot service by running this command in Terminal:
+    <div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>launchctl<span class="w"> </span>load<span class="w"> </span>/Library/LaunchDaemons/com.mediajournal.plist
+</code></pre></div></li>
+</ol>
+<hr />
+<p>If you want to access the app from outside your local Wi-Fi network, check the following guides:</p>
+<div style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
+<p><a class="md-button" href="../../configuration/remote-access/">Read the Remote Access Guide</a>
+<a class="md-button" href="../../configuration/authentication/">Read the Authentication Guide</a></p>
+</div>
 
 
 
@@ -1038,6 +1211,8 @@
             </div>
           
           
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
 <script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
         </div>
         
@@ -1081,7 +1256,7 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["search.suggest", "search.highlight", "content.code.copy", "navigation.tabs"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["search.suggest", "search.highlight", "content.code.copy", "navigation.tabs", "content.tabs.link"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
       <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>

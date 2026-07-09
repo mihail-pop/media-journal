@@ -18,7 +18,7 @@
         <link rel="prev" href="../../setup/linux/">
       
       
-        <link rel="next" href="../../app-guide/home/">
+        <link rel="next" href="../remote-access/">
       
       
         
@@ -82,7 +82,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#work-in-progress" class="md-skip">
+        <a href="#authentication" class="md-skip">
           Skip to content
         </a>
       
@@ -235,7 +235,7 @@
   
     
   
-  Welcome
+  Introduction
 
       </a>
     </li>
@@ -383,7 +383,7 @@
   <span class="md-ellipsis">
     
   
-    Welcome
+    Introduction
   
 
     
@@ -683,13 +683,41 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#work-in-progress" class="md-nav__link">
+  <a href="#authentication" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Work in progress :)
+        Authentication
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Authentication">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#step-1-create-an-account" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 1: Create an Account
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-2-enable-the-login-screen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 2: Enable the Login Screen
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -697,6 +725,34 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../remote-access/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Remote Access
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -774,62 +830,6 @@
     
   
     Home
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../app-guide/lists/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Lists
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../app-guide/details/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Details
   
 
     
@@ -988,13 +988,41 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#work-in-progress" class="md-nav__link">
+  <a href="#authentication" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Work in progress :)
+        Authentication
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Authentication">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#step-1-create-an-account" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 1: Create an Account
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-2-enable-the-login-screen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 2: Enable the Login Screen
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1020,7 +1048,109 @@
 
   <h1>Authentication</h1>
 
-<h2 id="work-in-progress">Work in progress :)</h2>
+<h2 id="authentication">Authentication<a class="headerlink" href="#authentication" title="Permanent link">#</a></h2>
+<p>By default Media Journal does not require a login to access. If you are hosting the app on a local network for personal use this is usually fine. </p>
+<p>However, if you plan to expose the app to the internet (using a reverse proxy or Cloudflare Tunnels) it is highly recommended to enable authentication. This will lock down the entire app including your uploaded images and screenshots so only you can access them.</p>
+<p>Setting up authentication is a two-step process: you must create an administrator account and then tell the app to require a login.</p>
+<hr />
+<h3 id="step-1-create-an-account">Step 1: Create an Account<a class="headerlink" href="#step-1-create-an-account" title="Permanent link">#</a></h3>
+<p>Before you lock the app you need to create a "Superuser" account so you can actually log in.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:4"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><input id="__tabbed_1_4" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Docker</label><label for="__tabbed_1_2">Windows</label><label for="__tabbed_1_3">Mac</label><label for="__tabbed_1_4">Linux</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<p>Open a terminal on the machine running your Docker container and run:
+<div class="highlight"><pre><span></span><code>docker<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>-it<span class="w"> </span>media-journal<span class="w"> </span>python<span class="w"> </span>manage.py<span class="w"> </span>createsuperuser
+</code></pre></div>
+<em>It will prompt you to create a username, email (optional) and password. Note that as you type your password nothing will show on the screen for security reasons.</em></p>
+</div>
+<div class="tabbed-block">
+<p>Open a terminal inside your <code>media-journal</code> folder and run:
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>manage.py<span class="w"> </span>createsuperuser
+</code></pre></div>
+<em>It will prompt you to create a username, email (optional) and password. Note that as you type your password nothing will show on the screen for security reasons.</em></p>
+</div>
+<div class="tabbed-block">
+<p>Open your terminal, navigate to your <code>media-journal</code> folder, activate your virtual environment and run the command:
+<div class="highlight"><pre><span></span><code><span class="nb">source</span><span class="w"> </span>venv/bin/activate
+python3<span class="w"> </span>manage.py<span class="w"> </span>createsuperuser
+</code></pre></div>
+<em>It will prompt you to create a username, email (optional) and password. Note that as you type your password nothing will show on the screen for security reasons.</em></p>
+</div>
+<div class="tabbed-block">
+<p>Open your terminal, navigate to your <code>media-journal</code> folder, activate your virtual environment and run the command:
+<div class="highlight"><pre><span></span><code><span class="nb">source</span><span class="w"> </span>venv/bin/activate
+python<span class="w"> </span>manage.py<span class="w"> </span>createsuperuser
+</code></pre></div>
+<em>It will prompt you to create a username, email (optional) and password. Note that as you type your password nothing will show on the screen for security reasons.</em></p>
+</div>
+</div>
+</div>
+<hr />
+<h3 id="step-2-enable-the-login-screen">Step 2: Enable the Login Screen<a class="headerlink" href="#step-2-enable-the-login-screen" title="Permanent link">#</a></h3>
+<p>Now that you have an account you need to start the app with the <code>REQUIRE_LOGIN=True</code> environment variable.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:4"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><input id="__tabbed_2_3" name="__tabbed_2" type="radio" /><input id="__tabbed_2_4" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Docker</label><label for="__tabbed_2_2">Windows</label><label for="__tabbed_2_3">Mac</label><label for="__tabbed_2_4">Linux</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<p>Open your <code>docker-compose.yml</code> file and uncomment the <code>REQUIRE_LOGIN</code> line under the environment section:
+<div class="highlight"><pre><span></span><code><span class="nt">environment</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">REQUIRE_LOGIN=True</span>
+</code></pre></div>
+Then restart your container to apply the changes:
+<div class="highlight"><pre><span></span><code>docker-compose<span class="w"> </span>down
+docker-compose<span class="w"> </span>up<span class="w"> </span>-d
+</code></pre></div></p>
+</div>
+<div class="tabbed-block">
+<p><strong>If using the <code>.bat</code> file (Recommended):</strong><br />
+Open your <code>run_journal.bat</code> file in a text editor and add <code>set REQUIRE_LOGIN=True</code> right before the runserver command:
+<div class="highlight"><pre><span></span><code><span class="k">set</span> <span class="nv">REQUIRE_LOGIN</span><span class="p">=</span>True
+<span class="nv">%PY%</span> manage.py runserver 0.0.0.0:8000 --noreload
+</code></pre></div></p>
+<p><strong>If running manually in PowerShell:</strong>
+<div class="highlight"><pre><span></span><code><span class="nv">$env:REQUIRE_LOGIN</span><span class="p">=</span><span class="s2">&quot;True&quot;</span>
+<span class="n">python</span> <span class="n">manage</span><span class="p">.</span><span class="n">py</span> <span class="n">runserver</span> <span class="n">0</span><span class="p">.</span><span class="n">0</span><span class="p">.</span><span class="n">0</span><span class="p">.</span><span class="n">0</span><span class="p">:</span><span class="n">8000</span> <span class="p">-</span><span class="n">-noreload</span>
+</code></pre></div></p>
+<p><strong>If running manually in CMD:</strong>
+<div class="highlight"><pre><span></span><code>set REQUIRE_LOGIN=True
+python manage.py runserver 0.0.0.0:8000 --noreload
+</code></pre></div></p>
+</div>
+<div class="tabbed-block">
+<p><strong>If using the Launchd Background Service (Recommended):</strong><br />
+Open your <code>com.mediajournal.plist</code> file in a text editor and add the <code>EnvironmentVariables</code> dictionary right above your <code>ProgramArguments</code>:
+<div class="highlight"><pre><span></span><code><span class="nt">&lt;key&gt;</span>EnvironmentVariables<span class="nt">&lt;/key&gt;</span>
+<span class="nt">&lt;dict&gt;</span>
+<span class="w">    </span><span class="nt">&lt;key&gt;</span>REQUIRE_LOGIN<span class="nt">&lt;/key&gt;</span>
+<span class="w">    </span><span class="nt">&lt;string&gt;</span>True<span class="nt">&lt;/string&gt;</span>
+<span class="nt">&lt;/dict&gt;</span>
+</code></pre></div>
+Then restart the service in the terminal:
+<div class="highlight"><pre><span></span><code>launchctl<span class="w"> </span>unload<span class="w"> </span>~/Library/LaunchAgents/com.mediajournal.plist
+launchctl<span class="w"> </span>load<span class="w"> </span>~/Library/LaunchAgents/com.mediajournal.plist
+</code></pre></div></p>
+<p><strong>If running manually in the terminal:</strong>
+<div class="highlight"><pre><span></span><code><span class="nb">export</span><span class="w"> </span><span class="nv">REQUIRE_LOGIN</span><span class="o">=</span>True
+python3<span class="w"> </span>manage.py<span class="w"> </span>runserver<span class="w"> </span><span class="m">0</span>.0.0.0:8000<span class="w"> </span>--noreload
+</code></pre></div></p>
+</div>
+<div class="tabbed-block">
+<p><strong>If using the Systemd Background Service (Recommended):</strong><br />
+Edit your service file (<code>sudo nano /etc/systemd/system/mediajournal.service</code>) and add <code>Environment="REQUIRE_LOGIN=True"</code> under the <code>[Service]</code> section:
+<div class="highlight"><pre><span></span><code><span class="k">[Service]</span>
+<span class="na">Environment</span><span class="o">=</span><span class="s">&quot;REQUIRE_LOGIN=True&quot;</span>
+<span class="na">User</span><span class="o">=</span><span class="s">YOUR_LINUX_USERNAME</span>
+</code></pre></div>
+Then restart the service:
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>systemctl<span class="w"> </span>daemon-reload
+sudo<span class="w"> </span>systemctl<span class="w"> </span>restart<span class="w"> </span>mediajournal
+</code></pre></div></p>
+<p><strong>If running manually in the terminal:</strong>
+<div class="highlight"><pre><span></span><code><span class="nb">export</span><span class="w"> </span><span class="nv">REQUIRE_LOGIN</span><span class="o">=</span>True
+python<span class="w"> </span>manage.py<span class="w"> </span>runserver<span class="w"> </span><span class="m">0</span>.0.0.0:8000<span class="w"> </span>--noreload
+</code></pre></div></p>
+</div>
+</div>
+</div>
 
 
 
@@ -1038,6 +1168,8 @@
             </div>
           
           
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
 <script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
         </div>
         
@@ -1081,7 +1213,7 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["search.suggest", "search.highlight", "content.code.copy", "navigation.tabs"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["search.suggest", "search.highlight", "content.code.copy", "navigation.tabs", "content.tabs.link"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
       <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>

@@ -62,3 +62,25 @@
 html {
   overflow-y: scroll !important;
 }
+
+/* =========================================
+   5. Style permalink #
+   ========================================= */
+h2:target .headerlink, 
+h3:target .headerlink, 
+h4:target .headerlink {
+  transform: scale(1.2);
+}
+
+/* =========================================
+   6. Increase Sidebar and TOC Font Size
+   ========================================= */
+/* Main navigation (Left Sidebar) */
+.md-nav--primary .md-nav__link {
+  font-size: 0.8rem; /* Default is around 0.7rem */
+}
+
+/* Table of Contents (Right Sidebar) */
+.md-nav--secondary .md-nav__link {
+  font-size: 0.75rem; /* Default is around 0.6rem */
+}

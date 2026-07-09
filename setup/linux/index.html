@@ -82,7 +82,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#work-in-progress" class="md-skip">
+        <a href="#setup-for-linux-ubuntudebian" class="md-skip">
           Skip to content
         </a>
       
@@ -235,7 +235,7 @@
   
     
   
-  Welcome
+  Introduction
 
       </a>
     </li>
@@ -383,7 +383,7 @@
   <span class="md-ellipsis">
     
   
-    Welcome
+    Introduction
   
 
     
@@ -598,13 +598,41 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#work-in-progress" class="md-nav__link">
+  <a href="#setup-for-linux-ubuntudebian" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Work in progress :)
+        Setup for Linux (Ubuntu/Debian)
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Setup for Linux (Ubuntu/Debian)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#access-from-other-devices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Access from Other Devices
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#run-automatically-on-boot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Run Automatically on Boot
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -702,6 +730,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../configuration/remote-access/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Remote Access
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -774,62 +830,6 @@
     
   
     Home
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../app-guide/lists/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Lists
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../app-guide/details/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Details
   
 
     
@@ -988,13 +988,41 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#work-in-progress" class="md-nav__link">
+  <a href="#setup-for-linux-ubuntudebian" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Work in progress :)
+        Setup for Linux (Ubuntu/Debian)
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Setup for Linux (Ubuntu/Debian)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#access-from-other-devices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Access from Other Devices
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#run-automatically-on-boot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Run Automatically on Boot
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1020,7 +1048,105 @@
 
   <h1>Linux</h1>
 
-<h2 id="work-in-progress">Work in progress :)</h2>
+<h2 id="setup-for-linux-ubuntudebian">Setup for Linux (Ubuntu/Debian)<a class="headerlink" href="#setup-for-linux-ubuntudebian" title="Permanent link">#</a></h2>
+<ol>
+<li>
+<p>Open your terminal and install Python, pip, virtual environment tools and Git:<br />
+    <div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>apt<span class="w"> </span>update
+sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>python3<span class="w"> </span>python3-pip<span class="w"> </span>python3-venv<span class="w"> </span>git
+</code></pre></div></p>
+</li>
+<li>
+<p>Navigate to the folder where you want the app installed and clone the repository:<br />
+    <div class="highlight"><pre><span></span><code>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/mihail-pop/media-journal
+<span class="nb">cd</span><span class="w"> </span>media-journal
+</code></pre></div></p>
+</li>
+<li>
+<p>Create and activate a Virtual Environment:
+    <div class="highlight"><pre><span></span><code>python3<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>venv
+<span class="nb">source</span><span class="w"> </span>venv/bin/activate
+</code></pre></div></p>
+</li>
+<li>
+<p>Install the dependencies:<br />
+    <div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
+</code></pre></div></p>
+</li>
+<li>
+<p>Create the database:<br />
+    <div class="highlight"><pre><span></span><code>python<span class="w"> </span>manage.py<span class="w"> </span>migrate
+</code></pre></div></p>
+</li>
+<li>
+<p>Generate static files (required after every update):<br />
+    <div class="highlight"><pre><span></span><code>python<span class="w"> </span>manage.py<span class="w"> </span>collectstatic<span class="w"> </span>--noinput
+</code></pre></div></p>
+</li>
+<li>
+<p>Start the app:<br />
+    <div class="highlight"><pre><span></span><code><span class="nv">TZ</span><span class="o">=</span>Europe/London<span class="w"> </span>python<span class="w"> </span>manage.py<span class="w"> </span>runserver<span class="w"> </span><span class="m">0</span>.0.0.0:8000<span class="w"> </span>--noreload
+</code></pre></div>
+    Or use this command if you plan to run it on a machine 24/7:<br />
+    <div class="highlight"><pre><span></span><code><span class="nv">TZ</span><span class="o">=</span>Europe/London<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>waitress<span class="w"> </span>--listen<span class="o">=</span><span class="m">0</span>.0.0.0:8000<span class="w"> </span>--threads<span class="o">=</span><span class="m">8</span><span class="w"> </span>media_journal.wsgi:application
+</code></pre></div>
+    <em>(Replace <code>Europe/London</code> with your local timezone. You can find a clean list of supported timezones <a href="https://www.php.net/manual/en/timezones.php">here</a>).</em></p>
+</li>
+<li>
+<p>Open the app in your browser at: <a href="http://localhost:8000">http://localhost:8000</a></p>
+</li>
+<li>
+<p>Inside the app navigate to <strong>Settings → API Keys</strong>.
+    You will need to add your own API keys. In that section there are instructions on how to obtain them.</p>
+</li>
+</ol>
+<hr />
+<h3 id="access-from-other-devices">Access from Other Devices<a class="headerlink" href="#access-from-other-devices" title="Permanent link">#</a></h3>
+<p>To access the app from your phone, tablet or other devices on the same Wi-Fi network, use your computer's IP address instead of <code>localhost</code>. </p>
+<p>You can find your IP address by running this command in the terminal:
+<div class="highlight"><pre><span></span><code>hostname<span class="w"> </span>-I
+</code></pre></div>
+<em>(Example: Once you find it, you would type <code>http://192.168.1.15:8000</code> into your phone's browser).</em></p>
+<hr />
+<h3 id="run-automatically-on-boot">Run Automatically on Boot<a class="headerlink" href="#run-automatically-on-boot" title="Permanent link">#</a></h3>
+<p>To make the app start automatically and silently in the background when your Linux machine boots up, you can use Linux's built-in service manager called <code>systemd</code>.</p>
+<p><strong>1. Create the Service File:</strong><br />
+Open your terminal and create a new service file using the <code>nano</code> text editor:
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>nano<span class="w"> </span>/etc/systemd/system/mediajournal.service
+</code></pre></div></p>
+<p><strong>2. Add the Configuration:</strong><br />
+Paste the following code into the terminal. <strong>Make sure to replace</strong> <code>/PATH/TO/YOUR/</code> with the actual path to your folder and change <code>YOUR_LINUX_USERNAME</code> to your actual username.
+<div class="highlight"><pre><span></span><code><span class="k">[Unit]</span>
+<span class="na">Description</span><span class="o">=</span><span class="s">Media Journal Waitress Server</span>
+<span class="na">After</span><span class="o">=</span><span class="s">network.target</span>
+
+<span class="k">[Service]</span>
+<span class="na">User</span><span class="o">=</span><span class="s">YOUR_LINUX_USERNAME</span>
+<span class="na">WorkingDirectory</span><span class="o">=</span><span class="s">/PATH/TO/YOUR/media-journal</span>
+<span class="c1"># Replace Europe/London with your local timezone</span>
+<span class="na">Environment</span><span class="o">=</span><span class="s">&quot;TZ=Europe/London&quot;</span>
+<span class="na">ExecStart</span><span class="o">=</span><span class="s">/PATH/TO/YOUR/media-journal/venv/bin/python -m waitress --listen=0.0.0.0:8000 --threads=8 media_journal.wsgi:application</span>
+<span class="na">Restart</span><span class="o">=</span><span class="s">always</span>
+
+<span class="k">[Install]</span>
+<span class="na">WantedBy</span><span class="o">=</span><span class="s">multi-user.target</span>
+</code></pre></div>
+<em>(To save and exit nano: Press <code>Ctrl+O</code>, <code>Enter</code>, then <code>Ctrl+X</code>).</em></p>
+<blockquote>
+<p>For timezone you can find a clean list of supported timezones <a href="https://www.php.net/manual/en/timezones.php">here</a>.  </p>
+</blockquote>
+<p><strong>3. Activate the Service:</strong><br />
+Run these three commands to tell Linux to read your new file, start the app right now and enable it to start on every future boot:
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>systemctl<span class="w"> </span>daemon-reload
+sudo<span class="w"> </span>systemctl<span class="w"> </span>start<span class="w"> </span>mediajournal
+sudo<span class="w"> </span>systemctl<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>mediajournal
+</code></pre></div></p>
+<hr />
+<p>If you want to access the app from outside your local Wi-Fi network, check the following guides:</p>
+<div style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
+<p><a class="md-button" href="../../configuration/remote-access/">Read the Remote Access Guide</a>
+<a class="md-button" href="../../configuration/authentication/">Read the Authentication Guide</a></p>
+</div>
 
 
 
@@ -1038,6 +1164,8 @@
             </div>
           
           
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
 <script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
         </div>
         
@@ -1081,7 +1209,7 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["search.suggest", "search.highlight", "content.code.copy", "navigation.tabs"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["search.suggest", "search.highlight", "content.code.copy", "navigation.tabs", "content.tabs.link"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
       <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>

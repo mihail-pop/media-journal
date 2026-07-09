@@ -235,7 +235,7 @@
   
     
   
-  Welcome
+  Introduction
 
       </a>
     </li>
@@ -383,7 +383,7 @@
   <span class="md-ellipsis">
     
   
-    Welcome
+    Introduction
   
 
     
@@ -526,10 +526,21 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#configuration" class="md-nav__link">
+  <a href="#remote-access" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Configuration
+        Remote Access
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#authentication" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Authentication
       
     </span>
   </a>
@@ -719,6 +730,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../configuration/remote-access/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Remote Access
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -791,62 +830,6 @@
     
   
     Home
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../app-guide/lists/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Lists
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../app-guide/details/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Details
   
 
     
@@ -1017,10 +1000,21 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#configuration" class="md-nav__link">
+  <a href="#remote-access" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Configuration
+        Remote Access
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#authentication" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Authentication
       
     </span>
   </a>
@@ -1054,7 +1048,10 @@
 
   <h1>Docker</h1>
 
-<h2 id="setup-for-docker">Setup for Docker</h2>
+<h2 id="setup-for-docker">Setup for Docker<a class="headerlink" href="#setup-for-docker" title="Permanent link">#</a></h2>
+<blockquote>
+<p><strong>New to Docker?</strong> If you haven't used Docker before and plan to run the app on your personal PC or laptop, check the other guides to set up the app natively without Docker.</p>
+</blockquote>
 <ol>
 <li>
 <p>Clone the repository:
@@ -1062,7 +1059,8 @@
 </code></pre></div></p>
 </li>
 <li>
-<p>Open the <code>docker-compose.yml</code> file in a text editor, uncomment and update the <code>TZ</code> variable to your timezone (e.g., <code>TZ=Europe/London</code>). Otherwise, it will default to UTC.</p>
+<p>Open the <code>docker-compose.yml</code> file in a text editor, uncomment and update the <code>TZ</code> variable to your timezone.<br />
+<em>(Format is usually <code>Continent/City</code> like <code>Europe/London</code> or <code>America/New_York</code>. You can find a clean list of supported timezones <a href="https://www.php.net/manual/en/timezones.php">here</a>).</em> Otherwise, it will default to UTC.</p>
 </li>
 <li>
 <p>Open a terminal in the project folder and start the app with:<br />
@@ -1072,20 +1070,22 @@
 </li>
 <li>
 <p>Inside the app, navigate to <strong>Settings → API Keys</strong>.<br />
-   You will need to add your own API keys. In that section there are instructions on how to obtain them.</p>
+    You will need to add your own API keys. In that section there are instructions on how to obtain them.</p>
 </li>
 </ol>
-<h3 id="configuration">Configuration</h3>
-<p>The application can be configured using environment variables.</p>
-<ul>
-<li>
-<p><code>CSRF_TRUSTED_ORIGINS</code>: A comma-separated list of trusted origins for POST requests. This is necessary if you are accessing the application from a different domain.</p>
-<p>For example, in <code>docker-compose.yml</code>:<br />
+<hr />
+<h3 id="remote-access">Remote Access<a class="headerlink" href="#remote-access" title="Permanent link">#</a></h3>
+<p>If you plan to use a tool like Cloudflare Tunnels to access the app remotely, you need to whitelist your domain name. </p>
+<p>Open your <code>docker-compose.yml</code> file and uncomment the <code>CSRF_TRUSTED_ORIGINS</code> line. Add your remote URL there:
 <div class="highlight"><pre><span></span><code><span class="nt">environment</span><span class="p">:</span><span class="w">  </span>
-<span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">CSRF_TRUSTED_ORIGINS=https://your-domain.com,https://another-domain.com</span>
-</code></pre></div></p>
-</li>
-</ul>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">CSRF_TRUSTED_ORIGINS=https://your-domain.com</span>
+</code></pre></div>
+<em>(Note: If you have multiple domains, you can separate them with a comma).</em></p>
+<hr />
+<h3 id="authentication">Authentication<a class="headerlink" href="#authentication" title="Permanent link">#</a></h3>
+<p>If you expose the app to the internet it is highly recommended to turn on authentication. You can enable this by uncommenting <code>REQUIRE_LOGIN=True</code> in your <code>docker-compose.yml</code> file.</p>
+<p>To log in you will also need to create an administrator account (superuser).</p>
+<p><a class="md-button" href="../../configuration/authentication/#step-1-create-an-account" style="margin: 0 auto; display: block; width: fit-content;">Read the Authentication Guide</a></p>
 
 
 
@@ -1103,6 +1103,8 @@
             </div>
           
           
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
 <script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
         </div>
         
@@ -1146,7 +1148,7 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["search.suggest", "search.highlight", "content.code.copy", "navigation.tabs"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["search.suggest", "search.highlight", "content.code.copy", "navigation.tabs", "content.tabs.link"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
       <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
