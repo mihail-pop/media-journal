@@ -1,4 +1,6 @@
-## Setup for Windows - [Youtube Tutorial](https://youtu.be/Kopjki76ZxM?si=iQCA4Pbh_YYu9Q7y)
+## Setup for Windows
+
+> [**Youtube Tutorial**](https://youtu.be/Kopjki76ZxM?si=iQCA4Pbh_YYu9Q7y)
 
 1. Download [Python 3.13.0](https://www.python.org/downloads/release/python-3130/).  
     During installation check the option:
@@ -42,25 +44,70 @@
 9. Inside the app navigate to **Settings → API Keys**.
     You will need to add your own API keys. In that section there are instructions on how to obtain them.
 
-### Tips
+---
 
-- Access the app from your phone or other devices on the same network using your machine's IPv4 address. You can find your IPv4 address by running `ipconfig` in the terminal.
+### Access from Other Devices
+To access the app from your phone, tablet or other devices on the same Wi-Fi network, use your computer's IPv4 address instead of `localhost`. 
 
-- For windows, to automatically start the app, you can create a `.bat` file that runs the `runserver` command and a `.vbs` file in the shell:startup folder to start that bat file at startup (it will start after log on, if you want before log on you can make the app start as a service with nssm and the `.bat` file).
+You can find your IPv4 address by opening a terminal and running `ipconfig`.  
+*(Example: Once you find it, you would type `http://192.168.1.15:8000` into your phone's browser).*
 
-    Example `.bat` file:  
+---
+
+### Run Automatically on Startup
+To make the app start automatically in the background when you log into Windows, you can use a combination of a `.bat` file (to run the app) and a `.vbs` file (to hide the terminal window so it isn't in your way).
+
+**1. Create a `.bat` file (e.g., `run_journal.bat`) inside your project folder:**  
+```bat
+@echo off  
+cd /d "C:\***path to your folder***\media-journal"  
+set PY="C:\***path to your python***\Python\Python313\python.exe"  
+%PY% manage.py migrate  
+%PY% manage.py collectstatic --noinput  
+%PY% manage.py runserver 0.0.0.0:8000 --noreload
+```
+
+**2. Create a `.vbs` file in your Windows Startup folder:**  
+*(Press `Win + R`, type `shell:startup` and press Enter to open the folder).*
+```vbs
+Set WshShell = CreateObject("WScript.Shell")  
+WshShell.Run """C:\***path to your bat file***\run_journal.bat""", 0  
+Set WshShell = Nothing
+```
+
+---
+
+### Run Automatically on Boot
+If you want the app to start before you log into Windows, you can start it as a service. You can do this by turning the `.bat` file from the previous step into a Windows service using **NSSM**. (The `.vbs` file won't be needed anymore).
+
+1. Open a terminal as Administrator and install NSSM:
     ```sh
-    @echo off  
-    cd /d "C:\***path to your folder***\media-journal"  
-    set PY="C:\***path to your python***\Python\Python313\python.exe"  
-    %PY% manage.py migrate  
-    %PY% manage.py collectstatic --noinput  
-    %PY% manage.py runserver 0.0.0.0:8000 --noreload
+    winget install nssm
     ```
 
-    Example `.vbs` file:  
+2. Once installed, open a fresh Administrator terminal and run:
     ```sh
-    Set WshShell = CreateObject("WScript.Shell")  
-    WshShell.Run """C:\***path to your bat file***\run_journal.bat""", 0  
-    Set WshShell = Nothing
+    nssm install MediaJournal
     ```
+
+3. A graphical window will appear. In the **Application** tab, under **Path**, select the `.bat` file you created earlier.
+
+4. Go to the **Log on** tab, select **This account** and type in your Windows username and password.
+
+5. Click **Install service**. 
+
+6. To start it immediately without restarting your PC, run:
+    ```sh
+    nssm start MediaJournal
+    ```
+
+---
+
+If you want to access the app from outside your local Wi-Fi network, check the following guides:
+
+<div markdown="1" style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
+
+[Read the Remote Access Guide](../configuration/remote-access.md){ .md-button }
+[Read the Authentication Guide](../configuration/authentication.md){ .md-button }
+
+</div>

@@ -444,7 +444,7 @@ document.addEventListener("DOMContentLoaded", function () {
     coverContainer.dataset.mediaType = mediaType;
     bannerContainer.dataset.mediaType = mediaType;
     
-// Reset images to placeholder path, pass alt attribute for CSS, and remove .has-image states
+// Reset images to placeholder path, pass alt attribute for CSS and remove .has-image states
     const bannerPreview = document.getElementById("create-banner-preview");
     bannerPreview.src = "/static/core/img/placeholder.png";
     bannerPreview.alt = canonicalType; // <--- This passes the type so CSS can style it!

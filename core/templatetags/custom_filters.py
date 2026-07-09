@@ -138,7 +138,7 @@ class SecureHTMLParser(HTMLParser):
 def safe_html(value):
     """
     Whitelist safe HTML tags, strip ALL attributes, remove scripts,
-    convert Markdown bold to HTML, and smartly convert text newlines.
+    convert Markdown bold to HTML and smartly convert text newlines.
     """
     if not value:
         return ''

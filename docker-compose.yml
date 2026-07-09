@@ -12,6 +12,8 @@ services:
       # - TZ=Europe/Bucharest
       # Add trusted origins if needed
       # - CSRF_TRUSTED_ORIGINS=https://your-domain.com
+      # Enable authentication to secure your app
+      # - REQUIRE_LOGIN=True
     volumes:
       - ./media:/app/media
       - ./data:/app/data

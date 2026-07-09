@@ -15,6 +15,7 @@ theme:
     - search.highlight
     - content.code.copy
     - navigation.tabs
+    - content.tabs.link
   palette:
     - scheme: slate
       primary: black
@@ -31,7 +32,7 @@ theme:
         name: Switch to dark mode
 
 nav:
-  - Welcome: index.md
+  - Introduction: index.md
   - Setup:
     - Docker: setup/docker.md
     - Windows: setup/windows.md
@@ -39,10 +40,9 @@ nav:
     - Linux: setup/linux.md
   - Configuration:
     - Authentication: configuration/authentication.md
+    - Remote Access: configuration/remote-access.md
   - App Guide:
     - Home: app-guide/home.md
-    - Lists: app-guide/lists.md
-    - Details: app-guide/details.md
   - Developer Guide:
     - Architecture: developer/architecture.md
     - Database: developer/database.md
@@ -50,6 +50,12 @@ nav:
 markdown_extensions:
   - pymdownx.superfences
   - pymdownx.highlight
+  - toc:
+      permalink: "#"
+  - attr_list
+  - pymdownx.tabbed:
+      alternate_style: true
+  - md_in_html
 
 copyright: "Copyright &copy; 2026 Media Journal"
 
