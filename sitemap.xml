@@ -2,42 +2,46 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://mihail-pop.github.io/media-journal/</loc>
-         <lastmod>2026-07-09</lastmod>
+         <lastmod>2026-07-10</lastmod>
     </url>
     <url>
          <loc>https://mihail-pop.github.io/media-journal/app-guide/home/</loc>
-         <lastmod>2026-07-09</lastmod>
+         <lastmod>2026-07-10</lastmod>
+    </url>
+    <url>
+         <loc>https://mihail-pop.github.io/media-journal/app-guide/troubleshooting/</loc>
+         <lastmod>2026-07-10</lastmod>
     </url>
     <url>
          <loc>https://mihail-pop.github.io/media-journal/configuration/authentication/</loc>
-         <lastmod>2026-07-09</lastmod>
+         <lastmod>2026-07-10</lastmod>
     </url>
     <url>
          <loc>https://mihail-pop.github.io/media-journal/configuration/remote-access/</loc>
-         <lastmod>2026-07-09</lastmod>
+         <lastmod>2026-07-10</lastmod>
     </url>
     <url>
          <loc>https://mihail-pop.github.io/media-journal/developer/architecture/</loc>
-         <lastmod>2026-07-09</lastmod>
+         <lastmod>2026-07-10</lastmod>
     </url>
     <url>
          <loc>https://mihail-pop.github.io/media-journal/developer/database/</loc>
-         <lastmod>2026-07-09</lastmod>
+         <lastmod>2026-07-10</lastmod>
     </url>
     <url>
          <loc>https://mihail-pop.github.io/media-journal/setup/docker/</loc>
-         <lastmod>2026-07-09</lastmod>
+         <lastmod>2026-07-10</lastmod>
     </url>
     <url>
          <loc>https://mihail-pop.github.io/media-journal/setup/linux/</loc>
-         <lastmod>2026-07-09</lastmod>
+         <lastmod>2026-07-10</lastmod>
     </url>
     <url>
          <loc>https://mihail-pop.github.io/media-journal/setup/mac/</loc>
-         <lastmod>2026-07-09</lastmod>
+         <lastmod>2026-07-10</lastmod>
     </url>
     <url>
          <loc>https://mihail-pop.github.io/media-journal/setup/windows/</loc>
-         <lastmod>2026-07-09</lastmod>
+         <lastmod>2026-07-10</lastmod>
     </url>
 </urlset>
