@@ -380,7 +380,7 @@ html.modal-open {
 .form-group select,
 .form-group textarea {
   flex: 1;
-  max-width: 300px;
+  max-width: 135px;
   padding: 0.35rem 0.5rem;
   border: 0;
   box-shadow: 0;

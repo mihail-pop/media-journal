@@ -466,6 +466,7 @@ html.c-modal-open {
 .c-form-group input,
 .c-form-group select,
 .c-form-group textarea {
+  max-width: 135px;
   flex: 1;
   padding: 0.35rem 0.5rem;
   border: 0;

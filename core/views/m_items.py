@@ -384,8 +384,36 @@ def edit_item(request, item_id):
                 new_status = data["status"]
                 item.status = new_status
 
+            # --- Handle personal_rating FIRST to know if it changed ---
+            rating_changed = False
+            if "personal_rating" in data:
+                AppSettings = apps.get_model("core", "AppSettings")
+                try:
+                    app_settings = AppSettings.objects.first()
+                    rating_mode = app_settings.rating_mode if app_settings else "faces"
+                except Exception:
+                    rating_mode = "faces"
+
+                display_value = data["personal_rating"]
+                new_rating = None
+                
+                if display_value not in [None, "", "null"]:
+                    try:
+                        display_value_int = int(display_value)
+                        new_rating = display_to_rating(display_value_int, rating_mode)
+                    except ValueError:
+                        pass
+                
+                if item.personal_rating != new_rating:
+                    rating_changed = True
+                    item.personal_rating = new_rating
+
             # --- Handle date_added ---
             status_changed = new_status != old_status
+            
+            # The rule: Only auto-update if BOTH status and score changed.
+            auto_update_date = status_changed and rating_changed
+
             user_date = data.get("date_added")
 
             if user_date:
@@ -395,15 +423,15 @@ def edit_item(request, item_id):
                     current_date = item.date_added.date() if item.date_added else None
 
                     if current_date and current_date != user_date_obj:
-                        # User changed date - set to current time on that date
+                        # User changed date manually - this always takes priority
                         now = dt.datetime.now()
                         item.date_added = dt.datetime.combine(user_date_obj, now.time())
-                    elif status_changed:
+                    elif auto_update_date:
                         item.date_added = dt.datetime.now()
                 except Exception:
-                    if status_changed:
+                    if auto_update_date:
                         item.date_added = dt.datetime.now()
-            elif status_changed:
+            elif auto_update_date:
                 item.date_added = dt.datetime.now()
 
             # Update progress fields if present (manual input)
@@ -436,35 +464,18 @@ def edit_item(request, item_id):
                     item.progress_secondary = item.total_secondary
 
             if "repeats" in data:
-                try:
-                    item.repeats = max(0, int(data["repeats"]))
-                except (ValueError, TypeError):
-                    item.repeats = 0
-
-            if "personal_rating" in data:
-                # Get current rating mode (try to get from AppSettings, fallback to 'faces')
                 AppSettings = apps.get_model("core", "AppSettings")
                 try:
                     app_settings = AppSettings.objects.first()
-                    rating_mode = app_settings.rating_mode if app_settings else "faces"
+                    show_repeats = app_settings.show_repeats_field if app_settings else False
                 except Exception:
-                    rating_mode = "faces"
+                    show_repeats = False
 
-                display_value = data["personal_rating"]
-                if display_value in [None, "", "null"]:
-                    item.personal_rating = None
-                else:
+                if show_repeats:
                     try:
-                        display_value_int = int(display_value)
-                    except ValueError:
-                        display_value_int = None
-
-                    if display_value_int is None:
-                        item.personal_rating = None
-                    else:
-                        item.personal_rating = display_to_rating(
-                            display_value_int, rating_mode
-                        )
+                        item.repeats = max(0, int(data["repeats"]))
+                    except (ValueError, TypeError):
+                        item.repeats = 0
 
             if "notes" in data:
                 item.notes = data["notes"]
@@ -473,7 +484,17 @@ def edit_item(request, item_id):
                 item.favorite = data["favorite"] in ["true", "on", True]
 
             if "collections" in data:
-                item.collections.set(data["collections"])
+                AppSettings = apps.get_model("core", "AppSettings")
+                try:
+                    app_settings = AppSettings.objects.first()
+                    show_cols = app_settings.show_collections_field if app_settings else False
+                except Exception:
+                    show_cols = False
+                
+                # Only overwrite collections if the field is actually enabled in settings.
+                # Otherwise, the frontend hidden field sends an empty array [] and wipes it!
+                if show_cols:
+                    item.collections.set(data["collections"])
 
             item.save()
 

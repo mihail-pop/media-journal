@@ -11,6 +11,7 @@ from datetime import datetime
 from django.conf import settings
 from django.utils import timezone
 from django.core.serializers import serialize, deserialize
+from django.contrib.auth import get_user_model
 
 from core.models import APIKey, NavItem, MediaItem, AppSettings, FavoritePerson, Collection, CollectionItem, CalendarEvent
 from core.services.m_books import save_openlib_item
@@ -100,8 +101,11 @@ class BackupTask(threading.Thread):
     def do_export(self):
         self.message = "Gathering database data"
 
+        User = get_user_model()
+
         # 1. Serialize Data (Include all relevant models)
         models_to_backup = [
+            User.objects.all(),
             MediaItem.objects.all(),
             FavoritePerson.objects.all(),
             APIKey.objects.all(),
@@ -213,7 +217,18 @@ class BackupTask(threading.Thread):
 
                     try:
                         # Smart Merge Logic
-                        if isinstance(obj, MediaItem):
+                        User = get_user_model()
+                        
+                        if isinstance(obj, User):
+                            User.objects.update_or_create(
+                                username=obj.username,
+                                defaults={
+                                    field.name: getattr(obj, field.name)
+                                    for field in User._meta.fields
+                                    if field.name != "id"
+                                },
+                            )
+                        elif isinstance(obj, MediaItem):
                             lookup_key = f"provider_ids__{obj.source}"
                             MediaItem.objects.update_or_create(
                                 source=obj.source,

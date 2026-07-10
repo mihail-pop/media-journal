@@ -128,7 +128,9 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             return starsHtml.replace('margin-left:-0.25em;', 'margin-left:0;') + '</span>';
         } else if (ratingMode === 'scale_10') {
-            let displayVal = rnum > 10 ? Math.round(rnum / 10) : (rnum === 0 ? '' : rnum);
+            let displayVal = rnum;
+            if (rnum > 10) displayVal = Math.round(rnum / 10);
+            else displayVal = 1;
             return `<span style="font-size: 0.95rem; font-weight:bold;">${displayVal}</span>`;
         } else if (ratingMode === 'scale_100') {
             return `<span style="font-size: 0.95rem; font-weight:bold;">${Math.round(rnum)}</span>`;
@@ -181,13 +183,13 @@ document.addEventListener("DOMContentLoaded", () => {
             <a href="${item.url || '#'}" class="card-link" ${isAddModal ? 'draggable="false"' : ''}>
                 <div class="card-image">
                     <img src="${item.cover_url}" alt="${item.title}" loading="lazy" draggable="false">
+                    ${sortValueHtml}
                     ${selectCircleHtml}
                     ${editBtnHtml}
                 </div>
             </a>
             <div style="display: flex; flex-direction: column; justify-content: center;">
                 <div class="card-title" title="${item.title}">${item.title}</div>
-                ${sortValueHtml}
             </div>
         `;
 

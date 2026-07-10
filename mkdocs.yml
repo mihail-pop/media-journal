@@ -42,6 +42,7 @@ nav:
     - Authentication: configuration/authentication.md
     - Remote Access: configuration/remote-access.md
   - App Guide:
+    - Troubleshooting: app-guide/troubleshooting.md
     - Home: app-guide/home.md
   - Developer Guide:
     - Architecture: developer/architecture.md

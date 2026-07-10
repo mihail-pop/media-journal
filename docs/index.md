@@ -6,7 +6,7 @@ Welcome to the documentation :) and thank you for checking out Media Journal! I 
 
 It's not the most advanced app, nor am I a senior developer, but I care about this app and I use it daily. I think that's worth something and that's why I got this far with it.
 
-Maybe a senior developer who is nonchalant about their app would have been better, BUT if you are one of the few unlucky people who are looking for an app exactly like this, now you are you are stuck with me! >:) See ya in the trenches.
+Maybe a senior developer who is nonchalant about their app would have been better, BUT if you are one of the few unlucky people who are looking for an app exactly like this, now you are stuck with me! >:) See ya in the trenches.
 
 ## (Old) Demo Video
 
