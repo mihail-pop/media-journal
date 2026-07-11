@@ -70,11 +70,12 @@
 
 .rating-stars {
   display: flex;
-  gap: 8.5px;
+  gap: 1.5px;
   align-items: center;
   background-color: var(--bg-primary);
   border-radius: 6px;
   padding: 0.35rem 0.5rem;
+  width: 131px;
 }
 
 .star {
@@ -919,7 +920,7 @@ input[type="number"] {
   position: relative;
   color: var(--text-tertiary);
   font-size: 0.95rem;
-  width: auto;
+  width: 100%;
 }
 
 .status-indicator {

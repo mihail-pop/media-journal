@@ -487,7 +487,7 @@
       </div>
       <div class="entry-content formatted-content">{{ item.notes|linebreaksbr }}</div>
       <!-- Hidden data for JS -->
-      <script type="application/json" id="raw-notes-data">{{ item.notes|escapejs }}</script>
+      <script type="application/json" id="raw-notes-data">{"notes": "{{ item.notes|escapejs }}"}</script>
     </div>
     {% endif %}
 
@@ -500,7 +500,7 @@
           
           <span class="entry-meta-pill date-pill">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-            {{ log.activity_date|date:"M d, Y" }}
+            {{ log.activity_date|date:"d M Y" }}
           </span>
           
           {% if log.progress_start %}
@@ -550,7 +550,7 @@
   <!-- Sleek Unified Composer -->
   <div class="journal-composer collapsed" id="journal-composer">
      <div class="composer-placeholder" onclick="expandComposer()">
-        <span>Write a note or a log entry...</span>
+        <span>Start writing...</span>
      </div>
      
      <div class="composer-active">
@@ -573,12 +573,12 @@
               <button type="button" onclick="formatText('> ', '')" title="Quote">”</button>
               <button type="button" onclick="formatText('||', '||')" title="Inline Spoiler">Spoiler</button>
            </div>
-           <textarea id="journal-textarea" placeholder="What's on your mind?"></textarea>
+           <textarea id="journal-textarea" placeholder="Write in your journal..."></textarea>
            <div id="journal-preview" class="formatted-content" style="display: none;"></div>
         </div>
 
         <div class="composer-log-fields" id="log-extra-fields" style="{% if not item.notes %}display: none;{% endif %}">
-            <input type="text" id="log-title" placeholder="Entry Title">
+            <input type="text" id="log-title" placeholder="Title">
             <input type="date" id="log-date" value="{% now 'Y-m-d' %}">
             <div class="progress-group">
                <div class="custom-select-wrapper">

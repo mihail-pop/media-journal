@@ -2293,7 +2293,6 @@ html.c-modal-open {
 
 .journal-entry-card {
   background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 1.2rem;
   margin-bottom: 1rem;
@@ -2396,6 +2395,46 @@ html.c-modal-open {
   color: var(--special-color);
 }
 
+/* Custom Dropdown Options */
+.custom-options {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  max-height: 200px;
+  overflow-y: auto;
+  margin-top: 0.3rem;
+  scrollbar-color: var(--text-overview) var(--bg-tertiary);
+}
+
+.custom-options.open {
+  display: block;
+}
+
+.custom-option {
+  padding: 0.6rem 1rem;
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background 0.2s ease, color 0.2s ease;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.custom-option:last-child {
+  border-bottom: none;
+}
+
+.custom-option:hover {
+  background-color: var(--hover-bg);
+  color: var(--text-title);
+}
+
 /* Header Controls */
 .journal-controls {
   display: flex;
@@ -2443,19 +2482,29 @@ html.c-modal-open {
 }
 
 .journal-entries-list.grid-view {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  gap: 1rem;
-  align-items: start;
+  column-count: 2;
+  column-gap: 1rem;
+  display: block;
 }
 
 .journal-entries-list.grid-view .notes-card {
-  grid-column: 1 / -1; /* Make notes span full width */
+  column-span: all;
+  margin-bottom: 1rem;
 }
 
 .journal-entries-list.grid-view .journal-entry-card {
-  margin-bottom: 0;
-  height: 100%;
+  break-inside: avoid;
+  page-break-inside: avoid;
+  -webkit-column-break-inside: avoid;
+  margin-bottom: 1rem;
+  display: inline-block;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+#j-show-more-wrapper {
+  padding-top: 0.2rem;
+  clear: both;
 }
 
 /* Sleek Meta Pills */
@@ -2497,7 +2546,7 @@ html.c-modal-open {
 
 @media (orientation: portrait) {
   .journal-entries-list.grid-view {
-    grid-template-columns: 1fr; /* Stack on mobile */
+    column-count: 1; /* Stack on mobile */
   }
   .entry-meta-pill {
     font-size: 1.6rem;
@@ -2522,12 +2571,15 @@ html.c-modal-open {
 
 /* COMPOSER */
 .journal-composer {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid var(--border-color);
+  background: var(--bg-tertiary);
   border-radius: 12px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
   margin-top: 1.5rem;
+}
+
+.journal-composer.expanded {
+  overflow: visible;
 }
 
 .journal-composer.collapsed {
@@ -2630,7 +2682,7 @@ html.c-modal-open {
   width: 100%;
   box-sizing: border-box;
   background: var(--bg-primary);
-  border: 1px solid var(--border-color);
+  border: 0px solid var(--border-color);
   color: var(--text-primary);
   border-radius: 8px;
   padding: 1rem;
@@ -2638,6 +2690,7 @@ html.c-modal-open {
   min-height: 150px;
   outline: none;
   font-family: inherit;
+  scrollbar-color: var(--text-primary) var(--bg-tertiary);
 }
 
 .composer-editor-area textarea:focus {
@@ -2647,8 +2700,7 @@ html.c-modal-open {
 #journal-preview {
   width: 100%;
   box-sizing: border-box;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
+  background: var(--bg-primary);
   color: var(--text-primary);
   border-radius: 8px;
   padding: 1rem;
@@ -2669,7 +2721,7 @@ html.c-modal-open {
 .composer-log-fields input,
 .composer-log-fields select {
   background: var(--bg-primary);
-  border: 1px solid var(--border-color);
+  border: 0px solid var(--border-color);
   color: var(--text-primary);
   border-radius: 6px;
   padding: 0.6rem 0.8rem;
@@ -2703,9 +2755,14 @@ body:not([data-theme="light"]) .composer-log-fields input[type="date"] {
   width: 70px;
 }
 
+.l-rating-number input {
+  font-size: 0.9rem !important;
+  height: 1.85rem !important;
+}
+
 .spoiler-toggle-btn {
   background: var(--bg-primary);
-  border: 1px solid var(--border-color);
+  border: 0px solid var(--border-color);
   color: var(--text-secondary);
   border-radius: 6px;
   padding: 0.6rem 1rem;
@@ -2719,6 +2776,10 @@ body:not([data-theme="light"]) .composer-log-fields input[type="date"] {
   font-size: 0.9rem;
 }
 
+.spoiler-toggle-btn:hover{
+  background: var(--hover-bg);
+}
+
 .spoiler-toggle-btn:has(input:checked) {
   background: #ff3b38;
   color: white;
@@ -2729,13 +2790,17 @@ body:not([data-theme="light"]) .composer-log-fields input[type="date"] {
 select.single-unit {
   appearance: none;
   -webkit-appearance: none;
-  background: var(--bg-tertiary) !important;
+  background: var(--bg-primary) !important;
   border-color: var(--border-color) !important;
   color: var(--text-secondary) !important;
   font-weight: 600;
   pointer-events: none;
   text-align: center;
   padding-right: 0.8rem !important; /* Remove dropdown arrow space */
+}
+
+select.single-unit ~ .select-arrow {
+  display: none !important;
 }
 
 /* Entry score SVG formatting */
@@ -2762,8 +2827,19 @@ select.single-unit {
 
 .log-score-wrapper .rating-faces {
   margin: 0;
-  box-shadow: 0 0 0 1px var(--border-color); 
   border-radius: 6px;
+  display: flex;
+  gap: 23px;
+  padding: 4px 7px;
+  border-radius: 6px;
+  justify-content: center;
+  border: 0;
+  background-color: var(--bg-primary);
+}
+
+.log-score-wrapper .face {
+  width: 27px;
+  height: 27px;
 }
 
 .composer-actions {
@@ -2783,7 +2859,7 @@ select.single-unit {
 }
 
 .j-btn-cancel {
-  background: transparent;
+  background: var(--bg-primary);
   color: var(--text-overview);
 }
 
