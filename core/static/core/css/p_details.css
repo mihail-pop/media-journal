@@ -2279,6 +2279,393 @@ html.c-modal-open {
   letter-spacing: normal;
 }
 
+/* --- JOURNAL SECTION --- */
+.journal-section {
+  margin-top: 1.5rem;
+  margin-bottom: 2.5rem;
+}
+
+.journal-header h2 {
+  color: var(--text-title);
+  margin-bottom: 1rem;
+  cursor: default;
+}
+
+.journal-entry-card {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 1.2rem;
+  margin-bottom: 1rem;
+  position: relative;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.entry-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.8rem;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  padding-bottom: 0.5rem;
+}
+
+.entry-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.entry-type {
+  font-weight: 700;
+  color: var(--special-color);
+  text-transform: none;
+  font-size: 0.85rem;
+  letter-spacing: normal;
+}
+
+.entry-date, .entry-progress, .entry-score {
+  font-size: 0.85rem;
+  color: var(--text-overview);
+}
+
+.entry-score {
+  color: #f5c518;
+  font-weight: bold;
+}
+
+.entry-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.entry-edit-btn {
+  background: none;
+  border: none;
+  color: var(--text-overview);
+  cursor: pointer;
+  transition: color 0.2s;
+  padding: 0;
+}
+
+.entry-edit-btn:hover {
+  color: var(--text-title);
+}
+
+.entry-edit-btn.delete-btn:hover {
+  color: #ff3b38;
+}
+
+.entry-title {
+  font-size: 1.1rem;
+  color: var(--text-title);
+  margin: 0 0 0.5rem 0;
+}
+
+.entry-content {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.log-spoiler-blur {
+  filter: blur(5px);
+  cursor: pointer;
+  transition: filter 0.3s ease;
+  user-select: none;
+}
+
+.log-spoiler-blur:hover {
+  filter: blur(2px);
+}
+
+/* COMPOSER */
+.journal-composer {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  margin-top: 1.5rem;
+}
+
+.journal-composer.collapsed {
+  cursor: text;
+}
+
+.journal-composer.collapsed:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--special-color);
+}
+
+.composer-placeholder {
+  padding: 1rem 1.5rem;
+  color: var(--text-overview);
+  display: flex;
+  align-items: center;
+  font-size: 0.95rem;
+}
+
+.composer-active {
+  display: none;
+  padding: 1.5rem;
+}
+
+.journal-composer.expanded .composer-placeholder {
+  display: none;
+}
+
+.journal-composer.expanded .composer-active {
+  display: block;
+  animation: fadeIn 0.3s ease;
+}
+
+.composer-tabs {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.5rem;
+}
+
+.tab-group {
+  display: flex;
+  gap: 1rem;
+}
+
+.j-tab-btn {
+  background: none;
+  border: none;
+  color: var(--text-overview);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.2rem 0;
+  transition: color 0.2s;
+  position: relative;
+}
+
+.j-tab-btn:hover {
+  color: var(--text-title);
+}
+
+.j-tab-btn.active {
+  color: var(--special-color);
+}
+
+.j-tab-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: -0.6rem;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: var(--special-color);
+}
+
+.composer-toolbar {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.composer-toolbar button {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  border-radius: 4px;
+  padding: 0.3rem 0.6rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background 0.2s;
+}
+
+.composer-toolbar button:hover {
+  background: var(--hover-bg);
+  color: var(--text-title);
+}
+
+.composer-editor-area textarea {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  border-radius: 8px;
+  padding: 1rem;
+  resize: vertical;
+  min-height: 150px;
+  outline: none;
+  font-family: inherit;
+}
+
+.composer-editor-area textarea:focus {
+  border-color: var(--special-color);
+}
+
+#journal-preview {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  border-radius: 8px;
+  padding: 1rem;
+  min-height: 150px;
+}
+
+.composer-log-fields {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding-top: 1.5rem;
+  border-top: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+.composer-log-fields input,
+.composer-log-fields select {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  border-radius: 6px;
+  padding: 0.6rem 0.8rem;
+  outline: none;
+  font-size: 0.9rem;
+  text-align: center;
+  transition: border-color 0.2s;
+}
+
+.composer-log-fields input:focus,
+.composer-log-fields select:focus {
+  border-color: var(--special-color);
+}
+
+#log-title {
+  min-width: 200px;
+  flex: 1;
+  text-align: left;
+}
+
+body:not([data-theme="light"]) .composer-log-fields input[type="date"] {
+  color-scheme: dark;
+}
+
+.progress-group {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.progress-group input {
+  width: 70px;
+}
+
+.spoiler-toggle-btn {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  border-radius: 6px;
+  padding: 0.6rem 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  transition: all 0.2s;
+  user-select: none;
+  font-size: 0.9rem;
+}
+
+.spoiler-toggle-btn:has(input:checked) {
+  background: #ff3b38;
+  color: white;
+  border-color: #ff3b38;
+}
+
+/* Single Unit styling (looks like a button/label) */
+select.single-unit {
+  appearance: none;
+  -webkit-appearance: none;
+  background: var(--bg-tertiary) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-secondary) !important;
+  font-weight: 600;
+  pointer-events: none;
+  text-align: center;
+  padding-right: 0.8rem !important; /* Remove dropdown arrow space */
+}
+
+/* Entry score SVG formatting */
+.entry-score .card-rating,
+.entry-score .star-rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  vertical-align: middle;
+}
+
+.entry-score svg {
+  width: 1.1em;
+  height: 1.1em;
+  color: currentColor;
+}
+
+/* Dynamic Score UI aligner */
+.log-score-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.log-score-wrapper .rating-faces {
+  margin: 0;
+  box-shadow: 0 0 0 1px var(--border-color); 
+  border-radius: 6px;
+}
+
+.composer-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.j-btn-cancel, .j-btn-save {
+  padding: 0.5rem 1.2rem;
+  border-radius: 6px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.j-btn-cancel {
+  background: transparent;
+  color: var(--text-overview);
+}
+
+.j-btn-cancel:hover {
+  background: var(--hover-bg);
+  color: var(--text-title);
+}
+
+.j-btn-save {
+  background: var(--special-color);
+  color: white;
+}
+
+.j-btn-save:hover {
+  filter: brightness(1.1);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 @media (pointer: coarse) and (hover: none) {
 
   .banner-section img[alt="movie"],

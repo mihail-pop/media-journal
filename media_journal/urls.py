@@ -94,6 +94,7 @@ urlpatterns = [
     path("upload-banner/", views.upload_banner, name="upload_banner"),
     path("upload-cover/", views.upload_cover, name="upload_cover"),
     path("refresh-item/", views.refresh_item, name="refresh_item"),
+    path('api/manage-journal-log/', views.manage_journal_log, name='manage_journal_log'),
     path("update-nav-items/", views.update_nav_items, name="update_nav_items"),
     path("api/get-extra-info/", views.get_extra_info, name="get_extra_info"),
     path("api/check_planned_movie_statuses/", views.check_planned_movie_statuses, name="check_planned_movie_statuses"),

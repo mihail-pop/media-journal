@@ -87,6 +87,35 @@ class MediaItem(models.Model):
         self.provider_ids[self.source] = str(value)
     
 
+class MediaItemLog(models.Model):
+    item = models.ForeignKey(
+        'MediaItem', 
+        on_delete=models.CASCADE, 
+        related_name='logs'
+    )
+    
+    title = models.CharField(max_length=255, blank=True, null=True)
+    content = models.TextField()
+    
+    # Dates
+    activity_date = models.DateTimeField(default=timezone.now)  # When the session/playthrough happened
+    date_added = models.DateTimeField(auto_now_add=True)        # When the log was created in the app
+    
+    # Details
+    score = models.PositiveSmallIntegerField(null=True, blank=True)
+    is_spoiler = models.BooleanField(default=False)
+    
+    # Progress Tracking
+    progress_unit = models.CharField(max_length=50, blank=True, null=True) # e.g., 'episode', 'chapter', 'page', 'minutes'
+    progress_start = models.PositiveIntegerField(null=True, blank=True)
+    progress_end = models.PositiveIntegerField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-activity_date', '-date_added']
+
+    def __str__(self):
+        return f"Log for {self.item.title} on {self.activity_date.strftime('%Y-%m-%d')}"
+
 class FavoritePerson(models.Model):
     PERSON_TYPE_CHOICES = [
         ('character', 'Character'),

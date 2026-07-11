@@ -13,7 +13,7 @@ from django.core.files.storage import FileSystemStorage
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_POST
 
-from core.models import MediaItem, Collection
+from core.models import MediaItem, Collection, MediaItemLog, AppSettings
 from core.services.g_utils import display_to_rating, rating_to_display, get_sharded_path
 from core.services.m_books import save_openlib_item
 from core.services.m_games import save_igdb_item
@@ -885,3 +885,64 @@ def favorite_music_videos(request):
         return JsonResponse({"videos": videos})
     except Exception as e:
         return JsonResponse({"videos": [], "error": str(e)})
+
+@ensure_csrf_cookie
+@require_POST
+def manage_journal_log(request):
+    try:
+        data = json.loads(request.body)
+        action = data.get("action")
+        item_id = data.get("item_id")
+        log_id = data.get("log_id")
+
+        if action == "delete":
+            if log_id:
+                MediaItemLog.objects.filter(id=log_id, item_id=item_id).delete()
+            return JsonResponse({"success": True})
+        
+        elif action == "save":
+            if log_id:
+                log = MediaItemLog.objects.get(id=log_id, item_id=item_id)
+            else:
+                log = MediaItemLog(item_id=item_id)
+            
+            log.title = data.get("title")
+            log.content = data.get("content", "")
+            
+            activity_date_str = data.get("activity_date")
+            if activity_date_str:
+                try:
+                    # Append time to the date so it stores correctly as datetime without timezone issues
+                    parsed_date = dt.datetime.strptime(activity_date_str, "%Y-%m-%d").date()
+                    now_time = dt.datetime.now().time()
+                    log.activity_date = dt.datetime.combine(parsed_date, now_time)
+                except ValueError:
+                    pass
+                    
+            # Handle empty strings converting to None securely
+            score_str = data.get("score")
+            if score_str:
+                try:
+                    app_settings = AppSettings.objects.first()
+                    r_mode = app_settings.rating_mode if app_settings else "faces"
+                    display_val = int(score_str)
+                    log.score = display_to_rating(display_val, r_mode)
+                except ValueError:
+                    log.score = None
+            else:
+                log.score = None
+            
+            log.is_spoiler = data.get("is_spoiler", False)
+            log.progress_unit = data.get("progress_unit")
+            
+            p_start = data.get("progress_start")
+            log.progress_start = int(p_start) if p_start else None
+            
+            p_end = data.get("progress_end")
+            log.progress_end = int(p_end) if p_end else None
+            
+            log.save()
+            return JsonResponse({"success": True})
+            
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)})
