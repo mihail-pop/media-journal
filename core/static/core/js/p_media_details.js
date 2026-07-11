@@ -2834,6 +2834,8 @@ function editJournalEntry(type, id = null) {
     setComposerMode('notes');
     // Safely inject text AFTER mode is set to prevent auto-overwriting
     document.getElementById('journal-textarea').value = content;
+    // Switch to write tab in case it was left on preview
+    setComposerTab('write');
   } else {
     editingLogId = id;
     const rawDataStr = document.getElementById('raw-log-' + id)?.textContent;
@@ -2847,7 +2849,7 @@ function editJournalEntry(type, id = null) {
         document.getElementById('log-title').value = data.title;
         document.getElementById('log-date').value = data.activity_date;
         updateLogRatingUI(data.score); // Properly set visual rating state
-        document.getElementById('log-progress-unit').value = data.progress_unit;
+        document.getElementById('log-progress-unit').value = data.progress_unit || '';
         document.getElementById('log-progress-start').value = data.progress_start;
         document.getElementById('log-progress-end').value = data.progress_end;
         document.getElementById('log-spoiler').checked = data.is_spoiler;
@@ -2858,6 +2860,8 @@ function editJournalEntry(type, id = null) {
     setComposerMode('logs');
     // Safely inject text AFTER mode is set to prevent auto-overwriting
     document.getElementById('journal-textarea').value = content;
+    // Switch to write tab in case it was left on preview
+    setComposerTab('write');
   }
   
   // Smooth scroll to the composer
@@ -3004,255 +3008,121 @@ document.getElementById('confirm-delete-log-btn')?.addEventListener('click', fun
     });
 });
 
-function collapseComposer() {
-  document.getElementById('journal-composer').classList.add('collapsed');
-  document.getElementById('journal-composer').classList.remove('expanded');
-  
-  // Clear drafts & resets
-  window.draftNotes = undefined;
-  window.draftLogs = undefined;
-  editingLogId = null;
-  document.getElementById('journal-textarea').value = '';
-  document.getElementById('log-title').value = '';
-  updateLogRatingUI(''); // Properly clear visual rating state
-  document.getElementById('log-progress-unit').value = '';
-  document.getElementById('log-progress-start').value = '';
-  document.getElementById('log-progress-end').value = '';
-  document.getElementById('log-spoiler').checked = false;
-  document.getElementById('log-date').value = new Date().toISOString().split('T')[0];
-  
-  setComposerTab('write');
-  const hasNotes = !!document.getElementById('raw-notes-data');
-  setComposerMode(hasNotes ? 'logs' : 'notes');
-}
+// --- JOURNAL VIEW, SORT, & PAGINATION LOGIC ---
+document.addEventListener('DOMContentLoaded', () => {
+  const sortSelect = document.getElementById('j-sort-select');
+  const orderToggle = document.getElementById('j-order-toggle');
+  const viewToggle = document.getElementById('j-view-toggle');
+  const showMoreBtn = document.getElementById('j-show-more-btn');
+  const list = document.getElementById('journal-entries-list');
 
-function setComposerTab(tab) {
-  const writeBtn = document.querySelector('.j-tab-btn[data-tab="write"]');
-  const previewBtn = document.querySelector('.j-tab-btn[data-tab="preview"]');
-  const textarea = document.getElementById('journal-textarea');
-  const previewArea = document.getElementById('journal-preview');
-  const toolbar = document.getElementById('composer-toolbar');
+  if (!sortSelect || !list) return; // Exit if not in list
 
-  if (tab === 'write') {
-    writeBtn.classList.add('active');
-    previewBtn.classList.remove('active');
-    textarea.style.display = 'block';
-    toolbar.style.display = 'flex';
-    previewArea.style.display = 'none';
-    textarea.focus();
-  } else {
-    previewBtn.classList.add('active');
-    writeBtn.classList.remove('active');
-    textarea.style.display = 'none';
-    toolbar.style.display = 'none';
-    previewArea.style.display = 'block';
-    
-    // Markdown parser for preview
-    let text = textarea.value
-      .replace(/</g, '&lt;').replace(/>/g, '&gt;') // sanitize
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      .replace(/\|\|(.*?)\|\|/g, '<span class="spoiler" onclick="this.classList.toggle(\'revealed\')">$1</span>')
-      .replace(/\[center\]([\s\S]*?)\[\/center\]/g, '<div style="text-align:center;">$1</div>')
-      .replace(/^(?:&gt;|>)\s?(.*?)$/gm, '<blockquote style="border-left:3px solid var(--special-color); margin:0; padding-left:10px; color:var(--text-secondary);">$1</blockquote>')
-      .replace(/\n/g, '<br>');
+  // 1. Initialize View (Grid/List)
+  const savedView = localStorage.getItem('journalView') || 'list';
+  window.journalExpanded = false;
+
+  function applyView(viewType) {
+      if (viewType === 'grid') {
+          list.classList.add('grid-view');
+          viewToggle.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>';
+          viewToggle.title = "Switch to List View";
+      } else {
+          list.classList.remove('grid-view');
+          viewToggle.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>';
+          viewToggle.title = "Switch to Grid View";
+      }
+  }
+  applyView(savedView);
+
+  viewToggle.addEventListener('click', () => {
+      const isGrid = list.classList.contains('grid-view');
+      const newView = isGrid ? 'list' : 'grid';
+      localStorage.setItem('journalView', newView);
+      applyView(newView);
+  });
+
+  // 2. Sorting & Pagination Logic
+  function applySortAndVisibility() {
+      const notesCard = list.querySelector('.notes-card');
+      const logs = Array.from(list.querySelectorAll('.log-card'));
+      const sortBy = sortSelect.value;
+      const sortOrder = orderToggle.dataset.order;
+
+      // Sort Logs in Memory
+      logs.sort((a, b) => {
+          let valA, valB;
+          const rawA = document.getElementById('raw-log-' + a.dataset.id)?.textContent;
+          const rawB = document.getElementById('raw-log-' + b.dataset.id)?.textContent;
+          
+          if (!rawA || !rawB) return 0;
+          
+          const dataA = JSON.parse(rawA);
+          const dataB = JSON.parse(rawB);
+
+          if (sortBy === 'activity_date') {
+              valA = new Date(dataA.activity_date).getTime();
+              valB = new Date(dataB.activity_date).getTime();
+          } else if (sortBy === 'title') {
+              valA = dataA.title.toLowerCase();
+              valB = dataB.title.toLowerCase();
+          } else if (sortBy === 'score') {
+              valA = Number(dataA.score) || 0;
+              valB = Number(dataB.score) || 0;
+          }
+
+          if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
+          if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
+          return 0;
+      });
+
+      // Re-append nicely to DOM
+      if (notesCard) list.appendChild(notesCard);
+      logs.forEach(log => list.appendChild(log));
+
+      // Limit Visibility
+      const limit = 4;
+      const wrapper = document.getElementById('j-show-more-wrapper');
       
-    previewArea.innerHTML = text || '<span style="color:var(--text-overview)">Nothing to preview.</span>';
-  }
-}
-
-function setComposerMode(mode) {
-  const notesBtn = document.querySelector('.j-tab-btn[data-mode="notes"]');
-  const logsBtn = document.querySelector('.j-tab-btn[data-mode="logs"]');
-  const logFields = document.getElementById('log-extra-fields');
-  const textarea = document.getElementById('journal-textarea');
-
-  // Preserve drafts when swapping
-  if (notesBtn.classList.contains('active')) {
-      window.draftNotes = textarea.value;
-  } else if (logsBtn.classList.contains('active')) {
-      window.draftLogs = textarea.value;
-  }
-
-  if (mode === 'notes') {
-    notesBtn.classList.add('active');
-    logsBtn.classList.remove('active');
-    logFields.style.display = 'none';
-    
-    const rawNotes = document.getElementById('raw-notes-data');
-    if (window.draftNotes !== undefined) {
-        textarea.value = window.draftNotes;
-    } else if (rawNotes) {
-        textarea.value = rawNotes.textContent;
-        window.draftNotes = textarea.value;
-    } else {
-        textarea.value = '';
-    }
-  } else {
-    logsBtn.classList.add('active');
-    notesBtn.classList.remove('active');
-    logFields.style.display = 'flex';
-    
-    textarea.value = window.draftLogs || '';
-  }
-}
-
-function formatText(startTag, endTag) {
-  const textarea = document.getElementById('journal-textarea');
-  const start = textarea.selectionStart;
-  const end = textarea.selectionEnd;
-  const text = textarea.value;
-  const selectedText = text.substring(start, end);
-  
-  const replacement = startTag + selectedText + endTag;
-  textarea.value = text.substring(0, start) + replacement + text.substring(end);
-  
-  // Restore cursor position
-  textarea.focus();
-  if (selectedText.length > 0) {
-    textarea.selectionStart = start;
-    textarea.selectionEnd = start + replacement.length;
-  } else {
-    textarea.selectionStart = textarea.selectionEnd = start + startTag.length;
-  }
-}
-
-function editJournalEntry(type, id = null) {
-  const composer = document.getElementById('journal-composer');
-  composer.classList.remove('collapsed');
-  composer.classList.add('expanded');
-  
-  if (type === 'notes') {
-    editingLogId = null;
-    const rawData = document.getElementById('raw-notes-data');
-    if (rawData) {
-      window.draftNotes = rawData.textContent; // force override draft
-    }
-    setComposerMode('notes');
-  } else {
-    editingLogId = id;
-    const rawDataStr = document.getElementById('raw-log-' + id)?.textContent;
-    if (rawDataStr) {
-      try {
-        const data = JSON.parse(rawDataStr);
-        window.draftLogs = data.content; // force override draft
-        
-        document.getElementById('log-title').value = data.title;
-        document.getElementById('log-date').value = data.activity_date;
-        updateLogRatingUI(data.score); // Properly set visual rating state
-        document.getElementById('log-progress-unit').value = data.progress_unit;
-        document.getElementById('log-progress-start').value = data.progress_start;
-        document.getElementById('log-progress-end').value = data.progress_end;
-        document.getElementById('log-spoiler').checked = data.is_spoiler;
-      } catch (e) {
-        console.error("Failed to parse log data", e);
-      }
-    }
-    setComposerMode('logs');
-  }
-  
-  // Smooth scroll to the composer
-  document.getElementById('journal-composer').scrollIntoView({ behavior: 'smooth', block: 'center' });
-}
-
-function saveJournalEntry() {
-  const mode = document.querySelector('.j-tab-btn[data-mode="notes"]').classList.contains('active') ? 'notes' : 'logs';
-  const content = document.getElementById('journal-textarea').value;
-  const dbId = document.body.dataset.dbId;
-  const saveBtn = document.getElementById('j-btn-save');
-  
-  saveBtn.disabled = true;
-  saveBtn.textContent = "Saving...";
-
-  if (mode === 'notes') {
-    // Save to the main MediaItem via edit-item endpoint
-    fetch(`/edit-item/${dbId}/`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-CSRFToken": getCookie("csrftoken"),
-      },
-      body: JSON.stringify({ notes: content }),
-    })
-    .then(res => res.json())
-    .then(data => {
-      if (data.success) {
-        sessionStorage.setItem("refreshSuccess", "1");
-        location.reload();
+      if (logs.length <= limit) {
+          if (wrapper) wrapper.style.display = 'none';
+          logs.forEach(l => l.style.display = 'block');
       } else {
-        alert("Failed to save notes.");
-        saveBtn.disabled = false;
-        saveBtn.textContent = "Save";
+          if (wrapper) wrapper.style.display = 'block';
+          logs.forEach((l, index) => {
+              l.style.display = (window.journalExpanded || index < limit) ? 'block' : 'none';
+          });
+          if (showMoreBtn) {
+              showMoreBtn.textContent = window.journalExpanded ? 'Show Less' : `Show All (${logs.length})`;
+          }
       }
-    }).catch(err => {
-      console.error(err);
-      saveBtn.disabled = false;
-      saveBtn.textContent = "Save";
-    });
-  } else {
-    // Save to Log model via the new API endpoint
-    const payload = {
-      action: "save",
-      item_id: dbId,
-      log_id: editingLogId,
-      content: content,
-      title: document.getElementById('log-title').value,
-      activity_date: document.getElementById('log-date').value,
-      score: document.getElementById('log-score').value,
-      progress_unit: document.getElementById('log-progress-unit').value,
-      progress_start: document.getElementById('log-progress-start').value,
-      progress_end: document.getElementById('log-progress-end').value,
-      is_spoiler: document.getElementById('log-spoiler').checked
-    };
-
-    fetch(`/api/manage-journal-log/`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-CSRFToken": getCookie("csrftoken"),
-      },
-      body: JSON.stringify(payload),
-    })
-    .then(res => res.json())
-    .then(data => {
-      if (data.success) {
-        sessionStorage.setItem("refreshSuccess", "1");
-        location.reload();
-      } else {
-        alert("Failed to save log: " + (data.error || 'Unknown error'));
-        saveBtn.disabled = false;
-        saveBtn.textContent = "Save";
-      }
-    }).catch(err => {
-      console.error(err);
-      saveBtn.disabled = false;
-      saveBtn.textContent = "Save";
-    });
   }
-}
 
-function deleteJournalLog(id) {
-  if (confirm("Are you sure you want to delete this log?")) {
-    fetch(`/api/manage-journal-log/`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-CSRFToken": getCookie("csrftoken"),
-      },
-      body: JSON.stringify({
-        action: "delete",
-        item_id: document.body.dataset.dbId,
-        log_id: id
-      }),
-    })
-    .then(res => res.json())
-    .then(data => {
-      if (data.success) {
-        sessionStorage.setItem("refreshSuccess", "1");
-        location.reload();
+  // Triggering the Sorting
+  sortSelect.addEventListener('change', applySortAndVisibility);
+
+  orderToggle.addEventListener('click', () => {
+      const current = orderToggle.dataset.order;
+      const newOrder = current === 'desc' ? 'asc' : 'desc';
+      orderToggle.dataset.order = newOrder;
+      
+      const icon = orderToggle.querySelector('svg');
+      if (newOrder === 'asc') {
+          icon.style.transform = 'rotate(180deg)';
       } else {
-        alert("Failed to delete log.");
+          icon.style.transform = 'rotate(0deg)';
       }
-    }).catch(err => console.error(err));
+      
+      applySortAndVisibility();
+  });
+
+  if (showMoreBtn) {
+      showMoreBtn.addEventListener('click', () => {
+          window.journalExpanded = !window.journalExpanded;
+          applySortAndVisibility();
+      });
   }
-}
+
+  // Initial trigger to hide > 4 on page load
+  applySortAndVisibility();
+});
