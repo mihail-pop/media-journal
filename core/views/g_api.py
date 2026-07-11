@@ -86,7 +86,7 @@ def movies_api(request):
             default=F("total_main"),
             output_field=IntegerField(),
         )
-    )
+    ).prefetch_related('logs')
 
     # Apply sorting
     order_fields = ["status_order"]
@@ -118,10 +118,25 @@ def movies_api(request):
 
     items_data = []
     for item in items:
+        logs_data = []
+        for log in item.logs.all():
+            logs_data.append({
+                "id": log.id,
+                "title": log.title or "Log",
+                "content": log.content,
+                "activity_date": log.activity_date.strftime("%d %b %Y"),
+                "score": log.score,
+                "is_spoiler": log.is_spoiler,
+                "progress_unit": log.progress_unit,
+                "progress_start": log.progress_start,
+                "progress_end": log.progress_end
+            })
+
         items_data.append(
             {
                 "id": item.id,
                 "title": item.title,
+                "logs": logs_data,
                 "media_type": item.media_type,
                 "status": item.status,
                 "personal_rating": item.personal_rating,
@@ -240,7 +255,7 @@ def tvshows_api(request):
             default=F("total_secondary"),
             output_field=IntegerField(),
         ),
-    )
+    ).prefetch_related('logs')
 
     # Apply sorting
     order_fields = ["status_order"]
@@ -275,10 +290,25 @@ def tvshows_api(request):
 
     items_data = []
     for item in items:
+        logs_data = []
+        for log in item.logs.all():
+            logs_data.append({
+                "id": log.id,
+                "title": log.title or "Log",
+                "content": log.content,
+                "activity_date": log.activity_date.strftime("%d %b %Y"),
+                "score": log.score,
+                "is_spoiler": log.is_spoiler,
+                "progress_unit": log.progress_unit,
+                "progress_start": log.progress_start,
+                "progress_end": log.progress_end
+            })
+
         items_data.append(
             {
                 "id": item.id,
                 "title": item.title,
+                "logs": logs_data,
                 "media_type": item.media_type,
                 "status": item.status,
                 "personal_rating": item.personal_rating,
@@ -386,7 +416,7 @@ def anime_api(request):
             default=F("total_main"),
             output_field=IntegerField(),
         ),
-    )
+    ).prefetch_related('logs')
 
     # Apply sorting
     order_fields = ["status_order"]
@@ -418,10 +448,25 @@ def anime_api(request):
 
     items_data = []
     for item in items:
+        logs_data = []
+        for log in item.logs.all():
+            logs_data.append({
+                "id": log.id,
+                "title": log.title or "Log",
+                "content": log.content,
+                "activity_date": log.activity_date.strftime("%d %b %Y"),
+                "score": log.score,
+                "is_spoiler": log.is_spoiler,
+                "progress_unit": log.progress_unit,
+                "progress_start": log.progress_start,
+                "progress_end": log.progress_end
+            })
+
         items_data.append(
             {
                 "id": item.id,
                 "title": item.title,
+                "logs": logs_data,
                 "media_type": item.media_type,
                 "status": item.status,
                 "personal_rating": item.personal_rating,
@@ -535,7 +580,7 @@ def manga_api(request):
             default=F("total_secondary"),
             output_field=IntegerField(),
         ),
-    )
+    ).prefetch_related('logs')
 
     # Apply sorting
     order_fields = ["status_order"]
@@ -570,10 +615,25 @@ def manga_api(request):
 
     items_data = []
     for item in items:
+        logs_data = []
+        for log in item.logs.all():
+            logs_data.append({
+                "id": log.id,
+                "title": log.title or "Log",
+                "content": log.content,
+                "activity_date": log.activity_date.strftime("%d %b %Y"),
+                "score": log.score,
+                "is_spoiler": log.is_spoiler,
+                "progress_unit": log.progress_unit,
+                "progress_start": log.progress_start,
+                "progress_end": log.progress_end
+            })
+
         items_data.append(
             {
                 "id": item.id,
                 "title": item.title,
+                "logs": logs_data,
                 "media_type": item.media_type,
                 "status": item.status,
                 "personal_rating": item.personal_rating,
@@ -676,7 +736,7 @@ def games_api(request):
 
     queryset = queryset.annotate(
         status_order=status_ordering, rating_order=rating_ordering
-    )
+    ).prefetch_related('logs')
 
     # Apply sorting
     order_fields = ["status_order"]
@@ -708,10 +768,25 @@ def games_api(request):
 
     items_data = []
     for item in items:
+        logs_data = []
+        for log in item.logs.all():
+            logs_data.append({
+                "id": log.id,
+                "title": log.title or "Log",
+                "content": log.content,
+                "activity_date": log.activity_date.strftime("%d %b %Y"),
+                "score": log.score,
+                "is_spoiler": log.is_spoiler,
+                "progress_unit": log.progress_unit,
+                "progress_start": log.progress_start,
+                "progress_end": log.progress_end
+            })
+
         items_data.append(
             {
                 "id": item.id,
                 "title": item.title,
+                "logs": logs_data,
                 "media_type": item.media_type,
                 "status": item.status,
                 "personal_rating": item.personal_rating,
@@ -816,7 +891,7 @@ def music_api(request):
 
     queryset = queryset.annotate(
         status_order=status_ordering, rating_order=rating_ordering
-    )
+    ).prefetch_related('logs')
 
     # Apply sorting
     order_fields = ["status_order"]
@@ -845,10 +920,25 @@ def music_api(request):
 
     items_data = []
     for item in items:
+        logs_data = []
+        for log in item.logs.all():
+            logs_data.append({
+                "id": log.id,
+                "title": log.title or "Log",
+                "content": log.content,
+                "activity_date": log.activity_date.strftime("%d %b %Y"),
+                "score": log.score,
+                "is_spoiler": log.is_spoiler,
+                "progress_unit": log.progress_unit,
+                "progress_start": log.progress_start,
+                "progress_end": log.progress_end
+            })
+
         items_data.append(
             {
                 "id": item.id,
                 "title": item.title,
+                "logs": logs_data,
                 "media_type": item.media_type,
                 "status": item.status,
                 "personal_rating": item.personal_rating,
@@ -955,7 +1045,7 @@ def books_api(request):
             default=F("total_main"),
             output_field=IntegerField(),
         ),
-    )
+    ).prefetch_related('logs')
 
     # Apply sorting
     order_fields = ["status_order"]
@@ -987,10 +1077,25 @@ def books_api(request):
 
     items_data = []
     for item in items:
+        logs_data = []
+        for log in item.logs.all():
+            logs_data.append({
+                "id": log.id,
+                "title": log.title or "Log",
+                "content": log.content,
+                "activity_date": log.activity_date.strftime("%d %b %Y"),
+                "score": log.score,
+                "is_spoiler": log.is_spoiler,
+                "progress_unit": log.progress_unit,
+                "progress_start": log.progress_start,
+                "progress_end": log.progress_end
+            })
+
         items_data.append(
             {
                 "id": item.id,
                 "title": item.title,
+                "logs": logs_data,
                 "media_type": item.media_type,
                 "status": item.status,
                 "personal_rating": item.personal_rating,
@@ -1031,13 +1136,15 @@ def books_banners_api(request):
 def history_api(request):
     page = int(request.GET.get("page", 1))
     search = request.GET.get("search", "").strip()
-    sort_order = request.GET.get("sort", "desc")
-    year = request.GET.get("year", "")
+    sort_by = request.GET.get("sort_by", "activity_date")
+    sort_order = request.GET.get("sort_order", "desc")
+    activity_year = request.GET.get("activity_year", "")
     month = request.GET.get("month", "")
-    media_type = request.GET.get("type", "")
-    status = request.GET.get("status", "")
-    start_date = request.GET.get("start_date", "")
-    end_date = request.GET.get("end_date", "")
+    release_year = request.GET.get("release_year", "")
+    types_param = request.GET.get("types", "")
+    statuses_param = request.GET.get("statuses", "")
+    collections_param = request.GET.get("collections", "")
+    filter_mode = request.GET.get("filter_mode", "include")
     page_size = 50
 
     queryset = MediaItem.objects.all()
@@ -1051,29 +1158,71 @@ def history_api(request):
         ]
         queryset = queryset.filter(id__in=matching_ids)
 
-    if year:
-        queryset = queryset.filter(date_added__year=year)
+    if activity_year and activity_year != "all":
+        queryset = queryset.filter(date_added__year=activity_year)
+        if month and month != "all":
+            queryset = queryset.filter(date_added__month=month)
 
-    if month and year:
-        queryset = queryset.filter(date_added__month=month)
+    if release_year:
+        queryset = queryset.filter(release_date__startswith=release_year)
 
-    if media_type:
-        queryset = queryset.filter(media_type=media_type)
+    if types_param:
+        selected_types = [t.strip() for t in types_param.split(",") if t.strip()]
+        if filter_mode == "exclude":
+            queryset = queryset.exclude(media_type__in=selected_types)
+        else:
+            queryset = queryset.filter(media_type__in=selected_types)
 
-    if status:
-        queryset = queryset.filter(status=status)
+    if statuses_param:
+        selected_statuses = [s.strip() for s in statuses_param.split(",") if s.strip()]
+        if filter_mode == "exclude":
+            queryset = queryset.exclude(status__in=selected_statuses)
+        else:
+            queryset = queryset.filter(status__in=selected_statuses)
 
-    if start_date:
-        queryset = queryset.filter(date_added__date__gte=start_date)
+    if collections_param:
+        selected_collections = [c.strip() for c in collections_param.split(",") if c.strip()]
+        if filter_mode == "exclude":
+            queryset = queryset.exclude(collections__id__in=selected_collections)
+        else:
+            queryset = queryset.filter(collections__id__in=selected_collections).distinct()
 
-    if end_date:
-        queryset = queryset.filter(date_added__date__lte=end_date)
+    # Pre-calculate rating order to allow sorting
+    queryset = queryset.annotate(
+        rating_order=Case(
+            When(personal_rating=None, then=Value(0)),
+            default=F("personal_rating"),
+            output_field=IntegerField(),
+        )
+    )
 
-    # Sort by date_added
-    if sort_order == "asc":
-        queryset = queryset.order_by("date_added")
+    # Sorting logic
+    order_fields = []
+    if sort_by == "title":
+        if sort_order == "asc":
+            order_fields.extend([Lower("title"), "title"])
+        else:
+            order_fields.extend([Lower("title").desc(), "-title"])
+    elif sort_by == "activity_date":
+        if sort_order == "asc":
+            order_fields.extend(["date_added", Lower("title"), "title"])
+        else:
+            order_fields.extend(["-date_added", Lower("title"), "title"])
+    elif sort_by == "release_date":
+        if sort_order == "asc":
+            order_fields.extend(["release_date", Lower("title"), "title"])
+        else:
+            order_fields.extend(["-release_date", Lower("title"), "title"])
+    elif sort_by == "rating":
+        if sort_order == "asc":
+            order_fields.extend(["rating_order", Lower("title"), "title"])
+        else:
+            order_fields.extend(["-rating_order", Lower("title"), "title"])
+
+    if order_fields:
+        queryset = queryset.order_by(*order_fields)
     else:
-        queryset = queryset.order_by("-date_added")
+        queryset = queryset.order_by("-date_added", Lower("title"), "title")
 
     start = (page - 1) * page_size
     end = start + page_size
@@ -1085,9 +1234,9 @@ def history_api(request):
     for item in items:
         # Generate the detail URL
         if item.source == "tmdb" and item.media_type in ["movie", "tv"]:
-            if "_s" in item.source_id:
-                show_id = item.source_id.split("_s")[0]
-                season_number = item.source_id.split("_s")[1]
+            if "_s" in str(item.source_id):
+                show_id = str(item.source_id).split("_s")[0]
+                season_number = str(item.source_id).split("_s")[1]
                 url = f"/tmdb/season/{show_id}/{season_number}/"
             else:
                 url = f"/tmdb/{item.media_type}/{item.source_id}/"
@@ -1108,10 +1257,12 @@ def history_api(request):
                 "title": item.title,
                 "media_type": item.media_type,
                 "status": item.status,
+                "personal_rating": item.personal_rating,
                 "cover_url": item.cover_url or "/static/core/img/placeholder.png",
                 "banner_url": item.banner_url,
-                "date_added": item.date_added.isoformat(),
-                "date_formatted": item.date_added.strftime("%d %b %Y"),
+                "date_added": item.date_added.isoformat() if item.date_added else "",
+                "date_formatted": item.date_added.strftime("%d %b %Y") if item.date_added else "",
+                "release_date": item.release_date,
                 "url": url,
             }
         )

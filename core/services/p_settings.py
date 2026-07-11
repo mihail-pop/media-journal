@@ -13,7 +13,7 @@ from django.utils import timezone
 from django.core.serializers import serialize, deserialize
 from django.contrib.auth import get_user_model
 
-from core.models import APIKey, NavItem, MediaItem, AppSettings, FavoritePerson, Collection, CollectionItem, CalendarEvent
+from core.models import APIKey, NavItem, MediaItem, AppSettings, FavoritePerson, Collection, CollectionItem, CalendarEvent, MediaItemLog
 from core.services.m_books import save_openlib_item
 from core.services.m_movies_tvshows import save_tmdb_season
 
@@ -114,6 +114,7 @@ class BackupTask(threading.Thread):
             Collection.objects.all(),
             CollectionItem.objects.all(),
             CalendarEvent.objects.all(),
+            MediaItemLog.objects.all(),
         ]
 
         all_objects = []

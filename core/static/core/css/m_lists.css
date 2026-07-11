@@ -14,6 +14,9 @@
   --table-bg: #1f2a38;
 
   --activity-high: #abbacd;
+
+  --special-color: #00bfff;
+  --special-color-hover: #57d5ff;
 }
 
 [data-theme="light"] {
@@ -31,6 +34,9 @@
   --table-bg: #F2F2F2;
 
   --activity-high: #b3b3b3;
+
+  --special-color: #00bfff;
+  --special-color-hover: #57d5ff;
 }
 
 [data-theme="brown"] {
@@ -48,6 +54,9 @@
   --table-bg: #74544d;
 
   --activity-high: #af7f76;
+
+  --special-color: #df5c38;
+  --special-color-hover: #dd866e;
 }
 
 
@@ -886,6 +895,7 @@ body[data-media-type="games"] .card {
 .list-table tr.detailed-row .rating-number,
 .list-table tr.list-row .rating-number {
   font-size: initial;
+  vertical-align: baseline;
 }
 
 .card-meta-row {
@@ -1411,6 +1421,123 @@ body[data-media-type="tvshows"] .simple-title-cell a {
   display: none;
 }
 
+/* --- JOURNAL SECTION --- */
+.detailed-journal-container {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.journal-entry-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.journal-entry-header {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+.journal-entry-header .entry-meta-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 0.15rem 0.4rem;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.journal-entry-header .entry-meta-pill.type-pill {
+  border-color: var(--special-color);
+  color: var(--special-color);
+  background: rgba(0, 191, 255, 0.05);
+  font-weight: 600;
+}
+.journal-entry-header .entry-meta-pill.score-pill,
+.journal-entry-header .entry-meta-pill.score-pill .entry-score,
+.journal-entry-header .entry-meta-pill.score-pill .card-rating,
+.journal-entry-header .entry-meta-pill.score-pill .card-rating svg,
+.journal-entry-header .entry-meta-pill.score-pill .rating-number {
+  color: var(--text-secondary) !important;
+}
+.journal-entry-header .entry-meta-pill .card-rating svg,
+.journal-entry-header .entry-meta-pill .star-rating svg {
+  width: 1.1em !important;
+  height: 1.1em !important;
+}
+.journal-entry-header .entry-meta-pill .card-rating {
+  font-size: 0.8rem;
+  line-height: 1;
+  margin-left: 0;
+}
+.journal-entry-header .entry-meta-pill .rating-number {
+  font-size: 0.8rem !important;
+  line-height: 1;
+}
+.journal-entry-body {
+  font-size: 0.8rem;
+  color: var(--text-tertiary);
+  opacity: 0.8;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition: color 0.2s, filter 0.3s ease;
+  word-wrap: break-word;
+}
+.journal-entry-body.expanded {
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
+  display: block;
+  max-height: none;
+}
+.journal-entry-body:hover {
+  color: var(--text-secondary);
+  opacity: 1;
+}
+.journal-entry-body blockquote {
+  border-left: 2px solid var(--special-color);
+  margin: 0;
+  padding-left: 8px;
+  color: var(--text-secondary);
+}
+.log-spoiler-blur {
+  filter: blur(4px);
+  user-select: none;
+  position: relative;
+}
+/* This invisible layer prevents the blur from destroying the hit-box! */
+.log-spoiler-blur::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+.log-spoiler-blur:hover {
+  filter: blur(2px);
+}
+
+.spoiler {
+  background-color: var(--text-overview);
+  color: var(--text-overview);
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.spoiler.revealed {
+  background-color: transparent;
+  color: inherit;
+}
+
 @media (pointer: coarse) and (hover: none) {
 
   .banner-rotator img[alt="movie"],
@@ -1812,7 +1939,8 @@ body[data-media-type="tvshows"] .simple-title-cell a {
   }
 
 
-  .detailed-notes {
+  .detailed-notes,
+  .detailed-journal-container {
     display: none;
   }
 }

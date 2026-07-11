@@ -848,24 +848,25 @@ def books(request):
 
 @ensure_csrf_cookie
 def history(request):
-    # For sidebar: calculate latest 3 years dynamically
+    # For sidebar: get current year
     current_year = timezone.now().year
-    latest_years = [current_year - i for i in range(3)]  # e.g., 2025, 2024, 2023
 
-    # Get theme mode from AppSettings
+    # Get theme mode and rating mode from AppSettings
     AppSettings = apps.get_model("core", "AppSettings")
     settings = AppSettings.objects.first()
     theme_mode = settings.theme_mode if settings else "dark"
+    rating_mode = settings.rating_mode if settings else "faces"
 
-    ordered_types = get_ordered_types()
+    valid_collections = list(Collection.objects.all().distinct().values('id', 'title'))
 
     return render(
         request,
         "core/p_history.html",
         {
-            "latest_years": latest_years,
+            "current_year": current_year,
             "theme_mode": theme_mode,
-            "ordered_types": ordered_types,
+            "rating_mode": rating_mode,
+            "valid_collections": valid_collections,
         },
     )
 

@@ -412,6 +412,73 @@ const statusLabelsMap = {
     return card;
   }
 
+function parseJournalContent(html) {
+  if(!html) return '';
+  let text = html
+    .replace(/</g, '&lt;').replace(/>/g, '&gt;') // sanitize
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/\|\|(.*?)\|\|/g, '<span class="spoiler">$1</span>')
+    .replace(/\[center\]([\s\S]*?)\[\/center\]/g, '<div style="text-align:center;">$1</div>')
+    .replace(/^(?:&gt;|>)\s?(.*?)$/gm, '<blockquote style="border-left:3px solid var(--special-color); margin:0; padding-left:10px; color:var(--text-secondary);">$1</blockquote>')
+    .replace(/\n/g, '<br>');
+  return text;
+}
+
+function getDetailedJournalHtml(item) {
+    let html = '<div class="detailed-journal-container">';
+    
+    if (item.notes) {
+        const formattedNotes = parseJournalContent(item.notes);
+        html += `
+            <div class="journal-entry-wrapper">
+                <div class="journal-entry-header">
+                    <span class="entry-meta-pill type-pill">Notes</span>
+                </div>
+                <div class="journal-entry-body expandable-entry">${formattedNotes}</div>
+            </div>
+        `;
+    }
+
+    if (item.logs && item.logs.length > 0) {
+        item.logs.forEach(log => {
+            const formattedLog = parseJournalContent(log.content);
+            const spoilerClass = log.is_spoiler ? 'log-spoiler-blur' : '';
+            
+            // Build pills
+            let pillsHtml = `<span class="entry-meta-pill type-pill">${log.title || 'Log'}</span>`;
+            pillsHtml += `<span class="entry-meta-pill date-pill"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg> ${log.activity_date}</span>`;
+            
+            if (log.progress_start !== null && log.progress_start !== undefined && log.progress_start !== "") {
+                let unit = log.progress_unit || 'Unit';
+                unit = unit.charAt(0).toUpperCase() + unit.slice(1);
+                if (log.progress_end !== null && log.progress_end !== undefined && log.progress_end !== '') {
+                    if (!unit.endsWith('s')) unit += 's';
+                    pillsHtml += `<span class="entry-meta-pill progress-pill"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg> ${unit} ${log.progress_start} - ${log.progress_end}</span>`;
+                } else {
+                    pillsHtml += `<span class="entry-meta-pill progress-pill"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg> ${unit} ${log.progress_start}</span>`;
+                }
+            }
+            
+            if (log.score) {
+                pillsHtml += `<span class="entry-meta-pill score-pill"><span class="entry-score" data-score="${log.score}">${getRatingHtml(log.score)}</span></span>`;
+            }
+
+            html += `
+                <div class="journal-entry-wrapper">
+                    <div class="journal-entry-header">
+                        ${pillsHtml}
+                    </div>
+                    <div class="journal-entry-body expandable-entry ${spoilerClass}">${formattedLog}</div>
+                </div>
+            `;
+        });
+    }
+    
+    html += '</div>';
+    return html;
+}
+
 function createListRowElement(item, isDetailed = false) {
     const row = document.createElement('tr');
     row.className = isDetailed ? 'list-row detailed-row' : 'list-row';
@@ -458,7 +525,7 @@ function createListRowElement(item, isDetailed = false) {
             </div>
             <div class="detailed-text-content">
               <span class="detailed-title">${item.title}</span>
-              ${item.notes ? `<span class="detailed-notes">${item.notes}</span>` : ''}
+              ${getDetailedJournalHtml(item)}
             </div>
             <div class="list-row-actions">
               ${repeatHtml}
@@ -670,7 +737,8 @@ function createListRowElement(item, isDetailed = false) {
       
       // Update in-memory list (best-effort)
       if (idx !== -1) {
-        allItems[idx] = Object.assign({}, allItems[idx], item);
+        item = Object.assign({}, allItems[idx], item);
+        allItems[idx] = item;
       } else {
         // If not present, add to in-memory list (we don't know exact position without full load)
         allItems.unshift(item);
@@ -1776,6 +1844,41 @@ updateSortButtons();
   
   // === EVENT DELEGATION FOR EDIT BUTTONS ===
   document.addEventListener('click', function(e) {
+    const entryBody = e.target.closest('.expandable-entry');
+
+    if (entryBody) {
+        // Prevent clicking the text from navigating to details page
+        e.preventDefault();
+        e.stopPropagation();
+
+        // 1. If the log is blurred, first click ONLY unblurs it.
+        if (entryBody.classList.contains('log-spoiler-blur')) {
+            entryBody.classList.remove('log-spoiler-blur');
+            return; 
+        }
+
+        // 2. If we clicked an inline spoiler, toggle it and stop.
+        const inlineSpoiler = e.target.closest('.spoiler');
+        if (inlineSpoiler) {
+            inlineSpoiler.classList.toggle('revealed');
+            return; 
+        }
+        
+        // 3. Otherwise, toggle expansion
+        const isExpanded = entryBody.classList.contains('expanded');
+        
+        // Collapse all others
+        document.querySelectorAll('.expandable-entry.expanded').forEach(el => {
+            if (el !== entryBody) {
+                el.classList.remove('expanded');
+            }
+        });
+
+        // Toggle current
+        entryBody.classList.toggle('expanded');
+        return;
+    }
+
     if (e.target.classList.contains('play-card-btn')) {
       e.preventDefault();
       e.stopPropagation();

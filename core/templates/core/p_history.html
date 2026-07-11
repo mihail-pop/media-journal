@@ -16,19 +16,75 @@
 <aside class="sidebar">
   <input type="text" id="search-input" placeholder="Search" autocomplete="off">
 
-  <h3>Sort</h3>
-  <div class="sort-filter filter-group">
-    <button id="sort-asc" class="filter-btn sort-btn">Ascending</button>
-    <button id="sort-desc" class="filter-btn sort-btn active">Descending</button>
+  <h3>Sort By</h3>
+  <div class="sort-controls">
+    <div class="sort-select-wrapper h-select-wrapper">
+      <div id="sort-select" class="sort-select h-select-trigger" data-value="activity_date" role="button" tabindex="0" aria-haspopup="listbox" aria-expanded="false">Activity Date</div>
+      <div class="h-select-options sort-options" role="listbox">
+        <div class="h-select-option sort-option" data-sort="title" data-value="title" role="option">Title</div>
+        <div class="h-select-option sort-option" data-sort="rating" data-value="rating" role="option">Rating</div>
+        <div class="h-select-option sort-option active" data-sort="activity_date" data-value="activity_date" role="option">Activity Date</div>
+        <div class="h-select-option sort-option" data-sort="release_date" data-value="release_date" role="option">Release Date</div>
+      </div>
+    </div>
+    <button type="button" id="sort-order-btn" class="sort-order-btn" data-order="desc" aria-label="Sort descending"></button>
   </div>
 
-  <h3>Year & Month</h3>
+  <div class="filter-by-header">
+    <h3>Filter By</h3>
+    <button id="filter-mode-toggle" class="filter-mode-btn">Include</button>
+  </div>
+  
+  <div class="type-filter-container">
+    <div class="type-select-wrapper h-select-wrapper" id="type-select-wrapper">
+      <div id="type-select" class="genre-select h-select-trigger" role="button" tabindex="0">
+        <div class="type-tags genre-tags"></div>
+        <input type="text" id="type-search" placeholder="Type" data-placeholder="Type">
+        <div id="type-indicator" class="genre-indicator"></div>
+      </div>
+      <div class="h-select-options type-options" id="type-options" role="listbox" multiple>
+        <!-- Populated by JS -->
+      </div>
+    </div>
+  </div>
+
+  <div class="status-filter-container" style="margin-top: 0.5rem;">
+    <div class="status-select-wrapper h-select-wrapper" id="status-select-wrapper">
+      <div id="status-select" class="genre-select h-select-trigger" role="button" tabindex="0">
+        <div class="status-tags genre-tags"></div>
+        <input type="text" id="status-search" placeholder="Status" data-placeholder="Status">
+        <div id="status-indicator" class="genre-indicator"></div>
+      </div>
+      <div class="h-select-options status-options" id="status-options" role="listbox" multiple>
+        <!-- Populated by JS -->
+      </div>
+    </div>
+  </div>
+
+  {% if valid_collections %}
+  <div class="list-collection-filter-container" style="margin-top: 0.5rem;">
+    <div class="list-collection-select-wrapper h-select-wrapper" id="list-collection-select-wrapper">
+      <div id="list-collection-select" class="genre-select h-select-trigger" role="button" tabindex="0">
+        <div class="list-collection-tags genre-tags"></div>
+        <input type="text" id="list-collection-search" placeholder="Collections" autocomplete="off" data-placeholder="Collections">
+        <div id="list-collection-indicator" class="genre-indicator"></div>
+      </div>
+      <div class="h-select-options list-collection-options" id="list-collection-options" role="listbox" multiple>
+        {% for col in valid_collections %}
+          <div class="h-select-option list-collection-option" data-value="{{ col.id }}" data-title="{{ col.title }}">
+            <span>{{ col.title }}</span><span class="list-collection-select-wrapper-check">✕</span>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <h3>Activity Year</h3>
   <div class="year-filter filter-group">
-    <button class="filter-btn year-btn" data-year="all">All</button>
-    {% for year in latest_years %}
-    <button class="filter-btn year-btn" data-year="{{ year }}">{{ year }}</button>
-    {% endfor %}
-    <input type="number" id="custom-year" placeholder="Year" min="1900" max="2100">
+    <button class="filter-btn year-btn active" data-year="all">All</button>
+    <button class="filter-btn year-btn" data-year="{{ current_year }}">{{ current_year }}</button>
+    <input type="number" id="custom-year" placeholder="Year">
   </div>
 
   <div id="month-filter" class="month-filter filter-group" style="display:none;">
@@ -46,27 +102,12 @@
     <button class="filter-btn month-btn" data-month="12">Dec</button>
   </div>
 
-  <h3 class="date-range-title">Date Range</h3>
-  <div class="date-range-filter filter-group">
-    <input type="date" id="start-date">  <input type="date" id="end-date"> 
+  <div class="release-year-header">
+    <h3>Release Year</h3>
+    <span id="release-year-display" style="display: none;"><span id="release-year-value"></span> <span id="release-year-clear" style="cursor: pointer; font-weight: bold; margin-left: 5px;">✕</span></span>
   </div>
-
-  <h3>Type</h3>
-  <div class="type-filter filter-group">
-    <button class="filter-btn type-btn" data-type="all">All</button>
-    {% for type_info in ordered_types %}
-    <button class="filter-btn type-btn" data-type="{{ type_info.data_type }}">{{ type_info.label }}</button>
-    {% endfor %}
-  </div>
-
-  <h3>Status</h3>
-  <div class="status-filter filter-group">
-    <button class="filter-btn status-btn" data-status="all">All</button>
-    <button class="filter-btn status-btn" data-status="completed">Completed</button>
-    <button class="filter-btn status-btn" data-status="ongoing">Ongoing</button>
-    <button class="filter-btn status-btn" data-status="planned">Planned</button>
-    <button class="filter-btn status-btn" data-status="on_hold">On Hold</button>
-    <button class="filter-btn status-btn" data-status="dropped">Dropped</button>
+  <div class="release-year-slider-container">
+    <input type="range" id="release-year-slider" min="1950" max="2027" value="2027" class="slider">
   </div>
 </aside>
 
@@ -90,6 +131,7 @@
 {{ block.super }}
 <script>
   document.body.setAttribute('data-theme', '{{ theme_mode }}');
+  document.body.setAttribute('data-rating-mode', '{{ rating_mode }}');
 </script>
 <script src="{% static 'core/js/g_edit_modal.js' %}"></script>
 <script src="{% static 'core/js/p_history.js' %}"></script>

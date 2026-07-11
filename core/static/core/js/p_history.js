@@ -1,20 +1,26 @@
 document.addEventListener("DOMContentLoaded", () => {
-
   const cardView = document.getElementById("card-view");
   const loadingIndicator = document.getElementById("loading-indicator");
+  const noItemsMsg = document.getElementById("no-items-message");
   const searchInput = document.getElementById("search-input");
+  
+  // Sort Controls
+  const sortSelect = document.getElementById("sort-select");
+  const sortOptions = document.querySelectorAll(".sort-option");
+  const sortOrderBtn = document.getElementById("sort-order-btn");
+  
+  // Filter Controls
+  const filterModeToggle = document.getElementById('filter-mode-toggle');
   const yearBtns = [...document.querySelectorAll(".year-btn")];
   const monthBtns = [...document.querySelectorAll(".month-btn")];
-  const typeBtns = [...document.querySelectorAll(".type-btn")];
-  const statusBtns = [...document.querySelectorAll(".status-btn")];
   const monthFilterDiv = document.getElementById("month-filter");
-  const noItemsMsg = document.getElementById("no-items-message");
-
-  const sortAscBtn = document.getElementById("sort-asc");
-  const sortDescBtn = document.getElementById("sort-desc");
   const customYearInput = document.getElementById("custom-year");
-  const startDateInput = document.getElementById("start-date");
-  const endDateInput = document.getElementById("end-date");
+  
+  // Slider Controls
+  const releaseYearSlider = document.getElementById("release-year-slider");
+  const releaseYearDisplay = document.getElementById("release-year-display");
+  const releaseYearValue = document.getElementById("release-year-value");
+  const releaseYearClear = document.getElementById("release-year-clear");
 
   // === PAGINATION STATE ===
   let currentPage = 1;
@@ -24,22 +30,491 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const isBackForwardNav = performance.getEntriesByType('navigation')[0]?.type === 'back_forward';
   
-  let selectedYear = isBackForwardNav ? (sessionStorage.getItem('history_year') || "all") : "all";
-  let selectedMonth = isBackForwardNav ? (sessionStorage.getItem('history_month') || "all") : "all";
-  let selectedType = isBackForwardNav ? (sessionStorage.getItem('history_type') || "all") : "all";
-  let selectedStatus = isBackForwardNav ? (sessionStorage.getItem('history_status') || "all") : "all";
+  if (!isBackForwardNav) {
+    sessionStorage.removeItem('history_activity_year');
+    sessionStorage.removeItem('history_activity_month');
+    sessionStorage.removeItem('history_search');
+    sessionStorage.removeItem('history_sort_order');
+    sessionStorage.removeItem('history_sort_by');
+    sessionStorage.removeItem('history_filter_mode');
+    sessionStorage.removeItem('history_types');
+    sessionStorage.removeItem('history_statuses');
+    sessionStorage.removeItem('history_collections');
+    sessionStorage.removeItem('history_release_year');
+  }
+
+  let selectedActivityYear = isBackForwardNav ? (sessionStorage.getItem('history_activity_year') || "all") : "all";
+  let selectedActivityMonth = isBackForwardNav ? (sessionStorage.getItem('history_activity_month') || "all") : "all";
   let searchQuery = isBackForwardNav ? (sessionStorage.getItem('history_search') || "") : "";
-  let sortOrder = isBackForwardNav ? (sessionStorage.getItem('history_sort') || "desc") : "desc";
-  let startDate = isBackForwardNav ? (sessionStorage.getItem('history_startDate') || null) : null;
-  let endDate = isBackForwardNav ? (sessionStorage.getItem('history_endDate') || null) : null;
+  let sortOrder = isBackForwardNav ? (sessionStorage.getItem('history_sort_order') || "desc") : "desc";
+  let sortBy = isBackForwardNav ? (sessionStorage.getItem('history_sort_by') || "activity_date") : "activity_date";
+  
+  let currentFilterMode = isBackForwardNav ? (sessionStorage.getItem('history_filter_mode') || "include") : "include";
+  let currentTypes = isBackForwardNav ? JSON.parse(sessionStorage.getItem('history_types') || "[]") : [];
+  let currentStatuses = isBackForwardNav ? JSON.parse(sessionStorage.getItem('history_statuses') || "[]") : [];
+  let currentCollections = isBackForwardNav ? JSON.parse(sessionStorage.getItem('history_collections') || "[]") : [];
+  
+  let releaseYear = isBackForwardNav ? (sessionStorage.getItem('history_release_year') || "") : "";
+
+  // === MULTI SELECT LOGIC ===
+  function initMultiSelect(config) {
+    const {
+      wrapperId, searchId, optionsId, tagsContainerSelector, indicatorId, 
+      availableOptions, currentSelection, onToggle, getTitle
+    } = config;
+    
+    const wrapper = document.getElementById(wrapperId);
+    const searchInputEl = document.getElementById(searchId);
+    const optionsContainer = document.getElementById(optionsId);
+    const tagsContainer = document.querySelector(tagsContainerSelector);
+    const indicator = document.getElementById(indicatorId);
+
+    if (!wrapper) return;
+    optionsContainer.innerHTML = ''; 
+
+    availableOptions.forEach(opt => {
+      const optionEl = document.createElement('div');
+      optionEl.className = `h-select-option ${wrapperId}-option`;
+      optionEl.dataset.value = opt.value;
+      optionEl.dataset.title = getTitle(opt);
+      optionEl.innerHTML = `<span>${getTitle(opt)}</span><span class="${wrapperId}-check">✕</span>`;
+      
+      optionEl.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleItem(opt);
+        searchInputEl.value = '';
+        filterOptions('');
+      });
+      optionsContainer.appendChild(optionEl);
+    });
+
+    function toggleItem(opt) {
+      const existingIdx = currentSelection.findIndex(item => item.value === opt.value);
+      if (existingIdx > -1) {
+        currentSelection.splice(existingIdx, 1);
+      } else {
+        currentSelection.push(opt);
+      }
+      updateUI();
+      onToggle();
+    }
+
+    function updateUI() {
+      tagsContainer.innerHTML = '';
+      currentSelection.forEach(item => {
+        const tag = document.createElement('div');
+        tag.className = 'genre-tag';
+        tag.innerHTML = `<span>${getTitle(item)}</span><span class="remove-tag">✕</span>`;
+        tag.querySelector('.remove-tag').addEventListener('click', (e) => {
+          e.stopPropagation();
+          toggleItem(item);
+        });
+        tagsContainer.appendChild(tag);
+      });
+
+      const options = optionsContainer.querySelectorAll('.h-select-option');
+      options.forEach(opt => {
+        if (currentSelection.find(i => i.value === opt.dataset.value)) {
+          opt.classList.add('selected');
+        } else {
+          opt.classList.remove('selected');
+        }
+      });
+
+      if (currentSelection.length > 0) {
+        searchInputEl.placeholder = '';
+        wrapper.classList.add('has-items');
+      } else {
+        searchInputEl.placeholder = searchInputEl.dataset.placeholder || searchInputEl.getAttribute('placeholder');
+        wrapper.classList.remove('has-items');
+      }
+    }
+
+    function openSelect() {
+      const rect = wrapper.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      if (spaceBelow < 360 && rect.top > spaceBelow) {
+        wrapper.classList.add('drop-up');
+      } else {
+        wrapper.classList.remove('drop-up');
+      }
+      optionsContainer.classList.add('open');
+      wrapper.classList.add('open');
+    }
+
+    wrapper.addEventListener('click', (e) => {
+      openSelect();
+      if (e.target !== searchInputEl && e.target !== indicator && !e.target.closest('.remove-tag')) {
+        searchInputEl.focus();
+      }
+    });
+    
+    searchInputEl.addEventListener('focus', () => {
+      openSelect();
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!wrapper.contains(e.target)) {
+        optionsContainer.classList.remove('open');
+        wrapper.classList.remove('open');
+      }
+    });
+
+    indicator.addEventListener('click', (e) => {
+      e.stopPropagation();
+      document.querySelectorAll('.h-select-wrapper.open').forEach(el => {
+        if (el !== wrapper) {
+            el.classList.remove('open');
+            const opts = el.querySelector('.h-select-options');
+            if (opts) opts.classList.remove('open');
+        }
+      });
+      
+      if (currentSelection.length > 0) {
+        currentSelection.length = 0;
+        updateUI();
+        optionsContainer.classList.remove('open');
+        wrapper.classList.remove('open');
+        onToggle();
+      } else {
+        if (optionsContainer.classList.contains('open')) {
+          optionsContainer.classList.remove('open');
+          wrapper.classList.remove('open');
+        } else {
+          openSelect();
+          searchInputEl.focus();
+        }
+      }
+    });
+
+    function normalizeSearchText(str) {
+      return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    }
+
+    function filterOptions(query) {
+      const q = normalizeSearchText(query);
+      const options = optionsContainer.querySelectorAll('.h-select-option');
+      options.forEach(opt => {
+        if (normalizeSearchText(opt.dataset.title).includes(q)) {
+          opt.classList.remove('hidden');
+        } else {
+          opt.classList.add('hidden');
+        }
+      });
+    }
+
+    searchInputEl.addEventListener('input', (e) => {
+      filterOptions(e.target.value);
+    });
+
+    searchInputEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Backspace' && e.target.value === '' && currentSelection.length > 0) {
+        toggleItem(currentSelection[currentSelection.length - 1]);
+      }
+    });
+
+    updateUI();
+  }
+
+  // Init Type Filter
+  initMultiSelect({
+    wrapperId: 'type-select-wrapper',
+    searchId: 'type-search',
+    optionsId: 'type-options',
+    tagsContainerSelector: '.type-tags',
+    indicatorId: 'type-indicator',
+    availableOptions: [
+      { value: 'movie', label: 'Movies' },
+      { value: 'tv', label: 'TV Shows' },
+      { value: 'anime', label: 'Anime' },
+      { value: 'manga', label: 'Manga' },
+      { value: 'game', label: 'Games' },
+      { value: 'book', label: 'Books' },
+      { value: 'music', label: 'Music' }
+    ],
+    currentSelection: currentTypes,
+    getTitle: opt => opt.label,
+    onToggle: () => {
+      sessionStorage.setItem('history_types', JSON.stringify(currentTypes));
+      resetAndLoad();
+    }
+  });
+
+  // Init Status Filter
+  initMultiSelect({
+    wrapperId: 'status-select-wrapper',
+    searchId: 'status-search',
+    optionsId: 'status-options',
+    tagsContainerSelector: '.status-tags',
+    indicatorId: 'status-indicator',
+    availableOptions: [
+      { value: 'ongoing', label: 'Ongoing' },
+      { value: 'completed', label: 'Completed' },
+      { value: 'on_hold', label: 'On Hold' },
+      { value: 'planned', label: 'Planned' },
+      { value: 'dropped', label: 'Dropped' }
+    ],
+    currentSelection: currentStatuses,
+    getTitle: opt => opt.label,
+    onToggle: () => {
+      sessionStorage.setItem('history_statuses', JSON.stringify(currentStatuses));
+      resetAndLoad();
+    }
+  });
+
+  // Init Collection Filter
+  const colContainer = document.getElementById('list-collection-options');
+  if (colContainer) {
+    const colOpts = document.querySelectorAll('#list-collection-options .list-collection-option');
+    const availableCollections = Array.from(colOpts).map(el => ({
+      value: el.dataset.value,
+      label: el.dataset.title
+    }));
+    
+    initMultiSelect({
+      wrapperId: 'list-collection-select-wrapper',
+      searchId: 'list-collection-search',
+      optionsId: 'list-collection-options',
+      tagsContainerSelector: '.list-collection-tags',
+      indicatorId: 'list-collection-indicator',
+      availableOptions: availableCollections,
+      currentSelection: currentCollections,
+      getTitle: opt => opt.label,
+      onToggle: () => {
+        sessionStorage.setItem('history_collections', JSON.stringify(currentCollections));
+        resetAndLoad();
+      }
+    });
+  }
+
+  // === UI UPDATES FOR CONTROLS ===
+  const defaultSortLabels = {
+    title: "Title",
+    rating: "Rating",
+    activity_date: "Activity Date",
+    release_date: "Release Date",
+  };
+
+  function updateSortButtons() {
+    if (sortSelect) {
+      sortSelect.textContent = defaultSortLabels[sortBy] || defaultSortLabels.activity_date;
+      sortSelect.dataset.value = sortBy;
+    }
+
+    sortOptions.forEach(option => {
+      const isActive = option.dataset.sort === sortBy;
+      option.classList.toggle('active', isActive);
+      option.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    });
+
+    if (sortOrderBtn) {
+      sortOrderBtn.dataset.order = sortOrder;
+    }
+  }
+
+  function setSortSelectOpen(isOpen) {
+    const wrapper = sortSelect?.closest('.h-select-wrapper');
+    const optionsList = wrapper?.querySelector('.h-select-options');
+    if (!optionsList || !wrapper) return;
+
+    if (isOpen) {
+      const rect = sortSelect.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      if (spaceBelow < 220 && rect.top > spaceBelow) {
+        wrapper.classList.add('drop-up');
+      } else {
+        wrapper.classList.remove('drop-up');
+      }
+    }
+
+    optionsList.classList.toggle('open', isOpen);
+    sortSelect.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  }
+
+  function applySortFromControl(sortType) {
+    if (!sortType) return;
+    if (sortBy === sortType) {
+      sortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
+    } else {
+      sortBy = sortType;
+      sortOrder = (sortType === 'title' || sortType === 'release_date') ? 'asc' : 'desc';
+    }
+
+    sessionStorage.setItem('history_sort_by', sortBy);
+    sessionStorage.setItem('history_sort_order', sortOrder);
+    setSortSelectOpen(false);
+    updateSortButtons();
+    resetAndLoad();
+  }
+
+  // === EVENT LISTENERS ===
+  if (filterModeToggle) {
+    if (currentFilterMode === 'exclude') {
+        filterModeToggle.textContent = 'Exclude';
+        filterModeToggle.classList.add('exclude-mode');
+    }
+    filterModeToggle.addEventListener('click', () => {
+      if (currentFilterMode === 'include') {
+        currentFilterMode = 'exclude';
+        filterModeToggle.textContent = 'Exclude';
+        filterModeToggle.classList.add('exclude-mode');
+      } else {
+        currentFilterMode = 'include';
+        filterModeToggle.textContent = 'Include';
+        filterModeToggle.classList.remove('exclude-mode');
+      }
+      sessionStorage.setItem('history_filter_mode', currentFilterMode);
+      resetAndLoad();
+    });
+  }
+
+  if (sortSelect) {
+    sortSelect.addEventListener("click", () => {
+      const optionsList = sortSelect.closest('.h-select-wrapper')?.querySelector('.h-select-options');
+      setSortSelectOpen(!optionsList?.classList.contains('open'));
+    });
+  }
+
+  sortOptions.forEach((option) => {
+    option.addEventListener("click", (e) => {
+      e.stopPropagation();
+      applySortFromControl(option.dataset.sort);
+    });
+  });
+
+  if (sortOrderBtn) {
+    sortOrderBtn.addEventListener("click", () => {
+      sortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
+      sessionStorage.setItem('history_sort_order', sortOrder);
+      updateSortButtons();
+      resetAndLoad();
+    });
+  }
+  
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest || !e.target.closest('.sort-controls')) {
+      setSortSelectOpen(false);
+    }
+  });
+
+  let searchTimeout;
+  searchInput.addEventListener("input", e => {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+      searchQuery = e.target.value;
+      sessionStorage.setItem('history_search', searchQuery);
+      resetAndLoad();
+    }, 300);
+  });
+
+  function updateMonthFilterVisibility() {
+    monthFilterDiv.style.display = selectedActivityYear !== "all" ? "flex" : "none";
+  }
+
+  yearBtns.forEach(btn => btn.addEventListener("click", () => {
+    yearBtns.forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    selectedActivityYear = btn.dataset.year;
+    customYearInput.value = ''; // clear input when using buttons
+    
+    // Selecting the same year resets the month selection implicitly
+    selectedActivityMonth = "all";
+    monthBtns.forEach(b => b.classList.remove("active"));
+    const allMonthBtn = monthBtns.find(b => b.dataset.month === "all");
+    if(allMonthBtn) allMonthBtn.classList.add("active");
+
+    sessionStorage.setItem('history_activity_year', selectedActivityYear);
+    sessionStorage.setItem('history_activity_month', selectedActivityMonth);
+    updateMonthFilterVisibility();
+    resetAndLoad();
+  }));
+
+  customYearInput.addEventListener("input", (e) => {
+    // Limit to 4 characters
+    if (e.target.value.length > 4) {
+      e.target.value = e.target.value.slice(0, 4);
+    }
+    
+    if (e.target.value.length === 4) {
+      yearBtns.forEach(b => b.classList.remove("active"));
+      selectedActivityYear = e.target.value;
+      
+      selectedActivityMonth = "all";
+      monthBtns.forEach(b => b.classList.remove("active"));
+      const allMonthBtn = monthBtns.find(b => b.dataset.month === "all");
+      if(allMonthBtn) allMonthBtn.classList.add("active");
+
+      sessionStorage.setItem('history_activity_year', selectedActivityYear);
+      sessionStorage.setItem('history_activity_month', selectedActivityMonth);
+      updateMonthFilterVisibility();
+      resetAndLoad();
+    }
+  });
+
+  monthBtns.forEach(btn => btn.addEventListener("click", () => {
+    monthBtns.forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    selectedActivityMonth = btn.dataset.month;
+    sessionStorage.setItem('history_activity_month', selectedActivityMonth);
+    resetAndLoad();
+  }));
+
+  if (releaseYear) {
+    releaseYearSlider.value = releaseYear;
+    releaseYearValue.textContent = releaseYear;
+    releaseYearDisplay.style.display = 'inline';
+  } else {
+    releaseYearSlider.value = new Date().getFullYear() + 1;
+  }
+
+  releaseYearSlider.addEventListener("input", (e) => {
+    releaseYearValue.textContent = e.target.value;
+    releaseYearDisplay.style.display = 'inline';
+  });
+
+  releaseYearSlider.addEventListener("change", (e) => {
+    releaseYear = e.target.value;
+    sessionStorage.setItem('history_release_year', releaseYear);
+    resetAndLoad();
+  });
+
+  releaseYearClear.addEventListener("click", () => {
+    releaseYear = "";
+    releaseYearSlider.value = new Date().getFullYear() + 1; 
+    releaseYearDisplay.style.display = 'none';
+    sessionStorage.setItem('history_release_year', releaseYear);
+    resetAndLoad();
+  });
+
+  // Restore states
+  if (isBackForwardNav) {
+    searchInput.value = searchQuery;
+    const yearBtn = yearBtns.find(b => b.dataset.year === selectedActivityYear);
+    if (yearBtn) {
+      yearBtns.forEach(b => b.classList.remove("active"));
+      yearBtn.classList.add("active");
+      customYearInput.value = '';
+    } else if (selectedActivityYear !== "all") {
+      yearBtns.forEach(b => b.classList.remove("active"));
+      customYearInput.value = selectedActivityYear;
+    }
+    const monthBtn = monthBtns.find(b => b.dataset.month === selectedActivityMonth);
+    if (monthBtn) {
+      monthBtns.forEach(b => b.classList.remove("active"));
+      monthBtn.classList.add("active");
+    }
+  } else {
+    if (yearBtns.length > 0) yearBtns[0].classList.add("active");
+    if (monthBtns.length > 0) monthBtns[0].classList.add("active");
+  }
+  updateMonthFilterVisibility();
+  updateSortButtons();
 
   // === API FUNCTIONS ===
   async function loadItems(page = 1, reset = false) {
     if (isLoading || (!hasMore && !reset)) return;
-    
     isLoading = true;
     
-    // Only show loading indicator after 200ms delay
     const loadingTimeout = setTimeout(() => {
       loadingIndicator.style.display = 'block';
     }, 200);
@@ -48,15 +523,17 @@ document.addEventListener("DOMContentLoaded", () => {
       const params = new URLSearchParams({
         page: page,
         search: searchQuery,
-        sort: sortOrder
+        sort_by: sortBy,
+        sort_order: sortOrder,
+        filter_mode: currentFilterMode
       });
       
-      if (selectedYear !== 'all') params.append('year', selectedYear);
-      if (selectedMonth !== 'all') params.append('month', selectedMonth);
-      if (selectedType !== 'all') params.append('type', selectedType);
-      if (selectedStatus !== 'all') params.append('status', selectedStatus);
-      if (startDate) params.append('start_date', startDate);
-      if (endDate) params.append('end_date', endDate);
+      if (selectedActivityYear !== 'all') params.append('activity_year', selectedActivityYear);
+      if (selectedActivityMonth !== 'all') params.append('month', selectedActivityMonth);
+      if (releaseYear) params.append('release_year', releaseYear);
+      if (currentTypes.length > 0) params.append('types', currentTypes.map(t => t.value).join(','));
+      if (currentStatuses.length > 0) params.append('statuses', currentStatuses.map(s => s.value).join(','));
+      if (currentCollections.length > 0) params.append('collections', currentCollections.map(c => c.value).join(','));
       
       const historyCacheVersion = sessionStorage.getItem('cacheVersion_history');
       if (historyCacheVersion) {
@@ -70,7 +547,6 @@ document.addEventListener("DOMContentLoaded", () => {
         allItems = data.items || [];
         currentPage = 1;
       } else {
-        // Merge without duplicates: replace existing items by id, append new ones
         const existingMap = new Map(allItems.map((it, idx) => [String(it.id), idx]));
         for (const ni of (data.items || [])) {
           const nid = String(ni.id);
@@ -105,23 +581,16 @@ document.addEventListener("DOMContentLoaded", () => {
       cardView.appendChild(card);
     });
     
-    // Show/hide month filter
-    monthFilterDiv.style.display = selectedYear !== "all" ? "flex" : "none";
-    
-    // Show/hide "No items found" message
     if (noItemsMsg) {
       noItemsMsg.style.display = allItems.length === 0 ? "block" : "none";
     }
   }
 
-  // Replace or move a single updated item in the History view without reloading
   function replaceHistoryItem(item) {
     try {
       sessionStorage.setItem('cacheVersion_history', Date.now().toString());
-
       const id = String(item.id);
 
-      // Update in-memory list
       const idx = allItems.findIndex(i => String(i.id) === id);
       if (idx !== -1) {
         allItems[idx] = item;
@@ -129,51 +598,49 @@ document.addEventListener("DOMContentLoaded", () => {
         allItems.unshift(item);
       }
 
-      // Helper: check whether the item matches current filters
       function matchesFilters(it) {
         if (!it) return false;
-        // Status filter
-        if (selectedStatus && selectedStatus !== 'all' && it.status !== selectedStatus) return false;
-        // Type filter
-        if (selectedType && selectedType !== 'all' && it.media_type !== selectedType) return false;
-        // Year filter
-        if (selectedYear && selectedYear !== 'all') {
+        
+        if (currentTypes.length > 0) {
+          const typeMatches = currentTypes.find(t => t.value === it.media_type);
+          if (currentFilterMode === 'include' && !typeMatches) return false;
+          if (currentFilterMode === 'exclude' && typeMatches) return false;
+        }
+
+        if (currentStatuses.length > 0) {
+          const statusMatches = currentStatuses.find(s => s.value === it.status);
+          if (currentFilterMode === 'include' && !statusMatches) return false;
+          if (currentFilterMode === 'exclude' && statusMatches) return false;
+        }
+
+        if (selectedActivityYear && selectedActivityYear !== 'all') {
           const y = new Date(it.date_added).getFullYear();
-          if (String(y) !== String(selectedYear)) return false;
+          if (String(y) !== String(selectedActivityYear)) return false;
+          
+          if (selectedActivityMonth && selectedActivityMonth !== 'all') {
+             const m = new Date(it.date_added).getMonth() + 1;
+             if (String(m) !== String(selectedActivityMonth)) return false;
+          }
         }
-        // Month filter
-        if (selectedMonth && selectedMonth !== 'all') {
-          const m = new Date(it.date_added).getMonth() + 1;
-          if (String(m) !== String(selectedMonth)) return false;
+        
+        if (releaseYear) {
+          if (!it.release_date || !it.release_date.startsWith(String(releaseYear))) return false;
         }
-        // Search query
+
         if (searchQuery && searchQuery.trim()) {
           const q = searchQuery.trim().toLowerCase();
           if (!(String(it.title || '').toLowerCase().includes(q))) return false;
         }
-        // Date range
-        if (startDate) {
-          const sd = new Date(startDate).getTime();
-          const da = it.date_added ? new Date(it.date_added).getTime() : 0;
-          if (da < sd) return false;
-        }
-        if (endDate) {
-          const ed = new Date(endDate).getTime();
-          const da = it.date_added ? new Date(it.date_added).getTime() : 0;
-          if (da > ed) return false;
-        }
+        
         return true;
       }
 
-      // If the edited item no longer matches filters, remove any visible instance and stop
       if (!matchesFilters(item)) {
         document.querySelectorAll(`.card[data-id="${id}"]`).forEach(n => n.remove());
-        // ensure it's not in in-memory list for current view
         allItems = allItems.filter(i => String(i.id) !== id);
         return;
       }
 
-      // Ensure date_formatted is present (APIs sometimes send this; edit endpoint sends ISO date only)
       if (!item.date_formatted && item.date_added) {
         try {
           const d = new Date(item.date_added);
@@ -183,7 +650,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
 
-      // Generate URL if not present
       if (!item.url) {
         if (item.source === "tmdb" && item.media_type === "tv" && item.source_id && item.source_id.includes("_s")) {
           const parts = item.source_id.split("_s");
@@ -203,27 +669,38 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
 
-      // Remove any existing DOM nodes for this id (avoid duplicates)
       document.querySelectorAll(`.card[data-id="${id}"]`).forEach(n => n.remove());
-
       const newEl = createCardElement(item);
-      const oldEl = cardView.querySelector(`.card[data-id="${id}"]`);
-      if (oldEl) {
-        oldEl.replaceWith(newEl);
-        return;
-      }
 
-      // Insert among currently loaded cards by date (newest/oldest). If no loaded cards, append.
       const cards = Array.from(cardView.querySelectorAll('.card'));
       let inserted = false;
       for (const c of cards) {
         const cid = String(c.dataset.id);
         const ci = allItems.find(i => String(i.id) === cid);
         if (!ci) continue;
-        const a = item.date_added ? new Date(item.date_added).getTime() : 0;
-        const b = ci.date_added ? new Date(ci.date_added).getTime() : 0;
-        // history default is desc (newer first)
-        if (a > b) {
+        
+        let cmp = 0;
+        if (sortBy === 'title') {
+            cmp = String(item.title || '').localeCompare(String(ci.title || ''));
+        } else if (sortBy === 'release_date') {
+            const a = item.release_date ? new Date(item.release_date).getTime() : 0;
+            const b = ci.release_date ? new Date(ci.release_date).getTime() : 0;
+            cmp = a - b;
+            if (cmp === 0) cmp = String(item.title || '').localeCompare(String(ci.title || ''));
+        } else if (sortBy === 'rating') {
+            const a = item.personal_rating || 0;
+            const b = ci.personal_rating || 0;
+            cmp = a - b;
+            if (cmp === 0) cmp = String(item.title || '').localeCompare(String(ci.title || ''));
+        } else {
+            const a = item.date_added ? new Date(item.date_added).getTime() : 0;
+            const b = ci.date_added ? new Date(ci.date_added).getTime() : 0;
+            cmp = a - b;
+            if (cmp === 0) cmp = String(item.title || '').localeCompare(String(ci.title || ''));
+        }
+        
+        const shouldInsertBefore = (sortOrder === 'desc' ? cmp > 0 : cmp < 0);
+        if (shouldInsertBefore) {
           cardView.insertBefore(newEl, c);
           inserted = true;
           break;
@@ -235,11 +712,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Remove item from history DOM and in-memory list
   function removeHistoryItem(id) {
     try {
       sessionStorage.setItem('cacheVersion_history', Date.now().toString());
-
       const sid = String(id);
       document.querySelectorAll(`.card[data-id="${sid}"]`).forEach(n => n.remove());
       allItems = allItems.filter(i => String(i.id) !== sid);
@@ -249,8 +724,64 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   window.removeHistoryItem = removeHistoryItem;
-
   window.replaceHistoryItem = replaceHistoryItem;
+
+  let ratingMode = document.body.getAttribute('data-rating-mode') || 'faces';
+
+  function getRatingHtml(rating) {
+    if (!rating) return 'Unrated';
+    const rnum = Number(rating);
+    if (isNaN(rnum)) return 'Unrated';
+
+    let normalized = rnum;
+    if (ratingMode === 'stars_5') {
+      normalized = (rnum > 0 && rnum <= 5) ? (rnum * 20) : rnum;
+    } else if (ratingMode === 'scale_10') {
+      normalized = rnum;
+    }
+
+    const rounded = Math.round(normalized);
+
+    if (ratingMode === 'faces') {
+      if (rounded <= 33) {
+        return '<span class="card-rating"><svg aria-hidden="true" focusable="false" data-prefix="far" data-icon="frown" class="svg-inline--fa fa-frown fa-w-16 fa-lg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><path fill="currentColor" d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zm0 448c-110.3 0-200-89.7-200-200S137.7 56 248 56s200 89.7 200 200-89.7 200-200 200zm-80-216c17.7 0 32-14.3 32-32s-14.3-32-32-32-32 14.3-32 32 14.3 32 32 32zm160-64c-17.7 0-32 14.3-32 32s14.3 32 32 32 32-14.3 32-32-14.3-32-32-32zm-80 128c-40.2 0-78 17.7-103.8 48.6-8.5 10.2-7.1 25.3 3.1 33.8 10.2 8.4 25.3 7.1 33.8-3.1 16.6-19.9 41-31.4 66.9-31.4s50.3 11.4 66.9 31.4c8.1 9.7 23.1 11.9 33.8 3.1 10.2-8.5 11.5-23.6 3.1-33.8C326 321.7 288.2 304 248 304z"></path></svg></span>';
+      } else if (rounded <= 66) {
+        return '<span class="card-rating"><svg aria-hidden="true" focusable="false" data-prefix="far" data-icon="meh" class="svg-inline--fa fa-meh fa-w-16 fa-lg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><path fill="currentColor" d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zm0 448c-110.3 0-200-89.7-200-200S137.7 56 248 56s200 89.7 200 200-89.7 200-200 200zm-80-216c17.7 0 32-14.3 32-32s-14.3-32-32-32-32 14.3-32 32 14.3 32 32 32zm160-64c-17.7 0-32 14.3-32 32s14.3 32 32 32 32-14.3 32-32-14.3-32-32-32zm8 144H160c-13.2 0-24 10.8-24 24s10.8 24 24 24h176c13.2 0 24-10.8 24-24s-10.8-24-24-24z"></path></svg></span>';
+      } else {
+        return '<span class="card-rating"><svg aria-hidden="true" focusable="false" data-prefix="far" data-icon="smile" class="svg-inline--fa fa-smile fa-w-16 fa-lg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><path fill="currentColor" d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zm0 448c-110.3 0-200-89.7-200-200S137.7 56 248 56s200 89.7 200 200-89.7 200-200 200zm-80-216c17.7 0 32-14.3 32-32s-14.3-32-32-32-32 14.3-32 32 14.3 32 32 32zm160 0c17.7 0 32-14.3 32-32s-14.3-32-32-32-32 14.3-32 32 14.3 32 32 32zm4 72.6c-20.8 25-51.5 39.4-84 39.4s-63.2-14.3-84-39.4c-8.5-10.2-23.7-11.5-33.8-3.1-10.2 8.5-11.5 23.6-3.1 33.8 30 36 74.1 56.6 120.9 56.6s90.9-20.6 120.9-56.6c8.5-10.2 7.1-25.3-3.1-33.8-10.1-8.4-25.3-7.1-33.8 3.1z"></path></svg></span>';
+      }
+    } else if (ratingMode === 'stars_5') {
+      let starsCount = (rnum > 0 && rnum <= 5) ? Math.round(rnum) : Math.round(normalized / 20);
+      let starsHtml = '<span class="card-rating"><span class="star-rating">';
+      for (let i = 1; i <= 5; i++) {
+        if (i <= starsCount) {
+          starsHtml += '<svg class="star-icon filled" viewBox="0 0 32 32" style="color:gold;"><path fill="currentColor" stroke="#000" stroke-width="1.2" d="M16 2.5l4.09 8.29 9.16 1.33-6.62 6.45 1.56 9.09L16 23.13l-8.19 4.32 1.56-9.09-6.62-6.45 9.16-1.33L16 2.5z"/></svg>';
+        } else {
+          starsHtml += '<svg class="star-icon empty" viewBox="0 0 32 32" style="color:#444;"><path fill="currentColor" stroke="#000" stroke-width="1.2" d="M16 2.5l4.09 8.29 9.16 1.33-6.62 6.45 1.56 9.09L16 23.13l-8.19 4.32 1.56-9.09-6.62-6.45 9.16-1.33L16 2.5z"/></svg>';
+        }
+      }
+      starsHtml += '</span></span>';
+      return starsHtml;
+    } else if (ratingMode === 'scale_10') {
+      let displayVal = rnum > 10 ? Math.round(rnum / 10) : rnum;
+      if (displayVal === 0 && rnum > 0) displayVal = 1;
+      return `<span class="card-rating"><span class="rating-number">${displayVal}</span></span>`;
+    } else if (ratingMode === 'scale_100') {
+      return `<span class="card-rating"><span class="rating-number">${Math.round(rnum)}</span></span>`;
+    }
+    return 'Unrated';
+  }
+
+  function formatDateString(dateStr) {
+    if (!dateStr) return 'Unknown';
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr;
+      return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    } catch (e) {
+      return dateStr;
+    }
+  }
 
   function createCardElement(item) {
     const card = document.createElement('div');
@@ -262,9 +793,12 @@ document.addEventListener("DOMContentLoaded", () => {
     card.dataset.coverUrl = item.cover_url;
     card.dataset.bannerUrl = item.banner_url;
     
-    const dateObj = new Date(item.date_added);
-    const timeAgo = getTimeAgo(dateObj);
-    const statusText = getStatusText(item.status, timeAgo);
+    let dynamicText = item.date_formatted;
+    if (sortBy === 'release_date') {
+      dynamicText = formatDateString(item.release_date);
+    } else if (sortBy === 'rating') {
+      dynamicText = getRatingHtml(item.personal_rating);
+    }
     
     card.innerHTML = `
       <a href="${item.url}" class="card-link">
@@ -273,11 +807,8 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
         <div class="card-title-overlay">
           <span class="card-title">${item.title}</span>
-          <div class="card-subtitle">
-            ${statusText}
-          </div>
           <div class="card-date">
-            ${item.date_formatted}
+            ${dynamicText}
           </div>
         </div>
       </a>
@@ -286,31 +817,6 @@ document.addEventListener("DOMContentLoaded", () => {
     `;
     
     return card;
-  }
-
-  function getTimeAgo(date) {
-    const now = new Date();
-    const diffMs = now - date;
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-    const diffMinutes = Math.floor(diffMs / (1000 * 60));
-    const diffWeeks = Math.floor(diffDays / 7);
-    const diffMonths = Math.floor(diffDays / 30);
-    const diffYears = Math.floor(diffDays / 365);
-    
-    if (diffYears > 0) return `${diffYears} year${diffYears > 1 ? 's' : ''} ago`;
-    if (diffMonths > 0) return `${diffMonths} month${diffMonths > 1 ? 's' : ''} ago`;
-    if (diffWeeks > 0) return `${diffWeeks} week${diffWeeks > 1 ? 's' : ''} ago`;
-    if (diffDays > 0) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
-    if (diffHours > 0) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-    if (diffMinutes > 0) return `${diffMinutes} minute${diffMinutes > 1 ? 's' : ''} ago`;
-    return 'just now';
-  }
-
-  function getStatusText(status, timeAgo) {
-    if (status === 'on_hold') return `Paused ${timeAgo}`;
-    if (status === 'ongoing') return `Started ${timeAgo}`;
-    return `${status.charAt(0).toUpperCase() + status.slice(1)} ${timeAgo}`;
   }
 
   function resetAndLoad() {
@@ -334,152 +840,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   window.addEventListener('scroll', handleScroll);
-
-  // Search filter
-  let searchTimeout;
-  searchInput.addEventListener("input", e => {
-    clearTimeout(searchTimeout);
-    searchTimeout = setTimeout(() => {
-      searchQuery = e.target.value;
-      sessionStorage.setItem('history_search', searchQuery);
-      resetAndLoad();
-    }, 300);
-  });
-
-  // Year filter
-  yearBtns.forEach(btn => btn.addEventListener("click", () => {
-    yearBtns.forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-    selectedYear = btn.dataset.year;
-    selectedMonth = "all";
-    monthBtns.forEach(b => b.classList.remove("active"));
-    sessionStorage.setItem('history_year', selectedYear);
-    sessionStorage.setItem('history_month', selectedMonth);
-    resetAndLoad();
-  }));
-
-  // Month filter
-  monthBtns.forEach(btn => btn.addEventListener("click", () => {
-    monthBtns.forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-    selectedMonth = btn.dataset.month;
-    sessionStorage.setItem('history_month', selectedMonth);
-    resetAndLoad();
-  }));
-
-  // Type filter
-  typeBtns.forEach(btn => btn.addEventListener("click", () => {
-    typeBtns.forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-    selectedType = btn.dataset.type;
-    sessionStorage.setItem('history_type', selectedType);
-    resetAndLoad();
-  }));
-
-  // Status filter
-  statusBtns.forEach(btn => btn.addEventListener("click", () => {
-    statusBtns.forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-    selectedStatus = btn.dataset.status;
-    sessionStorage.setItem('history_status', selectedStatus);
-    resetAndLoad();
-  }));
-
-  // Sort buttons
-  sortAscBtn.addEventListener("click", () => {
-    sortOrder = "asc";
-    sortAscBtn.classList.add("active");
-    sortDescBtn.classList.remove("active");
-    sessionStorage.setItem('history_sort', sortOrder);
-    resetAndLoad();
-  });
-
-  sortDescBtn.addEventListener("click", () => {
-    sortOrder = "desc";
-    sortDescBtn.classList.add("active");
-    sortAscBtn.classList.remove("active");
-    sessionStorage.setItem('history_sort', sortOrder);
-    resetAndLoad();
-  });
-
-  // Custom year input
-  customYearInput.addEventListener("keydown", e => {
-    if (e.key === "Enter") {
-      selectedYear = customYearInput.value;
-      selectedMonth = "all";
-      monthBtns.forEach(b => b.classList.remove("active"));
-      sessionStorage.setItem('history_year', selectedYear);
-      sessionStorage.setItem('history_month', selectedMonth);
-      resetAndLoad();
-    }
-  });
-
-  // Date range filter
-  startDateInput.addEventListener("change", e => {
-    startDate = e.target.value || null;
-    sessionStorage.setItem('history_startDate', startDate || '');
-    resetAndLoad();
-  });
-
-  endDateInput.addEventListener("change", e => {
-    endDate = e.target.value || null;
-    sessionStorage.setItem('history_endDate', endDate || '');
-    resetAndLoad();
-  });
-
-  // Initial states - restore from session or defaults
-  if (isBackForwardNav) {
-    searchInput.value = searchQuery;
-    if (startDate) startDateInput.value = startDate;
-    if (endDate) endDateInput.value = endDate;
-    
-    const yearBtn = yearBtns.find(b => b.dataset.year === selectedYear);
-    if (yearBtn) {
-      yearBtns.forEach(b => b.classList.remove("active"));
-      yearBtn.classList.add("active");
-    }
-    
-    const monthBtn = monthBtns.find(b => b.dataset.month === selectedMonth);
-    if (monthBtn) {
-      monthBtns.forEach(b => b.classList.remove("active"));
-      monthBtn.classList.add("active");
-    }
-    
-    const typeBtn = typeBtns.find(b => b.dataset.type === selectedType);
-    if (typeBtn) {
-      typeBtns.forEach(b => b.classList.remove("active"));
-      typeBtn.classList.add("active");
-    }
-    
-    const statusBtn = statusBtns.find(b => b.dataset.status === selectedStatus);
-    if (statusBtn) {
-      statusBtns.forEach(b => b.classList.remove("active"));
-      statusBtn.classList.add("active");
-    }
-    
-    if (sortOrder === 'asc') {
-      sortAscBtn?.classList.add("active");
-      sortDescBtn?.classList.remove("active");
-    } else {
-      sortDescBtn?.classList.add("active");
-      sortAscBtn?.classList.remove("active");
-    }
-  } else {
-    yearBtns[0]?.classList.add("active");
-    typeBtns[0]?.classList.add("active");
-    statusBtns[0]?.classList.add("active");
-    sortDescBtn?.classList.add("active");
-    
-    // Clear saved filters on fresh navigation
-    sessionStorage.removeItem('history_year');
-    sessionStorage.removeItem('history_month');
-    sessionStorage.removeItem('history_type');
-    sessionStorage.removeItem('history_status');
-    sessionStorage.removeItem('history_search');
-    sessionStorage.removeItem('history_sort');
-    sessionStorage.removeItem('history_startDate');
-    sessionStorage.removeItem('history_endDate');
-  }
 
   // === GLOBAL EDIT MODAL FUNCTION ===
   window.openEditModal = function(element) {
@@ -520,7 +880,6 @@ document.addEventListener("DOMContentLoaded", () => {
       });
   };
 
-  // === EVENT DELEGATION FOR EDIT BUTTONS ===
   document.addEventListener('click', function(e) {
     if (e.target.classList.contains('edit-card-btn')) {
       e.preventDefault();
@@ -580,14 +939,12 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     document.querySelector('.list-page-container').prepend(toggleBtn);
 
-    // Close sidebar when clicking outside
     document.addEventListener('click', (e) => {
       if (!toggleBtn.contains(e.target) && !sidebar.contains(e.target)) {
         sidebar.classList.remove('sidebar-visible');
       }
     });
 
-    // Close sidebar on Escape key
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         sidebar.classList.remove('sidebar-visible');
@@ -596,6 +953,5 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-// Apply theme on page load
 const theme = document.body.getAttribute('data-theme') || 'dark';
 document.documentElement.setAttribute('data-theme', theme);
