@@ -920,7 +920,7 @@ input[type="number"] {
   position: relative;
   color: var(--text-tertiary);
   font-size: 0.95rem;
-  width: 100%;
+  width: auto;
 }
 
 .status-indicator {

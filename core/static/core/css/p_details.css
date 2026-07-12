@@ -2351,7 +2351,7 @@ html.c-modal-open {
 
 .entry-content {
   color: var(--text-secondary);
-  font-size: 0.95rem;
+  font-size: 1rem;
   line-height: 1.5;
 }
 
@@ -2367,20 +2367,20 @@ html.c-modal-open {
 }
 
 /* Custom Select Wrapper for Animation */
-.custom-select-wrapper {
+.d-custom-select-wrapper {
   position: relative;
   display: inline-flex;
   align-items: center;
 }
 
-.custom-select-wrapper select {
+.d-custom-select-wrapper select {
   appearance: none;
   -webkit-appearance: none;
   padding-right: 2.2rem !important;
   cursor: pointer;
 }
 
-.custom-select-wrapper .select-arrow {
+.d-custom-select-wrapper .select-arrow {
   position: absolute;
   right: 0.7rem;
   width: 16px;
@@ -2390,7 +2390,7 @@ html.c-modal-open {
   color: var(--text-overview);
 }
 
-.custom-select-wrapper select:focus ~ .select-arrow {
+.d-custom-select-wrapper select:focus ~ .select-arrow {
   transform: rotate(180deg);
   color: var(--special-color);
 }
@@ -2466,14 +2466,10 @@ html.c-modal-open {
   border: 1px solid var(--border-color);
   color: var(--text-primary);
   border-radius: 6px;
-  padding: 0.5rem 1rem;
+  padding: 0.58rem 1rem;
   font-size: 0.9rem;
   outline: none;
   transition: border-color 0.2s;
-}
-
-.j-select:focus {
-  border-color: var(--special-color);
 }
 
 /* Grid Layout for Journal */
@@ -2596,7 +2592,7 @@ html.c-modal-open {
   color: var(--text-overview);
   display: flex;
   align-items: center;
-  font-size: 0.95rem;
+  font-size: 1rem;
 }
 
 .composer-active {
@@ -2630,7 +2626,7 @@ html.c-modal-open {
   background: none;
   border: none;
   color: var(--text-overview);
-  font-size: 0.9rem;
+  font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
   padding: 0.2rem 0;
@@ -2680,6 +2676,7 @@ html.c-modal-open {
 
 .composer-editor-area textarea {
   width: 100%;
+  font-size: 1rem;
   box-sizing: border-box;
   background: var(--bg-primary);
   border: 0px solid var(--border-color);
@@ -2726,7 +2723,7 @@ html.c-modal-open {
   border-radius: 6px;
   padding: 0.6rem 0.8rem;
   outline: none;
-  font-size: 0.9rem;
+  font-size: 1rem;
   text-align: center;
   transition: border-color 0.2s;
 }
@@ -2773,7 +2770,7 @@ body:not([data-theme="light"]) .composer-log-fields input[type="date"] {
   font-weight: 600;
   transition: all 0.2s;
   user-select: none;
-  font-size: 0.9rem;
+  font-size: 1rem;
 }
 
 .spoiler-toggle-btn:hover{
@@ -2838,8 +2835,8 @@ select.single-unit ~ .select-arrow {
 }
 
 .log-score-wrapper .face {
-  width: 27px;
-  height: 27px;
+  width: 30px;
+  height: 30px;
 }
 
 .composer-actions {
@@ -2856,6 +2853,7 @@ select.single-unit ~ .select-arrow {
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
+  font-size: 1rem;
 }
 
 .j-btn-cancel {

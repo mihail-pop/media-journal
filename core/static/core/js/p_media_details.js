@@ -2410,7 +2410,7 @@ let appRatingMode = 'faces'; // Default fallback
 // Formats score identically to the lists page
 function rebuildCustomSelect(select) {
     const wrapper = select.parentElement;
-    if (!wrapper || !wrapper.classList.contains('custom-select-wrapper')) return;
+    if (!wrapper || !wrapper.classList.contains('d-custom-select-wrapper')) return;
     
     let optionsDiv = wrapper.querySelector('.custom-options');
     if (optionsDiv) {
@@ -2589,7 +2589,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Setup standalone UI dropdowns instantly
-  document.querySelectorAll('.custom-select-wrapper select').forEach(select => {
+  document.querySelectorAll('.d-custom-select-wrapper select').forEach(select => {
       rebuildCustomSelect(select);
   });
 
