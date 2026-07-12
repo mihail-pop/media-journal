@@ -2403,7 +2403,6 @@ html.c-modal-open {
   left: 0;
   width: 100%;
   background-color: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
   border-radius: 6px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   z-index: 1000;
@@ -2421,9 +2420,7 @@ html.c-modal-open {
   padding: 0.6rem 1rem;
   color: var(--text-primary);
   cursor: pointer;
-  font-size: 0.9rem;
   transition: background 0.2s ease, color 0.2s ease;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .custom-option:last-child {
@@ -2444,7 +2441,7 @@ html.c-modal-open {
 
 .j-icon-btn {
   background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
+  border: 0px solid var(--border-color);
   color: var(--text-overview);
   border-radius: 6px;
   width: 38px;
@@ -2463,11 +2460,11 @@ html.c-modal-open {
 
 .j-select {
   background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
+  border: 0px solid var(--border-color);
   color: var(--text-primary);
   border-radius: 6px;
-  padding: 0.58rem 1rem;
-  font-size: 0.9rem;
+  padding: 0.55rem 1rem;
+  font-size: 1rem;
   outline: none;
   transition: border-color 0.2s;
 }
