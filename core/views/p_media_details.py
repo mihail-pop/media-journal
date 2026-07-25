@@ -204,22 +204,22 @@ def upload_game_screenshots(request):
                 {"success": False, "message": "Missing screenshot_url."}, status=400
             )
 
-        screenshots = media_item.screenshots or []
-        new_screenshots = [s for s in screenshots if s.get("url") != screenshot_url]
-
         # Remove actual file from disk
         filename = screenshot_url.replace(settings.MEDIA_URL, "")
         file_path = os.path.join(settings.MEDIA_ROOT, filename)
         if os.path.exists(file_path):
             os.remove(file_path)
 
-        media_item.screenshots = new_screenshots
-        media_item.save()
+        from core.models import Screenshot
+        Screenshot.objects.filter(item=media_item, url=screenshot_url).delete()
+
+        # Return updated list from DB
+        return_screenshots = [{"url": s.url, "is_full_url": s.is_full_url} for s in media_item.game_screenshots.all()]
         return JsonResponse(
             {
                 "success": True,
                 "message": "Screenshot deleted.",
-                "screenshots": new_screenshots,
+                "screenshots": return_screenshots,
             }
         )
 
@@ -231,49 +231,35 @@ def upload_game_screenshots(request):
         )
 
     if action == "replace":
-        old_screenshots = media_item.screenshots or []
-        # Safely remove old screenshots directly by looking at their DB paths
-        for s in old_screenshots:
-            url = s.get("url")
-            if url:
-                file_path = os.path.join(settings.MEDIA_ROOT, url.replace(settings.MEDIA_URL, ""))
+        from core.models import Screenshot
+        # Safely remove old files using DB
+        for s in media_item.game_screenshots.all():
+            if s.url:
+                file_path = os.path.join(settings.MEDIA_ROOT, s.url.replace(settings.MEDIA_URL, ""))
                 if os.path.exists(file_path):
                     os.remove(file_path)
                     
+        media_item.game_screenshots.all().delete()
+        media_item.screenshots = []
         start_index = 1
         old_screenshots = []
 
     elif action == "add":
+        from django.db.models import Max
         old_screenshots = media_item.screenshots or []
-
-        # Find the highest index in existing screenshots to avoid collisions
-        max_index = 0
-        prefix = f"igdb_{igdb_id}_"
-
-        for s in old_screenshots:
-            try:
-                url = s.get("url", "")
-                filename = url.split("/")[-1]
-                if filename.startswith(prefix):
-                    # Format: igdb_{id}_{index}_{timestamp}.ext OR igdb_{id}_{index}.ext
-                    suffix = filename[len(prefix) :]
-                    name_body = os.path.splitext(suffix)[0]
-                    parts = name_body.split("_")
-                    if len(parts) >= 1 and parts[0].isdigit():
-                        idx = int(parts[0])
-                        if idx > max_index:
-                            max_index = idx
-            except (ValueError, IndexError, AttributeError):
-                continue
-
-        start_index = max_index + 1
+        
+        # Get highest position from DB to avoid collisions
+        max_pos = media_item.game_screenshots.aggregate(Max('position'))['position__max']
+        start_index = (max_pos or 0) + 1
 
     else:
         return JsonResponse(
             {"success": False, "message": "Invalid action."}, status=400
         )
 
-    new_screenshots = list(old_screenshots)
+    from core.models import Screenshot
+    screenshot_objs = []
+
     for i, file in enumerate(files, start=start_index):
         ext = os.path.splitext(file.name)[1].lower()
         if ext not in [".jpg", ".jpeg", ".png"]:
@@ -281,16 +267,17 @@ def upload_game_screenshots(request):
         filename = generate_unique_filename(i, ext)
         default_storage.save(filename, file)
         url = f"/media/{filename}"
-        new_screenshots.append({"url": url, "is_full_url": False})
+        screenshot_objs.append(Screenshot(item=media_item, url=url, is_full_url=False, position=i))
 
-    media_item.screenshots = new_screenshots
-    media_item.save()
+    Screenshot.objects.bulk_create(screenshot_objs)
+    
+    return_screenshots = [{"url": s.url, "is_full_url": s.is_full_url} for s in media_item.game_screenshots.all()]
 
     return JsonResponse(
         {
             "success": True,
             "message": "Screenshots updated.",
-            "screenshots": new_screenshots,
+            "screenshots": return_screenshots,
         }
     )
 
@@ -326,11 +313,8 @@ def add_music_video(request):
 
         new_position = max_position + 1
 
-        # Add new video
-        screenshots.append({"url": url, "position": new_position})
-
-        item.screenshots = screenshots
-        item.save()
+        from core.models import MusicVideo
+        MusicVideo.objects.create(item=item, url=url, position=new_position)
 
         return JsonResponse({"success": True})
     except MediaItem.DoesNotExist:
@@ -351,19 +335,14 @@ def delete_music_video(request):
 
         item = MediaItem.objects.get(provider_ids__musicbrainz=str(source_id), media_type="music")
 
-        # Get current screenshots/youtube_links
-        screenshots = item.screenshots or []
-
-        # Remove the video at the specified position
-        screenshots = [link for link in screenshots if link.get("position") != position]
-
-        # Reorder positions
-        screenshots.sort(key=lambda x: x.get("position", 0))
-        for i, link in enumerate(screenshots, start=1):
-            link["position"] = i
-
-        item.screenshots = screenshots
-        item.save()
+        from core.models import MusicVideo
+        MusicVideo.objects.filter(item=item, position=position).delete()
+        
+        # Reorder remaining DB objects
+        remaining = list(item.music_videos.all().order_by('position'))
+        for i, video in enumerate(remaining, start=1):
+            video.position = i
+            video.save(update_fields=['position'])
 
         return JsonResponse({"success": True})
     except MediaItem.DoesNotExist:
@@ -381,19 +360,17 @@ def reorder_music_videos(request):
         new_order = data.get("order")  # List of positions in new order
 
         item = MediaItem.objects.get(provider_ids__musicbrainz=str(source_id))
-        youtube_links = item.screenshots or []
-
-        # Reorder based on new_order list
-        reordered = []
+        
+        from core.models import MusicVideo
+        videos = list(item.music_videos.all())
+        
+        # Reorder DB based on new_order list
         for new_pos, old_pos in enumerate(new_order, start=1):
-            for link in youtube_links:
-                if link.get("position") == old_pos:
-                    link["position"] = new_pos
-                    reordered.append(link)
+            for video in videos:
+                if video.position == old_pos:
+                    video.position = new_pos
+                    video.save(update_fields=['position'])
                     break
-
-        item.screenshots = reordered
-        item.save()
 
         return JsonResponse({"success": True})
     except Exception as e:
@@ -409,17 +386,14 @@ def set_video_as_cover(request):
         position = data.get("position")
 
         item = MediaItem.objects.get(provider_ids__musicbrainz=str(source_id))
-        youtube_links = item.screenshots or []
+        
+        from core.models import MusicVideo
+        video = item.music_videos.filter(position=position).first()
 
-        # Find video at position
-        video_url = None
-        for link in youtube_links:
-            if link.get("position") == position:
-                video_url = link.get("url")
-                break
-
-        if not video_url or "youtube.com/watch?v=" not in video_url:
+        if not video or "youtube.com/watch?v=" not in video.url:
             return JsonResponse({"error": "Video not found"}, status=404)
+            
+        video_url = video.url
 
         # Extract video ID and get thumbnail
         video_id = video_url.split("v=")[1].split("&")[0]

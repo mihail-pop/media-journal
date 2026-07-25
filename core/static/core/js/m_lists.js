@@ -1933,8 +1933,8 @@ updateSortButtons();
       allMusicItems.forEach(item => {
           let videoId = null;
           
-          if (item.screenshots && item.screenshots.length > 0) {
-              const sortedShots = [...item.screenshots].sort((a, b) => (a.position || 0) - (b.position || 0));
+          if (item.youtube_links && item.youtube_links.length > 0) {
+              const sortedShots = [...item.youtube_links].sort((a, b) => (a.position || 0) - (b.position || 0));
               for (const shot of sortedShots) {
                   const match = shot.url ? shot.url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&"'>\s]{11})/) : null;
                   if (match) {

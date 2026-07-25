@@ -133,7 +133,7 @@ def save_igdb_item(igdb_id):
     ]
 
     # Save to DB
-    MediaItem.objects.create(
+    item = MediaItem.objects.create(
         title=title,
         media_type="game",
         source="igdb",
@@ -145,10 +145,20 @@ def save_igdb_item(igdb_id):
         cast=[],
         seasons=None,
         related_titles=[],
-        screenshots=local_screenshots,
         genres=genres,
         creators=creators,
     )
+
+    from core.models import Screenshot
+    Screenshot.objects.bulk_create([
+        Screenshot(
+            item=item, 
+            url=s["url"], 
+            is_full_url=s.get("is_full_url", False), 
+            position=i+1
+        )
+        for i, s in enumerate(local_screenshots)
+    ])
 
     return JsonResponse({"success": True, "message": "Game added to list"})
 

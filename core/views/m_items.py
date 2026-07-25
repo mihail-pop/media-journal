@@ -585,8 +585,8 @@ def delete_item(request, item_id):
                     os.path.join(media_root, p.replace("/media/", ""))
                 )
 
-        for shot in item.screenshots or []:
-            p = shot.get("url", "")
+        for shot in item.game_screenshots.all():
+            p = shot.url
             if p.startswith("/media/"):
                 paths_to_check.append(
                     os.path.join(media_root, p.replace("/media/", ""))
@@ -738,11 +738,10 @@ def refresh_item(request):
                 files_to_delete.append(os.path.join(settings.MEDIA_ROOT, new_item.banner_url.replace('/media/', '')))
 
         # Screenshots are manual, so we ALWAYS keep old screenshots. Mark new ones for deletion.
-        if new_item.screenshots:
-            for shot in new_item.screenshots:
-                url = shot.get("url", "")
-                if url.startswith("/media/"):
-                    files_to_delete.append(os.path.join(settings.MEDIA_ROOT, url.replace("/media/", "")))
+        for shot in new_item.game_screenshots.all():
+            url = shot.url
+            if url.startswith("/media/"):
+                files_to_delete.append(os.path.join(settings.MEDIA_ROOT, url.replace("/media/", "")))
 
         # Restore original provider ids to put it back in its rightful place
         item.provider_ids = original_provider_ids
@@ -866,21 +865,20 @@ def favorite_music_videos(request):
 
         videos = []
         for item in music_items:
-            if item.screenshots:
-                for link in item.screenshots:
-                    if link.get("position") != 1:
-                        continue
-                    url = link.get("url", "")
-                    if "youtube.com/watch?v=" in url:
-                        video_id = url.split("watch?v=")[1].split("&")[0]
-                        videos.append(
-                            {
-                                "video_id": video_id,
-                                "item_id": item.id,
-                                "is_favorite": item.favorite,
-                                "source_id": item.source_id,
-                            }
-                        )
+            for video in item.music_videos.all():
+                if video.position != 1:
+                    continue
+                url = video.url
+                if "youtube.com/watch?v=" in url:
+                    video_id = url.split("watch?v=")[1].split("&")[0]
+                    videos.append(
+                        {
+                            "video_id": video_id,
+                            "item_id": item.id,
+                            "is_favorite": item.favorite,
+                            "source_id": item.source_id,
+                        }
+                    )
 
         return JsonResponse({"videos": videos})
     except Exception as e:

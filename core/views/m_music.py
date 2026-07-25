@@ -141,8 +141,15 @@ def musicbrainz_detail(request, recording_id):
     try:
         item = MediaItem.objects.get(provider_ids__musicbrainz=str(recording_id))
 
-        # Get YouTube links from screenshots field
-        youtube_links = item.screenshots or []
+        youtube_links = [
+            {
+                "id": v.id,
+                "url": v.url,
+                "position": v.position,
+                "is_favorite": v.is_favorite
+            }
+            for v in item.music_videos.all()
+        ]
 
         # Format release date
         formatted_release_date = ""

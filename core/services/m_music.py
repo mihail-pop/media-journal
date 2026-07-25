@@ -332,7 +332,7 @@ def save_musicbrainz_item(recording_id):
                 pass
 
     # Save to database
-    MediaItem.objects.create(
+    item = MediaItem.objects.create(
         title=title,
         media_type="music",
         source="musicbrainz",
@@ -344,10 +344,19 @@ def save_musicbrainz_item(recording_id):
         cast=cast_data,
         seasons=None,
         related_titles=[],
-        screenshots=youtube_links,
         genres=genres,
         creators=creators,
     )
+
+    from core.models import MusicVideo
+    MusicVideo.objects.bulk_create([
+        MusicVideo(
+            item=item, 
+            url=v["url"], 
+            position=v.get("position", i+1)
+        )
+        for i, v in enumerate(youtube_links)
+    ])
 
     return JsonResponse({"success": True, "message": "Song added to list"})
 

@@ -12,7 +12,13 @@ def get_game_screenshots_data(igdb_id):
     # Try DB first
     try:
         item = MediaItem.objects.get(provider_ids__igdb=str(igdb_id))
-        return item.screenshots or []
+        return [
+            {
+                "url": s.url,
+                "is_full_url": s.is_full_url
+            }
+            for s in item.game_screenshots.all()
+        ]
     except MediaItem.DoesNotExist:
         pass
 

@@ -736,7 +736,7 @@ def games_api(request):
 
     queryset = queryset.annotate(
         status_order=status_ordering, rating_order=rating_ordering
-    ).prefetch_related('logs')
+    ).prefetch_related('logs', 'music_videos')
 
     # Apply sorting
     order_fields = ["status_order"]
@@ -950,7 +950,10 @@ def music_api(request):
                 "repeats": item.repeats,
                 "provider_ids": item.provider_ids,
                 "is_favorite": item.favorite,
-                "screenshots": item.screenshots,
+                "youtube_links": [
+                    {"url": v.url, "position": v.position, "is_favorite": v.is_favorite} 
+                    for v in item.music_videos.all()
+                ],
                 "date_added": item.date_added.isoformat() if item.date_added else "",
                 "release_date": (
                   datetime.strptime(item.release_date, "%Y-%m-%d").strftime("%d %b %Y")

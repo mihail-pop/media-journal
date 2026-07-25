@@ -26,10 +26,11 @@ logger = logging.getLogger(__name__)
 
 
 SYSTEM_NOTIFICATIONS = [
-    {
-        "id": "sys_1_25_shard",
-        "html": "Relevant only if you are updating from a release before 1.26.0: I improved how images are stored to keep the app fast and stable in the long run. Please <a href='#' id='trigger-sharding-btn' style='font-weight:bold; color:#F59E0B;'>click here to update your existing images</a>. (Do not close the page until it finishes)"
-    }
+    # Example of how to add a system notification in the future:
+    # {
+    #     "id": "sys_1_25_shard",
+    #     "html": "Relevant only if you are updating from a release before 1.26.0: I improved how images are stored to keep the app fast and stable in the long run. Please <a href='#' id='trigger-sharding-btn' style='font-weight:bold; color:#F59E0B;'>click here to update your existing images</a>. (Do not close the page until it finishes)"
+    # }
 ]
 
 @ensure_csrf_cookie

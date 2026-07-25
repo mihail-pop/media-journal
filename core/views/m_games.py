@@ -186,8 +186,16 @@ def igdb_detail(request, igdb_id):
     formatted_release_date = ""
 
     if in_my_list:
-        # Use saved data
-        screenshots = item.screenshots or []
+        screenshots = [
+            {
+                "id": s.id,
+                "url": s.url,
+                "is_full_url": s.is_full_url,
+                "position": s.position,
+                "is_favorite": s.is_favorite
+            }
+            for s in item.game_screenshots.all()
+        ]
 
         # Format release date from DB
         if item.release_date:

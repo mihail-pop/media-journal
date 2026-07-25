@@ -2,6 +2,7 @@ import uuid
 
 from django.db import models
 from django.utils import timezone
+from django.db.models import Max
 
 
 class APIKey(models.Model):
@@ -54,7 +55,7 @@ class MediaItem(models.Model):
     seasons = models.JSONField(blank=True, null=True)     # TV - Seasons
     episodes = models.JSONField(blank=True, null=True)    # Seasons - Episode details
     related_titles = models.JSONField(blank=True, null=True)  # Anime, Manga - Prequels, Sequels
-    screenshots = models.JSONField(blank=True, null=True) # Games - Screenshots / Music - Youtube Links + Position 
+    screenshots = models.JSONField(blank=True, null=True) # Games - Screenshots / Music - Youtube Links + Position # Deprecated, will remove after 3 releases.
     genres = models.JSONField(default=list, blank=True)
     creators = models.JSONField(default=list, blank=True) # Movies, TV - Directors / Anime - Studio / Games - Devs / Manga, Books - Authors / Music - Artists
 
@@ -264,3 +265,48 @@ class AppSettings(models.Model):
 
     def __str__(self):
         return f"App Settings ({self.rating_mode}, theme={self.theme_mode}, username={self.username})"
+
+class Screenshot(models.Model):
+    item = models.ForeignKey(MediaItem, on_delete=models.CASCADE, related_name='game_screenshots')
+    url = models.CharField(max_length=500)
+    is_full_url = models.BooleanField(default=False)
+    position = models.PositiveIntegerField(blank=True)
+    is_favorite = models.BooleanField(default=False)
+    
+    date_added = models.DateTimeField(default=timezone.now)
+    activity_date = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-is_favorite', 'position', 'date_added']
+
+    def save(self, *args, **kwargs):
+        # If this is a new screenshot and position isn't set, auto-increment it
+        if not self.pk and not self.position:
+            max_pos = Screenshot.objects.filter(item=self.item).aggregate(Max('position'))['position__max']
+            self.position = (max_pos or 0) + 1
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"Screenshot {self.position} for {self.item.title}"
+
+class MusicVideo(models.Model):
+    item = models.ForeignKey(MediaItem, on_delete=models.CASCADE, related_name='music_videos')
+    url = models.CharField(max_length=500)
+    position = models.PositiveIntegerField(blank=True)
+    is_favorite = models.BooleanField(default=False)
+    
+    date_added = models.DateTimeField(default=timezone.now)
+    activity_date = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-is_favorite', 'position', 'date_added']
+
+    def save(self, *args, **kwargs):
+        # If this is a new video and position isn't set, auto-increment it
+        if not self.pk and not self.position:
+            max_pos = MusicVideo.objects.filter(item=self.item).aggregate(Max('position'))['position__max']
+            self.position = (max_pos or 0) + 1
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"Music Video {self.position} for {self.item.title}"

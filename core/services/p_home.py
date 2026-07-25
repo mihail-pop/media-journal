@@ -116,11 +116,16 @@ def start_media_cleanup_loop():
                     valid_files.add(item.banner_url.replace("/media/", "", 1).strip('/'))
                 
                 # Smart scan all JSON fields for any image paths
-                extract_valid_media(item.screenshots, valid_files)
                 extract_valid_media(item.seasons, valid_files)
                 extract_valid_media(item.episodes, valid_files)
                 extract_valid_media(item.related_titles, valid_files)
                 extract_valid_media(item.cast, valid_files)
+
+            # Add Game Screenshots from the new relational table
+            from core.models import Screenshot
+            for shot in Screenshot.objects.all():
+                if shot.url and shot.url.startswith("/media/"):
+                    valid_files.add(shot.url.replace("/media/", "", 1).strip('/'))
 
             # Define the specific folders we want to clean
             folders_to_clean =[

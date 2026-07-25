@@ -110,7 +110,6 @@ def save_openlib_item(work_id):
         cast=[{"name": name, "character": ""} for name in author_names],
         seasons=None,
         related_titles=[],
-        screenshots=[],
         total_main=total_pages,
         genres=genres,
         creators=author_names,
