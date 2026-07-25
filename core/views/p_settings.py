@@ -80,6 +80,26 @@ def update_theme(request):
 
 @ensure_csrf_cookie
 @require_POST
+def update_details_sections(request):
+    try:
+        data = json.loads(request.body)
+        sections = data.get("sections", [])
+        
+        AppSettings = apps.get_model("core", "AppSettings")
+        settings = AppSettings.objects.first()
+        if not settings:
+            settings = AppSettings.objects.create()
+            
+        settings.details_sections_order = sections
+        settings.save()
+
+        return JsonResponse({"success": True})
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)}, status=400)
+
+
+@ensure_csrf_cookie
+@require_POST
 def update_nav_items(request):
     try:
         data = json.loads(request.body)

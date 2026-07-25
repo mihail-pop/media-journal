@@ -114,573 +114,601 @@
 <!-- Main background section -->
 <div class="main-colored-section">
   <div class="detail-container">
-    <div id="trailer-container" class="trailer-grid"></div>
-    {% if prequels or sequels %}
-    <section class="recommendations-section double-recs">
-      {% if prequels %}
-      <div class="rec-block">
-        <h2>Prequel{{ prequels|length|pluralize }}</h2>
-        <div class="recommendations-list">
-          {% for rec in prequels %}
-          <a href="{% url 'anilist_detail' source=rec.source media_type=rec.media_type|default:media_type source_id=rec.id %}" class="rec-card" title="{{ rec.title }}">
-            <img src="{{ rec.poster_path }}"
-     alt="{{ rec.title }}"
-     data-placeholder="{% static 'core/img/placeholder.png' %}"
-     onerror="this.onerror=null;this.src=this.dataset.placeholder;" />
-            <div class="card-title-overlay">
-              <p class="rec-title">{{ rec.title }}</p>
-            </div>
-          </a>
-          {% endfor %}
-        </div>
-      </div>
-      {% endif %}
+    {{ screenshots|json_script:"screenshots-data" }}
 
-      {% if sequels %}
-      <div class="rec-block">
-        <h2>Sequel{{ sequels|length|pluralize }}</h2>
-        <div class="recommendations-list">
-          {% for rec in sequels %}
-          <a href="{% url 'anilist_detail' source=rec.source media_type=rec.media_type|default:media_type source_id=rec.id %}" class="rec-card" title="{{ rec.title }}">
-            <img src="{{ rec.poster_path }}" 
-     alt="{{ rec.title }}" 
-     data-placeholder="{% static 'core/img/placeholder.png' %}" 
-     onerror="this.onerror=null;this.src=this.dataset.placeholder;" />
-            <div class="card-title-overlay">
-              <p class="rec-title">{{ rec.title }}</p>
-            </div>
-          </a>
-          {% endfor %}
-        </div>
-      </div>
-      {% endif %}
-    </section>
-    {% endif %}
+    {% for section in details_sections_order %}
+      {% if section.visible %}
 
-{% if seasons %}
-    <section class="seasons-section">
-      <h2>Season{{ seasons|length|pluralize }}</h2>
-      <div class="seasons-list">
-        {% for season in seasons %}
-        <a href="/tmdb/season/{{ source_id }}/{{ season.season_number }}/" class="season-card">
-          <img 
-            src="{{ season.poster_path_full|default:'' }}"
-            alt="{{ season.name }}"
+        <!-- TRAILERS -->
+        {% if section.id == 'trailers' %}
+          <div id="trailer-container" class="trailer-grid"></div>
+        {% endif %}
+
+        <!-- PREQUELS & SEQUELS -->
+        {% if section.id == 'prequels_sequels' %}
+          {% if prequels or sequels %}
+          <section class="recommendations-section double-recs">
+            {% if prequels %}
+            <div class="rec-block">
+              <h2>Prequel{{ prequels|length|pluralize }}</h2>
+              <div class="recommendations-list">
+                {% for rec in prequels %}
+                <a href="{% url 'anilist_detail' source=rec.source media_type=rec.media_type|default:media_type source_id=rec.id %}" class="rec-card" title="{{ rec.title }}">
+                  <img src="{{ rec.poster_path }}"
+                       alt="{{ rec.title }}"
+                       data-placeholder="{% static 'core/img/placeholder.png' %}"
+                       onerror="this.onerror=null;this.src=this.dataset.placeholder;" />
+                  <div class="card-title-overlay">
+                    <p class="rec-title">{{ rec.title }}</p>
+                  </div>
+                </a>
+                {% endfor %}
+              </div>
+            </div>
+            {% endif %}
+
+            {% if sequels %}
+            <div class="rec-block">
+              <h2>Sequel{{ sequels|length|pluralize }}</h2>
+              <div class="recommendations-list">
+                {% for rec in sequels %}
+                <a href="{% url 'anilist_detail' source=rec.source media_type=rec.media_type|default:media_type source_id=rec.id %}" class="rec-card" title="{{ rec.title }}">
+                  <img src="{{ rec.poster_path }}" 
+                       alt="{{ rec.title }}" 
+                       data-placeholder="{% static 'core/img/placeholder.png' %}" 
+                       onerror="this.onerror=null;this.src=this.dataset.placeholder;" />
+                  <div class="card-title-overlay">
+                    <p class="rec-title">{{ rec.title }}</p>
+                  </div>
+                </a>
+                {% endfor %}
+              </div>
+            </div>
+            {% endif %}
+          </section>
+          {% endif %}
+        {% endif %}
+
+        <!-- SEASONS -->
+        {% if section.id == 'seasons' %}
+          {% if seasons %}
+          <section class="seasons-section">
+            <h2>Season{{ seasons|length|pluralize }}</h2>
+            <div class="seasons-list">
+              {% for season in seasons %}
+              <a href="/tmdb/season/{{ source_id }}/{{ season.season_number }}/" class="season-card">
+                <img 
+                  src="{{ season.poster_path_full|default:'' }}"
+                  alt="{{ season.name }}"
+                  data-placeholder="{% static 'core/img/placeholder.png' %}"
+                  onerror="this.onerror=null;this.src=this.dataset.placeholder;"
+                />
+                <div class="card-title-overlay">
+                  <p class="season-name">{{ season.name }}</p>
+                  
+                  {% if season.season_number > 0 and season.episode_count <= 1 %}
+                    {% with total=seasons|length is_last=forloop.revcounter0|add:0 is_second_last=forloop.revcounter0|add:0 %}
+                      {% if is_last == 0 or is_second_last == 1 %}
+                        <p class="episode-count">Announced</p>
+                      {% endif %}
+                    {% endwith %}
+                  {% else %}
+                    <p class="episode-count">{{ season.episode_count }} episode{{ season.episode_count|pluralize }}</p>
+                  {% endif %}
+                  
+                  <p class="air-date">{{ season.air_date }}</p>
+                </div>
+              </a>
+              {% endfor %}
+            </div>
+          </section>
+          {% endif %}
+        {% endif %}
+
+        <!-- MUSIC -->
+        {% if section.id == 'music' %}
+          {% if media_type == 'music' %}
+          <section class="trailer-section music-section">
+            <div class="music-header">
+              <h2>Music</h2>
+              <div class="music-controls">
+                <label class="music-control-btn">
+                  <input type="checkbox" id="music-autoplay-toggle">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                  </svg>
+                  <span>Autoplay</span>
+                </label>
+                <label class="music-control-btn">
+                  <input type="checkbox" id="music-hide-toggle">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                  </svg>
+                  <span>Hide</span>
+                </label>
+                {% if in_my_list %}
+                <button id="music-add-btn" class="music-control-btn">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                  </svg>
+                  <span>Add</span>
+                </button>
+                {% endif %}
+              </div>
+            </div>
+            <div id="music-add-form" class="music-add-form" style="display:none;">
+              <input type="text" id="music-youtube-url" placeholder="Enter YouTube URL">
+              <button id="music-save-btn">Save</button>
+              <button id="music-cancel-btn">Cancel</button>
+            </div>
+            <div id="music-videos-container" class="trailer-grid">
+              {% if youtube_links %}
+              {% for link in youtube_links %}
+                {% if 'youtube.com/watch?v=' in link.url %}
+                  <div class="music-video-wrapper" data-position="{{ link.position }}">
+                    <iframe
+                      src="https://www.youtube.com/embed/{{ link.url|slice:'32:' }}"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowfullscreen
+                      referrerpolicy="origin-when-cross-origin"
+                    ></iframe>
+                    {% if in_my_list %}
+                    <div class="music-video-controls">
+                      <button class="music-delete-btn" data-position="{{ link.position }}" title="Delete Video">✕</button>
+                      <button class="music-cover-btn" data-position="{{ link.position }}" title="Set thumbnail as banner and poster">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="pointer-events: none;">
+                          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                          <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                          <polyline points="21 15 16 10 5 21"></polyline>
+                        </svg>
+                      </button>
+                      <button class="music-up-btn" data-position="{{ link.position }}" title="Move Up">▲</button>
+                      <button class="music-down-btn" data-position="{{ link.position }}" title="Move Down">▼</button>
+                    </div>
+                    {% endif %}
+                  </div>
+                {% endif %}
+              {% endfor %}
+              {% endif %}
+            </div>
+          </section>
+          {% endif %}
+        {% endif %}
+
+        <!-- SCREENSHOTS -->
+        {% if section.id == 'screenshots' %}
+          {% if media_type == 'game' and screenshots or media_type == 'game' and not recommendations %}
+          <section class="screenshots-section">
+            <div class="screenshots-header">
+            <h2>Screenshots</h2>
+          {% if not recommendations %}
+            <!-- Upload Form -->
+             <div class="screenshots-header-buttons">
+            <form id="screenshot-upload-form" enctype="multipart/form-data" class="inline-form">
+              <input type="hidden" name="igdb_id" value="{{ source_id }}">
+              <input type="file" id="screenshot-file-input" name="screenshots[]" accept=".jpg,.jpeg,.png" multiple hidden>
+              <button type="button" id="swap-btn">
+                Swap
+              </button>
+            </form>
+
+            <!-- Add Form (add to existing) -->
+          <form id="screenshot-add-form" enctype="multipart/form-data" class="inline-form">
+            <input type="hidden" name="igdb_id" value="{{ source_id }}">
+            <input type="file" id="screenshot-add-file-input" name="screenshots[]" accept=".jpg,.jpeg,.png" multiple hidden>
+            <button type="button" onclick="document.getElementById('screenshot-add-file-input').click();">
+              Add
+            </button>
+          </form>
+          </div>
+              {% endif %}
+          </div>
+          {% if screenshots %}
+            <div class="screenshots-background" data-igdb-id="{{ source_id }}" data-total-screenshots="{{ total_screenshots|default:0 }}">
+            <div class="screenshot-rotator" onmouseenter="showArrows(this)" onmouseleave="hideArrows(this)">
+              <img id="screenshot-image" src="{{ screenshots.0.url }}" alt="Screenshot" />
+              <button class="rotator-btn left" onclick="changeScreenshot(-1)" style="display: none;">‹</button>
+              <button class="rotator-btn right" onclick="changeScreenshot(1)" style="display: none;">›</button>
+              {% if not recommendations %}
+              <button class="autoplay-screenshot-btn" id="autoplay-screenshot-btn" title="Autoplay screenshots">
+                <svg viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M8 5v14l11-7z"/>
+                </svg>
+              </button>
+              <button class="fullscreen-screenshot-btn" id="fullscreen-screenshot-btn" title="Fullscreen">
+                <svg viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+                </svg>
+              </button>
+              <button class="delete-screenshot-btn" title="Delete Screenshot">×</button>
+              {% endif %}
+            </div>
+
+            <div class="screenshots-list">
+              {% for shot in screenshots %}
+                <img 
+                  src="{{ shot.url }}" 
+                  alt="Screenshot {{ forloop.counter }}" 
+                  class="thumbnail {% if forloop.first %}active-thumbnail{% endif %}" 
+                  onclick="setScreenshot({{ forloop.counter0 }})" 
+                />
+              {% endfor %}
+            </div>
+            </div>
+            
+            <div class="screenshot-overlay" id="screenshot-overlay">
+              <img id="overlay-screenshot-image" src="{{ screenshots.0.url }}" alt="Screenshot" />
+              <button class="rotator-btn left" onclick="changeScreenshot(-1)">‹</button>
+              <button class="rotator-btn right" onclick="changeScreenshot(1)">›</button>
+              {% if not recommendations %}
+              <button class="autoplay-screenshot-btn" id="overlay-autoplay-btn" title="Autoplay screenshots">
+                <svg viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M8 5v14l11-7z"/>
+                </svg>
+              </button>
+              <button class="fullscreen-screenshot-btn" id="overlay-fullscreen-btn" title="Exit fullscreen">
+                <svg viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/>
+                </svg>
+              </button>
+              <button class="delete-screenshot-btn" title="Delete Screenshot">×</button>
+              {% endif %}
+            </div>
+          {% endif %}
+          </section>
+          {% endif %}
+        {% endif %}
+
+        <!-- CAST & CREW -->
+        {% if section.id == 'cast' %}
+          {% if cast %}
+          <section class="cast-section">
+            <div class="cast-header">
+              {% if media_type == "tv" or media_type == "movie" %}
+              <h2>Cast</h2>
+              {% elif media_type == "manga" or media_type == "anime" %}
+              <h2>Character{{ cast|length|pluralize }}</h2>
+              {% elif media_type == "book" %}
+              <h2>Author{{ cast|length|pluralize }}</h2>
+              {% else %}
+              <h2>Cast</h2>
+              {% endif %}
+              
+              <div class="cast-controls">
+                <div class="search-container">
+                  <button id="search-toggle-btn" class="search-toggle">
+                    <svg class="cast-search-icon" width="24" height="24" viewBox="0 0 512 512" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M505 442.7L405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128
+                               C416 93.1 322.9 0 208 0S0 93.1 0 208s93.1 208 208 208c48.3 0 92.7-16.4 128-44v16.3
+                               c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9 0l28.3-28.3
+                               c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7 0-128-57.2-128-128
+                               0-70.7 57.2-128 128-128 70.7 0 128 57.2 128 128
+                               0 70.7-57.2 128-128 128z"></path>
+                    </svg>
+                  </button>
+                  <input type="text" id="person-search-input" placeholder="Search.." autocomplete="off" class="search-input hidden">
+                </div>
+                
+                {% if cast|length >= 8 %}
+                <button id="load-more-cast" class="load-more-btn" 
+                        data-source="{{ source }}" 
+                        data-source-id="{{ source_id }}" 
+                        data-media-type="{{ media_type }}" 
+                        data-page="1">Load More</button>
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- Search results above the cast list -->
+            <div id="person-search-results" class="search-results"></div>
+
+            <div class="cast-list">
+              {% for member in cast %}
+              {% if member.id %}
+                {% if media_type == "tv" or media_type == "movie" %}
+                  <a href="/person/actor/{{ member.id }}/" class="cast-member">
+                {% elif media_type == "manga" or media_type == "anime" %}
+                  <a href="/person/character/{{ member.id }}/" class="cast-member">
+                {% else %}
+                  <div class="cast-member">
+                {% endif %}
+                  {% if media_type != "book" %}
+                  <img src="{% if member.is_full_url %}{{ member.profile_path }}{% else %}https://image.tmdb.org/t/p/w185{{ member.profile_path }}{% endif %}"
+                       alt="{{ member.name }}"
+                       data-placeholder="{% static 'core/img/placeholder.png' %}"
+                       onerror="this.onerror=null;this.src=this.dataset.placeholder;" />
+                  {% endif %}
+                  <div class="card-title-overlay">
+                    {% if media_type == 'anime' or media_type == 'manga' %}
+                      <p class="actor-name">{{ member.name }}</p>
+                    {% else %}
+                      <p class="actor-name">{{ member.name }}</p>
+                      <p class="character-name">{{ member.character }}</p>
+                    {% endif %}
+                  </div>
+                  {% if media_type != "book" %}
+                  <label class="cast-favorite" data-name="{{ member.name }}" data-img="{% if member.is_full_url %}{{ member.profile_path }}{% else %}https://image.tmdb.org/t/p/w185{{ member.profile_path }}{% endif %}" data-type="{% if media_type == 'anime' or media_type == 'manga' %}character{% else %}actor{% endif %}" data-id="{{ member.id|default:'' }}">
+                    <input type="checkbox">
+                    <span class="heart"></span>
+                  </label>
+                  {% endif %}
+                {% if media_type == "tv" or media_type == "movie" or media_type == "manga" or media_type == "anime" %}
+                  </a>
+                {% else %}
+                  </div>
+                {% endif %}
+              {% else %}
+                <div class="cast-member">
+                  <img src="{% if member.is_full_url %}{{ member.profile_path }}{% else %}https://image.tmdb.org/t/p/w185{{ member.profile_path }}{% endif %}"
+                       alt="{{ member.name }}"
+                       data-placeholder="{% static 'core/img/placeholder.png' %}"
+                       onerror="this.onerror=null;this.src=this.dataset.placeholder;" />
+                  <div class="card-title-overlay">
+                    <p class="actor-name">{{ member.name }}</p>
+                    <p class="character-name">{{ member.character }}</p>
+                  </div>
+                  {% if media_type != "book" %}
+                  <label class="cast-favorite" data-name="{{ member.name }}" data-img="{% if member.is_full_url %}{{ member.profile_path }}{% else %}https://image.tmdb.org/t/p/w185{{ member.profile_path }}{% endif %}" data-type="{% if media_type == 'anime' or media_type == 'manga' %}character{% else %}actor{% endif %}" data-id="">
+                    <input type="checkbox">
+                    <span class="heart"></span>
+                  </label>
+                  {% endif %}
+                </div>
+              {% endif %}
+              {% endfor %}
+            </div>
+          </section>
+          {% endif %}
+        {% endif %}
+
+        <!-- JOURNAL -->
+        {% if section.id == 'journal' %}
+          {% if in_my_list %}
+          <section class="journal-section">
+            <div class="journal-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+              <h2 style="margin: 0;">Journal</h2>
+              
+              <div class="journal-controls">
+                <button id="j-view-toggle" class="j-icon-btn" title="Toggle View">
+                  <!-- SVG injected by JS -->
+                </button>
+                
+                <div class="d-custom-select-wrapper">
+                  <select id="j-sort-select" class="j-select">
+                    <option value="activity_date">Activity Date</option>
+                    <option value="title">Title</option>
+                    <option value="score">Score</option>
+                  </select>
+                  <svg class="select-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </div>
+
+                <button id="j-order-toggle" class="j-icon-btn" data-order="desc" title="Toggle Order">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transition: transform 0.3s ease;">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <polyline points="19 12 12 19 5 12"></polyline>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div id="journal-entries-list" class="journal-entries-list">
+              <!-- Existing Notes -->
+              {% if item.notes %}
+              <div class="journal-entry-card notes-card">
+                <div class="entry-header">
+                  <div class="entry-meta">
+                    <span class="entry-meta-pill type-pill">Notes</span>
+                  </div>
+                  <button class="entry-edit-btn" onclick="editJournalEntry('notes')" title="Edit Notes">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                  </button>
+                </div>
+                <div class="entry-content formatted-content">{{ item.notes|linebreaksbr }}</div>
+                <!-- Hidden data for JS -->
+                <script type="application/json" id="raw-notes-data">{"notes": "{{ item.notes|escapejs }}"}</script>
+              </div>
+              {% endif %}
+
+              <!-- Logs -->
+              {% for log in item.logs.all %}
+              <div class="journal-entry-card log-card" data-id="{{ log.id }}">
+                <div class="entry-header">
+                  <div class="entry-meta">
+                    <span class="entry-meta-pill type-pill">{{ log.title|default:"Log" }}</span>
+                    
+                    <span class="entry-meta-pill date-pill">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                      {{ log.activity_date|date:"d M Y" }}
+                    </span>
+                    
+                    {% if log.progress_start %}
+                      <span class="entry-meta-pill progress-pill">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                        <span class="unit-label" data-unit="{{ log.progress_unit }}" data-end="{{ log.progress_end|default:'' }}"></span> {{ log.progress_start }}{% if log.progress_end %} - {{ log.progress_end }}{% endif %}
+                      </span>
+                    {% endif %}
+                    
+                    {% if log.score %}
+                      <span class="entry-meta-pill score-pill"><span class="entry-score" data-score="{{ log.score }}"></span></span>
+                    {% endif %}
+                  </div>
+                  <div class="entry-actions">
+                    <button class="entry-edit-btn delete-btn" onclick="openDeleteLogModal({{ log.id }})" title="Delete Log">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    </button>
+                    <button class="entry-edit-btn" onclick="editJournalEntry('logs', {{ log.id }})" title="Edit Log">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                    </button>
+                  </div>
+                </div>
+                <div class="entry-content formatted-content {% if log.is_spoiler %}log-spoiler-blur{% endif %}" {% if log.is_spoiler %}onclick="this.classList.remove('log-spoiler-blur');" title="Click to reveal spoiler"{% endif %}>
+                  {{ log.content|linebreaksbr }}
+                </div>
+                <!-- Hidden data for JS -->
+                <script type="application/json" id="raw-log-{{ log.id }}">
+                  {
+                    "title": "{{ log.title|default_if_none:''|escapejs }}",
+                    "content": "{{ log.content|default_if_none:''|escapejs }}",
+                    "activity_date": "{{ log.activity_date|date:'Y-m-d' }}",
+                    "score": "{{ log.score|default_if_none:'' }}",
+                    "is_spoiler": {% if log.is_spoiler %}true{% else %}false{% endif %},
+                    "progress_unit": "{{ log.progress_unit|default_if_none:''|escapejs }}",
+                    "progress_start": "{{ log.progress_start|default_if_none:'' }}",
+                    "progress_end": "{{ log.progress_end|default_if_none:'' }}"
+                  }
+                </script>
+              </div>
+              {% endfor %}
+            </div>
+
+            <div id="j-show-more-wrapper" style="display: none; text-align: center; margin-bottom: 1.5rem;">
+              <button id="j-show-more-btn" class="j-btn-cancel" style="border: 1px solid var(--border-color);">Show All</button>
+            </div>
+
+            <!-- Sleek Unified Composer -->
+            <div class="journal-composer collapsed" id="journal-composer">
+               <div class="composer-placeholder" onclick="expandComposer()">
+                  <span>Start writing...</span>
+               </div>
+               
+               <div class="composer-active">
+                  <div class="composer-tabs">
+                     <div class="tab-group left">
+                       <button class="j-tab-btn active" data-tab="write" onclick="setComposerTab('write')">Write</button>
+                       <button class="j-tab-btn" data-tab="preview" onclick="setComposerTab('preview')">Preview</button>
+                     </div>
+                     <div class="tab-group right">
+                       <button class="j-tab-btn {% if not item.notes %}active{% endif %}" data-mode="notes" onclick="setComposerMode('notes')">Notes</button>
+                       <button class="j-tab-btn {% if item.notes %}active{% endif %}" data-mode="logs" onclick="setComposerMode('logs')">Logs</button>
+                     </div>
+                  </div>
+
+                  <div class="composer-editor-area">
+                     <div class="composer-toolbar" id="composer-toolbar">
+                        <button type="button" onclick="formatText('**', '**')" title="Bold"><b>B</b></button>
+                        <button type="button" onclick="formatText('*', '*')" title="Italic"><i>I</i></button>
+                        <button type="button" onclick="formatText('[center]', '[/center]')" title="Center">≡</button>
+                        <button type="button" onclick="formatText('> ', '')" title="Quote">”</button>
+                        <button type="button" onclick="formatText('||', '||')" title="Inline Spoiler">Spoiler</button>
+                     </div>
+                     <textarea id="journal-textarea" placeholder="Write in your journal..."></textarea>
+                     <div id="journal-preview" class="formatted-content" style="display: none;"></div>
+                  </div>
+
+                  <div class="composer-log-fields" id="log-extra-fields" style="{% if not item.notes %}display: none;{% endif %}">
+                      <input type="text" id="log-title" placeholder="Title">
+                      <input type="date" id="log-date" value="{% now 'Y-m-d' %}">
+                      <div class="progress-group">
+                         <div class="d-custom-select-wrapper">
+                           <select id="log-progress-unit">
+                             <!-- Populated by JS -->
+                           </select>
+                           <svg class="select-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                         </div>
+                         <input type="number" id="log-progress-start" placeholder="Start">
+                         <input type="number" id="log-progress-end" placeholder="End">
+                      </div>
+                      
+                      <div class="log-score-wrapper">
+                          <input type="hidden" id="log-score" value="">
+                          <div id="log-rating-faces" class="rating-faces" style="display: none;">
+                              <button type="button" data-value="1" class="face face-bad" title="Bad"></button>
+                              <button type="button" data-value="50" class="face face-neutral" title="Neutral"></button>
+                              <button type="button" data-value="100" class="face face-good" title="Good"></button>
+                          </div>
+                          <div id="log-dynamic-rating"></div>
+                      </div>
+
+                      <label class="spoiler-toggle-btn">
+                          <input type="checkbox" id="log-spoiler" style="display:none;">
+                          <span>Spoiler</span>
+                      </label>
+                  </div>
+
+                  <div class="composer-actions">
+                     <button class="j-btn-cancel" onclick="collapseComposer()">Cancel</button>
+                     <button class="j-btn-save" id="j-btn-save" onclick="saveJournalEntry()">Save</button>
+                  </div>
+               </div>
+            </div>
+            
+            <!-- Delete Log Confirmation Modal -->
+            <div id="delete-log-modal" class="pc-modal-hidden">
+              <div class="pc-modal-overlay" onclick="closeDeleteLogModal()"></div>
+              <div class="pc-modal" style="max-width: 400px;">
+                <div class="pc-modal-content" style="padding: 2.5rem 2rem 2rem 2rem; text-align: center;">
+                  <h3 style="color: var(--text-title); margin-top: 0; font-size: 1.5rem;">Delete Log</h3>
+                  <p style="color: var(--text-secondary); margin-bottom: 2rem; line-height: 1.5;">Are you sure you want to delete this log entry? This cannot be undone.</p>
+                  <div style="display: flex; justify-content: center; gap: 1rem;">
+                    <button class="pc-btn pc-cancel" onclick="closeDeleteLogModal()">Cancel</button>
+                    <button class="pc-btn" style="background: #ff3b38; color: white;" id="confirm-delete-log-btn">Delete</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+          {% endif %}
+        {% endif %}
+
+<!-- RECOMMENDATIONS -->
+        {% if section.id == 'recommendations' %}
+          {% if recommendations %}
+          <section class="recommendations-section">
+            <h2>Recommendations</h2>
+            <div class="recommendations-list">
+              {% for rec in recommendations %}
+              <div class="recommendation">
+              <a href="
+                {% if media_type == 'game' %}
+                  {% url 'igdb_detail' igdb_id=rec.id %}
+                {% elif media_type == 'anime' or media_type == 'manga' %}
+                  {% if rec.anilist_id %}
+                    {% url 'anilist_detail' source='anilist' media_type=rec.media_type|default:media_type source_id=rec.anilist_id %}
+                  {% else %}
+                    {% url 'anilist_detail' source='mal' media_type=rec.media_type|default:media_type source_id=rec.mal_id|default:rec.id %}
+                  {% endif %}
+                {% elif media_type == 'book' %}
+                  {% url 'openlib_detail' work_id=rec.id %}
+                {% else %}
+                  {% url 'tmdb_detail' media_type=media_type tmdb_id=rec.id %}
+                {% endif %}
+              " title="{{ rec.title }}">
+                
+                {% if rec.poster_path %}
+          <img
+            src="{% if media_type == 'game' or media_type == 'anime' or media_type == 'manga' %}
+                  {{ rec.poster_path }}
+                 {% else %}
+                  https://image.tmdb.org/t/p/w185{{ rec.poster_path }}
+                 {% endif %}"
+            alt="{{ rec.title }}"
             data-placeholder="{% static 'core/img/placeholder.png' %}"
             onerror="this.onerror=null;this.src=this.dataset.placeholder;"
           />
-          <div class="card-title-overlay">
-            <p class="season-name">{{ season.name }}</p>
-            
-            {% if season.season_number > 0 and season.episode_count <= 1 %}
-              {% with total=seasons|length is_last=forloop.revcounter0|add:0 is_second_last=forloop.revcounter0|add:0 %}
-                {% if is_last == 0 or is_second_last == 1 %}
-                  <p class="episode-count">Announced</p>
+                {% else %}
+                  <img 
+            src="{% static 'core/img/placeholder.png' %}" 
+            alt="{{ rec.title }}" 
+          />
                 {% endif %}
-              {% endwith %}
-            {% else %}
-              <p class="episode-count">{{ season.episode_count }} episode{{ season.episode_count|pluralize }}</p>
-            {% endif %}
-            
-            <p class="air-date">{{ season.air_date }}</p>
-          </div>
-        </a>
-        {% endfor %}
-      </div>
-    </section>
-    {% endif %}
-
-{{ screenshots|json_script:"screenshots-data" }}
-
-{% if media_type == 'music' %}
-<section class="trailer-section music-section">
-  <div class="music-header">
-    <h2>Music</h2>
-    <div class="music-controls">
-      <label class="music-control-btn">
-        <input type="checkbox" id="music-autoplay-toggle">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polygon points="5 3 19 12 5 21 5 3"></polygon>
-        </svg>
-        <span>Autoplay</span>
-      </label>
-      <label class="music-control-btn">
-        <input type="checkbox" id="music-hide-toggle">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-          <line x1="1" y1="1" x2="23" y2="23"></line>
-        </svg>
-        <span>Hide</span>
-      </label>
-      {% if in_my_list %}
-      <button id="music-add-btn" class="music-control-btn">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="12" y1="5" x2="12" y2="19"></line>
-          <line x1="5" y1="12" x2="19" y2="12"></line>
-        </svg>
-        <span>Add</span>
-      </button>
-      {% endif %}
-    </div>
-  </div>
-  <div id="music-add-form" class="music-add-form" style="display:none;">
-    <input type="text" id="music-youtube-url" placeholder="Enter YouTube URL">
-    <button id="music-save-btn">Save</button>
-    <button id="music-cancel-btn">Cancel</button>
-  </div>
-  <div id="music-videos-container" class="trailer-grid">
-    {% if youtube_links %}
-    {% for link in youtube_links %}
-      {% if 'youtube.com/watch?v=' in link.url %}
-        <div class="music-video-wrapper" data-position="{{ link.position }}">
-          <iframe
-            src="https://www.youtube.com/embed/{{ link.url|slice:'32:' }}"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowfullscreen
-            referrerpolicy="origin-when-cross-origin"
-          ></iframe>
-          {% if in_my_list %}
-          <div class="music-video-controls">
-            <button class="music-delete-btn" data-position="{{ link.position }}" title="Delete Video">✕</button>
-            <button class="music-cover-btn" data-position="{{ link.position }}" title="Set thumbnail as banner and poster">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="pointer-events: none;">
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                <polyline points="21 15 16 10 5 21"></polyline>
-              </svg>
-            </button>
-            <button class="music-up-btn" data-position="{{ link.position }}" title="Move Up">▲</button>
-            <button class="music-down-btn" data-position="{{ link.position }}" title="Move Down">▼</button>
-          </div>
-          {% endif %}
-        </div>
-      {% endif %}
-    {% endfor %}
-    {% endif %}
-  </div>
-</section>
-{% endif %}
-
-{% if media_type == 'game' and screenshots or media_type == 'game' and not recommendations %}
-<section class="screenshots-section">
-  <div class="screenshots-header">
-  <h2>Screenshots</h2>
-{% if not recommendations %}
-  <!-- Upload Form -->
-   <div class="screenshots-header-buttons">
-  <form id="screenshot-upload-form" enctype="multipart/form-data" class="inline-form">
-    <input type="hidden" name="igdb_id" value="{{ source_id }}">
-    <input type="file" id="screenshot-file-input" name="screenshots[]" accept=".jpg,.jpeg,.png" multiple hidden>
-    <button type="button" id="swap-btn">
-      Swap
-    </button>
-  </form>
-
-  <!-- Add Form (add to existing) -->
-<form id="screenshot-add-form" enctype="multipart/form-data" class="inline-form">
-  <input type="hidden" name="igdb_id" value="{{ source_id }}">
-  <input type="file" id="screenshot-add-file-input" name="screenshots[]" accept=".jpg,.jpeg,.png" multiple hidden>
-  <button type="button" onclick="document.getElementById('screenshot-add-file-input').click();">
-    Add
-  </button>
-</form>
-</div>
-    {% endif %}
-</div>
-{% if screenshots %}
-  <div class="screenshots-background" data-igdb-id="{{ source_id }}" data-total-screenshots="{{ total_screenshots|default:0 }}">
-  <div class="screenshot-rotator" onmouseenter="showArrows(this)" onmouseleave="hideArrows(this)">
-    <img id="screenshot-image" src="{{ screenshots.0.url }}" alt="Screenshot" />
-    <button class="rotator-btn left" onclick="changeScreenshot(-1)" style="display: none;">‹</button>
-    <button class="rotator-btn right" onclick="changeScreenshot(1)" style="display: none;">›</button>
-    {% if not recommendations %}
-    <button class="autoplay-screenshot-btn" id="autoplay-screenshot-btn" title="Autoplay screenshots">
-      <svg viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
-        <path d="M8 5v14l11-7z"/>
-      </svg>
-    </button>
-    <button class="fullscreen-screenshot-btn" id="fullscreen-screenshot-btn" title="Fullscreen">
-      <svg viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
-        <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
-      </svg>
-    </button>
-    <button class="delete-screenshot-btn" title="Delete Screenshot">×</button>
-    {% endif %}
-  </div>
-
-  <div class="screenshots-list">
-    {% for shot in screenshots %}
-      <img 
-        src="{{ shot.url }}" 
-        alt="Screenshot {{ forloop.counter }}" 
-        class="thumbnail {% if forloop.first %}active-thumbnail{% endif %}" 
-        onclick="setScreenshot({{ forloop.counter0 }})" 
-      />
-    {% endfor %}
-  </div>
-  </div>
-  
-  <div class="screenshot-overlay" id="screenshot-overlay">
-    <img id="overlay-screenshot-image" src="{{ screenshots.0.url }}" alt="Screenshot" />
-    <button class="rotator-btn left" onclick="changeScreenshot(-1)">‹</button>
-    <button class="rotator-btn right" onclick="changeScreenshot(1)">›</button>
-    {% if not recommendations %}
-    <button class="autoplay-screenshot-btn" id="overlay-autoplay-btn" title="Autoplay screenshots">
-      <svg viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
-        <path d="M8 5v14l11-7z"/>
-      </svg>
-    </button>
-    <button class="fullscreen-screenshot-btn" id="overlay-fullscreen-btn" title="Exit fullscreen">
-      <svg viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
-        <path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/>
-      </svg>
-    </button>
-    <button class="delete-screenshot-btn" title="Delete Screenshot">×</button>
-    {% endif %}
-  </div>
-  {{ screenshots|json_script:"screenshots-data" }}
-{% endif %}
-</section>
-{% endif %}
-
-{% if cast %}
-<section class="cast-section">
-  <div class="cast-header">
-    {% if media_type == "tv" or media_type == "movie" %}
-    <h2>Cast</h2>
-    {% elif media_type == "manga" or media_type == "anime" %}
-    <h2>Character{{ cast|length|pluralize }}</h2>
-    {% elif media_type == "book" %}
-    <h2>Author{{ cast|length|pluralize }}</h2>
-    {% else %}
-    <h2>Cast</h2>
-    {% endif %}
-    
-    <div class="cast-controls">
-      <div class="search-container">
-        <button id="search-toggle-btn" class="search-toggle">
-          <svg class="cast-search-icon" width="24" height="24" viewBox="0 0 512 512" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-            <path d="M505 442.7L405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128
-                     C416 93.1 322.9 0 208 0S0 93.1 0 208s93.1 208 208 208c48.3 0 92.7-16.4 128-44v16.3
-                     c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9 0l28.3-28.3
-                     c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7 0-128-57.2-128-128
-                     0-70.7 57.2-128 128-128 70.7 0 128 57.2 128 128
-                     0 70.7-57.2 128-128 128z"></path>
-          </svg>
-        </button>
-        <input type="text" id="person-search-input" placeholder="Search.." autocomplete="off" class="search-input hidden">
-      </div>
-      
-      {% if cast|length >= 8 %}
-      <button id="load-more-cast" class="load-more-btn" 
-              data-source="{{ source }}" 
-              data-source-id="{{ source_id }}" 
-              data-media-type="{{ media_type }}" 
-              data-page="1">Load More</button>
-      {% endif %}
-    </div>
-  </div>
-
-  <!-- Search results above the cast list -->
-  <div id="person-search-results" class="search-results"></div>
-
-  <div class="cast-list">
-    {% for member in cast %}
-    {% if member.id %}
-      {% if media_type == "tv" or media_type == "movie" %}
-        <a href="/person/actor/{{ member.id }}/" class="cast-member">
-      {% elif media_type == "manga" or media_type == "anime" %}
-        <a href="/person/character/{{ member.id }}/" class="cast-member">
-      {% else %}
-        <div class="cast-member">
-      {% endif %}
-        {% if media_type != "book" %}
-        <img src="{% if member.is_full_url %}{{ member.profile_path }}{% else %}https://image.tmdb.org/t/p/w185{{ member.profile_path }}{% endif %}"
-             alt="{{ member.name }}"
-             data-placeholder="{% static 'core/img/placeholder.png' %}"
-             onerror="this.onerror=null;this.src=this.dataset.placeholder;" />
-        {% endif %}
-        <div class="card-title-overlay">
-          {% if media_type == 'anime' or media_type == 'manga' %}
-            <p class="actor-name">{{ member.name }}</p>
-          {% else %}
-            <p class="actor-name">{{ member.name }}</p>
-            <p class="character-name">{{ member.character }}</p>
-          {% endif %}
-        </div>
-        {% if media_type != "book" %}
-        <label class="cast-favorite" data-name="{{ member.name }}" data-img="{% if member.is_full_url %}{{ member.profile_path }}{% else %}https://image.tmdb.org/t/p/w185{{ member.profile_path }}{% endif %}" data-type="{% if media_type == 'anime' or media_type == 'manga' %}character{% else %}actor{% endif %}" data-id="{{ member.id|default:'' }}">
-          <input type="checkbox">
-          <span class="heart"></span>
-        </label>
-        {% endif %}
-      {% if media_type == "tv" or media_type == "movie" or media_type == "manga" or media_type == "anime" %}
-        </a>
-      {% else %}
-        </div>
-      {% endif %}
-    {% else %}
-      <div class="cast-member">
-        <img src="{% if member.is_full_url %}{{ member.profile_path }}{% else %}https://image.tmdb.org/t/p/w185{{ member.profile_path }}{% endif %}"
-             alt="{{ member.name }}"
-             data-placeholder="{% static 'core/img/placeholder.png' %}"
-             onerror="this.onerror=null;this.src=this.dataset.placeholder;" />
-        <div class="card-title-overlay">
-          <p class="actor-name">{{ member.name }}</p>
-          <p class="character-name">{{ member.character }}</p>
-        </div>
-        {% if media_type != "book" %}
-        <label class="cast-favorite" data-name="{{ member.name }}" data-img="{% if member.is_full_url %}{{ member.profile_path }}{% else %}https://image.tmdb.org/t/p/w185{{ member.profile_path }}{% endif %}" data-type="{% if media_type == 'anime' or media_type == 'manga' %}character{% else %}actor{% endif %}" data-id="">
-          <input type="checkbox">
-          <span class="heart"></span>
-        </label>
-        {% endif %}
-      </div>
-    {% endif %}
-    {% endfor %}
-  </div>
-  
-
-</section>
-{% endif %}
-
-<!-- START OF JOURNAL SECTION -->
-{% if in_my_list %}
-<section class="journal-section">
-  <div class="journal-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
-    <h2 style="margin: 0;">Journal</h2>
-    
-    <div class="journal-controls">
-      <button id="j-view-toggle" class="j-icon-btn" title="Toggle View">
-        <!-- SVG injected by JS -->
-      </button>
-      
-      <div class="d-custom-select-wrapper">
-        <select id="j-sort-select" class="j-select">
-          <option value="activity_date">Activity Date</option>
-          <option value="title">Title</option>
-          <option value="score">Score</option>
-        </select>
-        <svg class="select-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-      </div>
-
-      <button id="j-order-toggle" class="j-icon-btn" data-order="desc" title="Toggle Order">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transition: transform 0.3s ease;">
-          <line x1="12" y1="5" x2="12" y2="19"></line>
-          <polyline points="19 12 12 19 5 12"></polyline>
-        </svg>
-      </button>
-    </div>
-  </div>
-
-  <div id="journal-entries-list" class="journal-entries-list">
-    <!-- Existing Notes -->
-    {% if item.notes %}
-    <div class="journal-entry-card notes-card">
-      <div class="entry-header">
-        <div class="entry-meta">
-          <span class="entry-meta-pill type-pill">Notes</span>
-        </div>
-        <button class="entry-edit-btn" onclick="editJournalEntry('notes')" title="Edit Notes">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-        </button>
-      </div>
-      <div class="entry-content formatted-content">{{ item.notes|linebreaksbr }}</div>
-      <!-- Hidden data for JS -->
-      <script type="application/json" id="raw-notes-data">{"notes": "{{ item.notes|escapejs }}"}</script>
-    </div>
-    {% endif %}
-
-    <!-- Logs -->
-    {% for log in item.logs.all %}
-    <div class="journal-entry-card log-card" data-id="{{ log.id }}">
-      <div class="entry-header">
-        <div class="entry-meta">
-          <span class="entry-meta-pill type-pill">{{ log.title|default:"Log" }}</span>
-          
-          <span class="entry-meta-pill date-pill">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-            {{ log.activity_date|date:"d M Y" }}
-          </span>
-          
-          {% if log.progress_start %}
-            <span class="entry-meta-pill progress-pill">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
-              <span class="unit-label" data-unit="{{ log.progress_unit }}" data-end="{{ log.progress_end|default:'' }}"></span> {{ log.progress_start }}{% if log.progress_end %} - {{ log.progress_end }}{% endif %}
-            </span>
-          {% endif %}
-          
-          {% if log.score %}
-            <span class="entry-meta-pill score-pill"><span class="entry-score" data-score="{{ log.score }}"></span></span>
-          {% endif %}
-        </div>
-        <div class="entry-actions">
-          <button class="entry-edit-btn delete-btn" onclick="openDeleteLogModal({{ log.id }})" title="Delete Log">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-          </button>
-          <button class="entry-edit-btn" onclick="editJournalEntry('logs', {{ log.id }})" title="Edit Log">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-          </button>
-        </div>
-      </div>
-      <div class="entry-content formatted-content {% if log.is_spoiler %}log-spoiler-blur{% endif %}" {% if log.is_spoiler %}onclick="this.classList.remove('log-spoiler-blur');" title="Click to reveal spoiler"{% endif %}>
-        {{ log.content|linebreaksbr }}
-      </div>
-      <!-- Hidden data for JS -->
-      <script type="application/json" id="raw-log-{{ log.id }}">
-        {
-          "title": "{{ log.title|default_if_none:''|escapejs }}",
-          "content": "{{ log.content|default_if_none:''|escapejs }}",
-          "activity_date": "{{ log.activity_date|date:'Y-m-d' }}",
-          "score": "{{ log.score|default_if_none:'' }}",
-          "is_spoiler": {% if log.is_spoiler %}true{% else %}false{% endif %},
-          "progress_unit": "{{ log.progress_unit|default_if_none:''|escapejs }}",
-          "progress_start": "{{ log.progress_start|default_if_none:'' }}",
-          "progress_end": "{{ log.progress_end|default_if_none:'' }}"
-        }
-      </script>
-    </div>
-    {% endfor %}
-  </div>
-
-  <div id="j-show-more-wrapper" style="display: none; text-align: center; margin-bottom: 1.5rem;">
-    <button id="j-show-more-btn" class="j-btn-cancel" style="border: 1px solid var(--border-color);">Show All</button>
-  </div>
-
-  <!-- Sleek Unified Composer -->
-  <div class="journal-composer collapsed" id="journal-composer">
-     <div class="composer-placeholder" onclick="expandComposer()">
-        <span>Start writing...</span>
-     </div>
-     
-     <div class="composer-active">
-        <div class="composer-tabs">
-           <div class="tab-group left">
-             <button class="j-tab-btn active" data-tab="write" onclick="setComposerTab('write')">Write</button>
-             <button class="j-tab-btn" data-tab="preview" onclick="setComposerTab('preview')">Preview</button>
-           </div>
-           <div class="tab-group right">
-             <button class="j-tab-btn {% if not item.notes %}active{% endif %}" data-mode="notes" onclick="setComposerMode('notes')">Notes</button>
-             <button class="j-tab-btn {% if item.notes %}active{% endif %}" data-mode="logs" onclick="setComposerMode('logs')">Logs</button>
-           </div>
-        </div>
-
-        <div class="composer-editor-area">
-           <div class="composer-toolbar" id="composer-toolbar">
-              <button type="button" onclick="formatText('**', '**')" title="Bold"><b>B</b></button>
-              <button type="button" onclick="formatText('*', '*')" title="Italic"><i>I</i></button>
-              <button type="button" onclick="formatText('[center]', '[/center]')" title="Center">≡</button>
-              <button type="button" onclick="formatText('> ', '')" title="Quote">”</button>
-              <button type="button" onclick="formatText('||', '||')" title="Inline Spoiler">Spoiler</button>
-           </div>
-           <textarea id="journal-textarea" placeholder="Write in your journal..."></textarea>
-           <div id="journal-preview" class="formatted-content" style="display: none;"></div>
-        </div>
-
-        <div class="composer-log-fields" id="log-extra-fields" style="{% if not item.notes %}display: none;{% endif %}">
-            <input type="text" id="log-title" placeholder="Title">
-            <input type="date" id="log-date" value="{% now 'Y-m-d' %}">
-            <div class="progress-group">
-               <div class="d-custom-select-wrapper">
-                 <select id="log-progress-unit">
-                   <!-- Populated by JS -->
-                 </select>
-                 <svg class="select-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-               </div>
-               <input type="number" id="log-progress-start" placeholder="Start">
-               <input type="number" id="log-progress-end" placeholder="End">
-            </div>
-            
-            <div class="log-score-wrapper">
-                <input type="hidden" id="log-score" value="">
-                <div id="log-rating-faces" class="rating-faces" style="display: none;">
-                    <button type="button" data-value="1" class="face face-bad" title="Bad"></button>
-                    <button type="button" data-value="50" class="face face-neutral" title="Neutral"></button>
-                    <button type="button" data-value="100" class="face face-good" title="Good"></button>
+                
+                <div class="card-title-overlay">
+                  <p class="rec-title">{{ rec.title }}</p>
                 </div>
-                <div id="log-dynamic-rating"></div>
+              </a>
+              </div>
+              {% endfor %}
             </div>
-
-            <label class="spoiler-toggle-btn">
-                <input type="checkbox" id="log-spoiler" style="display:none;">
-                <span>Spoiler</span>
-            </label>
-        </div>
-
-        <div class="composer-actions">
-           <button class="j-btn-cancel" onclick="collapseComposer()">Cancel</button>
-           <button class="j-btn-save" id="j-btn-save" onclick="saveJournalEntry()">Save</button>
-        </div>
-     </div>
-  </div>
-  
-  <!-- Delete Log Confirmation Modal -->
-  <div id="delete-log-modal" class="pc-modal-hidden">
-    <div class="pc-modal-overlay" onclick="closeDeleteLogModal()"></div>
-    <div class="pc-modal" style="max-width: 400px;">
-      <div class="pc-modal-content" style="padding: 2.5rem 2rem 2rem 2rem; text-align: center;">
-        <h3 style="color: var(--text-title); margin-top: 0; font-size: 1.5rem;">Delete Log</h3>
-        <p style="color: var(--text-secondary); margin-bottom: 2rem; line-height: 1.5;">Are you sure you want to delete this log entry? This cannot be undone.</p>
-        <div style="display: flex; justify-content: center; gap: 1rem;">
-          <button class="pc-btn pc-cancel" onclick="closeDeleteLogModal()">Cancel</button>
-          <button class="pc-btn" style="background: #ff3b38; color: white;" id="confirm-delete-log-btn">Delete</button>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-{% endif %}
-<!-- END OF JOURNAL SECTION -->
-
-{% if recommendations %}
-<section class="recommendations-section">
-  <h2>Recommendations</h2>
-  <div class="recommendations-list">
-    {% for rec in recommendations %}
-    <div class="recommendation">
-    <a href="
-      {% if media_type == 'game' %}
-        {% url 'igdb_detail' igdb_id=rec.id %}
-      {% elif media_type == 'anime' or media_type == 'manga' %}
-        {% if rec.anilist_id %}
-          {% url 'anilist_detail' source='anilist' media_type=rec.media_type|default:media_type source_id=rec.anilist_id %}
-        {% else %}
-          {% url 'anilist_detail' source='mal' media_type=rec.media_type|default:media_type source_id=rec.mal_id|default:rec.id %}
+          </section>
+          {% else %}
+          <div id="dynamic-recommendations-placeholder"></div>
+          {% endif %}
         {% endif %}
-      {% elif media_type == 'book' %}
-        {% url 'openlib_detail' work_id=rec.id %}
-      {% else %}
-        {% url 'tmdb_detail' media_type=media_type tmdb_id=rec.id %}
+
       {% endif %}
-    " title="{{ rec.title }}">
-      
-      {% if rec.poster_path %}
-<img
-  src="{% if media_type == 'game' or media_type == 'anime' or media_type == 'manga' %}
-        {{ rec.poster_path }}
-       {% else %}
-        https://image.tmdb.org/t/p/w185{{ rec.poster_path }}
-       {% endif %}"
-  alt="{{ rec.title }}"
-  data-placeholder="{% static 'core/img/placeholder.png' %}"
-  onerror="this.onerror=null;this.src=this.dataset.placeholder;"
-/>
-      {% else %}
-        <img 
-  src="{% static 'core/img/placeholder.png' %}" 
-  alt="{{ rec.title }}" 
-/>
-      {% endif %}
-      
-      <div class="card-title-overlay">
-        <p class="rec-title">{{ rec.title }}</p>
-      </div>
-    </a>
-    </div>
     {% endfor %}
-  </div>
-</section>
-{% endif %}
 
   </div>
 </div>

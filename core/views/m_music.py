@@ -156,6 +156,7 @@ def musicbrainz_detail(request, recording_id):
         AppSettings = apps.get_model("core", "AppSettings")
         settings = AppSettings.objects.first()
         theme_mode = settings.theme_mode if settings else "dark"
+        details_sections_order = settings.details_sections_order if settings else []
 
         # Extract artist and album IDs from cast field
         cast_data = item.cast or {}
@@ -191,6 +192,7 @@ def musicbrainz_detail(request, recording_id):
                 "theme_mode": theme_mode,
                 "artist_id": artist_id,
                 "album_id": album_id,
+                "details_sections_order": details_sections_order,
             },
         )
     except MediaItem.DoesNotExist:
@@ -468,6 +470,7 @@ def musicbrainz_detail(request, recording_id):
     AppSettings = apps.get_model("core", "AppSettings")
     settings = AppSettings.objects.first()
     theme_mode = settings.theme_mode if settings else "dark"
+    details_sections_order = settings.details_sections_order if settings else []
 
     # Extract artist and album IDs
     artist_id = (
@@ -500,5 +503,6 @@ def musicbrainz_detail(request, recording_id):
             "theme_mode": theme_mode,
             "artist_id": artist_id,
             "album_id": first_release_id,
+            "details_sections_order": details_sections_order,
         },
     )

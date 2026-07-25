@@ -91,6 +91,7 @@ def openlib_detail(request, work_id):
         AppSettings = apps.get_model("core", "AppSettings")
         settings = AppSettings.objects.first()
         theme_mode = settings.theme_mode if settings else "dark"
+        details_sections_order = settings.details_sections_order if settings else []
 
         return render(
             request,
@@ -113,6 +114,7 @@ def openlib_detail(request, work_id):
                 "seasons": None,
                 "page_type": "book",
                 "theme_mode": theme_mode,
+                "details_sections_order": details_sections_order,
             },
         )
 
@@ -215,6 +217,7 @@ def openlib_detail(request, work_id):
     AppSettings = apps.get_model("core", "AppSettings")
     settings = AppSettings.objects.first()
     theme_mode = settings.theme_mode if settings else "dark"
+    details_sections_order = settings.details_sections_order if settings else []
 
     return render(
         request,
@@ -237,5 +240,6 @@ def openlib_detail(request, work_id):
             "seasons": None,
             "page_type": "book",
             "theme_mode": theme_mode,
+            "details_sections_order": details_sections_order,
         },
     )

@@ -1177,5 +1177,6 @@ def settings_page(request):
             "show_date_field": settings.show_date_field,
             "show_repeats_field": settings.show_repeats_field,
             "show_collections_field": settings.show_collections_field,
+            "details_sections_order": settings.details_sections_order,
         },
     )

@@ -132,7 +132,11 @@
       </div>
 
       <div class="preferences-section nav-buttons-section">
-        <h3>Navigation Buttons</h3>
+        <div class="section-header-with-labels">
+          <span class="order-label">Left</span>
+          <h3>Navigation Buttons</h3>
+          <span class="order-label">Right</span>
+        </div>
         <div id="nav-items-form">
           {% for item in nav_items %}
             <div class="nav-item-box {% if item.visible %}active{% endif %}" data-id="{{ item.id }}" draggable="true">
@@ -164,6 +168,37 @@
         </div>
         <p style="font-size: 0.9rem; margin-top: 1.5rem; text-align: center;">
           <b>Click to show/hide • Drag to reorder • Hidden buttons will disappear on the other pages but remain visible here</b>
+        </p>
+      </div>
+
+<div class="preferences-section nav-buttons-section">
+        <div class="section-header-with-labels">
+          <span class="order-label">Top</span>
+          <h3>Details Page Sections</h3>
+          <span class="order-label">Bottom</span>
+        </div>
+        <div id="details-sections-form">
+          {% for section in details_sections_order %}
+            <div class="details-section-box {% if section.visible %}active{% endif %}" data-id="{{ section.id }}" draggable="true">
+              <input type="checkbox" class="details-checkbox" {% if section.visible %}checked{% endif %}>
+              <span class="details-name">{{ section.name }}</span>
+              <div class="details-pills">
+                {% if section.id == 'episodes' %}<span class="details-pill">TV Seasons</span>
+                {% elif section.id == 'trailers' %}<span class="details-pill">All</span>
+                {% elif section.id == 'prequels_sequels' %}<span class="details-pill">Anime, Manga</span>
+                {% elif section.id == 'seasons' %}<span class="details-pill">TV Shows</span>
+                {% elif section.id == 'music' %}<span class="details-pill">Music</span>
+                {% elif section.id == 'screenshots' %}<span class="details-pill">Games</span>
+                {% elif section.id == 'cast' %}<span class="details-pill">Movies, TV, Anime, Manga</span>
+                {% elif section.id == 'journal' %}<span class="details-pill">All</span>
+                {% elif section.id == 'recommendations' %}<span class="details-pill">All</span>
+                {% endif %}
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+        <p style="font-size: 0.9rem; margin-top: 1.5rem; text-align: center;">
+          <b>Click to show/hide • Drag to reorder</b>
         </p>
       </div>
 

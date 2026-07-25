@@ -137,6 +137,7 @@ def tmdb_detail(request, media_type, tmdb_id):
         AppSettings = apps.get_model("core", "AppSettings")
         settings = AppSettings.objects.first()
         theme_mode = settings.theme_mode if settings else "dark"
+        details_sections_order = settings.details_sections_order if settings else []
 
         return render(
             request,
@@ -159,6 +160,7 @@ def tmdb_detail(request, media_type, tmdb_id):
                 "seasons": seasons,
                 "page_type": media_type,
                 "theme_mode": theme_mode,
+                "details_sections_order": details_sections_order,
             },
         )
 
@@ -264,6 +266,7 @@ def tmdb_detail(request, media_type, tmdb_id):
     AppSettings = apps.get_model("core", "AppSettings")
     settings = AppSettings.objects.first()
     theme_mode = settings.theme_mode if settings else "dark"
+    details_sections_order = settings.details_sections_order if settings else []
 
     raw_recs = data.get("recommendations", {}).get("results", [])[:16]
 
@@ -297,6 +300,7 @@ def tmdb_detail(request, media_type, tmdb_id):
             "seasons": seasons,
             "page_type": media_type,
             "theme_mode": theme_mode,
+            "details_sections_order": details_sections_order,
         },
     )
 
@@ -380,6 +384,7 @@ def tmdb_season_detail(request, tmdb_id, season_number):
         AppSettings = apps.get_model("core", "AppSettings")
         settings = AppSettings.objects.first()
         theme_mode = settings.theme_mode if settings else "dark"
+        details_sections_order = settings.details_sections_order if settings else []
 
         return render(
             request,
@@ -403,6 +408,7 @@ def tmdb_season_detail(request, tmdb_id, season_number):
                 "page_type": "tv",
                 "season_nav": season_nav,
                 "theme_mode": theme_mode,
+                "details_sections_order": details_sections_order,
             },
         )
     except MediaItem.DoesNotExist:
@@ -510,6 +516,7 @@ def tmdb_season_detail(request, tmdb_id, season_number):
     AppSettings = apps.get_model("core", "AppSettings")
     settings = AppSettings.objects.first()
     theme_mode = settings.theme_mode if settings else "dark"
+    details_sections_order = settings.details_sections_order if settings else []
 
     return render(
         request,
@@ -533,6 +540,7 @@ def tmdb_season_detail(request, tmdb_id, season_number):
             "page_type": "tv",
             "season_nav": season_nav,
             "theme_mode": theme_mode,
+            "details_sections_order": details_sections_order,
         },
     )
 

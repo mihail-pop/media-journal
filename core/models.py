@@ -247,5 +247,20 @@ class AppSettings(models.Model):
 
     dismissed_system_notifications = models.JSONField(default=list, blank=True)
 
+    def default_details_sections_order():
+        return [
+            {"id": "trailers", "name": "Trailers", "visible": True},
+            {"id": "prequels_sequels", "name": "Prequels & Sequels", "visible": True},
+            {"id": "seasons", "name": "Seasons", "visible": True},
+            {"id": "episodes", "name": "Episodes", "visible": True},
+            {"id": "music", "name": "Music", "visible": True},
+            {"id": "screenshots", "name": "Screenshots", "visible": True},
+            {"id": "cast", "name": "Cast & Characters", "visible": True},
+            {"id": "journal", "name": "Journal", "visible": True},
+            {"id": "recommendations", "name": "Recommendations", "visible": True},
+        ]
+
+    details_sections_order = models.JSONField(default=default_details_sections_order, blank=True)
+
     def __str__(self):
         return f"App Settings ({self.rating_mode}, theme={self.theme_mode}, username={self.username})"

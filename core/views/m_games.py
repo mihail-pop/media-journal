@@ -205,6 +205,7 @@ def igdb_detail(request, igdb_id):
         AppSettings = apps.get_model("core", "AppSettings")
         settings = AppSettings.objects.first()
         theme_mode = settings.theme_mode if settings else "dark"
+        details_sections_order = settings.details_sections_order if settings else []
 
         context = {
             "item": item,
@@ -225,6 +226,7 @@ def igdb_detail(request, igdb_id):
             "in_my_list": True,
             "page_type": "game",
             "theme_mode": theme_mode,
+            "details_sections_order": details_sections_order,
         }
         return render(request, "core/p_media_details.html", context)
 
@@ -327,6 +329,7 @@ def igdb_detail(request, igdb_id):
     AppSettings = apps.get_model("core", "AppSettings")
     settings = AppSettings.objects.first()
     theme_mode = settings.theme_mode if settings else "dark"
+    details_sections_order = settings.details_sections_order if settings else []
 
     context = {
         "item": None,
@@ -349,6 +352,7 @@ def igdb_detail(request, igdb_id):
         "in_my_list": False,
         "page_type": "game",
         "theme_mode": theme_mode,
+        "details_sections_order": details_sections_order,
     }
 
     return render(request, "core/p_media_details.html", context)

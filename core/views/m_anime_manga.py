@@ -253,6 +253,7 @@ def anilist_detail(request, source, media_type, source_id):
     AppSettings = apps.get_model("core", "AppSettings")
     settings = AppSettings.objects.first()
     theme_mode = settings.theme_mode if settings else "dark"
+    details_sections_order = settings.details_sections_order if settings else []
 
     context = {
         "item": item,
@@ -272,6 +273,7 @@ def anilist_detail(request, source, media_type, source_id):
         "recommendations": recommendations,
         "page_type": media_type,
         "theme_mode": theme_mode,
+        "details_sections_order": details_sections_order,
     }
 
     return render(request, "core/p_media_details.html", context)

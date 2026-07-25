@@ -1754,7 +1754,12 @@ if (data.recommendations?.length) {
           </div>
         </section>
       `;
-      mainSection.insertAdjacentHTML('beforeend', recHTML);
+      const placeholder = document.getElementById('dynamic-recommendations-placeholder');
+          if (placeholder) {
+            placeholder.outerHTML = recHTML;
+          } else {
+            mainSection.insertAdjacentHTML('beforeend', recHTML);
+          }
     }
   }
 }
@@ -1924,7 +1929,12 @@ if (data.recommendations?.length) {
           </div>
         </section>
       `;
-      mainSection.insertAdjacentHTML('beforeend', recHTML);
+      const placeholder = document.getElementById('dynamic-recommendations-placeholder');
+          if (placeholder) {
+            placeholder.outerHTML = recHTML;
+          } else {
+            mainSection.insertAdjacentHTML('beforeend', recHTML);
+          }
     }
   }
 }
@@ -2148,7 +2158,12 @@ if (data.trailers?.length) {
               </div>
             </section>
           `;
-          mainSection.insertAdjacentHTML('beforeend', recHTML);
+          const placeholder = document.getElementById('dynamic-recommendations-placeholder');
+          if (placeholder) {
+            placeholder.outerHTML = recHTML;
+          } else {
+            mainSection.insertAdjacentHTML('beforeend', recHTML);
+          }
         }
       }
     }    return safeHTML.join("\n");
@@ -2340,7 +2355,12 @@ if (data.recommendations?.length) {
           </div>
         </section>
       `;
-      mainSection.insertAdjacentHTML('beforeend', recHTML);
+      const placeholder = document.getElementById('dynamic-recommendations-placeholder');
+          if (placeholder) {
+            placeholder.outerHTML = recHTML;
+          } else {
+            mainSection.insertAdjacentHTML('beforeend', recHTML);
+          }
     }
   }
 }

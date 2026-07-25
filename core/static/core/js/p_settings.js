@@ -290,6 +290,100 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
+// ----- Details Sections Logic -----
+  const detailsForm = document.getElementById("details-sections-form");
+
+  if (detailsForm) {
+    let draggedDetailsItem = null;
+
+    detailsForm.addEventListener('click', (e) => {
+      const box = e.target.closest('.details-section-box');
+      if (box) {
+        const checkbox = box.querySelector('.details-checkbox');
+        checkbox.checked = !checkbox.checked;
+        box.classList.toggle('active', checkbox.checked);
+        saveDetailsSections();
+      }
+    });
+
+    detailsForm.addEventListener('dragstart', (e) => {
+      const box = e.target.closest('.details-section-box');
+      if (box) {
+        draggedDetailsItem = box;
+        setTimeout(() => box.classList.add('dragging'), 0);
+      }
+    });
+
+    detailsForm.addEventListener('dragend', (e) => {
+      const box = e.target.closest('.details-section-box');
+      if (box) {
+        box.classList.remove('dragging');
+        saveDetailsSections();
+        draggedDetailsItem = null;
+      }
+    });
+
+    detailsForm.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      const afterElement = getDragAfterDetailsElement(detailsForm, e.clientX, e.clientY);
+      const dragging = detailsForm.querySelector('.dragging');
+      if (dragging) {
+        if (afterElement == null) {
+          detailsForm.appendChild(dragging);
+        } else {
+          detailsForm.insertBefore(dragging, afterElement);
+        }
+      }
+    });
+
+    function getDragAfterDetailsElement(container, x, y) {
+      const draggableElements = [...container.querySelectorAll('.details-section-box:not(.dragging)')];
+      
+      return draggableElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        // 2D grid calculation: checks if mouse Y is within the row of this specific box
+        const inRow = y > box.top && y < box.bottom;
+        if (inRow) {
+          const offset = x - box.left - box.width / 2;
+          if (offset < 0 && offset > closest.offset) {
+            return { offset: offset, element: child };
+          }
+        }
+        return closest;
+      }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+
+    function saveDetailsSections() {
+      const boxes = detailsForm.querySelectorAll(".details-section-box");
+      const data = Array.from(boxes).map(box => ({
+        id: box.dataset.id,
+        name: box.querySelector(".details-name").textContent,
+        visible: box.querySelector(".details-checkbox").checked
+      }));
+
+      fetch("/update-details-sections/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": getCookie("csrftoken"),
+        },
+        body: JSON.stringify({ sections: data }),
+      })
+        .then(res => res.json())
+        .then(res => {
+          if (res.success) {
+            showNotification("Details sections updated!");
+          } else {
+            alert("Update failed.");
+          }
+        })
+        .catch(err => {
+          console.error("Error:", err);
+          alert("Error updating sections.");
+        });
+    }
+  }
+
   // ----- API Key Management -----
   document.querySelectorAll(".save-btn").forEach(btn => {
     btn.addEventListener("click", async () => {

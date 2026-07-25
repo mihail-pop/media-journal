@@ -106,291 +106,302 @@
 <div class="main-colored-section">
   <div class="detail-container">
     
-    {% if episodes %}
-    <section class="episodes-section">
-      <h2>Episodes</h2>
-      <div class="episodes-list">
-        {% for episode in episodes %}
-        <div class="episode-card">
-          <div class="episode-image-container">
-            {% if episode.still_path %}
-            <img src="{{ episode.still_path }}" 
-                 alt="{{ episode.name }}"
-                 data-placeholder="{% static 'core/img/placeholder.png' %}"
-                 onerror="this.onerror=null;this.src=this.dataset.placeholder;"
-                 class="episode-image" />
-            {% else %}
-            <img src="{% static 'core/img/placeholder.png' %}" alt="{{ episode.name }}" class="episode-image" />
-            {% endif %}
-            <div class="expand-overlay">
-              <div class="expand-icon">⛶</div>
-            </div>
-          </div>
-          <div class="episode-info">
-            <h3>{{ episode.episode_number }}. {{ episode.name }}</h3>
-            <div class="episode-overview-container">
-              <p class="episode-overview">{{ episode.overview }}</p>
-              <button class="episode-read-more-btn">Read More</button>
-            </div>
-            <p class="episode-air-date">{{ episode.formatted_air_date }}</p>
-          </div>
-        </div>
-        {% endfor %}
-      </div>
-    </section>
-    {% endif %}
+    {% for section in details_sections_order %}
+      {% if section.visible %}
 
-    {% if cast %}
-    <section class="cast-section">
-      <div class="cast-header">
-        <h2>Cast</h2>
-        
-        <div class="cast-controls">
-          <div class="search-container">
-            <button id="search-toggle-btn" class="search-toggle">
-              <svg class="cast-search-icon" width="24" height="24" viewBox="0 0 512 512" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                <path d="M505 442.7L405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128
-                         C416 93.1 322.9 0 208 0S0 93.1 0 208s93.1 208 208 208c48.3 0 92.7-16.4 128-44v16.3
-                         c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9 0l28.3-28.3
-                         c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7 0-128-57.2-128-128
-                         0-70.7 57.2-128 128-128 70.7 0 128 57.2 128 128
-                         0 70.7-57.2 128-128 128z"></path>
-              </svg>
-            </button>
-            <input type="text" id="person-search-input" placeholder="Search.." autocomplete="off" class="search-input hidden">
-          </div>
-          
-          {% if cast|length >= 8 %}
-          <button id="load-more-cast" class="load-more-btn" 
-                  data-source="{{ source }}" 
-                  data-source-id="{{ source_id }}" 
-                  data-media-type="{{ media_type }}" 
-                  data-page="1">Load More</button>
+        <!-- EPISODES -->
+        {% if section.id == 'episodes' %}
+          {% if episodes %}
+          <section class="episodes-section">
+            <h2>Episodes</h2>
+            <div class="episodes-list">
+              {% for episode in episodes %}
+              <div class="episode-card">
+                <div class="episode-image-container">
+                  {% if episode.still_path %}
+                  <img src="{{ episode.still_path }}" 
+                       alt="{{ episode.name }}"
+                       data-placeholder="{% static 'core/img/placeholder.png' %}"
+                       onerror="this.onerror=null;this.src=this.dataset.placeholder;"
+                       class="episode-image" />
+                  {% else %}
+                  <img src="{% static 'core/img/placeholder.png' %}" alt="{{ episode.name }}" class="episode-image" />
+                  {% endif %}
+                  <div class="expand-overlay">
+                    <div class="expand-icon">⛶</div>
+                  </div>
+                </div>
+                <div class="episode-info">
+                  <h3>{{ episode.episode_number }}. {{ episode.name }}</h3>
+                  <div class="episode-overview-container">
+                    <p class="episode-overview">{{ episode.overview }}</p>
+                    <button class="episode-read-more-btn">Read More</button>
+                  </div>
+                  <p class="episode-air-date">{{ episode.formatted_air_date }}</p>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </section>
           {% endif %}
-        </div>
-      </div>
-
-      <!-- Search results above the cast list -->
-      <div id="person-search-results" class="search-results"></div>
-
-      <div class="cast-list">
-        {% for member in cast %}
-        {% if member.id %}
-          <a href="/person/actor/{{ member.id }}/" class="cast-member">
-        {% else %}
-          <div class="cast-member">
-        {% endif %}
-          <img src="{% if member.is_full_url %}{{ member.profile_path }}{% else %}https://image.tmdb.org/t/p/w185{{ member.profile_path }}{% endif %}"
-               alt="{{ member.name }}"
-               data-placeholder="{% static 'core/img/placeholder.png' %}"
-               onerror="this.onerror=null;this.src=this.dataset.placeholder;" />
-          <div class="card-title-overlay">
-            <p class="actor-name">{{ member.name }}</p>
-            <p class="character-name">{{ member.character }}</p>
-          </div>
-          <label class="cast-favorite" data-name="{{ member.name }}" data-img="{% if member.is_full_url %}{{ member.profile_path }}{% else %}https://image.tmdb.org/t/p/w185{{ member.profile_path }}{% endif %}" data-type="actor" data-id="{{ member.id|default:'' }}">
-            <input type="checkbox">
-            <span class="heart"></span>
-          </label>
-        {% if member.id %}
-          </a>
-        {% else %}
-          </div>
-        {% endif %}
-        {% endfor %}
-      </div>
-      
-
-    </section>
-    {% endif %}
-
-    <!-- START OF JOURNAL SECTION -->
-    {% if in_my_list %}
-    <section class="journal-section">
-      <div class="journal-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
-        <h2 style="margin: 0;">Journal</h2>
-        
-        <div class="journal-controls">
-          <button id="j-view-toggle" class="j-icon-btn" title="Toggle View">
-            <!-- SVG injected by JS -->
-          </button>
-          
-          <div class="d-custom-select-wrapper">
-            <select id="j-sort-select" class="j-select">
-              <option value="activity_date">Activity Date</option>
-              <option value="title">Title</option>
-              <option value="score">Score</option>
-            </select>
-            <svg class="select-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-          </div>
-
-          <button id="j-order-toggle" class="j-icon-btn" data-order="desc" title="Toggle Order">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transition: transform 0.3s ease;">
-              <line x1="12" y1="5" x2="12" y2="19"></line>
-              <polyline points="19 12 12 19 5 12"></polyline>
-            </svg>
-          </button>
-        </div>
-      </div>
-
-      <div id="journal-entries-list" class="journal-entries-list">
-        <!-- Existing Notes -->
-        {% if item.notes %}
-        <div class="journal-entry-card notes-card">
-          <div class="entry-header">
-            <div class="entry-meta">
-              <span class="entry-meta-pill type-pill">Notes</span>
-            </div>
-            <button class="entry-edit-btn" onclick="editJournalEntry('notes')" title="Edit Notes">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-            </button>
-          </div>
-          <div class="entry-content formatted-content">{{ item.notes|linebreaksbr }}</div>
-          <!-- Hidden data for JS -->
-          <script type="application/json" id="raw-notes-data">{"notes": "{{ item.notes|escapejs }}"}</script>
-        </div>
         {% endif %}
 
-        <!-- Logs -->
-        {% for log in item.logs.all %}
-        <div class="journal-entry-card log-card" data-id="{{ log.id }}">
-          <div class="entry-header">
-            <div class="entry-meta">
-              <span class="entry-meta-pill type-pill">{{ log.title|default:"Log" }}</span>
+        <!-- CAST & CREW -->
+        {% if section.id == 'cast' %}
+          {% if cast %}
+          <section class="cast-section">
+            <div class="cast-header">
+              <h2>Cast</h2>
               
-              <span class="entry-meta-pill date-pill">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                {{ log.activity_date|date:"d M Y" }}
-              </span>
-              
-              {% if log.progress_start %}
-                <span class="entry-meta-pill progress-pill">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
-                  <span class="unit-label" data-unit="{{ log.progress_unit }}" data-end="{{ log.progress_end|default:'' }}"></span> {{ log.progress_start }}{% if log.progress_end %} - {{ log.progress_end }}{% endif %}
-                </span>
-              {% endif %}
-              
-              {% if log.score %}
-                <span class="entry-meta-pill score-pill"><span class="entry-score" data-score="{{ log.score }}"></span></span>
-              {% endif %}
-            </div>
-            <div class="entry-actions">
-              <button class="entry-edit-btn delete-btn" onclick="openDeleteLogModal({{ log.id }})" title="Delete Log">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-              </button>
-              <button class="entry-edit-btn" onclick="editJournalEntry('logs', {{ log.id }})" title="Edit Log">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-              </button>
-            </div>
-          </div>
-          <div class="entry-content formatted-content {% if log.is_spoiler %}log-spoiler-blur{% endif %}" {% if log.is_spoiler %}onclick="this.classList.remove('log-spoiler-blur');" title="Click to reveal spoiler"{% endif %}>
-            {{ log.content|linebreaksbr }}
-          </div>
-          <!-- Hidden data for JS -->
-          <script type="application/json" id="raw-log-{{ log.id }}">
-            {
-              "title": "{{ log.title|default_if_none:''|escapejs }}",
-              "content": "{{ log.content|default_if_none:''|escapejs }}",
-              "activity_date": "{{ log.activity_date|date:'Y-m-d' }}",
-              "score": "{{ log.score|default_if_none:'' }}",
-              "is_spoiler": {% if log.is_spoiler %}true{% else %}false{% endif %},
-              "progress_unit": "{{ log.progress_unit|default_if_none:''|escapejs }}",
-              "progress_start": "{{ log.progress_start|default_if_none:'' }}",
-              "progress_end": "{{ log.progress_end|default_if_none:'' }}"
-            }
-          </script>
-        </div>
-        {% endfor %}
-      </div>
-
-      <div id="j-show-more-wrapper" style="display: none; text-align: center; margin-bottom: 1.5rem;">
-        <button id="j-show-more-btn" class="j-btn-cancel" style="border: 1px solid var(--border-color);">Show All</button>
-      </div>
-
-      <!-- Sleek Unified Composer -->
-      <div class="journal-composer collapsed" id="journal-composer">
-         <div class="composer-placeholder" onclick="expandComposer()">
-            <span>Start writing...</span>
-         </div>
-         
-         <div class="composer-active">
-            <div class="composer-tabs">
-               <div class="tab-group left">
-                 <button class="j-tab-btn active" data-tab="write" onclick="setComposerTab('write')">Write</button>
-                 <button class="j-tab-btn" data-tab="preview" onclick="setComposerTab('preview')">Preview</button>
-               </div>
-               <div class="tab-group right">
-                 <button class="j-tab-btn {% if not item.notes %}active{% endif %}" data-mode="notes" onclick="setComposerMode('notes')">Notes</button>
-                 <button class="j-tab-btn {% if item.notes %}active{% endif %}" data-mode="logs" onclick="setComposerMode('logs')">Logs</button>
-               </div>
-            </div>
-
-            <div class="composer-editor-area">
-               <div class="composer-toolbar" id="composer-toolbar">
-                  <button type="button" onclick="formatText('**', '**')" title="Bold"><b>B</b></button>
-                  <button type="button" onclick="formatText('*', '*')" title="Italic"><i>I</i></button>
-                  <button type="button" onclick="formatText('[center]', '[/center]')" title="Center">≡</button>
-                  <button type="button" onclick="formatText('> ', '')" title="Quote">”</button>
-                  <button type="button" onclick="formatText('||', '||')" title="Inline Spoiler">Spoiler</button>
-               </div>
-               <textarea id="journal-textarea" placeholder="Write in your journal..."></textarea>
-               <div id="journal-preview" class="formatted-content" style="display: none;"></div>
-            </div>
-
-            <div class="composer-log-fields" id="log-extra-fields" style="{% if not item.notes %}display: none;{% endif %}">
-                <input type="text" id="log-title" placeholder="Title">
-                <input type="date" id="log-date" value="{% now 'Y-m-d' %}">
-                <div class="progress-group">
-                   <div class="d-custom-select-wrapper">
-                     <select id="log-progress-unit">
-                       <!-- Populated by JS -->
-                     </select>
-                     <svg class="select-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                   </div>
-                   <input type="number" id="log-progress-start" placeholder="Start">
-                   <input type="number" id="log-progress-end" placeholder="End">
+              <div class="cast-controls">
+                <div class="search-container">
+                  <button id="search-toggle-btn" class="search-toggle">
+                    <svg class="cast-search-icon" width="24" height="24" viewBox="0 0 512 512" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M505 442.7L405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128
+                               C416 93.1 322.9 0 208 0S0 93.1 0 208s93.1 208 208 208c48.3 0 92.7-16.4 128-44v16.3
+                               c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9 0l28.3-28.3
+                               c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7 0-128-57.2-128-128
+                               0-70.7 57.2-128 128-128 70.7 0 128 57.2 128 128
+                               0 70.7-57.2 128-128 128z"></path>
+                    </svg>
+                  </button>
+                  <input type="text" id="person-search-input" placeholder="Search.." autocomplete="off" class="search-input hidden">
                 </div>
                 
-                <div class="log-score-wrapper">
-                    <input type="hidden" id="log-score" value="">
-                    <div id="log-rating-faces" class="rating-faces" style="display: none;">
-                        <button type="button" data-value="1" class="face face-bad" title="Bad"></button>
-                        <button type="button" data-value="50" class="face face-neutral" title="Neutral"></button>
-                        <button type="button" data-value="100" class="face face-good" title="Good"></button>
-                    </div>
-                    <div id="log-dynamic-rating"></div>
+                {% if cast|length >= 8 %}
+                <button id="load-more-cast" class="load-more-btn" 
+                        data-source="{{ source }}" 
+                        data-source-id="{{ source_id }}" 
+                        data-media-type="{{ media_type }}" 
+                        data-page="1">Load More</button>
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- Search results above the cast list -->
+            <div id="person-search-results" class="search-results"></div>
+
+            <div class="cast-list">
+              {% for member in cast %}
+              {% if member.id %}
+                <a href="/person/actor/{{ member.id }}/" class="cast-member">
+              {% else %}
+                <div class="cast-member">
+              {% endif %}
+                <img src="{% if member.is_full_url %}{{ member.profile_path }}{% else %}https://image.tmdb.org/t/p/w185{{ member.profile_path }}{% endif %}"
+                     alt="{{ member.name }}"
+                     data-placeholder="{% static 'core/img/placeholder.png' %}"
+                     onerror="this.onerror=null;this.src=this.dataset.placeholder;" />
+                <div class="card-title-overlay">
+                  <p class="actor-name">{{ member.name }}</p>
+                  <p class="character-name">{{ member.character }}</p>
+                </div>
+                <label class="cast-favorite" data-name="{{ member.name }}" data-img="{% if member.is_full_url %}{{ member.profile_path }}{% else %}https://image.tmdb.org/t/p/w185{{ member.profile_path }}{% endif %}" data-type="actor" data-id="{{ member.id|default:'' }}">
+                  <input type="checkbox">
+                  <span class="heart"></span>
+                </label>
+              {% if member.id %}
+                </a>
+              {% else %}
+                </div>
+              {% endif %}
+              {% endfor %}
+            </div>
+          </section>
+          {% endif %}
+        {% endif %}
+
+        <!-- JOURNAL -->
+        {% if section.id == 'journal' %}
+          {% if in_my_list %}
+          <section class="journal-section">
+            <div class="journal-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+              <h2 style="margin: 0;">Journal</h2>
+              
+              <div class="journal-controls">
+                <button id="j-view-toggle" class="j-icon-btn" title="Toggle View">
+                  <!-- SVG injected by JS -->
+                </button>
+                
+                <div class="d-custom-select-wrapper">
+                  <select id="j-sort-select" class="j-select">
+                    <option value="activity_date">Activity Date</option>
+                    <option value="title">Title</option>
+                    <option value="score">Score</option>
+                  </select>
+                  <svg class="select-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
                 </div>
 
-                <label class="spoiler-toggle-btn">
-                    <input type="checkbox" id="log-spoiler" style="display:none;">
-                    <span>Spoiler</span>
-                </label>
+                <button id="j-order-toggle" class="j-icon-btn" data-order="desc" title="Toggle Order">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transition: transform 0.3s ease;">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <polyline points="19 12 12 19 5 12"></polyline>
+                  </svg>
+                </button>
+              </div>
             </div>
 
-            <div class="composer-actions">
-               <button class="j-btn-cancel" onclick="collapseComposer()">Cancel</button>
-               <button class="j-btn-save" id="j-btn-save" onclick="saveJournalEntry()">Save</button>
+            <div id="journal-entries-list" class="journal-entries-list">
+              <!-- Existing Notes -->
+              {% if item.notes %}
+              <div class="journal-entry-card notes-card">
+                <div class="entry-header">
+                  <div class="entry-meta">
+                    <span class="entry-meta-pill type-pill">Notes</span>
+                  </div>
+                  <button class="entry-edit-btn" onclick="editJournalEntry('notes')" title="Edit Notes">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                  </button>
+                </div>
+                <div class="entry-content formatted-content">{{ item.notes|linebreaksbr }}</div>
+                <!-- Hidden data for JS -->
+                <script type="application/json" id="raw-notes-data">{"notes": "{{ item.notes|escapejs }}"}</script>
+              </div>
+              {% endif %}
+
+              <!-- Logs -->
+              {% for log in item.logs.all %}
+              <div class="journal-entry-card log-card" data-id="{{ log.id }}">
+                <div class="entry-header">
+                  <div class="entry-meta">
+                    <span class="entry-meta-pill type-pill">{{ log.title|default:"Log" }}</span>
+                    
+                    <span class="entry-meta-pill date-pill">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                      {{ log.activity_date|date:"d M Y" }}
+                    </span>
+                    
+                    {% if log.progress_start %}
+                      <span class="entry-meta-pill progress-pill">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                        <span class="unit-label" data-unit="{{ log.progress_unit }}" data-end="{{ log.progress_end|default:'' }}"></span> {{ log.progress_start }}{% if log.progress_end %} - {{ log.progress_end }}{% endif %}
+                      </span>
+                    {% endif %}
+                    
+                    {% if log.score %}
+                      <span class="entry-meta-pill score-pill"><span class="entry-score" data-score="{{ log.score }}"></span></span>
+                    {% endif %}
+                  </div>
+                  <div class="entry-actions">
+                    <button class="entry-edit-btn delete-btn" onclick="openDeleteLogModal({{ log.id }})" title="Delete Log">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    </button>
+                    <button class="entry-edit-btn" onclick="editJournalEntry('logs', {{ log.id }})" title="Edit Log">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                    </button>
+                  </div>
+                </div>
+                <div class="entry-content formatted-content {% if log.is_spoiler %}log-spoiler-blur{% endif %}" {% if log.is_spoiler %}onclick="this.classList.remove('log-spoiler-blur');" title="Click to reveal spoiler"{% endif %}>
+                  {{ log.content|linebreaksbr }}
+                </div>
+                <!-- Hidden data for JS -->
+                <script type="application/json" id="raw-log-{{ log.id }}">
+                  {
+                    "title": "{{ log.title|default_if_none:''|escapejs }}",
+                    "content": "{{ log.content|default_if_none:''|escapejs }}",
+                    "activity_date": "{{ log.activity_date|date:'Y-m-d' }}",
+                    "score": "{{ log.score|default_if_none:'' }}",
+                    "is_spoiler": {% if log.is_spoiler %}true{% else %}false{% endif %},
+                    "progress_unit": "{{ log.progress_unit|default_if_none:''|escapejs }}",
+                    "progress_start": "{{ log.progress_start|default_if_none:'' }}",
+                    "progress_end": "{{ log.progress_end|default_if_none:'' }}"
+                  }
+                </script>
+              </div>
+              {% endfor %}
             </div>
-         </div>
-      </div>
-      
-      <!-- Delete Log Confirmation Modal -->
-      <div id="delete-log-modal" class="pc-modal-hidden">
-        <div class="pc-modal-overlay" onclick="closeDeleteLogModal()"></div>
-        <div class="pc-modal" style="max-width: 400px;">
-          <div class="pc-modal-content" style="padding: 2.5rem 2rem 2rem 2rem; text-align: center;">
-            <h3 style="color: var(--text-title); margin-top: 0; font-size: 1.5rem;">Delete Log</h3>
-            <p style="color: var(--text-secondary); margin-bottom: 2rem; line-height: 1.5;">Are you sure you want to delete this log entry? This cannot be undone.</p>
-            <div style="display: flex; justify-content: center; gap: 1rem;">
-              <button class="pc-btn pc-cancel" onclick="closeDeleteLogModal()">Cancel</button>
-              <button class="pc-btn" style="background: #ff3b38; color: white;" id="confirm-delete-log-btn">Delete</button>
+
+            <div id="j-show-more-wrapper" style="display: none; text-align: center; margin-bottom: 1.5rem;">
+              <button id="j-show-more-btn" class="j-btn-cancel" style="border: 1px solid var(--border-color);">Show All</button>
             </div>
-          </div>
-        </div>
-      </div>
-    </section>
-    {% endif %}
-    <!-- END OF JOURNAL SECTION -->
+
+            <!-- Sleek Unified Composer -->
+            <div class="journal-composer collapsed" id="journal-composer">
+               <div class="composer-placeholder" onclick="expandComposer()">
+                  <span>Start writing...</span>
+               </div>
+               
+               <div class="composer-active">
+                  <div class="composer-tabs">
+                     <div class="tab-group left">
+                       <button class="j-tab-btn active" data-tab="write" onclick="setComposerTab('write')">Write</button>
+                       <button class="j-tab-btn" data-tab="preview" onclick="setComposerTab('preview')">Preview</button>
+                     </div>
+                     <div class="tab-group right">
+                       <button class="j-tab-btn {% if not item.notes %}active{% endif %}" data-mode="notes" onclick="setComposerMode('notes')">Notes</button>
+                       <button class="j-tab-btn {% if item.notes %}active{% endif %}" data-mode="logs" onclick="setComposerMode('logs')">Logs</button>
+                     </div>
+                  </div>
+
+                  <div class="composer-editor-area">
+                     <div class="composer-toolbar" id="composer-toolbar">
+                        <button type="button" onclick="formatText('**', '**')" title="Bold"><b>B</b></button>
+                        <button type="button" onclick="formatText('*', '*')" title="Italic"><i>I</i></button>
+                        <button type="button" onclick="formatText('[center]', '[/center]')" title="Center">≡</button>
+                        <button type="button" onclick="formatText('> ', '')" title="Quote">”</button>
+                        <button type="button" onclick="formatText('||', '||')" title="Inline Spoiler">Spoiler</button>
+                     </div>
+                     <textarea id="journal-textarea" placeholder="Write in your journal..."></textarea>
+                     <div id="journal-preview" class="formatted-content" style="display: none;"></div>
+                  </div>
+
+                  <div class="composer-log-fields" id="log-extra-fields" style="{% if not item.notes %}display: none;{% endif %}">
+                      <input type="text" id="log-title" placeholder="Title">
+                      <input type="date" id="log-date" value="{% now 'Y-m-d' %}">
+                      <div class="progress-group">
+                         <div class="d-custom-select-wrapper">
+                           <select id="log-progress-unit">
+                             <!-- Populated by JS -->
+                           </select>
+                           <svg class="select-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                         </div>
+                         <input type="number" id="log-progress-start" placeholder="Start">
+                         <input type="number" id="log-progress-end" placeholder="End">
+                      </div>
+                      
+                      <div class="log-score-wrapper">
+                          <input type="hidden" id="log-score" value="">
+                          <div id="log-rating-faces" class="rating-faces" style="display: none;">
+                              <button type="button" data-value="1" class="face face-bad" title="Bad"></button>
+                              <button type="button" data-value="50" class="face face-neutral" title="Neutral"></button>
+                              <button type="button" data-value="100" class="face face-good" title="Good"></button>
+                          </div>
+                          <div id="log-dynamic-rating"></div>
+                      </div>
+
+                      <label class="spoiler-toggle-btn">
+                          <input type="checkbox" id="log-spoiler" style="display:none;">
+                          <span>Spoiler</span>
+                      </label>
+                  </div>
+
+                  <div class="composer-actions">
+                     <button class="j-btn-cancel" onclick="collapseComposer()">Cancel</button>
+                     <button class="j-btn-save" id="j-btn-save" onclick="saveJournalEntry()">Save</button>
+                  </div>
+               </div>
+            </div>
+            
+            <!-- Delete Log Confirmation Modal -->
+            <div id="delete-log-modal" class="pc-modal-hidden">
+              <div class="pc-modal-overlay" onclick="closeDeleteLogModal()"></div>
+              <div class="pc-modal" style="max-width: 400px;">
+                <div class="pc-modal-content" style="padding: 2.5rem 2rem 2rem 2rem; text-align: center;">
+                  <h3 style="color: var(--text-title); margin-top: 0; font-size: 1.5rem;">Delete Log</h3>
+                  <p style="color: var(--text-secondary); margin-bottom: 2rem; line-height: 1.5;">Are you sure you want to delete this log entry? This cannot be undone.</p>
+                  <div style="display: flex; justify-content: center; gap: 1rem;">
+                    <button class="pc-btn pc-cancel" onclick="closeDeleteLogModal()">Cancel</button>
+                    <button class="pc-btn" style="background: #ff3b38; color: white;" id="confirm-delete-log-btn">Delete</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+          {% endif %}
+        {% endif %}
+
+      {% endif %}
+    {% endfor %}
 
   </div>
 </div>
