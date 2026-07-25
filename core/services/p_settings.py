@@ -452,7 +452,6 @@ def refresh_musicbrainz_item(recording_id):
         cast=cast_data,
         seasons=None,
         related_titles=[],
-        screenshots=[],    # Preserved later
         genres=genres,
         creators=creators,
     )
@@ -519,7 +518,6 @@ def refresh_igdb_item(igdb_id):
         cast=[],
         seasons=None,
         related_titles=[],
-        screenshots=[],
         genres=genres,
         creators=creators,
     )

@@ -1252,12 +1252,133 @@ html {
     height: 1px;
   }
 
-  .date-range-title,
-  .date-range-filter {
-    display: none;
+ 
+  /* --- 1. Search and Text Inputs --- */
+  #search-input,
+  #type-search,
+  #status-search,
+  #list-collection-search {
+    display: block;
+    font-size: 2.5rem;
+    padding: 0.8rem;
+    width: 100%;
+    box-sizing: border-box;
   }
 
-  #search-input {
-    display: none;
+  /* --- 2. Sort Controls (Exact copy from lists) --- */
+  .sort-controls {
+    grid-template-columns: minmax(0, 1fr) 4.7rem;
+    gap: 0.6rem;
+  }
+
+  .sort-select {
+    font-size: 2.5rem;
+    padding: 0.8rem;
+    padding-right: 4rem;
+  }
+
+  .sort-select::after {
+    right: 1.1rem;
+    border-left-width: 0.55rem;
+    border-right-width: 0.55rem;
+    border-top-width: 0.65rem;
+  }
+
+  .sort-order-btn {
+    width: 4.7rem;
+    min-width: 4.7rem;
+    height: 4.65rem;
+  }
+
+  .sort-order-btn::before {
+    border-left-width: 0.65rem;
+    border-right-width: 0.65rem;
+  }
+
+  .sort-order-btn[data-order="asc"]::before {
+    border-bottom-width: 0.85rem;
+  }
+
+  .sort-order-btn[data-order="desc"]::before {
+    border-top-width: 0.85rem;
+  }
+
+  /* --- 3. Multi-Select Dropdowns (Tags & Options) --- */
+  .genre-select {
+    padding: 0.8rem;
+    padding-right: 4rem;
+  }
+
+  .genre-indicator::after {
+    border-left: 0.55rem solid transparent;
+    border-right: 0.55rem solid transparent;
+    border-top: 0.65rem solid currentColor;
+  }
+
+  .genre-tag {
+    font-size: 2.5rem;
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+    gap: 1rem;
+  }
+
+  .h-select-option {
+    font-size: 2.5rem;
+    padding: 0.8rem;
+  }
+
+  .type-select-wrapper-check,
+  .status-select-wrapper-check,
+  .list-collection-select-wrapper-check {
+    font-size: 2.5rem;
+  }
+
+  .filter-mode-btn {
+    font-size: 2rem;
+    padding: 0.5rem 1.2rem;
+    border-radius: 20px;
+  }
+
+  /* --- 4. Release Year Slider --- */
+  #release-year-display,
+  #release-year-clear {
+    font-size: 2.5rem;
+  }
+
+  .slider {
+    height: 16px; /* Thicker track for touch */
+    border-radius: 8px;
+  }
+
+  .slider::-webkit-slider-thumb {
+    width: 40px; /* Big thumb for mobile dragging */
+    height: 40px;
+  }
+
+  .slider::-moz-range-thumb {
+    width: 40px;
+    height: 40px;
+  }
+
+  /* --- 5. Date Range Filters --- */
+  .date-range-filter {
+    display: flex;
+    flex-direction: column; /* Stack them on mobile */
+    gap: 1rem;
+  }
+  
+  #start-date,
+  #end-date {
+    width: 100%;
+    font-size: 2.5rem;
+    padding: 0.8rem;
+  }
+
+  .date-range-filter input+input {
+    margin-top: 0;
+  }
+
+  #custom-year{
+    width: 100%;
   }
 }

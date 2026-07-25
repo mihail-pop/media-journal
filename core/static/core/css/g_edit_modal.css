@@ -1133,7 +1133,7 @@ input[type="number"] {
 
   .status-select-wrapper,
   .collection-select-wrapper {
-    width: 20rem !important;
+    width: 20rem;
   }
 
   .collection-select {

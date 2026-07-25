@@ -1031,16 +1031,54 @@ table td:last-child .delete-btn {
     transform-origin: top;
     margin-bottom: 1rem;
     width: 100%;
+
+    flex-wrap: wrap;
+    gap: 2px;
   }
 
   .tab-button {
     padding: 0.8rem 1.2rem;
     font-size: 0.9rem;
+
+    flex: 1 1 auto; 
+    text-align: center;
+    white-space: nowrap;
   }
 
   .preferences-container {
     grid-template-columns: 1fr;
     gap: 1rem;
+  }
+
+  .preferences-section {
+    box-sizing: border-box;
+    max-width: 100%;
+    width: 100%;
+    padding: 1rem;
+    overflow-x: hidden;
+  }
+
+  .preferences-section input, 
+  .preferences-section select {
+    box-sizing: border-box;
+    max-width: 100%;
+  }
+
+    .api-service {
+    /* Changes from 4 columns to 1 stacked column on mobile */
+    grid-template-columns: 1fr; 
+    gap: 0.5rem;
+    padding: 1rem;
+    box-sizing: border-box;
+  }
+  
+  .api-service-name, 
+  .api-service-desc {
+    text-align: center;
+  }
+
+  #refresh-options{
+    max-width: 20rem !important;
   }
 
   #nav-items-form {

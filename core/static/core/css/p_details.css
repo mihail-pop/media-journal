@@ -312,7 +312,7 @@ body[data-media-type="music"] .poster {
 #add-season-to-list-button {
   background-color: var(--button-primary);
   border: none;
-  padding: 0.6rem 1.2rem;
+  padding: 0.6rem 1.2rem !important;
   border-radius: 6px;
   font-weight: 600;
   cursor: pointer;
@@ -2537,31 +2537,6 @@ html.c-modal-open {
   border-color: rgba(245, 197, 24, 0.3);
 }
 
-@media (orientation: portrait) {
-  .journal-entries-list.grid-view {
-    column-count: 1; /* Stack on mobile */
-  }
-  .entry-meta-pill {
-    font-size: 1.6rem;
-    padding: 0.5rem 1rem;
-  }
-  .entry-meta-pill svg {
-    width: 24px;
-    height: 24px;
-  }
-  .j-icon-btn, .j-select {
-    height: 60px;
-    font-size: 2rem;
-  }
-  .j-icon-btn {
-    width: 60px;
-  }
-  .j-icon-btn svg, .select-arrow {
-    width: 28px;
-    height: 28px;
-  }
-}
-
 /* COMPOSER */
 .journal-composer {
   background: var(--bg-tertiary);
@@ -3360,5 +3335,146 @@ select.single-unit ~ .select-arrow {
     font-size: 2.2rem;
     padding: 1.5rem 3rem;
     border-radius: 16px;
+  }
+
+  .journal-entries-list.grid-view {
+    column-count: 1; /* Stack on mobile */
+  }
+  .entry-meta-pill {
+    font-size: 1.6rem;
+    padding: 0.5rem 1rem;
+  }
+  .entry-meta-pill svg {
+    width: 24px;
+    height: 24px;
+  }
+  .j-icon-btn, .j-select {
+    height: 100px;
+    font-size: 2.5rem;
+  }
+  .j-icon-btn {
+    width: 100px;
+  }
+  .j-icon-btn svg, .select-arrow {
+    width: 60px !important;
+    height: 60px !important;
+  }
+
+  
+.custom-options {
+  max-height: none;
+}
+
+  /* --- JOURNAL ENTRIES --- */
+  .entry-title {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .entry-content {
+    font-size: 2rem;
+    line-height: 1.5;
+  }
+
+  .entry-edit-btn svg {
+    width: 3.5rem;
+    height: 3.5rem;
+  }
+
+  .entry-meta {
+    gap: 1rem;
+  }
+
+  /* Dropdown options (Sort Journal) */
+  .custom-option {
+    font-size: 2.5rem;
+    padding: 1rem 1.5rem;
+  }
+
+  .d-custom-select-wrapper select {
+    padding-right: 4.5rem !important;
+  }
+
+  /* --- JOURNAL COMPOSER (Form) --- */
+  .composer-placeholder {
+    font-size: 2.5rem;
+    padding: 2rem;
+  }
+
+  .j-tab-btn {
+    font-size: 2.5rem;
+    padding: 0.5rem 1rem;
+  }
+
+  .composer-toolbar {
+    gap: 1rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .composer-toolbar button {
+    font-size: 2.2rem;
+    padding: 0.8rem 1.2rem;
+    border-radius: 8px;
+  }
+
+  .composer-editor-area textarea {
+    font-size: 2.2rem;
+    padding: 1.5rem;
+    min-height: 300px;
+    border-radius: 12px;
+  }
+
+  #journal-preview {
+    font-size: 2.2rem;
+    min-height: 300px;
+    padding: 1.5rem;
+  }
+
+  .composer-log-fields {
+    gap: 1.5rem;
+  }
+
+  .composer-log-fields input,
+  .composer-log-fields select,
+  .spoiler-toggle-btn {
+    font-size: 2.2rem;
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+  }
+
+  .progress-group input {
+    width: 140px; 
+  }
+
+  /* Score & Rating Faces */
+  .l-rating-number input {
+    font-size: 2.2rem !important;
+    height: 4.8rem !important; 
+    width: 120px !important;
+  }
+
+  .log-score-wrapper .rating-faces {
+    gap: 30px;
+    padding: 15px 20px;
+    border-radius: 12px;
+  }
+
+  .log-score-wrapper .face {
+    width: 60px;
+    height: 60px;
+  }
+
+  /* Action Buttons (Save/Cancel) */
+  .composer-actions {
+    gap: 2rem;
+    margin-top: 2.5rem;
+  }
+
+  .j-btn-cancel, 
+  .j-btn-save {
+    font-size: 2.2rem;
+    padding: 1.5rem 3rem;
+    border-radius: 12px;
   }
 }
