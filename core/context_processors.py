@@ -12,4 +12,4 @@ def nav_items(request):
 
 
 def version_context(request):
-    return {"version": "v1.29.0"}  # Update this with each release
+    return {"version": "v1.30.0"}  # Update this with each release
