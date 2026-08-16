@@ -15,7 +15,7 @@
         <link rel="canonical" href="https://mihail-pop.github.io/media-journal/developer/architecture/">
       
       
-        <link rel="prev" href="../../app-guide/home/">
+        <link rel="prev" href="../../app-guide/troubleshooting/">
       
       
         <link rel="next" href="../database/">
@@ -82,7 +82,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#work-in-progress" class="md-skip">
+        <a href="#architecture" class="md-skip">
           Skip to content
         </a>
       
@@ -290,7 +290,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../app-guide/troubleshooting/" class="md-tabs__link">
+        <a href="../../app-guide/how-to-use/" class="md-tabs__link">
           
   
   
@@ -735,14 +735,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../app-guide/troubleshooting/" class="md-nav__link">
+      <a href="../../app-guide/how-to-use/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Troubleshooting
+    How to use
   
 
     
@@ -763,14 +763,42 @@
   
   
     <li class="md-nav__item">
-      <a href="../../app-guide/home/" class="md-nav__link">
+      <a href="../../app-guide/how-it-works/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Home
+    How it works
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../app-guide/troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
   
 
     
@@ -859,6 +887,8 @@
       <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
       
       
+        
+      
       
         <label class="md-nav__link md-nav__link--active" for="__toc">
           
@@ -901,6 +931,8 @@
   
   
   
+    
+  
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
@@ -909,10 +941,54 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#work-in-progress" class="md-nav__link">
+  <a href="#tech-stack" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Work in progress :)
+        Tech Stack
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#minimal-dependencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Minimal Dependencies
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#production-serving" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Production Serving
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#external-apis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        External APIs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#file-naming-conventions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        File Naming Conventions
       
     </span>
   </a>
@@ -956,6 +1032,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -980,6 +1084,8 @@
   
   
   
+    
+  
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
@@ -988,10 +1094,54 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#work-in-progress" class="md-nav__link">
+  <a href="#tech-stack" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Work in progress :)
+        Tech Stack
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#minimal-dependencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Minimal Dependencies
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#production-serving" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Production Serving
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#external-apis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        External APIs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#file-naming-conventions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        File Naming Conventions
       
     </span>
   </a>
@@ -1018,9 +1168,52 @@
   
 
 
-  <h1>Architecture</h1>
-
-<h2 id="work-in-progress">Work in progress :)<a class="headerlink" href="#work-in-progress" title="Permanent link">#</a></h2>
+<h1 id="architecture">Architecture<a class="headerlink" href="#architecture" title="Permanent link">#</a></h1>
+<p>This page outlines the technologies used to build Media Journal and how the codebase is structured.</p>
+<h2 id="tech-stack">Tech Stack<a class="headerlink" href="#tech-stack" title="Permanent link">#</a></h2>
+<p>Media Journal is built as a monolithic web application to keep self-hosting simple and reliable.</p>
+<ul>
+<li><strong>Backend:</strong> Django (Python 3.13)</li>
+<li><strong>Database:</strong> SQLite. It only allows one write at a time but because the app is meant for single-user or small family use it's good enough and doesn't require any extra database setup.</li>
+<li><strong>Frontend:</strong> Vanilla JavaScript, HTML and CSS</li>
+<li><strong>Database for the Community Page:</strong> Realtime Database from Firebase</li>
+</ul>
+<h2 id="minimal-dependencies">Minimal Dependencies<a class="headerlink" href="#minimal-dependencies" title="Permanent link">#</a></h2>
+<p>I intentionally keep the requirements as small as possible. I don't want to use external libraries unless they are truly needed. This is to future-proof the app so it doesn't depend on separate third-party packages that might break or get abandoned over time. </p>
+<p>The main <code>requirements.txt</code> is extremely lightweight:
+<div class="highlight"><pre><span></span><code>Django==5.1.6
+requests==2.32.3
+whitenoise==6.11.0
+waitress==3.0.2
+</code></pre></div></p>
+<p>For development the <code>requirements-dev.txt</code> includes the base requirements plus the documentation tools:
+<div class="highlight"><pre><span></span><code>-r requirements.txt
+mkdocs-material==9.*
+</code></pre></div>
+I use MkDocs for building this documentation and Ruff for general code checking and formatting.</p>
+<h2 id="production-serving">Production Serving<a class="headerlink" href="#production-serving" title="Permanent link">#</a></h2>
+<p>When users run the app natively (where debug mode is off by default) the app uses a couple of extra tools to run efficiently:</p>
+<ul>
+<li><strong>WhiteNoise:</strong> Used to serve static files (CSS, JS, images) directly through the Python web app so users don't have to set up a reverse proxy like Nginx.</li>
+<li><strong>Waitress:</strong> A production-quality WSGI server used to run the app on Windows, Linux and Mac instead of Django's default development server. Users can choose to use Waitress or the default runserver depending on what they need.</li>
+</ul>
+<h2 id="external-apis">External APIs<a class="headerlink" href="#external-apis" title="Permanent link">#</a></h2>
+<p>I use well-known free APIs that are more likely to last for years to come. The backend makes these requests, parses the JSON data and formats it before saving it locally.</p>
+<ul>
+<li><strong>TMDB:</strong> Movies and TV shows</li>
+<li><strong>AniList:</strong> Anime and Manga</li>
+<li><strong>IGDB:</strong> Games</li>
+<li><strong>OpenLibrary:</strong> Books</li>
+<li><strong>MusicBrainz &amp; YouTube Search:</strong> Music</li>
+</ul>
+<h2 id="file-naming-conventions">File Naming Conventions<a class="headerlink" href="#file-naming-conventions" title="Permanent link">#</a></h2>
+<p>To keep the codebase manageable without creating deeply nested folder structures I use a specific prefix naming convention. Files that belong to the same logical cluster share the same prefix across views, services, templates and static files.</p>
+<ul>
+<li><strong><code>g_</code> (General):</strong> Files used across multiple pages (e.g. <code>g_base.py</code>, <code>g_edit_modal.js</code>).</li>
+<li><strong><code>p_</code> (Page):</strong> Files specific to a standalone page (e.g. <code>p_home.html</code>, <code>p_calendar.py</code>, <code>p_settings.css</code>).</li>
+<li><strong><code>m_</code> (Media):</strong> Files for pages or functionalities that are mainly for media items (e.g. <code>m_lists.js</code>, <code>m_details.html</code>).</li>
+</ul>
+<p>Because of this you can use the "Go to File" shortcut in Visual Studio Code (<code>Ctrl + P</code> or <code>Cmd + P</code>), type <code>p_home</code> and instantly see the HTML, CSS, JS and Python view files grouped together in the dropdown.</p>
 
 
 

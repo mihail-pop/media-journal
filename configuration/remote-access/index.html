@@ -18,7 +18,7 @@
         <link rel="prev" href="../authentication/">
       
       
-        <link rel="next" href="../../app-guide/troubleshooting/">
+        <link rel="next" href="../../app-guide/how-to-use/">
       
       
         
@@ -292,7 +292,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../app-guide/troubleshooting/" class="md-tabs__link">
+        <a href="../../app-guide/how-to-use/" class="md-tabs__link">
           
   
   
@@ -833,14 +833,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../app-guide/troubleshooting/" class="md-nav__link">
+      <a href="../../app-guide/how-to-use/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Troubleshooting
+    How to use
   
 
     
@@ -861,14 +861,42 @@
   
   
     <li class="md-nav__item">
-      <a href="../../app-guide/home/" class="md-nav__link">
+      <a href="../../app-guide/how-it-works/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Home
+    How it works
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../app-guide/troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
   
 
     
@@ -995,6 +1023,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../developer/contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1106,7 +1162,7 @@
 <p>You can use <strong><a href="https://tailscale.com/">Tailscale</a></strong>, which is free for personal use. You install it on the machine running Media Journal and on your remote devices. It creates a direct, peer-to-peer encrypted tunnel between them. </p>
 <ul>
 <li><strong>Pros:</strong> Free, extremely secure, requires no domain configuration and the app does not need to be exposed to the public internet.  </li>
-<li><strong>Cons:</strong> Anyone attempting to access the app must have the Tailscale app installed and be authenticated on your Tailscale network.</li>
+<li><strong>Cons:</strong> You must install Tailscale on every device you want to connect from. Also, if you use a Private DNS on your phone (like AdGuard DNS), you need to turn it off for the connection to work.</li>
 </ul>
 <hr />
 <h3 id="option-2-the-public-way-cloudflare-tunnels">Option 2: The Public Way (Cloudflare Tunnels)<a class="headerlink" href="#option-2-the-public-way-cloudflare-tunnels" title="Permanent link">#</a></h3>
@@ -1118,7 +1174,7 @@
 </ul>
 <hr />
 <h3 id="configuring-the-app-for-a-domain">Configuring the App for a Domain<a class="headerlink" href="#configuring-the-app-for-a-domain" title="Permanent link">#</a></h3>
-<p>If you choose <strong>Option 2</strong> your app's built-in security will block login attempts. It detects the traffic originating from <code>https://your-domain.com</code> instead of <code>localhost</code> and blocks it as a security measure. </p>
+<p>For <strong>both options</strong>, the app's built-in security will block login attempts. It detects the traffic originating from <code>https://your-domain.com</code> instead of <code>localhost</code> and blocks it as a security measure. </p>
 <p>To resolve this you must whitelist your domain name by setting the <code>CSRF_TRUSTED_ORIGINS</code> environment variable.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:4"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><input id="__tabbed_1_4" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Docker</label><label for="__tabbed_1_2">Windows</label><label for="__tabbed_1_3">Mac</label><label for="__tabbed_1_4">Linux</label></div>
 <div class="tabbed-content">
