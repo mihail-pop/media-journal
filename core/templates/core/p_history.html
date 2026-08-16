@@ -82,8 +82,8 @@
 
   <h3>Activity Year</h3>
   <div class="year-filter filter-group">
-    <button class="filter-btn year-btn active" data-year="all">All</button>
     <button class="filter-btn year-btn" data-year="{{ current_year }}">{{ current_year }}</button>
+    <button class="filter-btn year-btn" data-year="{{ previous_year }}">{{ previous_year }}</button>
     <input type="number" id="custom-year" placeholder="Year">
   </div>
 
@@ -104,7 +104,7 @@
 
   <div class="release-year-header">
     <h3>Release Year</h3>
-    <span id="release-year-display" style="display: none;"><span id="release-year-value"></span> <span id="release-year-clear" style="cursor: pointer; font-weight: bold; margin-left: 5px;">✕</span></span>
+    <span id="release-year-display" style="display: none;"><input type="number" id="release-year-value" class="editable-year"> <span id="release-year-clear" style="cursor: pointer; font-weight: bold; margin-left: 5px;">✕</span></span>
   </div>
   <div class="release-year-slider-container">
     <input type="range" id="release-year-slider" min="1950" max="2027" value="2027" class="slider">

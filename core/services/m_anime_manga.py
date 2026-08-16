@@ -402,6 +402,9 @@ def get_anime_extra_info(media_type, anilist_id=None, mal_id=None):
       Media(""" + id_field + """: $id, type: $type) {
         id
         idMal
+        title {
+          romaji
+        }
         status
         averageScore
         format
@@ -588,6 +591,7 @@ def get_anime_extra_info(media_type, anilist_id=None, mal_id=None):
             "episodes": data.get("episodes"),
             "duration": data.get("duration"),
             "genres": data.get("genres", []),
+            "romaji_title": data.get("title", {}).get("romaji"),
             "studios": [s["name"] for s in data.get("studios", {}).get("nodes", [])],
             "staff": staff_list,
             "trailers": trailers,
@@ -618,6 +622,9 @@ def get_manga_extra_info(media_type, anilist_id=None, mal_id=None):
       Media(""" + id_field + """: $id, type: $type) {
         id
         idMal
+        title {
+          romaji
+        }
         status
         averageScore
         format
@@ -778,6 +785,7 @@ def get_manga_extra_info(media_type, anilist_id=None, mal_id=None):
             "chapters": data.get("chapters"),
             "volumes": data.get("volumes"),
             "genres": data.get("genres", []),
+            "romaji_title": data.get("title", {}).get("romaji"),
             "studios": [s["name"] for s in data.get("studios", {}).get("nodes", [])],
             "staff": staff_list,
             "trailers": trailers,

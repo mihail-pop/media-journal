@@ -288,7 +288,7 @@ html {
 
 #custom-year {
   flex: none;
-  width: 4rem;
+  width: 3.5rem;
   padding: 0.4rem 0.6rem;
   font-size: 0.9rem;
   color: var(--text-primary);
@@ -838,6 +838,23 @@ html {
 #release-year-display {
   color: var(--text-primary);
   font-size: 0.9rem;
+}
+.editable-year {
+  background: transparent;
+  border: none;
+  color: inherit;
+  font: inherit;
+  width: 4ch;
+  outline: none;
+  padding: 0;
+  text-align: center;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+.editable-year::-webkit-inner-spin-button,
+.editable-year::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 #release-year-clear:hover {
   color: #ff4444;

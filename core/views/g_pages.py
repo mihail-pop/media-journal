@@ -851,6 +851,7 @@ def books(request):
 def history(request):
     # For sidebar: get current year
     current_year = timezone.now().year
+    previous_year = current_year - 1
 
     # Get theme mode and rating mode from AppSettings
     AppSettings = apps.get_model("core", "AppSettings")
@@ -865,6 +866,7 @@ def history(request):
         "core/p_history.html",
         {
             "current_year": current_year,
+            "previous_year": previous_year,
             "theme_mode": theme_mode,
             "rating_mode": rating_mode,
             "valid_collections": valid_collections,

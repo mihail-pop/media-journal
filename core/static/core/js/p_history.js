@@ -411,26 +411,39 @@ document.addEventListener("DOMContentLoaded", () => {
     monthFilterDiv.style.display = selectedActivityYear !== "all" ? "flex" : "none";
   }
 
-  yearBtns.forEach(btn => btn.addEventListener("click", () => {
-    yearBtns.forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-    selectedActivityYear = btn.dataset.year;
-    customYearInput.value = ''; // clear input when using buttons
-    
-    // Selecting the same year resets the month selection implicitly
+  function clearYearAndMonth() {
+    selectedActivityYear = "all";
     selectedActivityMonth = "all";
+    yearBtns.forEach(b => b.classList.remove("active"));
     monthBtns.forEach(b => b.classList.remove("active"));
-    const allMonthBtn = monthBtns.find(b => b.dataset.month === "all");
-    if(allMonthBtn) allMonthBtn.classList.add("active");
-
+    customYearInput.value = '';
     sessionStorage.setItem('history_activity_year', selectedActivityYear);
     sessionStorage.setItem('history_activity_month', selectedActivityMonth);
     updateMonthFilterVisibility();
     resetAndLoad();
+  }
+
+  yearBtns.forEach(btn => btn.addEventListener("click", () => {
+    if (btn.classList.contains("active")) {
+      // If clicking the already selected year, deselect and go back to all
+      clearYearAndMonth();
+    } else {
+      yearBtns.forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      selectedActivityYear = btn.dataset.year;
+      customYearInput.value = '';
+      
+      selectedActivityMonth = "all";
+      monthBtns.forEach(b => b.classList.remove("active"));
+
+      sessionStorage.setItem('history_activity_year', selectedActivityYear);
+      sessionStorage.setItem('history_activity_month', selectedActivityMonth);
+      updateMonthFilterVisibility();
+      resetAndLoad();
+    }
   }));
 
   customYearInput.addEventListener("input", (e) => {
-    // Limit to 4 characters
     if (e.target.value.length > 4) {
       e.target.value = e.target.value.slice(0, 4);
     }
@@ -441,46 +454,104 @@ document.addEventListener("DOMContentLoaded", () => {
       
       selectedActivityMonth = "all";
       monthBtns.forEach(b => b.classList.remove("active"));
-      const allMonthBtn = monthBtns.find(b => b.dataset.month === "all");
-      if(allMonthBtn) allMonthBtn.classList.add("active");
 
       sessionStorage.setItem('history_activity_year', selectedActivityYear);
       sessionStorage.setItem('history_activity_month', selectedActivityMonth);
       updateMonthFilterVisibility();
       resetAndLoad();
+    } else if (e.target.value === "") {
+      // If the user clears the input field, reset to all years
+      if (selectedActivityYear !== "all" && !yearBtns.some(b => b.classList.contains("active"))) {
+        clearYearAndMonth();
+      }
     }
   });
 
   monthBtns.forEach(btn => btn.addEventListener("click", () => {
-    monthBtns.forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-    selectedActivityMonth = btn.dataset.month;
-    sessionStorage.setItem('history_activity_month', selectedActivityMonth);
-    resetAndLoad();
+    if (btn.classList.contains("active")) {
+      // If clicking the already selected month, deselect and go back to all years
+      clearYearAndMonth();
+    } else {
+      monthBtns.forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      selectedActivityMonth = btn.dataset.month;
+      sessionStorage.setItem('history_activity_month', selectedActivityMonth);
+      resetAndLoad();
+    }
   }));
 
+  let lastValidReleaseYear = releaseYearSlider.value;
   if (releaseYear) {
     releaseYearSlider.value = releaseYear;
-    releaseYearValue.textContent = releaseYear;
+    releaseYearValue.value = releaseYear;
+    lastValidReleaseYear = releaseYear;
     releaseYearDisplay.style.display = 'inline';
   } else {
     releaseYearSlider.value = new Date().getFullYear() + 1;
+    lastValidReleaseYear = releaseYearSlider.value;
   }
 
+  let releaseYearDebounce;
+
   releaseYearSlider.addEventListener("input", (e) => {
-    releaseYearValue.textContent = e.target.value;
+    releaseYearValue.value = e.target.value;
     releaseYearDisplay.style.display = 'inline';
+    
+    clearTimeout(releaseYearDebounce);
+    releaseYearDebounce = setTimeout(() => {
+      if (releaseYear !== e.target.value) {
+        releaseYear = e.target.value;
+        lastValidReleaseYear = releaseYear;
+        sessionStorage.setItem('history_release_year', releaseYear);
+        resetAndLoad();
+      }
+    }, 1000);
   });
 
   releaseYearSlider.addEventListener("change", (e) => {
-    releaseYear = e.target.value;
-    sessionStorage.setItem('history_release_year', releaseYear);
-    resetAndLoad();
+    clearTimeout(releaseYearDebounce);
+    if (releaseYear !== e.target.value) {
+      releaseYear = e.target.value;
+      lastValidReleaseYear = releaseYear;
+      sessionStorage.setItem('history_release_year', releaseYear);
+      resetAndLoad();
+    }
+  });
+
+  // Release year custom input event listeners
+  releaseYearValue.addEventListener("input", (e) => {
+    if (e.target.value.length > 4) {
+      e.target.value = e.target.value.slice(0, 4);
+    }
+  });
+
+  releaseYearValue.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      releaseYearValue.blur();
+    }
+  });
+
+  releaseYearValue.addEventListener("blur", () => {
+    let val = releaseYearValue.value;
+    // Validate if it is a 4-digit number
+    if (val.length === 4 && !isNaN(val)) {
+      lastValidReleaseYear = val;
+      releaseYearSlider.value = val;
+      if (releaseYear !== val) {
+        releaseYear = val;
+        sessionStorage.setItem('history_release_year', releaseYear);
+        resetAndLoad();
+      }
+    } else {
+      // Revert changes if it's less than 4 numbers
+      releaseYearValue.value = lastValidReleaseYear;
+    }
   });
 
   releaseYearClear.addEventListener("click", () => {
     releaseYear = "";
     releaseYearSlider.value = new Date().getFullYear() + 1; 
+    lastValidReleaseYear = releaseYearSlider.value;
     releaseYearDisplay.style.display = 'none';
     sessionStorage.setItem('history_release_year', releaseYear);
     resetAndLoad();
@@ -503,9 +574,6 @@ document.addEventListener("DOMContentLoaded", () => {
       monthBtns.forEach(b => b.classList.remove("active"));
       monthBtn.classList.add("active");
     }
-  } else {
-    if (yearBtns.length > 0) yearBtns[0].classList.add("active");
-    if (monthBtns.length > 0) monthBtns[0].classList.add("active");
   }
   updateMonthFilterVisibility();
   updateSortButtons();

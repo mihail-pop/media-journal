@@ -26,8 +26,11 @@ CSRF_COOKIE_HTTPONLY = False
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-5%a8ctkwkr9t@vjy=y$xp6=bk7np&6a#w4qf3p^x4iy66r6n!g'
+# Optional: You can pass your own SECRET_KEY via environment variables (Docker or terminal) if you want a custom key.
+SECRET_KEY = os.environ.get(
+    'SECRET_KEY',
+    'django-insecure-5%a8ctkwkr9t@vjy=y$xp6=bk7np&6a#w4qf3p^x4iy66r6n!g'
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('MJ_DEV') == 'True'

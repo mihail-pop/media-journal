@@ -11,6 +11,7 @@ from django.http import JsonResponse
 from django.utils import timezone
 from django.core.files.storage import FileSystemStorage
 from django.views.decorators.csrf import ensure_csrf_cookie
+from django.db.models import Max, F
 from django.views.decorators.http import require_GET, require_POST
 
 from core.models import MediaItem, Collection, MediaItemLog, AppSettings
@@ -194,6 +195,13 @@ def create_custom_item(request):
         total_secondary = parse_int(request.POST.get("total_secondary"))
         progress_main = parse_int(request.POST.get("progress_main")) or 0
         progress_secondary = parse_int(request.POST.get("progress_secondary")) or 0
+        
+        # Calculate favorite position if checked
+        is_favorite = request.POST.get("favorite") in ["true", "on", True]
+        fav_position = None
+        if is_favorite:
+            max_pos = MediaItem.objects.filter(favorite=True).aggregate(Max('favorite_position'))['favorite_position__max']
+            fav_position = (max_pos or 0) + 1
 
         date_added_input = request.POST.get("date_added", "")
         if date_added_input:
@@ -229,7 +237,8 @@ def create_custom_item(request):
             total_secondary=total_secondary,
             
             personal_rating=rating_val,
-            favorite=request.POST.get("favorite") in ["true", "on", True],
+            favorite=is_favorite,
+            favorite_position=fav_position,
             notes=request.POST.get("c-notes", ""),
             date_added=date_added
         )
@@ -481,7 +490,27 @@ def edit_item(request, item_id):
                 item.notes = data["notes"]
 
             if "favorite" in data:
-                item.favorite = data["favorite"] in ["true", "on", True]
+                new_favorite_status = data["favorite"] in ["true", "on", True]
+                
+                # Only run logic if the favorite status actually changed
+                if item.favorite != new_favorite_status:
+                    if new_favorite_status:
+                        # Adding to favorites: put at the end
+                        max_pos = MediaItem.objects.filter(favorite=True).aggregate(Max('favorite_position'))['favorite_position__max']
+                        item.favorite_position = (max_pos or 0) + 1
+                    else:
+                        # Removing from favorites: clear position and reorder the rest
+                        old_pos = item.favorite_position
+                        item.favorite_position = None
+                        
+                        if old_pos is not None:
+                            # Shift all items that were AFTER this one down by 1 to close the gap
+                            MediaItem.objects.filter(
+                                favorite=True, 
+                                favorite_position__gt=old_pos
+                            ).update(favorite_position=F('favorite_position') - 1)
+                            
+                item.favorite = new_favorite_status
 
             if "collections" in data:
                 AppSettings = apps.get_model("core", "AppSettings")
@@ -605,6 +634,14 @@ def delete_item(request, item_id):
                     os.remove(path)
             except Exception:
                 pass  # Ignore deletion errors
+
+        # --- Fix the gap if the item was favorited
+        if item.favorite and item.favorite_position is not None:
+            old_pos = item.favorite_position
+            MediaItem.objects.filter(
+                favorite=True, 
+                favorite_position__gt=old_pos
+            ).update(favorite_position=F('favorite_position') - 1)
 
         # --- Delete the DB entry
         item.delete()
@@ -830,11 +867,26 @@ def toggle_music_favorite(request):
     try:
         data = json.loads(request.body)
         item_id = data.get("item_id")
-        favorite = data.get("favorite")
+        new_favorite_status = bool(data.get("favorite"))
 
         item = MediaItem.objects.get(id=item_id)
-        item.favorite = favorite
-        item.save()
+        
+        if item.favorite != new_favorite_status:
+            if new_favorite_status:
+                max_pos = MediaItem.objects.filter(favorite=True).aggregate(Max('favorite_position'))['favorite_position__max']
+                item.favorite_position = (max_pos or 0) + 1
+            else:
+                old_pos = item.favorite_position
+                item.favorite_position = None
+                
+                if old_pos is not None:
+                    MediaItem.objects.filter(
+                        favorite=True, 
+                        favorite_position__gt=old_pos
+                    ).update(favorite_position=F('favorite_position') - 1)
+                    
+            item.favorite = new_favorite_status
+            item.save(update_fields=['favorite', 'favorite_position'])
 
         return JsonResponse({"success": True})
     except MediaItem.DoesNotExist:

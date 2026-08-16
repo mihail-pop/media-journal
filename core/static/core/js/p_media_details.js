@@ -2024,6 +2024,10 @@ if (data.genres?.length) {
   safeHTML.push(`<p><span class="label">Genres: </span> ${data.genres.join(", ")}</p>`);
 }
 
+if (data.romaji_title) {
+  safeHTML.push(`<p><span class="label">Romaji: </span> ${data.romaji_title}</p>`);
+}
+
 if (data.studios?.length) {
   safeHTML.push(`<p><span class="label">Studio:</span> ${data.studios.join(", ")}</p>`);
 }
