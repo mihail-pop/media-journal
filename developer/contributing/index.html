@@ -1006,6 +1006,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#development-environment-debug-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Development Environment (DEBUG Mode)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#how-to-adding-a-new-theme" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1120,6 +1131,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#development-environment-debug-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Development Environment (DEBUG Mode)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#how-to-adding-a-new-theme" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1211,6 +1233,41 @@
 <blockquote>
 <p><strong>Note:</strong> All Pull Requests should be made against the <strong><code>development</code></strong> branch. Once a set of features is stable I will merge them into <code>main</code>, draft a new release and make a new Docker image.</p>
 </blockquote>
+<h2 id="development-environment-debug-mode">Development Environment (DEBUG Mode)<a class="headerlink" href="#development-environment-debug-mode" title="Permanent link">#</a></h2>
+<p>In <code>settings.py</code>, debug mode is configured to read an environment variable:
+<div class="highlight"><pre><span></span><code><span class="n">DEBUG</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MJ_DEV&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;True&#39;</span>
+</code></pre></div>
+This is done so that running the app normally on your machine defaults to <code>DEBUG=False</code> (production behavior), but when you open and run the app inside Visual Studio Code you automatically get <code>DEBUG=True</code> with live reload and detailed error pages.</p>
+<p>To configure this in VS Code create a <code>.vscode/settings.json</code> file in the root folder of the project and add the <code>MJ_DEV</code> variable for your operating system:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:3"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Windows</label><label for="__tabbed_1_2">Mac</label><label for="__tabbed_1_3">Linux</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;terminal.integrated.env.windows&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;MJ_DEV&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;True&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;terminal.integrated.env.osx&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;MJ_DEV&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;True&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;terminal.integrated.env.linux&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;MJ_DEV&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;True&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p>After saving the file any new terminal you open inside VS Code will automatically run with <code>MJ_DEV=True</code>.</p>
 <h2 id="how-to-adding-a-new-theme">How-to: Adding a New Theme<a class="headerlink" href="#how-to-adding-a-new-theme" title="Permanent link">#</a></h2>
 <p>If you would like to make your own theme and share with others (and you have some knowledge in coding/css/designing) here is how you can do it:</p>
 <h3 id="1-update-the-database-model">1. Update the Database Model<a class="headerlink" href="#1-update-the-database-model" title="Permanent link">#</a></h3>
