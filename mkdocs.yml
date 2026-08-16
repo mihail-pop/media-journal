@@ -42,13 +42,17 @@ nav:
     - Authentication: configuration/authentication.md
     - Remote Access: configuration/remote-access.md
   - App Guide:
+    - How to use: app-guide/how-to-use.md
+    - How it works: app-guide/how-it-works.md
     - Troubleshooting: app-guide/troubleshooting.md
-    - Home: app-guide/home.md
   - Developer Guide:
     - Architecture: developer/architecture.md
     - Database: developer/database.md
+    - Contributing: developer/contributing.md
 
 markdown_extensions:
+  - admonition
+  - pymdownx.details
   - pymdownx.superfences
   - pymdownx.highlight
   - toc:

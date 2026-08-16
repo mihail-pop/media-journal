@@ -139,7 +139,7 @@ def save_musicbrainz_item(recording_id):
     else:
         search_query = f"{artists} {title}"
 
-    # Simple YouTube search via scraping
+    # Simple YouTube search
     try:
         import unicodedata
         import urllib.parse

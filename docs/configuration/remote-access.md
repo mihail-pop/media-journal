@@ -10,7 +10,7 @@ If you only need access for yourself this is the easiest and safest method.
 You can use **[Tailscale](https://tailscale.com/)**, which is free for personal use. You install it on the machine running Media Journal and on your remote devices. It creates a direct, peer-to-peer encrypted tunnel between them. 
 
 * **Pros:** Free, extremely secure, requires no domain configuration and the app does not need to be exposed to the public internet.  
-* **Cons:** Anyone attempting to access the app must have the Tailscale app installed and be authenticated on your Tailscale network.
+* **Cons:** You must install Tailscale on every device you want to connect from. Also, if you use a Private DNS on your phone (like AdGuard DNS), you need to turn it off for the connection to work.
 
 ---
 
@@ -25,7 +25,7 @@ This requires a domain name. You can buy cheap promotional domains for $1–$2 f
 ---
 
 ### Configuring the App for a Domain
-If you choose **Option 2** your app's built-in security will block login attempts. It detects the traffic originating from `https://your-domain.com` instead of `localhost` and blocks it as a security measure. 
+For **both options**, the app's built-in security will block login attempts. It detects the traffic originating from `https://your-domain.com` instead of `localhost` and blocks it as a security measure. 
 
 To resolve this you must whitelist your domain name by setting the `CSRF_TRUSTED_ORIGINS` environment variable.
 

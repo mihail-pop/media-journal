@@ -297,7 +297,7 @@ def musicbrainz_detail(request, recording_id):
     else:
         search_query = f"{artists} {title}"
 
-    # Simple YouTube search via scraping (no API key needed)
+    # Simple YouTube search (no API key needed)
     try:
         import unicodedata
         import urllib.parse
