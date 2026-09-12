@@ -79,6 +79,9 @@ def load_more_cast(request):
     if not all([source, source_id, media_type]):
         return JsonResponse({"error": "Missing parameters"}, status=400)
 
+    if not source_id.isdigit():
+        return JsonResponse({"error": "Invalid source_id"}, status=400)
+
     try:
         if source == "tmdb":
             api_key = APIKey.objects.get(name="tmdb").key_1
