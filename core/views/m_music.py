@@ -1,5 +1,6 @@
 import logging
 import datetime
+import re
 
 import requests
 from django.apps import apps
@@ -9,7 +10,7 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET
 
 from core.models import MediaItem
-from core.services.m_music import wait_for_rate_limit
+from core.services.m_music import wait_for_rate_limit, mb_session
 
 logger = logging.getLogger(__name__)
 
@@ -18,20 +19,32 @@ logger = logging.getLogger(__name__)
 @require_GET
 def musicbrainz_search(request):
     wait_for_rate_limit()
-    query = request.GET.get("q", "").strip()
+    raw_query = request.GET.get("q", "").strip()
 
-    if not query:
+    if not raw_query:
         return JsonResponse({"error": "Query parameter 'q' is required."}, status=400)
+
+    # Remove ALL punctuation (commas, hyphens, brackets, etc.)
+    # Keeps only alphanumeric characters and spaces. Completely bulletproofs the Lucene search.
+    safe_query = re.sub(r'[^\w\s]', ' ', raw_query)
+    
+    # Convert to lowercase and remove manual AND/OR to prevent syntax crashes
+    words = [w.lower() for w in safe_query.split() if w.lower() not in ['and', 'or', 'not']]
+    
+    # Force ALL words to be present in the result by joining with AND
+    # Example: "naughty boy la la la" -> "naughty AND boy AND la AND la AND la"
+    lucene_query = " AND ".join(words)
+
+    if not lucene_query:
+        return JsonResponse({"error": "Invalid search query."}, status=400)
 
     # 1. Fetch data from MusicBrainz
     try:
         url = "https://musicbrainz.org/ws/2/recording"
-        params = {"query": query, "limit": 20, "fmt": "json"}
-        headers = {
-            "User-Agent": "MediaJournal/1.0 (https://github.com/mihail-pop/media-journal)"
-        }
+        params = {"query": lucene_query, "limit": 20, "fmt": "json"}
 
-        response = requests.get(url, params=params, headers=headers, timeout=10)
+        # Uses the smart mb_session from services that has retries and correct User-Agent
+        response = mb_session.get(url, params=params, timeout=10)
         response.raise_for_status()
         data = response.json()
 
@@ -100,6 +113,9 @@ def musicbrainz_search(request):
     # 4. Filter: keep all albums, only show singles if no album
     filtered = []
     for recs in grouped.values():
+        # Sort records by year (oldest first) so the "Original" release is prioritized over newer remasters
+        recs.sort(key=lambda x: x["year"] if x["year"] else "9999")
+        
         albums = [
             r
             for r in recs
@@ -110,9 +126,9 @@ def musicbrainz_search(request):
             )
         ]
         if albums:
-            filtered.append(albums[0])  # keep only the first album per title+artist
+            filtered.append(albums[0])  # keep only the oldest album
         else:
-            filtered.append(recs[0])  # keep only the first single if no album
+            filtered.append(recs[0])  # keep only the oldest single
 
     # 5. Format results for the frontend
     results = []
@@ -141,6 +157,18 @@ def musicbrainz_detail(request, recording_id):
     try:
         item = MediaItem.objects.get(provider_ids__musicbrainz=str(recording_id))
 
+        # Fetch and auto-repair positions if any are corrupted/duplicated # Remove auto-repair after one year or so it's a temporary fix that won't be needed forever
+        videos = list(item.music_videos.all().order_by('position'))
+        needs_repair = False
+        for i, v in enumerate(videos, start=1):
+            if v.position != i:
+                v.position = i
+                needs_repair = True
+        
+        if needs_repair:
+            for v in videos:
+                v.save(update_fields=['position'])
+
         youtube_links = [
             {
                 "id": v.id,
@@ -148,7 +176,7 @@ def musicbrainz_detail(request, recording_id):
                 "position": v.position,
                 "is_favorite": v.is_favorite
             }
-            for v in item.music_videos.all()
+            for v in videos
         ]
 
         # Format release date
@@ -206,10 +234,7 @@ def musicbrainz_detail(request, recording_id):
         pass
 
     wait_for_rate_limit()
-    # Fetch from MusicBrainz API
-    headers = {
-        "User-Agent": "MediaJournal/1.0 (https://github.com/mihail-pop/media-journal)"
-    }
+    # Fetch from MusicBrainz API (Headers handled by mb_session)
 
     # Get recording details
     recording_url = f"https://musicbrainz.org/ws/2/recording/{recording_id}"
@@ -219,8 +244,8 @@ def musicbrainz_detail(request, recording_id):
     }
 
     try:
-        recording_response = requests.get(
-            recording_url, params=recording_params, headers=headers, timeout=10
+        recording_response = mb_session.get(
+            recording_url, params=recording_params, timeout=10
         )
         recording_response.raise_for_status()
 

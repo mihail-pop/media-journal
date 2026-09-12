@@ -3,14 +3,44 @@ import logging
 import datetime
 
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 from django.http import JsonResponse
 
 from core.models import MediaItem
 from core.services.g_utils import download_image
+from core.context_processors import version_context
 
 logger = logging.getLogger(__name__)
 
 last_request_time = 0
+
+def get_mb_session():
+    session = requests.Session()
+    # 5 retries with exponential backoff (1s, 2s, 4s, 8s, 16s) = ~30s total window
+    retry = Retry(
+        total=3,
+        backoff_factor=1,
+        status_forcelist=[429, 500, 502, 503, 504],
+        allowed_methods=["GET"],
+        raise_on_status=False,
+        respect_retry_after_header=False  # CRITICAL: Ignores MB's 1s instruction so our exponential backoff actually works to bypass the AI scraper traffic
+    )
+    adapter = HTTPAdapter(max_retries=retry)
+    session.mount("https://", adapter)
+    session.mount("http://", adapter)
+    
+    # Dynamically pull the version from context processors (ignoring the request arg)
+    app_version = version_context(None).get("version", "v1.0")
+    
+    # Set the User-Agent strictly as recommended
+    session.headers.update({
+        "User-Agent": f"MediaJournal/{app_version} ( https://github.com/mihail-pop/media-journal )"
+    })
+    return session
+
+# Global session to use for all MusicBrainz calls
+mb_session = get_mb_session()
 
 
 def wait_for_rate_limit():
@@ -26,9 +56,6 @@ def wait_for_rate_limit():
 
 def save_musicbrainz_item(recording_id):
     wait_for_rate_limit()
-    headers = {
-        "User-Agent": "MediaJournal/1.0 (https://github.com/mihail-pop/media-journal)"
-    }
 
     # Get recording details
     recording_url = f"https://musicbrainz.org/ws/2/recording/{recording_id}"
@@ -38,8 +65,9 @@ def save_musicbrainz_item(recording_id):
     }
 
     try:
-        recording_response = requests.get(
-            recording_url, params=recording_params, headers=headers, timeout=10
+        # Use our smart mb_session which will retry on 503/429
+        recording_response = mb_session.get(
+            recording_url, params=recording_params, timeout=10
         )
         recording_response.raise_for_status()
 
@@ -385,11 +413,8 @@ def get_music_extra_info(recording_id, artist_id=None, album_id=None):
             )
         print(f"[MUSIC] From DB - artist_id: {artist_id}, album_id: {album_id}")
     except MediaItem.DoesNotExist:
-        print("[MUSIC] Item not in DB, using passed IDs")
+            print("[MUSIC] Item not in DB, using passed IDs")
 
-    headers = {
-        "User-Agent": "MediaJournal/1.0 (https://github.com/mihail-pop/media-journal)"
-    }
     album_tracks = []
     artist_singles = []
 
@@ -399,8 +424,8 @@ def get_music_extra_info(recording_id, artist_id=None, album_id=None):
         album_url = f"https://musicbrainz.org/ws/2/release/{album_id}"
         album_params = {"inc": "recordings", "fmt": "json"}
         try:
-            album_response = requests.get(
-                album_url, params=album_params, headers=headers, timeout=10
+            album_response = mb_session.get(
+                album_url, params=album_params, timeout=10
             )
             if album_response.status_code == 429:
                 raise Exception("HTTP 429 Too Many Requests: Rate Limit Exceeded")
@@ -433,8 +458,8 @@ def get_music_extra_info(recording_id, artist_id=None, album_id=None):
 
         try:
             while True:
-                rg_response = requests.get(
-                    rg_url, params=rg_params, headers=headers, timeout=10
+                rg_response = mb_session.get(
+                    rg_url, params=rg_params, timeout=10
                 )
                 if rg_response.status_code == 429:
                     raise Exception("HTTP 429 Too Many Requests: Rate Limit Exceeded")
@@ -488,7 +513,7 @@ def get_musicbrainz_discover(page=1, query="", sort="trending", genre="", year="
             lb_range = "this_month" if sort == "trending" else "all_time"
             
             url = "https://api.listenbrainz.org/1/stats/sitewide/recordings"
-            resp = requests.get(url, params={"count": 100, "range": lb_range}, timeout=10)
+            resp = mb_session.get(url, params={"count": 100, "range": lb_range}, timeout=10)
             
             if resp.status_code == 200:
                 recordings = resp.json().get("payload", {}).get("recordings", [])
@@ -538,7 +563,7 @@ def get_musicbrainz_discover(page=1, query="", sort="trending", genre="", year="
         # Call wait_for_rate_limit() to guarantee Page 2 doesn't trigger a 503 on MusicBrainz
         wait_for_rate_limit() 
         
-        resp = requests.get(url, params=params, timeout=10, headers={"User-Agent": "MediaJournal/1.0"})
+        resp = mb_session.get(url, params=params, timeout=10)
         if resp.status_code == 200:
             for rec in resp.json().get("recordings", []):
                 artist = ", ".join([a.get("name", "") for a in rec.get("artist-credit", [])])

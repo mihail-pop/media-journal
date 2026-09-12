@@ -357,12 +357,14 @@ def api_status_check(request):
             return "down"
 
     def check_musicbrainz():
+        from core.services.m_music import mb_session
         try:
-            headers = {"User-Agent": "MediaJournal/1.0 (https://github.com/mihail-pop/media-journal)"}
-            r = requests.get("https://musicbrainz.org/ws/2/recording?query=test&limit=1&fmt=json", headers=headers, timeout=20)
+            # Uses the mb_session to inherit our exponential backoff retries and versioned User-Agent
+            r = mb_session.get("https://musicbrainz.org/ws/2/recording?query=test&limit=1&fmt=json", timeout=10)
+            
             if r.status_code == 200: 
                 return "ok"
-            if r.status_code == 429: 
+            if r.status_code in [429, 503]: 
                 return "rate_limited"
             return "ok" if r.status_code < 500 else "down"
         except Exception: 

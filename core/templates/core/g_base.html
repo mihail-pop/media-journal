@@ -64,7 +64,7 @@
             {% if page == "tv" %}
               <input type="text" id="overlay-search-input" placeholder="Search for a TV show.." autocomplete="off">
             {% elif page == "music" %}
-              <input type="text" id="overlay-search-input" placeholder="Search for a song.. (Song - Artist)" autocomplete="off">
+              <input type="text" id="overlay-search-input" placeholder="Search for a song.." autocomplete="off">
             {% else %}
               {% with page|first as first_letter %}
                 {% if first_letter in "aeiou" %}

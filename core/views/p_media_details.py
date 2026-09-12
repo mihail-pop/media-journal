@@ -240,13 +240,10 @@ def upload_game_screenshots(request):
                     os.remove(file_path)
                     
         media_item.game_screenshots.all().delete()
-        media_item.screenshots = []
         start_index = 1
-        old_screenshots = []
 
     elif action == "add":
         from django.db.models import Max
-        old_screenshots = media_item.screenshots or []
         
         # Get highest position from DB to avoid collisions
         max_pos = media_item.game_screenshots.aggregate(Max('position'))['position__max']
@@ -303,17 +300,13 @@ def add_music_video(request):
         
         item = MediaItem.objects.get(provider_ids__musicbrainz=str(source_id), media_type="music")
 
-        # Get current screenshots/youtube_links
-        screenshots = item.screenshots or []
+        from django.db.models import Max
+        from core.models import MusicVideo
 
-        # Find next position
-        max_position = 0
-        if screenshots:
-            max_position = max([link.get("position", 0) for link in screenshots])
-
+        # Find next position based on existing DB objects
+        max_position = item.music_videos.aggregate(Max('position'))['position__max'] or 0
         new_position = max_position + 1
 
-        from core.models import MusicVideo
         MusicVideo.objects.create(item=item, url=url, position=new_position)
 
         return JsonResponse({"success": True})

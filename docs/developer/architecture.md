@@ -52,8 +52,8 @@ I use well-known free APIs that are more likely to last for years to come. The b
 
 To keep the codebase manageable without creating deeply nested folder structures I use a specific prefix naming convention. Files that belong to the same logical cluster share the same prefix across views, services, templates and static files.
 
-* **`g_` (General):** Files used across multiple pages (e.g. `g_base.py`, `g_edit_modal.js`).
+* **`g_` (General):** Files used across multiple pages (e.g. `g_base.html`, `g_edit_modal.js`).
 * **`p_` (Page):** Files specific to a standalone page (e.g. `p_home.html`, `p_calendar.py`, `p_settings.css`).
-* **`m_` (Media):** Files for pages or functionalities that are mainly for media items (e.g. `m_lists.js`, `m_details.html`).
+* **`m_` (Media):** Files for pages or functionalities that are mainly for media items (e.g. `m_lists.js`, `m_games.html`).
 
 Because of this you can use the "Go to File" shortcut in Visual Studio Code (`Ctrl + P` or `Cmd + P`), type `p_home` and instantly see the HTML, CSS, JS and Python view files grouped together in the dropdown.
