@@ -58,6 +58,8 @@ class MediaItem(models.Model):
     screenshots = models.JSONField(blank=True, null=True) # Games - Screenshots / Music - Youtube Links + Position # Deprecated, will remove after 3 releases.
     genres = models.JSONField(default=list, blank=True)
     creators = models.JSONField(default=list, blank=True) # Movies, TV - Directors / Anime - Studio / Games - Devs / Manga, Books - Authors / Music - Artists
+    
+    assigned_people = models.ManyToManyField('FavoritePerson', through='MediaPersonLink', related_name='assigned_media', blank=True)
 
     progress_main = models.PositiveIntegerField(default=0) # User progress out of the total
     progress_secondary = models.PositiveIntegerField(null=True, blank=True)
@@ -129,11 +131,20 @@ class FavoritePerson(models.Model):
     position = models.PositiveIntegerField()
     person_id = models.CharField(max_length=50, blank=True, null=True)  # ID from TMDB/AniList
     
+    # General Role field (e.g., "Director", "Actor", "Character")
+    role = models.CharField(max_length=100, blank=True, null=True)
+    
     # Actor-specific fields (TMDB)
     birthday = models.CharField(max_length=20, blank=True, null=True)
     deathday = models.CharField(max_length=20, blank=True, null=True)
     biography = models.TextField(blank=True, null=True)
-    related_media = models.JSONField(blank=True, null=True)  # Movies/TV shows they appeared in
+    
+    # Separated TMDB Media fields
+    known_for = models.JSONField(blank=True, null=True)
+    related_media = models.JSONField(blank=True, null=True) # Played_In
+    directed = models.JSONField(blank=True, null=True)
+    produced = models.JSONField(blank=True, null=True)
+    crew_credits = models.JSONField(blank=True, null=True)
     
     # Character-specific fields (AniList)
     description = models.TextField(blank=True, null=True)
@@ -141,8 +152,27 @@ class FavoritePerson(models.Model):
     media_appearances = models.JSONField(blank=True, null=True)  # Anime/manga they appear in
     voice_actors = models.JSONField(blank=True, null=True)  # Voice actors for this character
 
+    date_added = models.DateTimeField(default=timezone.now)
+
     def __str__(self):
         return f"{self.name} ({self.type})"
+
+class MediaPersonLink(models.Model):
+    item = models.ForeignKey('MediaItem', on_delete=models.CASCADE)
+    person = models.ForeignKey('FavoritePerson', on_delete=models.CASCADE)
+    
+    # The specific role this person had in this specific media item
+    media_role = models.CharField(max_length=100, blank=True, null=True) # e.g., Voice Actor, Director, Author
+    date_added = models.DateTimeField(default=timezone.now)
+    
+    class Meta:
+        ordering = ['-date_added']
+        # This prevents assigning the exact same person to the exact same item with the exact same role multiple times
+        unique_together = ('item', 'person', 'media_role') 
+        
+    def __str__(self):
+        role_str = f" as {self.media_role}" if self.media_role else ""
+        return f"{self.person.name}{role_str} in {self.item.title}"
 
 class CalendarEvent(models.Model):
     item = models.ForeignKey(
@@ -257,6 +287,7 @@ class AppSettings(models.Model):
             {"id": "music", "name": "Music", "visible": True},
             {"id": "screenshots", "name": "Screenshots", "visible": True},
             {"id": "cast", "name": "Cast & Characters", "visible": True},
+            {"id": "people", "name": "People", "visible": True},
             {"id": "journal", "name": "Journal", "visible": True},
             {"id": "recommendations", "name": "Recommendations", "visible": True},
         ]

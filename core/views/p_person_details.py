@@ -8,8 +8,9 @@ from django.http import JsonResponse
 from django.utils.text import slugify
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_POST
+from core.models import FavoritePerson, MediaItem, MediaPersonLink
+from core.services.g_utils import normalize_search_text
 
-from core.models import FavoritePerson
 from core.services.m_people import (
     fetch_actor_data,
     fetch_character_data,
@@ -140,3 +141,84 @@ def character_detail_api(request, character_id):
             f"Error in character_detail_api for character_id {character_id}: {str(e)}"
         )
         return JsonResponse({"error": "Internal server error"}, status=500)
+
+@ensure_csrf_cookie
+@require_GET
+def search_local_media(request):
+    try:
+        query = request.GET.get('q', '').strip()
+        if not query:
+            return JsonResponse({'results': []})
+            
+        queryset = MediaItem.objects.all()
+        normalized_query = normalize_search_text(query)
+        search_data = queryset.values_list('id', 'title', 'creators')
+        matching_ids = []
+        
+        for item_id, title, creators in search_data:
+            target_text = normalize_search_text(title)
+            if creators and isinstance(creators, list):
+                target_text += " " + normalize_search_text(" ".join(creators))
+            elif creators and isinstance(creators, str):
+                target_text += " " + normalize_search_text(creators)
+                
+            if normalized_query in target_text:
+                matching_ids.append(item_id)
+        
+        items = queryset.filter(id__in=matching_ids)[:15]
+        
+        results = []
+        for i in items:
+            year = i.release_date[:4] if i.release_date else ""
+            results.append({
+                'id': i.id, 
+                'title': i.title, 
+                'cover': i.cover_url or "/static/core/img/placeholder.png", 
+                'year': year,
+                'type': i.get_media_type_display()
+            })
+        return JsonResponse({'results': results})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
+
+@ensure_csrf_cookie
+@require_POST
+def assign_media_to_person(request):
+    try:
+        data = json.loads(request.body)
+        person_id = data.get('person_id')
+        person_type = data.get('person_type')
+        media_ids = data.get('media_ids', [])
+        
+        person = FavoritePerson.objects.get(person_id=person_id, type=person_type)
+        for m_id in media_ids:
+            item = MediaItem.objects.get(id=m_id)
+            MediaPersonLink.objects.get_or_create(item=item, person=person)
+        return JsonResponse({'success': True})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
+
+@ensure_csrf_cookie
+@require_POST
+def remove_assigned_media(request):
+    try:
+        data = json.loads(request.body)
+        link_id = data.get('link_id')
+        MediaPersonLink.objects.get(id=link_id).delete()
+        return JsonResponse({'success': True})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
+
+@ensure_csrf_cookie
+@require_POST
+def update_assigned_role(request):
+    try:
+        data = json.loads(request.body)
+        link_id = data.get('link_id')
+        new_role = data.get('role', '')
+        link = MediaPersonLink.objects.get(id=link_id)
+        link.media_role = new_role
+        link.save()
+        return JsonResponse({'success': True})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)

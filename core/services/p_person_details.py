@@ -44,10 +44,16 @@ def refresh_favorite_person(person_id, refresh_mode="data"):
             if actor_data:
                 fresh_image_url = actor_data.get("image")
                 additional_data = {
-                    "birthday": actor_data.get("birthday"),
-                    "deathday": actor_data.get("deathday"),
+                    "role": actor_data.get("role"),
+                    "age": actor_data.get("age"),
+                    "birthday": actor_data.get("birthday_raw") or actor_data.get("birthday"),
+                    "deathday": actor_data.get("deathday_raw") or actor_data.get("deathday"),
                     "biography": actor_data.get("biography"),
+                    "known_for": actor_data.get("known_for"),
                     "related_media": actor_data.get("related_media"),
+                    "directed": actor_data.get("directed"),
+                    "produced": actor_data.get("produced"),
+                    "crew_credits": actor_data.get("crew_credits"),
                 }
         elif person_type == "character" and api_person_id:
             character_data = fetch_character_data(api_person_id)

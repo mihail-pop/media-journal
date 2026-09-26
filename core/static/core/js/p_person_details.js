@@ -414,4 +414,203 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
     }
+
+    // -----------------------------------------
+    // Assign Media & Edit Role Logic
+    // -----------------------------------------
+    
+    // Move the Assign UI to the top-most section header
+    const firstSectionHeader = document.querySelector('.related-media-section .section-title-wrapper');
+    const assignContainer = document.getElementById('assign-media-container');
+    
+    if (firstSectionHeader && assignContainer) {
+        firstSectionHeader.appendChild(assignContainer);
+        assignContainer.style.display = 'flex';
+    }
+
+    const showAssignBtn = document.getElementById('show-assign-search-btn');
+    const assignWrapper = document.getElementById('assign-search-wrapper');
+    const assignInput = document.getElementById('assign-search-input');
+    const assignDropdown = document.getElementById('assign-dropdown');
+    const assignTagsContainer = document.getElementById('assign-tags');
+    const confirmAssignBtn = document.getElementById('confirm-assign-btn');
+    const cancelAssignBtn = document.getElementById('cancel-assign-btn');
+    
+    let selectedMediaIds = new Map(); // Maps ID -> Title
+    let searchTimeout = null;
+
+    if (showAssignBtn) {
+        showAssignBtn.addEventListener('click', () => {
+            showAssignBtn.style.display = 'none';
+            assignWrapper.style.display = 'flex';
+            assignInput.focus();
+        });
+        
+        cancelAssignBtn.addEventListener('click', () => {
+            assignWrapper.style.display = 'none';
+            showAssignBtn.style.display = 'flex';
+            assignInput.value = '';
+            assignDropdown.style.display = 'none';
+            selectedMediaIds.clear();
+            renderAssignTags();
+        });
+
+        // Search logic
+        assignInput.addEventListener('input', (e) => {
+            clearTimeout(searchTimeout);
+            const query = e.target.value.trim();
+            if (!query) {
+                assignDropdown.style.display = 'none';
+                return;
+            }
+            
+            searchTimeout = setTimeout(() => {
+                fetch(`/api/person/search_media/?q=${encodeURIComponent(query)}`)
+                .then(res => res.json())
+                .then(data => {
+                    assignDropdown.innerHTML = '';
+                    if (data.results.length === 0) {
+                        assignDropdown.innerHTML = '<div class="assign-search-item" style="justify-content: center; cursor: default;">No results found in library.</div>';
+                    } else {
+                        data.results.forEach(item => {
+                            const div = document.createElement('div');
+                            div.className = 'assign-search-item';
+                            div.innerHTML = `
+                                <img src="${item.cover}" alt="cover">
+                                <div>
+                                    <div style="font-weight: 600;">${item.title}</div>
+                                    <div style="font-size: 0.8rem; color: #8596a5;">${item.type} ${item.year ? '• ' + item.year : ''}</div>
+                                </div>
+                            `;
+                            div.addEventListener('click', () => {
+                                if (!selectedMediaIds.has(item.id)) {
+                                    selectedMediaIds.set(item.id, item.title);
+                                    renderAssignTags();
+                                }
+                                assignInput.value = '';
+                                assignDropdown.style.display = 'none';
+                                assignInput.focus();
+                            });
+                            assignDropdown.appendChild(div);
+                        });
+                    }
+                    assignDropdown.style.display = 'block';
+                });
+            }, 300);
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (assignWrapper && !assignWrapper.contains(e.target)) {
+                assignDropdown.style.display = 'none';
+            }
+        });
+
+        function renderAssignTags() {
+            assignTagsContainer.innerHTML = '';
+            selectedMediaIds.forEach((title, id) => {
+                const tag = document.createElement('div');
+                tag.className = 'assign-tag';
+                tag.innerHTML = `${title} <span>✕</span>`;
+                tag.querySelector('span').addEventListener('click', () => {
+                    selectedMediaIds.delete(id);
+                    renderAssignTags();
+                });
+                assignTagsContainer.appendChild(tag);
+            });
+        }
+
+        // Save Assignment
+        confirmAssignBtn.addEventListener('click', () => {
+            if (selectedMediaIds.size === 0) return;
+            
+            const favForm = document.getElementById('favorite-form');
+            const personId = favForm.dataset.personId;
+            const personType = favForm.dataset.personType;
+            
+            fetch('/api/person/assign_media/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+                body: JSON.stringify({ person_id: personId, person_type: personType, media_ids: Array.from(selectedMediaIds.keys()) })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    sessionStorage.setItem('personRefreshSuccess', '1');
+                    location.reload();
+                } else {
+                    showNotification(data.error, "warning");
+                }
+            });
+        });
+    }
+
+    // Handle Remove Action
+    document.querySelectorAll('.remove-assign-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const linkId = btn.dataset.linkId;
+            fetch('/api/person/remove_media/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+                body: JSON.stringify({ link_id: linkId })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) location.reload();
+            });
+        });
+    });
+
+    // Edit Role Modal Logic
+    const roleModal = document.getElementById('edit-role-modal');
+    const roleOverlay = document.getElementById('edit-role-overlay');
+    const roleInput = document.getElementById('edit-role-input');
+    const roleLinkIdInput = document.getElementById('edit-role-link-id');
+    const saveRoleBtn = document.getElementById('save-role-btn');
+    const closeRoleBtn = document.getElementById('close-role-modal-btn');
+    const closeRoleIcon = document.getElementById('close-role-modal-icon');
+
+    function closeRoleModal() {
+        roleModal.classList.add('pc-modal-hidden');
+        roleOverlay.classList.add('pc-modal-hidden');
+        document.body.classList.remove('c-modal-open');
+    }
+
+    document.querySelectorAll('.edit-role-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            roleLinkIdInput.value = btn.dataset.linkId;
+            roleInput.value = btn.dataset.role;
+            
+            roleModal.classList.remove('pc-modal-hidden');
+            roleOverlay.classList.remove('pc-modal-hidden');
+            document.body.classList.add('c-modal-open');
+            roleInput.focus();
+        });
+    });
+
+    [closeRoleBtn, closeRoleIcon, roleOverlay].forEach(el => {
+        if(el) el.addEventListener('click', closeRoleModal);
+    });
+
+    if (saveRoleBtn) {
+        saveRoleBtn.addEventListener('click', () => {
+            fetch('/api/person/update_role/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+                body: JSON.stringify({ link_id: roleLinkIdInput.value, role: roleInput.value })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    sessionStorage.setItem('personRefreshSuccess', '1');
+                    location.reload();
+                } else {
+                    showNotification(data.error, "warning");
+                }
+            });
+        });
+    }
+
 });

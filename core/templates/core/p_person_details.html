@@ -56,9 +56,10 @@
     <div class="right-column">
       <div class="text-info">
         <h1>{{ person_name }}</h1>
-        {% if person_type == 'character' and person_data.age %}
-        <p class="release-date" style="margin-bottom: 5px;"><strong>Age:</strong> {{ person_data.age }}</p>
-        {% endif %}
+        <p class="release-date" style="margin-bottom: 5px;">
+          {% if person_data.role %}<strong>{{ person_data.role }}</strong>{% endif %}
+          {% if person_data.age %} • Age: {{ person_data.age }}{% endif %}
+        </p>
         <div class="overview-container" style="margin-top: 0 !important;">
           <p class="overview">{% if person_data.biography %}{{ person_data.biography|safe_html }}{% elif person_data.description %}{{ person_data.description|safe_html }}{% else %}No information available{% endif %}</p>
           <button class="read-more-btn">Read More</button>
@@ -78,10 +79,87 @@
 <div class="main-colored-section">
   <div class="detail-container">
     
+    <!-- The Search UI Wrapper (Moved dynamically via JS to the first header) -->
+    <div id="assign-media-container" class="assign-media-container" style="display: none;">
+      <button class="add-custom-person-btn" id="show-assign-search-btn" title="Assign Media from Library">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+      </button>
+      
+      <div class="assign-search-wrapper" id="assign-search-wrapper" style="display:none;">
+        <div class="assign-search-inner">
+          <div id="assign-tags" class="assign-tags-container"></div>
+          <input type="text" id="assign-search-input" placeholder="Search library..." autocomplete="off">
+        </div>
+        <div id="assign-dropdown" class="assign-search-dropdown"></div>
+        <button class="pc-btn pc-save-btn assign-btn-small" id="confirm-assign-btn">Add</button>
+        <button class="pc-btn pc-cancel assign-btn-small" id="cancel-assign-btn">X</button>
+      </div>
+    </div>
+    
+    <!-- Assigned Media (In Your Journal) section -->
+    {% if person_data.assigned_media %}
+    <section class="related-media-section" id="journal-entries-section">
+      <div class="section-title-wrapper">
+        <h2>In Your Journal</h2>
+      </div>
+      <div class="related-media-list">
+        {% for media in person_data.assigned_media %}
+        <div class="media-card assigned-card" {% if media.url and media.url != '#' %}style="cursor: pointer;" onclick="window.location.href='{{ media.url }}'"{% endif %}>
+          <div class="assigned-card-actions" onclick="event.stopPropagation();">
+            <button class="assigned-action-btn edit-role-btn" title="Edit Role" data-link-id="{{ media.link_id }}" data-role="{{ media.media_role_raw }}">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+            </button>
+            <button class="assigned-action-btn remove-btn remove-assign-btn" title="Remove Media" data-link-id="{{ media.link_id }}">✕</button>
+          </div>
+          <div class="media-image-wrapper">
+            <img src="{% if media.image %}{{ media.image }}{% else %}{% static 'core/img/placeholder.png' %}{% endif %}" alt="{{ media.title }}" onerror="this.src='{% static 'core/img/placeholder.png' %}'" />
+          </div>
+          <div class="card-title-overlay">
+            <p class="media-title">{{ media.title }}</p>
+            {% if media.character %}<p class="media-character">{{ media.character }}</p>{% endif %}
+            <div class="media-meta-row">
+              {% if media.type_display %}<span class="media-type">{{ media.type_display }}</span>{% endif %}
+              {% if media.formatted_date %}<span class="media-year">{{ media.formatted_date|slice:"-4:" }}</span>{% endif %}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    <!-- Known For section -->
+    {% if person_data.known_for %}
+    <section class="related-media-section">
+      <div class="section-title-wrapper">
+        <h2>Known For</h2>
+      </div>
+      <div class="related-media-list">
+        {% for media in person_data.known_for %}
+        <div class="media-card" {% if media.url and media.url != '#' %}style="cursor: pointer;" onclick="window.location.href='{{ media.url }}'"{% endif %}>
+          <div class="media-image-wrapper">
+            <img src="{% if media.poster_path %}{{ media.poster_path }}{% elif media.image %}{{ media.image }}{% else %}{% static 'core/img/placeholder.png' %}{% endif %}" alt="{{ media.title }}" onerror="this.src='{% static 'core/img/placeholder.png' %}'" />
+          </div>
+          <div class="card-title-overlay">
+            <p class="media-title">{{ media.title }}</p>
+            {% if media.character %}<p class="media-character">{{ media.character }}</p>{% endif %}
+            <div class="media-meta-row">
+              {% if media.type_display %}<span class="media-type">{{ media.type_display }}</span>{% endif %}
+              {% if media.formatted_date %}<span class="media-year">{{ media.formatted_date|slice:"-4:" }}</span>{% endif %}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
     <!-- Related Media section -->
     {% if person_data.related_media or person_data.media_appearances %}
     <section class="related-media-section">
-      <h2>{% if person_type == 'actor' %}Played In{% else %}Appears In{% endif %}</h2>
+      <div class="section-title-wrapper">
+        <h2>{% if person_type == 'actor' %}Played In{% else %}Appears In{% endif %}</h2>
+      </div>
       <div class="related-media-list">
         {% if person_data.related_media %}
           {% for media in person_data.related_media %}
@@ -122,7 +200,9 @@
     <!-- Voice Actors section (for characters) -->
     {% if person_type == 'character' and person_data.voice_actors %}
     <section class="voice-actors-section">
-      <h2>Voice Actors</h2>
+      <div class="section-title-wrapper">
+        <h2>Voice Actors</h2>
+      </div>
       <div class="voice-actors-list">
         {% for va in person_data.voice_actors %}
         <div class="media-card">
@@ -132,6 +212,84 @@
           <div class="card-title-overlay">
             <p class="media-title">{{ va.name }}</p>
             <span class="media-language">{{ va.language }}</span>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    <!-- Directed section -->
+    {% if person_data.directed %}
+    <section class="related-media-section">
+      <div class="section-title-wrapper">
+        <h2>Directed</h2>
+      </div>
+      <div class="related-media-list">
+        {% for media in person_data.directed %}
+        <div class="media-card" {% if media.url and media.url != '#' %}style="cursor: pointer;" onclick="window.location.href='{{ media.url }}'"{% endif %}>
+          <div class="media-image-wrapper">
+            <img src="{% if media.poster_path %}{{ media.poster_path }}{% elif media.image %}{{ media.image }}{% else %}{% static 'core/img/placeholder.png' %}{% endif %}" alt="{{ media.title }}" onerror="this.src='{% static 'core/img/placeholder.png' %}'" />
+          </div>
+          <div class="card-title-overlay">
+            <p class="media-title">{{ media.title }}</p>
+            {% if media.character %}<p class="media-character">{{ media.character }}</p>{% endif %}
+            <div class="media-meta-row">
+              {% if media.type_display %}<span class="media-type">{{ media.type_display }}</span>{% endif %}
+              {% if media.formatted_date %}<span class="media-year">{{ media.formatted_date|slice:"-4:" }}</span>{% endif %}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    <!-- Produced section -->
+    {% if person_data.produced %}
+    <section class="related-media-section">
+      <div class="section-title-wrapper">
+        <h2>Produced</h2>
+      </div>
+      <div class="related-media-list">
+        {% for media in person_data.produced %}
+        <div class="media-card" {% if media.url and media.url != '#' %}style="cursor: pointer;" onclick="window.location.href='{{ media.url }}'"{% endif %}>
+          <div class="media-image-wrapper">
+            <img src="{% if media.poster_path %}{{ media.poster_path }}{% elif media.image %}{{ media.image }}{% else %}{% static 'core/img/placeholder.png' %}{% endif %}" alt="{{ media.title }}" onerror="this.src='{% static 'core/img/placeholder.png' %}'" />
+          </div>
+          <div class="card-title-overlay">
+            <p class="media-title">{{ media.title }}</p>
+            {% if media.character %}<p class="media-character">{{ media.character }}</p>{% endif %}
+            <div class="media-meta-row">
+              {% if media.type_display %}<span class="media-type">{{ media.type_display }}</span>{% endif %}
+              {% if media.formatted_date %}<span class="media-year">{{ media.formatted_date|slice:"-4:" }}</span>{% endif %}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    <!-- Crew section -->
+    {% if person_data.crew_credits %}
+    <section class="related-media-section">
+      <div class="section-title-wrapper">
+        <h2>Crew</h2>
+      </div>
+      <div class="related-media-list">
+        {% for media in person_data.crew_credits %}
+        <div class="media-card" {% if media.url and media.url != '#' %}style="cursor: pointer;" onclick="window.location.href='{{ media.url }}'"{% endif %}>
+          <div class="media-image-wrapper">
+            <img src="{% if media.poster_path %}{{ media.poster_path }}{% elif media.image %}{{ media.image }}{% else %}{% static 'core/img/placeholder.png' %}{% endif %}" alt="{{ media.title }}" onerror="this.src='{% static 'core/img/placeholder.png' %}'" />
+          </div>
+          <div class="card-title-overlay">
+            <p class="media-title">{{ media.title }}</p>
+            {% if media.character %}<p class="media-character">{{ media.character }}</p>{% endif %}
+            <div class="media-meta-row">
+              {% if media.type_display %}<span class="media-type">{{ media.type_display }}</span>{% endif %}
+              {% if media.formatted_date %}<span class="media-year">{{ media.formatted_date|slice:"-4:" }}</span>{% endif %}
+            </div>
           </div>
         </div>
         {% endfor %}
@@ -161,6 +319,9 @@
           <input type="hidden" name="person_type" value="{{ person_type }}">
           <input type="text" name="name" class="pc-title-input" value="{{ person_name }}" required autocomplete="off">
           
+          <!-- New Role Input -->
+          <input type="text" name="role" class="pc-title-input" value="{{ person_data.role|default:'' }}" placeholder="Role (e.g. Actor, Director, Character)" autocomplete="off" style="margin-top: 10px; opacity: 0.8;">
+          
           <div class="pc-form-group">
             <label>Overview</label>
             <textarea name="overview" required>{% if person_type == 'actor' %}{{ person_data.biography }}{% else %}{{ person_data.description }}{% endif %}</textarea>
@@ -188,6 +349,22 @@
   </div>
 </div>
 <div id="edit-person-overlay" class="pc-modal-overlay pc-modal-hidden"></div>
+
+<!-- Edit Media Role Modal -->
+<div id="edit-role-modal" class="pc-modal pc-modal-hidden" style="max-width: 400px; text-align: center;">
+  <div class="pc-modal-content" style="padding: 2.5rem 2rem;">
+    <button type="button" class="pc-close-btn" id="close-role-modal-icon">X</button>
+    <h3 style="margin-bottom: 1.5rem; color: var(--text-light); font-size: 1.5rem;">Edit Role</h3>
+    <input type="hidden" id="edit-role-link-id">
+    <input type="text" id="edit-role-input" class="pc-title-input" placeholder="Role (e.g. Director, Main Character)" style="width:100%; margin-bottom: 2rem; text-align: center; font-size: 1.2rem;">
+    <div class="pc-modal-buttons" style="justify-content: center; margin-top:0;">
+      <button type="button" class="pc-btn pc-cancel" id="close-role-modal-btn">Cancel</button>
+      <button type="button" class="pc-btn pc-save-btn" id="save-role-btn">Save</button>
+    </div>
+  </div>
+</div>
+<div id="edit-role-overlay" class="pc-modal-overlay pc-modal-hidden"></div>
+
 {% endblock %}
 
 {% block script %}

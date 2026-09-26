@@ -8,7 +8,7 @@ import requests
 from django.conf import settings
 from django.utils.text import slugify
 
-from core.models import APIKey, FavoritePerson
+from core.models import APIKey, FavoritePerson, MediaPersonLink
 from core.services.g_utils import download_image
 
 logger = logging.getLogger(__name__)
@@ -86,32 +86,40 @@ def character_search(query):
         return []
 
 
+def calculate_age(birth_date, death_date=None):
+    if not birth_date:
+        return ""
+    try:
+        birth = datetime.datetime.strptime(birth_date, "%Y-%m-%d")
+        end = datetime.datetime.strptime(death_date, "%Y-%m-%d") if death_date else datetime.datetime.now()
+        age = end.year - birth.year - ((end.month, end.day) < (birth.month, birth.day))
+        return str(age)
+    except ValueError:
+        return ""
+
 def fetch_actor_data(actor_id):
     """Fetch actor data from database or TMDB API"""
     try:
-        # Check if actor exists in database
         actor = FavoritePerson.objects.get(person_id=str(actor_id), type="actor")
-        # Ensure database stored media has the required fields
-        related_media = actor.related_media or []
-        for media in related_media:
-            if "url" not in media and media.get("id") and media.get("media_type"):
-                media["url"] = f"/tmdb/{media['media_type']}/{media['id']}/"
-            if "type_display" not in media:
-                media["type_display"] = (
-                    "Movie" if media.get("media_type") == "movie" else "TV Show"
-                )
-            if "formatted_date" not in media and media.get("release_date"):
-                try:
-                    parsed_date = datetime.datetime.strptime(
-                        media["release_date"], "%Y-%m-%d"
-                    )
-                    media["formatted_date"] = parsed_date.strftime("%b %Y")
-                except ValueError:
-                    media["formatted_date"] = media["release_date"]
-            if "character" not in media:
-                media["character"] = ""
+        
+        # Helper to format saved JSON media
+        def fix_media_list(media_list):
+            if not media_list: return []
+            for media in media_list:
+                if "url" not in media and media.get("id") and media.get("media_type"):
+                    media["url"] = f"/tmdb/{media['media_type']}/{media['id']}/"
+                if "type_display" not in media:
+                    media["type_display"] = "Movie" if media.get("media_type") == "movie" else "TV Show"
+                if "formatted_date" not in media and media.get("release_date"):
+                    try:
+                        parsed_date = datetime.datetime.strptime(media["release_date"], "%Y-%m-%d")
+                        media["formatted_date"] = parsed_date.strftime("%b %Y")
+                    except ValueError:
+                        media["formatted_date"] = media["release_date"]
+                if "character" not in media:
+                    media["character"] = ""
+            return media_list
 
-        # Format dates
         formatted_birthday = ""
         if actor.birthday:
             try:
@@ -128,14 +136,49 @@ def fetch_actor_data(actor_id):
             except ValueError:
                 formatted_deathday = actor.deathday
 
+        # Get linked media from "Media Journal" database
+        assigned_media = []
+        links = MediaPersonLink.objects.filter(person=actor).select_related('item')
+        for link in links:
+            item = link.item
+            
+            fmt_date = ""
+            if item.release_date:
+                try:
+                    parsed = datetime.datetime.strptime(item.release_date, "%Y-%m-%d")
+                    fmt_date = parsed.strftime("%b %Y")
+                except ValueError:
+                    fmt_date = item.release_date
+            
+            assigned_media.append({
+                "id": item.id,
+                "link_id": link.id,
+                "title": item.title,
+                "image": item.cover_url,
+                "type_display": item.get_media_type_display(),
+                "character": link.media_role or actor.role or "Actor",
+                "media_role_raw": link.media_role or "",
+                "formatted_date": fmt_date,
+                "url": f"/media/{item.id}/", 
+            })
+
         return {
             "id": actor.person_id,
             "name": actor.name,
+            "role": actor.role or "Actor",
+            "age": actor.age or calculate_age(actor.birthday, actor.deathday),
             "birthday": formatted_birthday,
+            "birthday_raw": actor.birthday,
             "deathday": formatted_deathday,
+            "deathday_raw": actor.deathday,
             "biography": actor.biography,
             "image": actor.image_url,
-            "related_media": related_media,
+            "known_for": fix_media_list(actor.known_for),
+            "related_media": fix_media_list(actor.related_media),
+            "directed": fix_media_list(actor.directed),
+            "produced": fix_media_list(actor.produced),
+            "crew_credits": fix_media_list(actor.crew_credits),
+            "assigned_media": assigned_media
         }
     except FavoritePerson.DoesNotExist:
         pass
@@ -143,8 +186,6 @@ def fetch_actor_data(actor_id):
     # Fetch from TMDB API
     try:
         api_key = APIKey.objects.get(name="tmdb").key_1
-
-        # Get person details
         person_url = f"https://api.themoviedb.org/3/person/{actor_id}"
         person_response = requests.get(person_url, params={"api_key": api_key})
 
@@ -152,72 +193,102 @@ def fetch_actor_data(actor_id):
             return None
 
         person_data = person_response.json()
-
-        # Get combined credits
         credits_url = f"https://api.themoviedb.org/3/person/{actor_id}/combined_credits"
         credits_response = requests.get(credits_url, params={"api_key": api_key})
 
+        known_for = []
         related_media = []
+        directed = []
+        produced = []
+        crew_credits = []
+        all_credits_for_sorting = []
+
         if credits_response.status_code == 200:
             credits_data = credits_response.json()
-            for credit in credits_data.get("cast", []):  # Limit to 20 entries
+            
+            def format_tmdb_credit(credit, is_crew=False):
                 media_type = credit.get("media_type")
-                if media_type in ["movie", "tv"]:
-                    release_date = credit.get("release_date") or credit.get(
-                        "first_air_date"
-                    )
-                    formatted_date = ""
-                    if release_date:
-                        try:
-                            parsed_date = datetime.datetime.strptime(
-                                release_date, "%Y-%m-%d"
-                            )
-                            formatted_date = parsed_date.strftime("%b %Y")
-                        except ValueError:
-                            formatted_date = release_date
+                if media_type not in ["movie", "tv"]: return None
+                if not credit.get("poster_path"): return None
+                
+                release_date = credit.get("release_date") or credit.get("first_air_date")
+                formatted_date = ""
+                if release_date:
+                    try:
+                        parsed_date = datetime.datetime.strptime(release_date, "%Y-%m-%d")
+                        formatted_date = parsed_date.strftime("%b %Y")
+                    except ValueError:
+                        formatted_date = release_date
 
-                    related_media.append(
-                        {
-                            "id": credit.get("id"),
-                            "title": credit.get("title") or credit.get("name"),
-                            "media_type": media_type,
-                            "type_display": "Movie"
-                            if media_type == "movie"
-                            else "TV Show",
-                            "release_date": release_date,
-                            "formatted_date": formatted_date,
-                            "poster_path": f"https://image.tmdb.org/t/p/original{credit.get('poster_path')}"
-                            if credit.get("poster_path")
-                            else None,
-                            "character": credit.get("character") or "",
-                            "url": f"/tmdb/{media_type}/{credit.get('id')}/",
-                        }
-                    )
+                return {
+                    "id": credit.get("id"),
+                    "title": credit.get("title") or credit.get("name"),
+                    "media_type": media_type,
+                    "type_display": "Movie" if media_type == "movie" else "TV Show",
+                    "release_date": release_date,
+                    "formatted_date": formatted_date,
+                    "poster_path": f"https://image.tmdb.org/t/p/original{credit.get('poster_path')}",
+                    "character": credit.get("job") if is_crew else (credit.get("character") or ""),
+                    "url": f"/tmdb/{media_type}/{credit.get('id')}/",
+                    "vote_count": credit.get("vote_count", 0)
+                }
 
-            # Sort by release date (latest first)
-            related_media.sort(
-                key=lambda x: x.get("release_date") or "0000-00-00", reverse=True
-            )
+            # Process Cast (Played In)
+            seen_cast = set()
+            for credit in credits_data.get("cast", []):
+                fmt = format_tmdb_credit(credit)
+                if fmt and fmt["title"] not in seen_cast:
+                    related_media.append(fmt)
+                    all_credits_for_sorting.append(fmt)
+                    seen_cast.add(fmt["title"])
 
-        # Filter media: remove entries without poster and deduplicate by title
-        filtered_media = []
-        seen_titles = set()
-        for media in related_media:
-            if not media.get("poster_path"):
-                continue
-            title = media.get("title", "")
-            if title in seen_titles:
-                continue
-            seen_titles.add(title)
-            filtered_media.append(media)
+            # Process Crew
+            seen_crew = set()
+            for credit in credits_data.get("crew", []):
+                fmt = format_tmdb_credit(credit, is_crew=True)
+                if not fmt: continue
+                
+                # Prevent exact job-title duplicates
+                job_key = f"{fmt['title']}-{fmt['character']}"
+                if job_key in seen_crew: continue
+                seen_crew.add(job_key)
+                
+                job = credit.get("job", "")
+                dept = credit.get("department", "")
+                
+                if job == "Director":
+                    directed.append(fmt)
+                elif job == "Producer" or dept == "Production":
+                    produced.append(fmt)
+                else:
+                    crew_credits.append(fmt)
+                    
+                # Add to all credits for "Known For" if title isn't already there
+                if not any(c["title"] == fmt["title"] for c in all_credits_for_sorting):
+                    all_credits_for_sorting.append(fmt)
 
-        # Format dates
+            # Sort lists by newest release date
+            def sort_by_date(lst):
+                lst.sort(key=lambda x: x.get("release_date") or "0000-00-00", reverse=True)
+                
+            sort_by_date(related_media)
+            sort_by_date(directed)
+            sort_by_date(produced)
+            sort_by_date(crew_credits)
+            
+            # Extract Known For (Top 10 highest vote counts)
+            all_credits_for_sorting.sort(key=lambda x: x.get("vote_count", 0), reverse=True)
+            known_for = all_credits_for_sorting[:10]
+
+        # Figure out Role
+        dept = person_data.get("known_for_department", "")
+        role_map = {"Acting": "Actor", "Directing": "Director", "Production": "Producer", "Writing": "Writer"}
+        general_role = role_map.get(dept, dept) or "Actor"
+
         formatted_birthday = ""
         if person_data.get("birthday"):
             try:
-                parsed = datetime.datetime.strptime(
-                    person_data.get("birthday"), "%Y-%m-%d"
-                )
+                parsed = datetime.datetime.strptime(person_data.get("birthday"), "%Y-%m-%d")
                 formatted_birthday = parsed.strftime("%d %B %Y")
             except ValueError:
                 formatted_birthday = person_data.get("birthday")
@@ -225,9 +296,7 @@ def fetch_actor_data(actor_id):
         formatted_deathday = ""
         if person_data.get("deathday"):
             try:
-                parsed = datetime.datetime.strptime(
-                    person_data.get("deathday"), "%Y-%m-%d"
-                )
+                parsed = datetime.datetime.strptime(person_data.get("deathday"), "%Y-%m-%d")
                 formatted_deathday = parsed.strftime("%d %B %Y")
             except ValueError:
                 formatted_deathday = person_data.get("deathday")
@@ -235,13 +304,20 @@ def fetch_actor_data(actor_id):
         return {
             "id": str(person_data.get("id")),
             "name": person_data.get("name"),
+            "role": general_role,
+            "age": calculate_age(person_data.get("birthday"), person_data.get("deathday")),
             "birthday": formatted_birthday,
+            "birthday_raw": person_data.get("birthday"),
             "deathday": formatted_deathday,
+            "deathday_raw": person_data.get("deathday"),
             "biography": person_data.get("biography"),
-            "image": f"https://image.tmdb.org/t/p/original{person_data.get('profile_path')}"
-            if person_data.get("profile_path")
-            else None,
-            "related_media": filtered_media,
+            "image": f"https://image.tmdb.org/t/p/original{person_data.get('profile_path')}" if person_data.get("profile_path") else None,
+            "known_for": known_for,
+            "related_media": related_media,
+            "directed": directed,
+            "produced": produced,
+            "crew_credits": crew_credits,
+            "assigned_media": [] # Empty when fetching freshly from API
         }
 
     except Exception as e:
@@ -306,14 +382,42 @@ def fetch_character_data(character_id):
                 except ValueError:
                     media["formatted_date"] = media["release_date"]
 
+        # Get linked media from "Media Journal" database
+        assigned_media = []
+        links = MediaPersonLink.objects.filter(person=character).select_related('item')
+        for link in links:
+            item = link.item
+            
+            fmt_date = ""
+            if item.release_date:
+                try:
+                    parsed = datetime.datetime.strptime(item.release_date, "%Y-%m-%d")
+                    fmt_date = parsed.strftime("%b %Y")
+                except ValueError:
+                    fmt_date = item.release_date
+            
+            assigned_media.append({
+                "id": item.id,
+                "link_id": link.id,
+                "title": item.title,
+                "image": item.cover_url,
+                "type_display": item.get_media_type_display(),
+                "character": link.media_role or character.role or "Character",
+                "media_role_raw": link.media_role or "",
+                "formatted_date": fmt_date,
+                "url": f"/media/{item.id}/", 
+            })
+
         return {
             "id": character.person_id,
             "name": character.name,
+            "role": character.role or "Character",
             "image": character.image_url,
             "description": character.description,
             "age": character.age,
             "media_appearances": media_appearances,
             "voice_actors": character.voice_actors or [],
+            "assigned_media": assigned_media,
         }
     except FavoritePerson.DoesNotExist:
         pass
@@ -505,6 +609,7 @@ def fetch_character_data(character_id):
         return {
             "id": str(character_data.get("id")),
             "name": character_data.get("name", {}).get("full"),
+            "role": "Character",
             "image": character_data.get("image", {}).get("large"),
             "description": description,
             "age": age,
@@ -524,19 +629,24 @@ def save_favorite_actor_character(name, image_url, type, person_id=None):
     timestamp = int(time.time() * 1000)
     slug_name = slugify(name)
 
-    # Fetch additional data based on type and get high-quality image
     additional_data = {}
-    high_quality_image_url = image_url  # fallback
+    high_quality_image_url = image_url  
     
     if type == "actor" and person_id:
         actor_data = fetch_actor_data(person_id)
         if actor_data:
             high_quality_image_url = actor_data.get("image") or image_url
             additional_data = {
-                "birthday": actor_data.get("birthday"),
-                "deathday": actor_data.get("deathday"),
+                "role": actor_data.get("role"),
+                "age": actor_data.get("age"),
+                "birthday": actor_data.get("birthday_raw") or actor_data.get("birthday"),
+                "deathday": actor_data.get("deathday_raw") or actor_data.get("deathday"),
                 "biography": actor_data.get("biography"),
+                "known_for": actor_data.get("known_for"),
                 "related_media": actor_data.get("related_media"),
+                "directed": actor_data.get("directed"),
+                "produced": actor_data.get("produced"),
+                "crew_credits": actor_data.get("crew_credits"),
             }
     elif type == "character" and person_id:
         character_data = fetch_character_data(person_id)
@@ -549,11 +659,9 @@ def save_favorite_actor_character(name, image_url, type, person_id=None):
                 "voice_actors": character_data.get("voice_actors"),
             }
 
-    # Prepare local path
     ext = high_quality_image_url.split(".")[-1].split("?")[0]
     relative_path = f"favorites/{type}s/{slug_name}_{timestamp}.{ext}"
 
-    # Download the high-quality image
     local_url = download_image(high_quality_image_url, relative_path)
     final_image_url = local_url if local_url else high_quality_image_url
 

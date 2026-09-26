@@ -127,7 +127,7 @@ body {
   z-index: 20001;
   background: var(--bg-tertiary);
   border-radius: 12px;
-  max-width: 500px;
+  max-width: 700px;
   width: 95%;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
   padding: 0;

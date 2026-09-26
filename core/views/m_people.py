@@ -247,6 +247,13 @@ def create_custom_person(request):
         
         # Prepare fields
         additional_data = {}
+        
+        # Determine Role
+        role = request.POST.get("role")
+        if not role:
+            role = "Actor" if person_type == "actor" else "Character"
+        additional_data["role"] = role
+
         if person_type == "actor":
             additional_data["biography"] = overview
             birthday = request.POST.get("birthday")
@@ -313,6 +320,14 @@ def edit_custom_person(request):
             return JsonResponse({"error": "Person not found."}, status=404)
 
         person.name = name
+        
+        # Update Role
+        role = request.POST.get("role")
+        if role:
+            person.role = role
+        elif not person.role:
+            person.role = "Actor" if person_type == "actor" else "Character"
+            
         if person_type == "actor":
             person.biography = overview
             person.birthday = request.POST.get("birthday")
