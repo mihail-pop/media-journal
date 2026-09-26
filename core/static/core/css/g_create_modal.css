@@ -681,6 +681,9 @@ input[name="release_date"] {
   background-color: var(--bg-primary);
   border-radius: 6px;
   min-height: 1.8rem;
+  max-height: 5.5rem;
+  overflow-y: auto;
+  scrollbar-color: var(--text-primary) var(--bg-tertiary);
   align-items: center;
   cursor: text;
   max-width: 8.4rem;
@@ -761,6 +764,9 @@ input[name="release_date"] {
   box-shadow: 0;
   border-radius: 6px;
   min-height: 1.8rem;
+  max-height: 5.5rem;
+  overflow-y: auto;
+  scrollbar-color: var(--text-primary) var(--bg-tertiary);
   padding: 0.35rem 2.5rem 0.35rem 0.5rem;
 }
 
@@ -1165,6 +1171,8 @@ input[type="number"] {
   .c-creator-input-container,
   #create-genre-wrapper .genre-select {
     height: auto !important;
+    max-height: 12rem !important;
+    overflow-y: auto !important;
   }
 
   .c-creator-tag, 

@@ -51,11 +51,17 @@ def movies_api(request):
 
     if search:
         normalized_query = normalize_search_text(search)
-        search_data = queryset.values_list('id', 'title')
-        matching_ids = [
-            item_id for item_id, title in search_data 
-            if normalized_query in normalize_search_text(title)
-        ]
+        search_data = queryset.values_list('id', 'title', 'creators')
+        matching_ids = []
+        for item_id, title, creators in search_data:
+            target_text = normalize_search_text(title)
+            if creators and isinstance(creators, list):
+                target_text += " " + normalize_search_text(" ".join(creators))
+            elif creators and isinstance(creators, str):
+                target_text += " " + normalize_search_text(creators)
+                
+            if normalized_query in target_text:
+                matching_ids.append(item_id)
         queryset = queryset.filter(id__in=matching_ids)
 
     filter_mode = request.GET.get("filter_mode", "include")
@@ -206,11 +212,17 @@ def tvshows_api(request):
 
     if search:
         normalized_query = normalize_search_text(search)
-        search_data = queryset.values_list('id', 'title')
-        matching_ids = [
-            item_id for item_id, title in search_data 
-            if normalized_query in normalize_search_text(title)
-        ]
+        search_data = queryset.values_list('id', 'title', 'creators')
+        matching_ids = []
+        for item_id, title, creators in search_data:
+            target_text = normalize_search_text(title)
+            if creators and isinstance(creators, list):
+                target_text += " " + normalize_search_text(" ".join(creators))
+            elif creators and isinstance(creators, str):
+                target_text += " " + normalize_search_text(creators)
+                
+            if normalized_query in target_text:
+                matching_ids.append(item_id)
         queryset = queryset.filter(id__in=matching_ids)
 
     filter_mode = request.GET.get("filter_mode", "include")
@@ -380,11 +392,17 @@ def anime_api(request):
 
     if search:
         normalized_query = normalize_search_text(search)
-        search_data = queryset.values_list('id', 'title')
-        matching_ids = [
-            item_id for item_id, title in search_data 
-            if normalized_query in normalize_search_text(title)
-        ]
+        search_data = queryset.values_list('id', 'title', 'creators')
+        matching_ids = []
+        for item_id, title, creators in search_data:
+            target_text = normalize_search_text(title)
+            if creators and isinstance(creators, list):
+                target_text += " " + normalize_search_text(" ".join(creators))
+            elif creators and isinstance(creators, str):
+                target_text += " " + normalize_search_text(creators)
+                
+            if normalized_query in target_text:
+                matching_ids.append(item_id)
         queryset = queryset.filter(id__in=matching_ids)
 
     filter_mode = request.GET.get("filter_mode", "include")
@@ -538,11 +556,17 @@ def manga_api(request):
 
     if search:
         normalized_query = normalize_search_text(search)
-        search_data = queryset.values_list('id', 'title')
-        matching_ids = [
-            item_id for item_id, title in search_data 
-            if normalized_query in normalize_search_text(title)
-        ]
+        search_data = queryset.values_list('id', 'title', 'creators')
+        matching_ids = []
+        for item_id, title, creators in search_data:
+            target_text = normalize_search_text(title)
+            if creators and isinstance(creators, list):
+                target_text += " " + normalize_search_text(" ".join(creators))
+            elif creators and isinstance(creators, str):
+                target_text += " " + normalize_search_text(creators)
+                
+            if normalized_query in target_text:
+                matching_ids.append(item_id)
         queryset = queryset.filter(id__in=matching_ids)
 
     filter_mode = request.GET.get("filter_mode", "include")
@@ -707,11 +731,17 @@ def games_api(request):
 
     if search:
         normalized_query = normalize_search_text(search)
-        search_data = queryset.values_list('id', 'title')
-        matching_ids = [
-            item_id for item_id, title in search_data 
-            if normalized_query in normalize_search_text(title)
-        ]
+        search_data = queryset.values_list('id', 'title', 'creators')
+        matching_ids = []
+        for item_id, title, creators in search_data:
+            target_text = normalize_search_text(title)
+            if creators and isinstance(creators, list):
+                target_text += " " + normalize_search_text(" ".join(creators))
+            elif creators and isinstance(creators, str):
+                target_text += " " + normalize_search_text(creators)
+                
+            if normalized_query in target_text:
+                matching_ids.append(item_id)
         queryset = queryset.filter(id__in=matching_ids)
 
     filter_mode = request.GET.get("filter_mode", "include")
@@ -1012,11 +1042,17 @@ def books_api(request):
 
     if search:
         normalized_query = normalize_search_text(search)
-        search_data = queryset.values_list('id', 'title')
-        matching_ids = [
-            item_id for item_id, title in search_data 
-            if normalized_query in normalize_search_text(title)
-        ]
+        search_data = queryset.values_list('id', 'title', 'creators')
+        matching_ids = []
+        for item_id, title, creators in search_data:
+            target_text = normalize_search_text(title)
+            if creators and isinstance(creators, list):
+                target_text += " " + normalize_search_text(" ".join(creators))
+            elif creators and isinstance(creators, str):
+                target_text += " " + normalize_search_text(creators)
+                
+            if normalized_query in target_text:
+                matching_ids.append(item_id)
         queryset = queryset.filter(id__in=matching_ids)
 
     filter_mode = request.GET.get("filter_mode", "include")
@@ -1154,11 +1190,17 @@ def history_api(request):
 
     if search:
         normalized_query = normalize_search_text(search)
-        search_data = queryset.values_list('id', 'title')
-        matching_ids = [
-            item_id for item_id, title in search_data 
-            if normalized_query in normalize_search_text(title)
-        ]
+        search_data = queryset.values_list('id', 'title', 'creators')
+        matching_ids = []
+        for item_id, title, creators in search_data:
+            target_text = normalize_search_text(title)
+            if creators and isinstance(creators, list):
+                target_text += " " + normalize_search_text(" ".join(creators))
+            elif creators and isinstance(creators, str):
+                target_text += " " + normalize_search_text(creators)
+                
+            if normalized_query in target_text:
+                matching_ids.append(item_id)
         queryset = queryset.filter(id__in=matching_ids)
 
     if activity_year and activity_year != "all":

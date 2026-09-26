@@ -1666,7 +1666,12 @@ function renderExtraInfo(mediaType, data) {
   }
 
 if (data.staff?.length) {
-  const staffHTML = data.staff.map(s => `<span class="staff-member">${s}</span>`).join(", ");
+  const staffHTML = data.staff.map(s => {
+    if (s.id) {
+      return `<a href="/person/actor/${s.id}/" class="staff-member">${s.name} (${s.job})</a>`;
+    }
+    return `<span class="staff-member">${s.name} (${s.job})</span>`;
+  }).join(", ");
   safeHTML.push(`<p><span class="label">Staff: </span> ${staffHTML}</p>`);
 }
 
@@ -1868,7 +1873,12 @@ if (data.homepage) {
 }
 
 if (data.staff?.length) {
-  const staffHTML = data.staff.map(s => `<span class="staff-member">${s}</span>`).join(", ");
+  const staffHTML = data.staff.map(s => {
+    if (s.id) {
+      return `<a href="/person/actor/${s.id}/" class="staff-member">${s.name} (${s.job})</a>`;
+    }
+    return `<span class="staff-member">${s.name} (${s.job})</span>`;
+  }).join(", ");
   safeHTML.push(`<p><span class="label">Staff: </span> ${staffHTML}</p>`);
 }
 

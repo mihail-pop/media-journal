@@ -174,6 +174,8 @@
   border-radius: 6px;
   cursor: text;
   min-height: 2.5rem;
+  max-height: 5.5rem;
+  overflow-y: auto;
   align-items: center;
   position: relative;
 }
@@ -182,7 +184,7 @@
   position: absolute;
   right: 0;
   top: 0;
-  height: 100%;
+  height: 2.5rem;
   width: 2.5rem;
   display: flex;
   align-items: center;
@@ -838,6 +840,9 @@ html.md-modal-open {
   background-color: var(--bg-primary);
   border-radius: 6px;
   min-height: 1.8rem;
+  max-height: 5.5rem;
+  overflow-y: auto;
+  scrollbar-color: var(--text-primary) var(--bg-tertiary);
   align-items: center;
   cursor: text;
   width: 100%;
@@ -918,6 +923,9 @@ html.md-modal-open {
   box-shadow: 0;
   border-radius: 6px;
   min-height: 1.8rem;
+  max-height: 5.5rem;
+  overflow-y: auto;
+  scrollbar-color: var(--text-primary) var(--bg-tertiary);
   padding: 0.35rem 2.5rem 0.35rem 0.5rem;
 }
 
@@ -1232,6 +1240,8 @@ input[type="number"] {
   .md-creator-input-container,
   #metadata-genre-wrapper .md-genre-select {
     height: auto !important;
+    max-height: 12rem !important;
+    overflow-y: auto !important;
   }
 
   .md-creator-tag, 

@@ -394,7 +394,12 @@ def get_movie_extra_info(tmdb_id):
         crew = data.get("credits", {}).get("crew", [])
         allowed_jobs = ["Director", "Writer", "Screenplay", "Producer", "Art Director"]
         staff_list = [
-            f"{c['name']} ({c['job']})" for c in crew if c.get("job") in allowed_jobs
+            {
+                "id": c.get("id"),
+                "name": c.get("name"),
+                "job": c.get("job")
+            }
+            for c in crew if c.get("job") in allowed_jobs
         ]
 
         # Fetch related movies if part of a collection
@@ -512,7 +517,12 @@ def get_tv_extra_info(tmdb_id):
         crew = data.get("credits", {}).get("crew", [])
         allowed_jobs = ["Director", "Writer", "Screenplay", "Producer", "Art Director"]
         staff_list = [
-            f"{c['name']} ({c['job']})" for c in crew if c.get("job") in allowed_jobs
+            {
+                "id": c.get("id"),
+                "name": c.get("name"),
+                "job": c.get("job")
+            }
+            for c in crew if c.get("job") in allowed_jobs
         ]
 
         # Process recommendations
