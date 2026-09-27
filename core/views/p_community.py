@@ -32,9 +32,11 @@ def posts_api(request):
     page_size = 25
     
     firebase_url = settings.FIREBASE_URL.rstrip('/')
+    firebase_secret = getattr(settings, 'FIREBASE_SECRET', None)
+    params = {'auth': firebase_secret} if firebase_secret else {}
     
     try:
-        response = requests.get(f"{firebase_url}/posts.json", timeout=10)
+        response = requests.get(f"{firebase_url}/posts.json", params=params, timeout=10)
         if not response.ok:
             return JsonResponse({'items': [], 'has_more': False, 'page': page})
         

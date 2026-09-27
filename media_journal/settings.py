@@ -167,6 +167,8 @@ DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000  # Increase field limit for multiple files
 
 # Firebase Configuration
 FIREBASE_URL = "https://media-journal-6c8cf-default-rtdb.europe-west1.firebasedatabase.app"
+# Optional: Firebase Database Secret/ID token used to authenticate server-side reads.
+FIREBASE_SECRET = os.environ.get('FIREBASE_SECRET')
 
 # --- LOGIN TOGGLE SETTINGS ---
 # Reads REQUIRE_LOGIN from .env or Docker. Defaults to False if not set.
