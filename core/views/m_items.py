@@ -926,6 +926,7 @@ def favorite_music_videos(request):
                     videos.append(
                         {
                             "video_id": video_id,
+                            "title": item.title,
                             "item_id": item.id,
                             "is_favorite": item.favorite,
                             "source_id": item.source_id,

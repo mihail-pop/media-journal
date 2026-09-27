@@ -20,6 +20,7 @@ def refresh_favorite_person(person_id, refresh_mode="data"):
         name = person.name
         api_person_id = person.person_id  # The actual API ID (TMDB/AniList)
         old_image_url = person.image_url  # Save the existing image URL
+        existing_role = person.role       # Save the existing custom role
 
         # Delete old image if it's in favorites directory ONLY if refreshing all
         if refresh_mode == "all" and person.image_url and person.image_url.startswith(settings.MEDIA_URL):
@@ -47,7 +48,7 @@ def refresh_favorite_person(person_id, refresh_mode="data"):
             if actor_data:
                 fresh_image_url = actor_data.get("image")
                 additional_data = {
-                    "role": actor_data.get("role"),
+                    "role": existing_role if existing_role else actor_data.get("role"),
                     "age": actor_data.get("age"),
                     "birthday": actor_data.get("birthday_raw") or actor_data.get("birthday"),
                     "deathday": actor_data.get("deathday_raw") or actor_data.get("deathday"),
@@ -63,7 +64,7 @@ def refresh_favorite_person(person_id, refresh_mode="data"):
             if character_data:
                 fresh_image_url = character_data.get("image")
                 additional_data = {
-                    "role": character_data.get("role", "Character"),
+                    "role": existing_role if existing_role else character_data.get("role", "Character"),
                     "description": character_data.get("description"),
                     "age": character_data.get("age"),
                     "media_appearances": character_data.get("media_appearances"),
