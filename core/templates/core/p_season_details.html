@@ -211,6 +211,41 @@
           {% endif %}
         {% endif %}
 
+        <!-- PEOPLE (Custom assigned) -->
+        {% if section.id == 'people' %}
+          {% if item and item.mediapersonlink_set.exists %}
+          <section class="cast-section">
+            <div class="cast-header">
+              <h2>People</h2>
+            </div>
+            <div class="cast-list">
+              {% for link in item.mediapersonlink_set.all %}
+                <a href="/person/{{ link.person.type }}/{{ link.person.person_id }}/" class="cast-member">
+                  <img src="{{ link.person.image_url|default:'/static/core/img/placeholder.png' }}"
+                       alt="{{ link.person.name }}"
+                       data-placeholder="{% static 'core/img/placeholder.png' %}"
+                       onerror="this.onerror=null;this.src=this.dataset.placeholder;" />
+                  <div class="card-title-overlay">
+                    <p class="actor-name">{{ link.person.name }}</p>
+                    <p class="character-name">
+                      {% if link.media_role %}
+                        {{ link.media_role }}
+                      {% elif link.person.role %}
+                        {{ link.person.role }}
+                      {% elif link.person.type == 'character' %}
+                        Character
+                      {% else %}
+                        Actor
+                      {% endif %}
+                    </p>
+                  </div>
+                </a>
+              {% endfor %}
+            </div>
+          </section>
+          {% endif %}
+        {% endif %}
+
         <!-- JOURNAL -->
         {% if section.id == 'journal' %}
           {% if in_my_list %}

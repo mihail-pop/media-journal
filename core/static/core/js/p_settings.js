@@ -294,6 +294,38 @@ document.addEventListener("DOMContentLoaded", function () {
   const detailsForm = document.getElementById("details-sections-form");
 
   if (detailsForm) {
+    // --- AUTO-HEAL: Check if "people" section exists, if not, add it ---
+    let hasPeople = false;
+    detailsForm.querySelectorAll('.details-section-box').forEach(box => {
+      if (box.dataset.id === 'people') hasPeople = true;
+    });
+    
+    if (!hasPeople) {
+      const peopleBox = document.createElement('div');
+      peopleBox.className = 'details-section-box active';
+      peopleBox.dataset.id = 'people';
+      peopleBox.draggable = true;
+      peopleBox.innerHTML = `
+        <input type="checkbox" class="details-checkbox" checked>
+        <span class="details-name">People</span>
+        <div class="details-pills">
+          <span class="details-pill">All</span>
+        </div>
+      `;
+      
+      // Try to insert it right after the 'Cast' section
+      const castBox = Array.from(detailsForm.children).find(el => el.dataset.id === 'cast');
+      if (castBox && castBox.nextSibling) {
+          detailsForm.insertBefore(peopleBox, castBox.nextSibling);
+      } else {
+          detailsForm.appendChild(peopleBox);
+      }
+      
+      // Silently save the new layout to the backend!
+      setTimeout(saveDetailsSections, 500); 
+    }
+    // -------------------------------------------------------------------
+
     let draggedDetailsItem = null;
 
     detailsForm.addEventListener('click', (e) => {

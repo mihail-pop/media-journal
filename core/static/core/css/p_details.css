@@ -2057,7 +2057,7 @@ body:not([data-theme="light"]) .pc-actor-dates input {
 
 .pc-cancel {
   color: var(--text-tertiary);
-  background: var(--bg-primary);
+  background: var(--bg-tertiary);
 }
 
 .pc-cancel:hover {
@@ -2255,6 +2255,10 @@ html.c-modal-open {
   flex-wrap: wrap;
   gap: 15px;
   margin-top: 6px;
+}
+
+.related-media-section {
+  margin-top: 1rem;
 }
 
 .voice-actors-section {
@@ -2955,7 +2959,7 @@ select.single-unit ~ .select-arrow {
 
 #show-assign-search-btn {
   background-color: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
+  border: 0px solid var(--border-color);
   color: var(--text-secondary);
   width: 40px;
   height: 40px;
@@ -2973,7 +2977,7 @@ select.single-unit ~ .select-arrow {
 }
 
 .assign-btn-small {
-  padding: 6px 12px;
+  padding: 12px 18px;
 }
 
 /* --- Assigned Card Hover Actions --- */

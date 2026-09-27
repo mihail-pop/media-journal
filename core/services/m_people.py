@@ -149,6 +149,23 @@ def fetch_actor_data(actor_id):
                     fmt_date = parsed.strftime("%b %Y")
                 except ValueError:
                     fmt_date = item.release_date
+
+            # Build correct URL based on Media Type and Source
+            url = "#"
+            if item.media_type in ["movie", "tv"]:
+                if "_s" in str(item.source_id):
+                    show_id, season_number = str(item.source_id).split("_s")
+                    url = f"/tmdb/season/{show_id}/{season_number}/"
+                else:
+                    url = f"/tmdb/{item.media_type}/{item.source_id}/"
+            elif item.media_type in ["anime", "manga"]:
+                url = f"/{item.source}/{item.media_type}/{item.source_id}/"
+            elif item.media_type == "game":
+                url = f"/igdb/game/{item.source_id}/"
+            elif item.media_type == "book":
+                url = f"/openlib/book/{item.source_id}/"
+            elif item.media_type == "music":
+                url = f"/musicbrainz/music/{item.source_id}/"
             
             assigned_media.append({
                 "id": item.id,
@@ -159,7 +176,7 @@ def fetch_actor_data(actor_id):
                 "character": link.media_role or actor.role or "Actor",
                 "media_role_raw": link.media_role or "",
                 "formatted_date": fmt_date,
-                "url": f"/media/{item.id}/", 
+                "url": url, 
             })
 
         return {
@@ -395,6 +412,23 @@ def fetch_character_data(character_id):
                     fmt_date = parsed.strftime("%b %Y")
                 except ValueError:
                     fmt_date = item.release_date
+
+            # Build correct URL based on Media Type and Source
+            url = "#"
+            if item.media_type in ["movie", "tv"]:
+                if "_s" in str(item.source_id):
+                    show_id, season_number = str(item.source_id).split("_s")
+                    url = f"/tmdb/season/{show_id}/{season_number}/"
+                else:
+                    url = f"/tmdb/{item.media_type}/{item.source_id}/"
+            elif item.media_type in ["anime", "manga"]:
+                url = f"/{item.source}/{item.media_type}/{item.source_id}/"
+            elif item.media_type == "game":
+                url = f"/igdb/game/{item.source_id}/"
+            elif item.media_type == "book":
+                url = f"/openlib/book/{item.source_id}/"
+            elif item.media_type == "music":
+                url = f"/musicbrainz/music/{item.source_id}/"
             
             assigned_media.append({
                 "id": item.id,
@@ -405,7 +439,7 @@ def fetch_character_data(character_id):
                 "character": link.media_role or character.role or "Character",
                 "media_role_raw": link.media_role or "",
                 "formatted_date": fmt_date,
-                "url": f"/media/{item.id}/", 
+                "url": url, 
             })
 
         return {
@@ -653,6 +687,7 @@ def save_favorite_actor_character(name, image_url, type, person_id=None):
         if character_data:
             high_quality_image_url = character_data.get("image") or image_url
             additional_data = {
+                "role": character_data.get("role", "Character"),
                 "description": character_data.get("description"),
                 "age": character_data.get("age"),
                 "media_appearances": character_data.get("media_appearances"),

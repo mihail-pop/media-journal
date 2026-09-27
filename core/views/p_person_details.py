@@ -194,6 +194,15 @@ def assign_media_to_person(request):
         for m_id in media_ids:
             item = MediaItem.objects.get(id=m_id)
             MediaPersonLink.objects.get_or_create(item=item, person=person)
+            
+            # Automatically append the person's name to the media item's creators list
+            if not isinstance(item.creators, list):
+                item.creators = []
+                
+            if person.name not in item.creators:
+                item.creators.append(person.name)
+                item.save(update_fields=['creators'])
+                
         return JsonResponse({'success': True})
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=400)
@@ -204,7 +213,18 @@ def remove_assigned_media(request):
     try:
         data = json.loads(request.body)
         link_id = data.get('link_id')
-        MediaPersonLink.objects.get(id=link_id).delete()
+        
+        # Get the link and related data before deleting it
+        link = MediaPersonLink.objects.get(id=link_id)
+        item = link.item
+        person_name = link.person.name
+        
+        # Remove the person's name from the item's creators list if it exists
+        if isinstance(item.creators, list) and person_name in item.creators:
+            item.creators.remove(person_name)
+            item.save(update_fields=['creators'])
+            
+        link.delete()
         return JsonResponse({'success': True})
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=400)

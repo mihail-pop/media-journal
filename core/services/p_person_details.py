@@ -5,7 +5,7 @@ import time
 from django.conf import settings
 from django.utils.text import slugify
 
-from core.models import FavoritePerson
+from core.models import FavoritePerson, MediaPersonLink
 from core.services.g_utils import download_image
 from core.services.m_people import fetch_actor_data, fetch_character_data
 
@@ -31,6 +31,9 @@ def refresh_favorite_person(person_id, refresh_mode="data"):
                         os.remove(old_path)
                     except Exception as e:
                         print(f"Failed to delete image file {old_path}: {e}")
+
+        # Backup existing assigned media links into memory
+        saved_links = list(person.mediapersonlink_set.values('item_id', 'media_role', 'date_added'))
 
         # Delete person without reordering
         person.delete()
@@ -60,6 +63,7 @@ def refresh_favorite_person(person_id, refresh_mode="data"):
             if character_data:
                 fresh_image_url = character_data.get("image")
                 additional_data = {
+                    "role": character_data.get("role", "Character"),
                     "description": character_data.get("description"),
                     "age": character_data.get("age"),
                     "media_appearances": character_data.get("media_appearances"),
@@ -81,7 +85,7 @@ def refresh_favorite_person(person_id, refresh_mode="data"):
             final_image_url = old_image_url
 
         # Recreate with old position and fresh data
-        FavoritePerson.objects.create(
+        new_person = FavoritePerson.objects.create(
             name=name,
             image_url=final_image_url,
             type=person_type,
@@ -89,6 +93,20 @@ def refresh_favorite_person(person_id, refresh_mode="data"):
             person_id=api_person_id,
             **additional_data,
         )
+
+        # Bulk restore the assigned media links
+        if saved_links:
+            links_to_create = [
+                MediaPersonLink(
+                    person=new_person,
+                    item_id=link['item_id'],
+                    media_role=link['media_role'],
+                    date_added=link['date_added']
+                )
+                for link in saved_links
+            ]
+            MediaPersonLink.objects.bulk_create(links_to_create)
+
         return True
     except FavoritePerson.DoesNotExist:
         return False
