@@ -419,17 +419,42 @@ document.addEventListener('DOMContentLoaded', function() {
     // Assign Media & Edit Role Logic
     // -----------------------------------------
     
-    // Move the Assign UI to the top-most section header
     const firstSectionHeader = document.querySelector('.related-media-section .section-title-wrapper');
     const assignContainer = document.getElementById('assign-media-container');
+    const assignWrapper = document.getElementById('assign-search-wrapper');
+    const showAssignBtn = document.getElementById('show-assign-search-btn');
+    const favRefreshWrapper = document.querySelector('.favorite-refresh-wrapper');
+    const mainDetailContainer = document.querySelector('.main-colored-section .detail-container');
     
-    if (firstSectionHeader && assignContainer) {
-        firstSectionHeader.appendChild(assignContainer);
-        assignContainer.style.display = 'flex';
+    if (assignContainer && showAssignBtn && assignWrapper) {
+        if (firstSectionHeader) {
+            // Normal behavior: Keep both inside the section header
+            firstSectionHeader.appendChild(assignContainer);
+            assignContainer.style.display = 'flex';
+        } else {
+            // Custom Person fallback: Split them up!
+            
+            // 1. Move the + button to the left column (under the poster)
+            if (favRefreshWrapper) {
+                favRefreshWrapper.appendChild(showAssignBtn);
+                showAssignBtn.style.display = 'flex';
+            }
+            
+            // 2. Move the search bar to the main container (centered)
+            if (mainDetailContainer) {
+                mainDetailContainer.prepend(assignWrapper);
+                assignWrapper.style.position = 'relative';
+                assignWrapper.style.justifyContent = 'center';
+                assignWrapper.style.marginTop = '2rem';
+                assignWrapper.style.marginBottom = '2rem';
+                assignWrapper.style.width = '100%';
+            }
+            
+            // Hide the original container
+            assignContainer.style.display = 'none';
+        }
     }
 
-    const showAssignBtn = document.getElementById('show-assign-search-btn');
-    const assignWrapper = document.getElementById('assign-search-wrapper');
     const assignInput = document.getElementById('assign-search-input');
     const assignDropdown = document.getElementById('assign-dropdown');
     const assignTagsContainer = document.getElementById('assign-tags');

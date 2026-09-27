@@ -2960,7 +2960,7 @@ select.single-unit ~ .select-arrow {
 #show-assign-search-btn {
   background-color: var(--bg-tertiary);
   border: 0px solid var(--border-color);
-  color: var(--text-secondary);
+  color: var(--text-overview);
   width: 40px;
   height: 40px;
   border-radius: 8px;
