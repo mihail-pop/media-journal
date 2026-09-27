@@ -147,10 +147,23 @@ def character_detail_api(request, character_id):
 def search_local_media(request):
     try:
         query = request.GET.get('q', '').strip()
+        person_id = request.GET.get('person_id')
+        person_type = request.GET.get('person_type')
+
         if not query:
             return JsonResponse({'results': []})
             
         queryset = MediaItem.objects.all()
+
+        # Exclude items that are already assigned to this person
+        if person_id and person_type:
+            try:
+                person = FavoritePerson.objects.get(person_id=person_id, type=person_type)
+                assigned_item_ids = MediaPersonLink.objects.filter(person=person).values_list('item_id', flat=True)
+                queryset = queryset.exclude(id__in=assigned_item_ids)
+            except FavoritePerson.DoesNotExist:
+                pass
+                
         normalized_query = normalize_search_text(query)
         search_data = queryset.values_list('id', 'title', 'creators')
         matching_ids = []
@@ -165,7 +178,7 @@ def search_local_media(request):
             if normalized_query in target_text:
                 matching_ids.append(item_id)
         
-        items = queryset.filter(id__in=matching_ids)[:15]
+        items = queryset.filter(id__in=matching_ids)
         
         results = []
         for i in items:

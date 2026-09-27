@@ -2883,26 +2883,37 @@ select.single-unit ~ .select-arrow {
 
 .assign-search-inner {
   display: flex;
-  flex-direction: column; /* Stack tags on top of input */
   background: var(--bg-primary);
-  border: 1px solid var(--border-color); /* Gives it a neat bounding box */
+  border: 1px solid var(--border-color);
   border-radius: 6px;
   padding: 0.5rem;
-  min-width: 320px; /* Make it wider */
+  min-width: 320px;
   max-width: 700px;
 }
 
 .assign-tags-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  max-height: 90px;
+  position: absolute;
+  bottom: calc(100% + 5px); /* Position it just above the search wrapper */
+  left: 0;
+  width: 100%; /* Matches wrapper width, similar to the dropdown */
+  box-sizing: border-box;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  max-height: 150px; /* Limit height and allow scrolling */
   overflow-y: auto;
+  box-shadow: 0 -4px 12px rgba(0,0,0,0.4);
+  z-index: 1000;
+  display: none; /* Hide when empty */
+  padding: 8px;
+  gap: 6px;
   scrollbar-color: var(--text-primary) var(--bg-tertiary);
 }
 
 .assign-tags-container:not(:empty) {
-  margin-bottom: 8px; /* Adds space above input only when tags exist */
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
 }
 
 #assign-search-input {
@@ -2944,6 +2955,24 @@ select.single-unit ~ .select-arrow {
   gap: 10px;
   border-bottom: 1px solid rgba(255,255,255,0.05);
   color: var(--text-primary);
+  border-left: 4px solid transparent;
+}
+
+.assign-search-item.selected {
+  background: var(--hover-bg);
+}
+
+.assign-search-item .selected-x {
+  font-weight: bold;
+  color: var(--text-primary);
+  margin-left: 10px;
+  font-size: 1.2rem;
+  padding: 0 5px;
+  transition: color 0.2s ease;
+}
+
+.assign-search-item .selected-x:hover {
+  color: #ff4444;
 }
 
 .assign-search-item:hover {

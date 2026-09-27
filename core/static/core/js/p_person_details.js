@@ -489,8 +489,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
+            const favForm = document.getElementById('favorite-form');
+            const pId = favForm ? favForm.dataset.personId : '';
+            const pType = favForm ? favForm.dataset.personType : '';
+            
             searchTimeout = setTimeout(() => {
-                fetch(`/api/person/search_media/?q=${encodeURIComponent(query)}`)
+                fetch(`/api/person/search_media/?q=${encodeURIComponent(query)}&person_id=${encodeURIComponent(pId)}&person_type=${encodeURIComponent(pType)}`)
                 .then(res => res.json())
                 .then(data => {
                     assignDropdown.innerHTML = '';
@@ -499,21 +503,35 @@ document.addEventListener('DOMContentLoaded', function() {
                     } else {
                         data.results.forEach(item => {
                             const div = document.createElement('div');
-                            div.className = 'assign-search-item';
-                            div.innerHTML = `
-                                <img src="${item.cover}" alt="cover">
-                                <div>
-                                    <div style="font-weight: 600;">${item.title}</div>
-                                    <div style="font-size: 0.8rem; color: #8596a5;">${item.type} ${item.year ? '• ' + item.year : ''}</div>
-                                </div>
-                            `;
-                            div.addEventListener('click', () => {
-                                if (!selectedMediaIds.has(item.id)) {
+                            div.dataset.itemId = item.id;
+                            
+                            const updateUI = () => {
+                                const isSelected = selectedMediaIds.has(item.id);
+                                div.className = `assign-search-item ${isSelected ? 'selected' : ''}`;
+                                div.innerHTML = `
+                                    <img src="${item.cover}" alt="cover">
+                                    <div style="flex: 1;">
+                                        <div style="font-weight: 600;">${item.title}</div>
+                                        <div style="font-size: 0.8rem; color: #8596a5;">${item.type} ${item.year ? '• ' + item.year : ''}</div>
+                                    </div>
+                                    ${isSelected ? '<span class="selected-x">✕</span>' : ''}
+                                `;
+                            };
+                            
+                            // Initialize item appearance
+                            updateUI();
+                            
+                            div.addEventListener('click', (e) => {
+                                e.stopPropagation(); // Prevent the document click listener from firing
+                                if (selectedMediaIds.has(item.id)) {
+                                    // Deselect if already selected
+                                    selectedMediaIds.delete(item.id);
+                                } else {
+                                    // Select
                                     selectedMediaIds.set(item.id, item.title);
-                                    renderAssignTags();
                                 }
-                                assignInput.value = '';
-                                assignDropdown.style.display = 'none';
+                                renderAssignTags();
+                                updateUI();
                                 assignInput.focus();
                             });
                             assignDropdown.appendChild(div);
@@ -537,9 +555,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 const tag = document.createElement('div');
                 tag.className = 'assign-tag';
                 tag.innerHTML = `${title} <span>✕</span>`;
-                tag.querySelector('span').addEventListener('click', () => {
+                tag.querySelector('span').addEventListener('click', (e) => {
+                    e.stopPropagation(); // Prevent the document click listener from firing
                     selectedMediaIds.delete(id);
                     renderAssignTags();
+                    
+                    // Manually un-highlight the dropdown item if it's currently rendered in search
+                    const div = document.querySelector(`.assign-search-item[data-item-id="${id}"]`);
+                    if (div) {
+                        div.classList.remove('selected');
+                        const xSpan = div.querySelector('.selected-x');
+                        if (xSpan) xSpan.remove();
+                    }
                 });
                 assignTagsContainer.appendChild(tag);
             });
