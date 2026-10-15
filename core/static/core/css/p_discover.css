@@ -618,7 +618,7 @@ body {
 
   .card img {
     width: 140px;
-    height: 210px;
+    height: 210px !important;
     object-fit: cover;
     display: block;
     border-radius: 6px;

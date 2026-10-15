@@ -42,7 +42,7 @@ html[data-font="os"] { --font-user: var(--font-os); }
 
 body {
   margin: 0;
-  font-family: var(--font-user, var(--font-segoe));
+  font-family: var(--font-user, var(--font-inter));
   background: var(--bg-primary, #f7f9fc);
   color: var(--text-primary, #2e3440);
 

@@ -11,10 +11,10 @@
 
   <script>
     (function() {
-      let savedFont = localStorage.getItem('user-font') || 'segoe';
+      let savedFont = localStorage.getItem('user-font') || 'inter';
       if (savedFont === 'system') {
-        savedFont = 'segoe';
-        localStorage.setItem('user-font', 'segoe');
+        savedFont = 'inter';
+        localStorage.setItem('user-font', 'inter');
       }
       document.documentElement.setAttribute('data-font', savedFont);
 

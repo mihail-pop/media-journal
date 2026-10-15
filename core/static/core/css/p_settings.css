@@ -472,6 +472,7 @@ table td:last-child .delete-btn {
 
 .details-section-box.dragging {
   opacity: 0.5;
+  pointer-events: none;
 }
 
 .details-checkbox {
@@ -531,6 +532,7 @@ table td:last-child .delete-btn {
 
 .nav-item-box.dragging {
   opacity: 0.5;
+  pointer-events: none;
 }
 
 .nav-item-checkbox {

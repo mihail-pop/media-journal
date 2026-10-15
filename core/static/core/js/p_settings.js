@@ -182,8 +182,8 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     // Set initial value from localStorage (handle legacy 'system' key)
-    let savedFont = localStorage.getItem('user-font') || 'segoe';
-    if (savedFont === 'system') savedFont = 'segoe';
+    let savedFont = localStorage.getItem('user-font') || 'inter';
+    if (savedFont === 'system') savedFont = 'inter';
 
     originalSelect.value = savedFont;
     const initialOption = select.querySelector(`.custom-option[data-value="${savedFont}"]`);
@@ -232,30 +232,54 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     });
 
+    navForm.addEventListener('dragenter', (e) => {
+      e.preventDefault(); // Required to stop cursor flickering
+    });
+
     navForm.addEventListener('dragover', (e) => {
       e.preventDefault();
-      const afterElement = getDragAfterElement(navForm, e.clientX);
+      e.dataTransfer.dropEffect = 'move'; // Force the 'move' cursor
+      
+      const afterElement = getDragAfterElement(navForm, e.clientX, e.clientY);
       const dragging = navForm.querySelector('.dragging');
-      if (dragging) {
-        if (afterElement == null) {
+      
+      if (dragging && afterElement !== undefined) {
+        if (afterElement === null) {
           navForm.appendChild(dragging);
-        } else {
+        } else if (afterElement !== dragging) {
           navForm.insertBefore(dragging, afterElement);
         }
       }
     });
 
-    function getDragAfterElement(container, x) {
+    function getDragAfterElement(container, x, y) {
       const draggableElements = [...container.querySelectorAll('.nav-item-box:not(.dragging)')];
-      return draggableElements.reduce((closest, child) => {
+
+      // 1. Check if we are directly hovering over a valid target
+      for (const child of draggableElements) {
         const box = child.getBoundingClientRect();
-        const offset = x - box.left - box.width / 2;
-        if (offset < 0 && offset > closest.offset) {
-          return { offset: offset, element: child };
-        } else {
-          return closest;
+        if (x >= box.left && x <= box.right && y >= box.top && y <= box.bottom) {
+          const boxCenterX = box.left + box.width / 2;
+          return x < boxCenterX ? child : child.nextElementSibling;
         }
-      }, { offset: Number.NEGATIVE_INFINITY }).element;
+      }
+
+      // 2. Fallbacks for overshooting the container (dragging too far left/right/top/bottom)
+      if (draggableElements.length > 0) {
+        const lastElement = draggableElements[draggableElements.length - 1];
+        const lastBox = lastElement.getBoundingClientRect();
+        if (y > lastBox.bottom || (y >= lastBox.top && y <= lastBox.bottom && x > lastBox.right)) {
+          return null; // Append to end
+        }
+
+        const firstElement = draggableElements[0];
+        const firstBox = firstElement.getBoundingClientRect();
+        if (y < firstBox.top || (y >= firstBox.top && y <= firstBox.bottom && x < firstBox.left)) {
+          return firstElement; // Insert at start
+        }
+      }
+
+      return undefined; // Do nothing if hovering over empty space or the dragged item itself
     }
 
     function saveNavItems() {
@@ -355,14 +379,21 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     });
 
+    detailsForm.addEventListener('dragenter', (e) => {
+      e.preventDefault(); // Required to stop cursor flickering
+    });
+
     detailsForm.addEventListener('dragover', (e) => {
       e.preventDefault();
+      e.dataTransfer.dropEffect = 'move'; // Force the 'move' cursor
+
       const afterElement = getDragAfterDetailsElement(detailsForm, e.clientX, e.clientY);
       const dragging = detailsForm.querySelector('.dragging');
-      if (dragging) {
-        if (afterElement == null) {
+      
+      if (dragging && afterElement !== undefined) {
+        if (afterElement === null) {
           detailsForm.appendChild(dragging);
-        } else {
+        } else if (afterElement !== dragging) {
           detailsForm.insertBefore(dragging, afterElement);
         }
       }
@@ -370,19 +401,32 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function getDragAfterDetailsElement(container, x, y) {
       const draggableElements = [...container.querySelectorAll('.details-section-box:not(.dragging)')];
-      
-      return draggableElements.reduce((closest, child) => {
+
+      // 1. Check if we are directly hovering over a valid target
+      for (const child of draggableElements) {
         const box = child.getBoundingClientRect();
-        // 2D grid calculation: checks if mouse Y is within the row of this specific box
-        const inRow = y > box.top && y < box.bottom;
-        if (inRow) {
-          const offset = x - box.left - box.width / 2;
-          if (offset < 0 && offset > closest.offset) {
-            return { offset: offset, element: child };
-          }
+        if (x >= box.left && x <= box.right && y >= box.top && y <= box.bottom) {
+          const boxCenterX = box.left + box.width / 2;
+          return x < boxCenterX ? child : child.nextElementSibling;
         }
-        return closest;
-      }, { offset: Number.NEGATIVE_INFINITY }).element;
+      }
+
+      // 2. Fallbacks for overshooting the container
+      if (draggableElements.length > 0) {
+        const lastElement = draggableElements[draggableElements.length - 1];
+        const lastBox = lastElement.getBoundingClientRect();
+        if (y > lastBox.bottom || (y >= lastBox.top && y <= lastBox.bottom && x > lastBox.right)) {
+          return null; // Append to end
+        }
+
+        const firstElement = draggableElements[0];
+        const firstBox = firstElement.getBoundingClientRect();
+        if (y < firstBox.top || (y >= firstBox.top && y <= firstBox.bottom && x < firstBox.left)) {
+          return firstElement; // Insert at start
+        }
+      }
+
+      return undefined; // Do nothing if hovering over empty space or the dragged item itself
     }
 
     function saveDetailsSections() {
