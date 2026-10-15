@@ -88,7 +88,7 @@
 
           <div class="c-form-group c-vertical-label">
             <label>Creators</label>
-            <div class="c-creator-input-container" onclick="document.getElementById('create-creator-input').focus()">
+            <div class="c-creator-input-container" onclick="if(!window.getSelection().toString()) document.getElementById('create-creator-input').focus()">
               <div class="c-creator-tags" id="create-creator-tags"></div>
               <input type="text" id="create-creator-input" placeholder="Add creator..." autocomplete="off">
             </div>

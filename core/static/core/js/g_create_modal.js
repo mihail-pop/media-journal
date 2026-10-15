@@ -161,6 +161,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
   if (genreWrapper) {
     genreWrapper.addEventListener('click', () => {
+      // If the user highlighted text, don't trigger the click behavior
+      if (window.getSelection().toString().length > 0) return;
+
       // Close Status dropdown
       const statusWrapper = document.getElementById("create-status-wrapper");
       const statusOptions = document.getElementById("create-status-options");

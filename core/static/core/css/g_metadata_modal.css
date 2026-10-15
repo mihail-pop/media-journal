@@ -236,6 +236,7 @@
   font-weight: bold;
   color: var(--text-muted);
   transition: color 0.2s;
+  user-select: none;
 }
 
 .md-genre-tag .md-remove-tag:hover {
@@ -874,6 +875,7 @@ html.md-modal-open {
   font-weight: bold;
   color: var(--text-secondary);
   transition: color 0.2s;
+  user-select: none;
 }
 
 .md-creator-tag .md-remove-tag:hover {

@@ -42,7 +42,7 @@
           <!-- Creators -->
           <div class="md-form-group md-vertical-label">
             <label>Creators</label>
-            <div class="md-creator-input-container" onclick="document.getElementById('metadata-creator-input').focus()">
+            <div class="md-creator-input-container" onclick="if(!window.getSelection().toString()) document.getElementById('metadata-creator-input').focus()">
               <div class="md-creator-tags" id="metadata-creator-tags"></div>
               <input type="text" id="metadata-creator-input" placeholder="Add creator..." autocomplete="off">
             </div>

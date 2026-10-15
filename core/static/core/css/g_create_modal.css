@@ -713,6 +713,11 @@ input[name="release_date"] {
   transition: color 0.2s;
 }
 
+.c-creator-tag .c-remove-tag,
+.genre-tag .remove-tag {
+  user-select: none;
+}
+
 .c-creator-tag .c-remove-tag:hover {
   color: #ff4444;
 }

@@ -111,6 +111,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
   if (genreWrapper) {
     genreWrapper.addEventListener('click', () => {
+      // If the user highlighted text, don't trigger the click behavior
+      if (window.getSelection().toString().length > 0) return;
+
       if (genreOptions) genreOptions.classList.add('md-open');
       genreWrapper.classList.add('md-open');
       if (genreSearch) genreSearch.focus();

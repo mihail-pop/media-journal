@@ -108,6 +108,9 @@ document.addEventListener("DOMContentLoaded", function () {
   const colWrapper = document.getElementById("edit-collection-wrapper");
   if (colWrapper) {
     colWrapper.addEventListener('click', () => {
+      // If the user highlighted text, don't trigger the click behavior
+      if (window.getSelection().toString().length > 0) return;
+
       // Close Status dropdown
       const statusWrapper = document.getElementById("edit-status-wrapper");
       const statusOptions = document.getElementById("edit-status-options");

@@ -655,6 +655,7 @@ html.modal-open {
   font-weight: bold;
   color: var(--text-secondary);
   transition: color 0.2s;
+  user-select: none; /* Prevents the X from being highlighted and copied */
 }
 
 .collection-tag .remove-tag:hover {
