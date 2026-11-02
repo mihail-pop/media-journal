@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let isLoading = false;
   let hasMorePages = true;
   let pageCache = new Map();
+  const renderedTmdbItems = new Set();
   
   const cardGrid = document.getElementById('card-view');
   const loadingDiv = document.getElementById('loading');
@@ -465,6 +466,7 @@ document.addEventListener('DOMContentLoaded', () => {
       cardGrid.innerHTML = '';
       hasMorePages = true;
       pageCache.clear(); // Clear cache on filter change
+      renderedTmdbItems.clear();
       
       // Load 2 pages initially
       await loadPage(1);
@@ -488,6 +490,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
   }
   
+  function appendDiscoverResults(items) {
+    items.forEach(item => {
+      // TMDB pages can overlap; keep each movie or show visible only once.
+      const key = `${item.media_type}:${item.id}`;
+      if (item.source === 'tmdb' && renderedTmdbItems.has(key)) return;
+
+      const card = createCard(item);
+      cardGrid.appendChild(card);
+      if (item.source === 'tmdb') renderedTmdbItems.add(key);
+    });
+  }
+
   async function loadPage(page) {
     const filters = { ...getActiveFilters(), page };
     const cacheKey = JSON.stringify(filters);
@@ -495,10 +509,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Check cache first
     if (pageCache.has(cacheKey)) {
       const cachedData = pageCache.get(cacheKey);
-      cachedData.results.forEach(item => {
-        const card = createCard(item);
-        cardGrid.appendChild(card);
-      });
+      appendDiscoverResults(cachedData.results);
       hasMorePages = cachedData.results.length === 20;
       return;
     }
@@ -517,10 +528,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // Cache the data
       pageCache.set(cacheKey, data);
       
-      data.results.forEach(item => {
-        const card = createCard(item);
-        cardGrid.appendChild(card);
-      });
+      appendDiscoverResults(data.results);
       
       hasMorePages = data.hasMore !== undefined ? data.hasMore : data.results.length === 20;
       
@@ -798,6 +806,9 @@ document.addEventListener('DOMContentLoaded', () => {
       cardGrid.querySelectorAll('.card').forEach(card => {
         const btn = card.querySelector('.add-to-list-btn');
         const itemData = JSON.parse(decodeURIComponent(btn.dataset.item));
+        if (itemData.source === 'tmdb') {
+          renderedTmdbItems.add(`${itemData.media_type}:${itemData.id}`);
+        }
         
         let isHovering = false;
         card.addEventListener('mouseenter', async (e) => {
