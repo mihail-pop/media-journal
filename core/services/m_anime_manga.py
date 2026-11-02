@@ -954,7 +954,7 @@ def get_anilist_discover(
                 }
             )
 
-        return {"results": results, "hasMore": len(raw_media) == 20}
+        return {"results": results, "hasMore": len(raw_media) > 0}
     except Exception:
         return {"results": [], "hasMore": False}
 

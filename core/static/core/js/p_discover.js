@@ -502,6 +502,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  function hasMoreResults(data) {
+    if (data.hasMore !== undefined) return data.hasMore;
+    // A short page can still have more results after it; stop on an empty page.
+    return data.results.length > 0;
+  }
+
   async function loadPage(page) {
     const filters = { ...getActiveFilters(), page };
     const cacheKey = JSON.stringify(filters);
@@ -510,7 +516,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (pageCache.has(cacheKey)) {
       const cachedData = pageCache.get(cacheKey);
       appendDiscoverResults(cachedData.results);
-      hasMorePages = cachedData.results.length === 20;
+      hasMorePages = hasMoreResults(cachedData);
       return;
     }
     
@@ -530,7 +536,7 @@ document.addEventListener('DOMContentLoaded', () => {
       
       appendDiscoverResults(data.results);
       
-      hasMorePages = data.hasMore !== undefined ? data.hasMore : data.results.length === 20;
+      hasMorePages = hasMoreResults(data);
       
     } catch (error) {
       console.error('Fetch error:', error);
