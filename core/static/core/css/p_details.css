@@ -61,6 +61,13 @@ body {
   margin: 0;
 }
 
+body.screenshot-scroll-locked {
+  position: fixed;
+  top: var(--screenshot-scroll-top);
+  left: var(--screenshot-scroll-left);
+  width: 100%;
+}
+
 a {
   color: var(--special-color);
   text-decoration: none;

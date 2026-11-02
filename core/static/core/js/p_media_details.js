@@ -385,23 +385,53 @@ function hideArrows(container) {
 const fullscreenBtn = document.getElementById("fullscreen-screenshot-btn");
 const overlayFullscreenBtn = document.getElementById("overlay-fullscreen-btn");
 const screenshotOverlay = document.getElementById("screenshot-overlay");
+let screenshotScrollPosition = null;
+
+function setScreenshotFullscreen(open) {
+  if (!screenshotOverlay) return;
+
+  if (open && !screenshotScrollPosition) {
+    screenshotScrollPosition = { x: window.scrollX, y: window.scrollY };
+    document.body.style.setProperty('--screenshot-scroll-top', `${-screenshotScrollPosition.y}px`);
+    document.body.style.setProperty('--screenshot-scroll-left', `${-screenshotScrollPosition.x}px`);
+    // Fix the page in place while html keeps its existing scrollbar track.
+    document.body.classList.add('screenshot-scroll-locked');
+  }
+
+  screenshotOverlay.classList.toggle('active', open);
+
+  if (!open && screenshotScrollPosition) {
+    const position = screenshotScrollPosition;
+    document.body.classList.remove('screenshot-scroll-locked');
+    document.body.style.removeProperty('--screenshot-scroll-top');
+    document.body.style.removeProperty('--screenshot-scroll-left');
+    screenshotScrollPosition = null;
+    window.scrollTo({ left: position.x, top: position.y, behavior: 'instant' });
+    fullscreenBtn?.focus({ preventScroll: true });
+  }
+}
 
 if (fullscreenBtn) {
   fullscreenBtn.addEventListener("click", function() {
-    screenshotOverlay.classList.add("active");
+    setScreenshotFullscreen(true);
   });
 }
 
 if (overlayFullscreenBtn) {
   overlayFullscreenBtn.addEventListener("click", function() {
-    screenshotOverlay.classList.remove("active");
+    setScreenshotFullscreen(false);
   });
 }
 
 if (screenshotOverlay) {
   screenshotOverlay.addEventListener("click", function(e) {
     if (e.target === screenshotOverlay) {
-      screenshotOverlay.classList.remove("active");
+      setScreenshotFullscreen(false);
+    }
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && screenshotOverlay.classList.contains('active')) {
+      setScreenshotFullscreen(false);
     }
   });
 }
