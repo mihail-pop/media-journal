@@ -1031,6 +1031,53 @@ img.poster[src*="placeholder"] {
   will-change: scroll-position;
 }
 
+.screenshots-preview {
+  position: relative;
+}
+
+.screenshots-list.is-resized {
+  box-sizing: border-box;
+  align-content: flex-start;
+}
+
+.screenshots-resize-handle {
+  position: absolute;
+  right: -0.5rem;
+  bottom: -0.5rem;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: none;
+  outline: none;
+  box-shadow: none;
+  background: none;
+  color: var(--text-overview);
+  cursor: ns-resize;
+  touch-action: none;
+  user-select: none;
+}
+
+.screenshots-resize-handle::after {
+  content: '';
+  position: absolute;
+  right: 0.25rem;
+  bottom: 0.25rem;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-right: 3px solid currentColor;
+  border-bottom: 3px solid currentColor;
+  border-bottom-right-radius: 3px;
+}
+
+.screenshots-resize-handle:hover {
+  color: var(--text-secondary);
+}
+
+.screenshots-resize-handle:focus {
+  outline: none;
+  box-shadow: none;
+}
+
 .screenshots-list::-webkit-scrollbar {
   width: 10px;
 }

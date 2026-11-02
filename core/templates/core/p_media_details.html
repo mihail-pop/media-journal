@@ -326,7 +326,8 @@
               {% endif %}
             </div>
 
-            <div class="screenshots-list">
+            <div class="screenshots-preview">
+            <div class="screenshots-list" id="screenshot-previews">
               {% for shot in screenshots %}
                 <img 
                   src="{{ shot.url }}" 
@@ -335,6 +336,8 @@
                   onclick="setScreenshot({{ forloop.counter0 }})" 
                 />
               {% endfor %}
+            </div>
+            <button type="button" class="screenshots-resize-handle" aria-label="Resize screenshot previews" aria-controls="screenshot-previews" title="Drag down to expand previews. Use arrow keys to adjust the height."></button>
             </div>
             </div>
             

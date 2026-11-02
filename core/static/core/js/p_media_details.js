@@ -199,11 +199,8 @@ document.addEventListener("DOMContentLoaded", function () {
     
     const list = document.querySelector('.screenshots-list');
     if (list) {
-      list.addEventListener('scroll', () => {
-        if (list.scrollTop + list.clientHeight >= list.scrollHeight - 200) {
-          loadMoreScreenshots();
-        }
-      });
+      list.addEventListener('scroll', loadVisibleScreenshotPreviews);
+      setupScreenshotPreviewResize(list);
     }
   }
   
@@ -215,6 +212,74 @@ document.addEventListener("DOMContentLoaded", function () {
     if (overlay) overlay.classList.add('single-screenshot');
   }
 });
+
+function loadVisibleScreenshotPreviews() {
+  const list = document.querySelector('.screenshots-list');
+  if (list && list.scrollTop + list.clientHeight >= list.scrollHeight - 200) {
+    loadMoreScreenshots();
+  }
+}
+
+function setupScreenshotPreviewResize(list) {
+  const handle = document.querySelector('.screenshots-resize-handle');
+  if (!handle) return;
+
+  let minimumHeight = null;
+  let drag = null;
+
+  function resizeTo(height) {
+    if (minimumHeight === null) minimumHeight = list.getBoundingClientRect().height;
+    const maximumHeight = Math.max(minimumHeight, window.innerHeight * 5);
+    const nextHeight = Math.max(minimumHeight, Math.min(maximumHeight, height));
+    list.classList.add('is-resized');
+    list.style.maxHeight = `${maximumHeight}px`;
+    list.style.height = `${nextHeight}px`;
+    loadVisibleScreenshotPreviews();
+  }
+
+  function resetHeight() {
+    list.classList.remove('is-resized');
+    list.style.removeProperty('height');
+    list.style.removeProperty('max-height');
+    minimumHeight = null;
+    drag = null;
+  }
+
+  handle.addEventListener('pointerdown', (event) => {
+    if (event.button !== 0 || !event.isPrimary) return;
+    event.preventDefault();
+    handle.focus({ preventScroll: true });
+    drag = { pointerId: event.pointerId, y: event.clientY, height: list.getBoundingClientRect().height };
+    handle.setPointerCapture(event.pointerId);
+  });
+
+  handle.addEventListener('pointermove', (event) => {
+    if (!drag || event.pointerId !== drag.pointerId) return;
+    resizeTo(drag.height + event.clientY - drag.y);
+  });
+
+  handle.addEventListener('pointerup', (event) => {
+    if (!drag || event.pointerId !== drag.pointerId) return;
+    drag = null;
+    handle.releasePointerCapture(event.pointerId);
+  });
+  handle.addEventListener('lostpointercapture', () => { drag = null; });
+
+  handle.addEventListener('keydown', (event) => {
+    if (!['ArrowDown', 'ArrowUp', 'Home'].includes(event.key)) return;
+    event.preventDefault();
+    if (event.key === 'Home') {
+      resetHeight();
+    } else {
+      resizeTo(list.getBoundingClientRect().height + (event.key === 'ArrowDown' ? 40 : -40));
+    }
+  });
+
+  // Returning through the browser's page cache should also restore the default height.
+  window.addEventListener('pageshow', (event) => {
+    if (event.persisted) resetHeight();
+  });
+}
 
 function loadMoreScreenshots() {
   if (isLoadingScreenshots || !hasMoreScreenshots) return;
@@ -240,6 +305,11 @@ function loadMoreScreenshots() {
         });
         screenshotsPage = nextPage;
         hasMoreScreenshots = data.has_more;
+        requestAnimationFrame(() => {
+          if (document.querySelector('.screenshots-list').classList.contains('is-resized')) {
+            loadVisibleScreenshotPreviews();
+          }
+        });
       } else {
         hasMoreScreenshots = false;
       }
