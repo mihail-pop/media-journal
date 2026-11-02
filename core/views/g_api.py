@@ -1419,6 +1419,7 @@ def discover_api(request):
     status = request.GET.get("status", "")
     genre = request.GET.get("genre", "")
     platform = request.GET.get("platform", "")
+    free_to_play = request.GET.get("free_to_play", "").lower() in ("true", "1")
 
     try:
         if media_type in ["anime", "manga"]:
@@ -1433,7 +1434,7 @@ def discover_api(request):
         elif media_type in ["movie", "tv"]:
             results = get_tmdb_discover(media_type, page, query, sort, year, genre)
         elif media_type == "game":
-            results = get_igdb_discover(page, query, sort, genre, platform, year)
+            results = get_igdb_discover(page, query, sort, genre, platform, year, free_to_play=free_to_play)
         elif media_type == "book":
             results = get_openlib_discover(page, query, sort, genre, year)
         elif media_type == "music":

@@ -1,4 +1,5 @@
 import time
+import json
 from datetime import datetime
 
 import requests
@@ -402,7 +403,7 @@ def get_game_extra_info(game_id):
 
 
 def get_igdb_discover(
-    page, query="", sort="rating", genre="", platform="", year=""
+    page, query="", sort="rating", genre="", platform="", year="", free_to_play=False
 ):
     token = get_igdb_token()
     if not token:
@@ -423,7 +424,11 @@ def get_igdb_discover(
     fields_to_request = "id, name, cover.url, summary, rating, genres.name, first_release_date, artworks.url, screenshots.url, hypes"
 
     if query:
-        data = f'search "{query}"; fields {fields_to_request}; limit 20; offset {offset};'
+        conditions = []
+        if free_to_play:
+            conditions.append('keywords.slug = "free-to-play"')
+        where_clause = f"where {' & '.join(conditions)};" if conditions else ""
+        data = f'search {json.dumps(query)}; fields {fields_to_request}; {where_clause} limit 20; offset {offset};'
     else:
         if sort == 'hypes':
             current_time = int(time.time())
@@ -457,6 +462,8 @@ def get_igdb_discover(
             conditions.append(f"genres = ({genre})")
         if platform:
             conditions.append(f"platforms = ({platform})")
+        if free_to_play:
+            conditions.append('keywords.slug = "free-to-play"')
 
         where_clause = " & ".join(conditions)
         

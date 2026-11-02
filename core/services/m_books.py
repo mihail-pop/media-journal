@@ -139,6 +139,9 @@ def get_openlib_discover(page=1, query="", sort="trending", genre="", year=""):
     if genre:
         clean_genre = genre.replace("_", " ")
         q_parts.append(f'subject:"{clean_genre}"')
+
+    if year and year.isdigit() and len(year) == 4:
+        q_parts.append(f"first_publish_year:{int(year)}")
         
     # 4. Apply the Solr Sorting & Index optimization
     ol_sort = "readinglog"
