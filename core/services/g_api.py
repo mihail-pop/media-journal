@@ -7,18 +7,23 @@ IGDB_ACCESS_TOKEN = None
 IGDB_TOKEN_EXPIRY = 0
 
 
+def serialize_game_screenshot(shot):
+    return {
+        "id": shot.id,
+        "url": shot.url,
+        "is_full_url": shot.is_full_url,
+        "position": shot.position,
+        "is_favorite": shot.is_favorite,
+        "date_added": shot.date_added.isoformat() if shot.date_added else None,
+    }
+
+
 # Helper for game screenshots API
 def get_game_screenshots_data(igdb_id):
     # Try DB first
     try:
-        item = MediaItem.objects.get(provider_ids__igdb=str(igdb_id))
-        return [
-            {
-                "url": s.url,
-                "is_full_url": s.is_full_url
-            }
-            for s in item.game_screenshots.all()
-        ]
+        item = MediaItem.objects.get(media_type="game", provider_ids__igdb=str(igdb_id))
+        return [serialize_game_screenshot(shot) for shot in item.game_screenshots.order_by('position', 'date_added', 'pk')]
     except MediaItem.DoesNotExist:
         pass
 

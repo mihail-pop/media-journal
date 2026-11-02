@@ -810,6 +810,26 @@ img.poster[src*="placeholder"] {
   opacity: 1;
 }
 
+.screenshot-rotator > button {
+  transition: opacity 0.15s ease, transform 0.2s, background-color 0.3s ease;
+}
+
+.screenshot-rotator .rotator-btn {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.screenshot-rotator:hover .rotator-btn {
+  opacity: 0.75;
+  pointer-events: auto;
+}
+
+.screenshot-rotator .rotator-btn:hover,
+.screenshot-rotator .rotator-btn:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 .rotator-btn.left {
   left: 2rem;
   border-top-right-radius: 0;
@@ -832,12 +852,13 @@ img.poster[src*="placeholder"] {
   font-size: 60px;
   cursor: pointer;
   opacity: 0;
-  transition: opacity 0.2s;
+  transition: opacity 0.2s, transform 0.2s;
   background: none;
 }
 
 .delete-screenshot-btn:hover {
   color: white;
+  transform: scale(1.2);
 }
 
 .screenshot-rotator:hover .delete-screenshot-btn {
@@ -876,6 +897,142 @@ img.poster[src*="placeholder"] {
 
 .screenshot-rotator .autoplay-screenshot-btn.no-delete {
   top: 1.5rem;
+}
+
+.download-screenshot-btn,
+.favorite-screenshot-btn {
+  position: absolute;
+  top: 7.25rem;
+  right: 1.5rem;
+  width: 50px;
+  height: 50px;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.screenshot-rotator:hover .download-screenshot-btn,
+.screenshot-rotator:hover .favorite-screenshot-btn {
+  opacity: 1;
+}
+
+.screenshot-rotator .download-screenshot-btn,
+.screenshot-rotator .favorite-screenshot-btn {
+  transform: translateX(-0.15rem);
+}
+
+.screenshot-rotator .download-screenshot-btn.no-delete {
+  top: 4.25rem;
+}
+
+.download-screenshot-btn svg,
+.favorite-screenshot-btn svg {
+  width: 40px;
+  height: 40px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+  transition: transform 0.2s;
+}
+
+.download-screenshot-btn:hover svg,
+.favorite-screenshot-btn:hover svg {
+  transform: scale(1.2);
+}
+
+.download-screenshot-btn:disabled {
+  cursor: wait;
+}
+
+.favorite-screenshot-btn {
+  top: 10.5rem;
+  color: white;
+}
+
+.favorite-screenshot-btn[aria-pressed="true"] {
+  color: #ffd166;
+}
+
+.favorite-screenshot-btn[aria-pressed="true"] svg {
+  fill: #ffd166;
+  filter: drop-shadow(0 2px 5px rgba(255, 209, 102, 0.5));
+}
+
+.favorite-screenshot-btn:disabled {
+  cursor: default;
+}
+
+.screenshot-favorite-options {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  padding-right: 0.5rem;
+  transform: translateY(-50%);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+.favorite-options-open .screenshot-favorite-options,
+.favorites-only .screenshot-favorite-options {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.screenshot-overlay.controls-hidden .screenshot-favorite-options {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.screenshot-favorites-filter {
+  padding: 0.55rem 0.75rem;
+  border: none;
+  border-radius: 6px;
+  white-space: nowrap;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  font: inherit;
+  cursor: pointer;
+}
+
+.screenshot-favorites-filter:hover,
+.screenshot-favorites-filter[aria-pressed="true"] {
+  background: #4a3e24;
+  color: #ffd166;
+}
+
+.screenshots-empty-message {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--text-title);
+  text-align: center;
+  pointer-events: none;
+}
+
+.screenshot-overlay .screenshots-empty-message {
+  color: white;
+}
+
+.screenshot-rotator.no-screenshots #screenshot-image,
+.screenshot-overlay.no-screenshots .screenshot-zoom-stage {
+  visibility: hidden;
+}
+
+@media (hover: none) {
+  .screenshot-rotator .screenshot-favorite-options,
+  .screenshot-overlay:not(.controls-hidden) .screenshot-favorite-options {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
 }
 
 .autoplay-screenshot-btn svg {
@@ -936,6 +1093,112 @@ img.poster[src*="placeholder"] {
   transform: scale(1.2);
 }
 
+.screenshot-date-control {
+  position: absolute;
+  left: 1rem;
+  bottom: 1rem;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  clip-path: polygon(0 0, 100% 100%, 0 100%);
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  font: inherit;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.screenshot-date-control:hover {
+  background: rgba(0, 0, 0, 0.85);
+}
+
+.screenshot-date-control.is-expanded {
+  left: 1.5rem;
+  bottom: 1.5rem;
+  width: auto;
+  height: 50px;
+  padding: 0 1.25rem;
+  border-radius: 999px;
+  clip-path: none;
+  background: rgba(0, 0, 0, 0.65);
+  box-sizing: border-box;
+  font-size: 1rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.screenshot-date-control[hidden],
+.screenshot-date-pill[hidden] {
+  display: none;
+}
+
+.screenshot-rotator:hover .screenshot-date-control,
+.screenshot-date-control:focus-visible {
+  opacity: 1;
+}
+
+.screenshot-overlay .screenshot-date-control {
+  left: 0;
+  bottom: 0;
+  opacity: 1;
+}
+
+.screenshot-overlay .screenshot-date-control.is-expanded {
+  left: 2rem;
+  bottom: var(--screenshot-date-bottom, 1.5rem);
+  height: var(--screenshot-date-height, 70px);
+}
+
+.screenshot-overlay:fullscreen {
+  --screenshot-date-height: 56px;
+}
+
+.screenshot-overlay.screenshot-date-expanded .screenshot-zoom-reset {
+  bottom: calc(var(--screenshot-date-bottom, 1.5rem) + var(--screenshot-date-height, 70px) + 0.75rem);
+}
+
+@media (orientation: portrait) {
+  .screenshot-date-control {
+    width: 3rem;
+    height: 3rem;
+  }
+
+  .screenshot-date-control.is-expanded {
+    width: auto;
+    height: 100px;
+    padding: 0 2rem;
+    font-size: 2rem;
+  }
+
+  .screenshot-overlay {
+    --screenshot-date-height: 140px;
+    --screenshot-date-bottom: 3.5rem;
+  }
+
+  .screenshot-overlay .screenshot-date-control.is-expanded {
+    font-size: 2.5rem;
+  }
+
+  .screenshot-overlay:fullscreen {
+    --screenshot-date-height: 100px;
+  }
+
+  .screenshot-overlay:fullscreen .screenshot-date-control.is-expanded {
+    font-size: 2rem;
+  }
+
+  .screenshot-overlay.has-screenshot-date:not(.screenshot-date-expanded) .screenshot-zoom-reset {
+    left: 3.75rem;
+  }
+}
+
 .screenshot-overlay {
   position: fixed;
   top: 0;
@@ -952,6 +1215,151 @@ img.poster[src*="placeholder"] {
 
 .screenshot-overlay.active {
   display: flex;
+}
+
+.screenshot-overlay:fullscreen {
+  background: #000;
+}
+
+.screenshot-zoom-stage {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  touch-action: none;
+}
+
+#overlay-screenshot-image {
+  flex-shrink: 0;
+  max-width: none;
+  max-height: none;
+  transform-origin: center;
+  user-select: none;
+  cursor: default;
+}
+
+.screenshot-zoom-stage.is-zoomed #overlay-screenshot-image,
+.screenshot-zoom-stage.is-cropping #overlay-screenshot-image {
+  cursor: grab;
+}
+
+.screenshot-zoom-stage.is-panning #overlay-screenshot-image {
+  cursor: grabbing;
+}
+
+.screenshot-overlay > button {
+  z-index: 1;
+  transition: opacity 0.15s ease, transform 0.2s;
+}
+
+.screenshot-overlay.controls-hidden > button {
+  opacity: 0;
+}
+
+.screenshot-crop-mask {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  box-sizing: border-box;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 0 0 200vmax rgba(0, 0, 0, 0.65);
+  pointer-events: none;
+}
+
+.screenshot-crop-mask.is-circle {
+  border-radius: 50%;
+}
+
+.screenshot-crop-options {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding-right: 0.5rem;
+  transform: translateY(-50%);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+.screenshot-overlay.crop-options-open .screenshot-crop-options,
+.screenshot-overlay.has-crop-shape .screenshot-crop-options {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.screenshot-overlay.controls-hidden .screenshot-crop-options {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.screenshot-crop-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 6px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+}
+
+.screenshot-crop-btn svg {
+  width: 100%;
+  height: 100%;
+}
+
+.screenshot-crop-btn:hover,
+.screenshot-crop-btn[aria-pressed="true"],
+.screenshot-crop-btn:focus-visible {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.screenshot-crop-btn:disabled {
+  opacity: 0.5;
+}
+
+@media (hover: none) {
+  .screenshot-overlay:not(.controls-hidden) .screenshot-crop-options {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+}
+
+@media (orientation: portrait) {
+  .screenshot-crop-btn {
+    width: 5rem;
+    height: 5rem;
+    padding: 0.6rem;
+  }
+}
+
+.screenshot-overlay.controls-hidden,
+.screenshot-overlay.controls-hidden *,
+.screenshot-overlay.controls-hidden #overlay-screenshot-image {
+  cursor: none;
+}
+
+.screenshot-zoom-reset {
+  position: absolute;
+  bottom: 1.5rem;
+  left: 2rem;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  border-radius: 6px;
+  background: rgba(30, 30, 30, 0.85);
+  color: white;
+  font: inherit;
+  cursor: pointer;
 }
 
 .screenshot-overlay img {
@@ -998,6 +1406,36 @@ img.poster[src*="placeholder"] {
 
 .screenshot-overlay .autoplay-screenshot-btn.no-delete {
   top: 2rem;
+}
+
+.screenshot-overlay .download-screenshot-btn {
+  opacity: 1;
+  top: 10rem;
+  right: 2rem;
+  width: 70px;
+  height: 70px;
+}
+
+.screenshot-overlay .download-screenshot-btn.no-delete {
+  top: 6rem;
+}
+
+.screenshot-overlay .download-screenshot-btn svg {
+  width: 60px;
+  height: 60px;
+}
+
+.screenshot-overlay .favorite-screenshot-btn {
+  top: 14.5rem;
+  right: 2rem;
+  width: 70px;
+  height: 70px;
+  opacity: 1;
+}
+
+.screenshot-overlay .favorite-screenshot-btn svg {
+  width: 60px;
+  height: 60px;
 }
 
 .screenshot-overlay .fullscreen-screenshot-btn {
@@ -1125,6 +1563,90 @@ img.poster[src*="placeholder"] {
   opacity: 1;
   border-color: var(--text-secondary);
 
+}
+
+.screenshots-list img.is-favorite {
+  border-color: #ffd166;
+}
+
+.screenshots-list.is-delete-selecting img:not(.delete-selected) {
+  opacity: 0.5;
+}
+
+.screenshots-list img.delete-selected {
+  opacity: 1;
+  border-color: #ef5350;
+}
+
+.screenshot-delete-panel {
+  position: fixed;
+  top: 4rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10020;
+  width: max-content;
+  max-width: min(32rem, calc(100% - 2rem));
+  padding: 12px 24px;
+  border-radius: 6px;
+  background: #bd3038;
+  color: white;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 500;
+  box-sizing: border-box;
+}
+
+.screenshot-delete-panel h3 {
+  margin: 0 0 0.5rem;
+  color: inherit;
+  font-size: 1.1em;
+}
+
+.screenshot-delete-panel p {
+  margin: 0 0 0.75rem;
+  line-height: 1.4;
+}
+
+.screenshot-delete-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.screenshot-delete-actions button {
+  padding: 0.45rem 0.75rem;
+  border: none;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.16);
+  color: white;
+  font: inherit;
+  cursor: pointer;
+}
+
+.screenshot-delete-actions button:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.screenshot-delete-actions .screenshot-delete-confirm {
+  background: white;
+  color: #a3232b;
+}
+
+.screenshot-delete-actions button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+@media (orientation: portrait) {
+  .screenshot-delete-panel {
+    top: 5rem;
+    width: 90%;
+    max-width: 90%;
+    padding: 20px 40px;
+    border-radius: 12px;
+    font-size: 2.5rem;
+  }
 }
 
 .screenshots-header-buttons {
@@ -3473,6 +3995,8 @@ select.single-unit ~ .select-arrow {
   }
 
   .fullscreen-screenshot-btn svg,
+  .favorite-screenshot-btn svg,
+  .download-screenshot-btn svg,
   .autoplay-screenshot-btn svg {
     width: 5rem;
     height: 5rem;
@@ -3488,6 +4012,8 @@ select.single-unit ~ .select-arrow {
   }
 
   .autoplay-screenshot-btn,
+  .favorite-screenshot-btn,
+  .download-screenshot-btn,
   .fullscreen-screenshot-btn {
     width: 100px;
     height: 100px;
@@ -3500,7 +4026,7 @@ select.single-unit ~ .select-arrow {
   }
 
   .screenshot-overlay .autoplay-screenshot-btn {
-    bottom: 3.5rem;
+    bottom: 12.5rem;
     width: 140px;
     height: 140px;
     margin-right: 9rem;
@@ -3521,8 +4047,65 @@ select.single-unit ~ .select-arrow {
 
   .screenshot-overlay .autoplay-screenshot-btn.no-delete {
     top: unset;
-    bottom: 1rem;
+    bottom: 10rem;
     margin-right: 18rem;
+  }
+
+  .screenshot-rotator .download-screenshot-btn {
+    top: 11.5rem;
+  }
+
+  .screenshot-rotator .download-screenshot-btn.no-delete {
+    top: 6.5rem;
+    right: 2rem;
+  }
+
+  .screenshot-overlay .download-screenshot-btn {
+    top: unset;
+    bottom: 4rem;
+    width: 140px;
+    height: 140px;
+    margin-right: 9rem;
+  }
+
+  .screenshot-overlay .download-screenshot-btn.no-delete {
+    bottom: 1.5rem;
+    margin-right: 18rem;
+  }
+
+  .screenshot-overlay .download-screenshot-btn svg {
+    width: 120px;
+    height: 120px;
+  }
+
+  .screenshot-rotator .favorite-screenshot-btn {
+    top: 18rem;
+  }
+
+  .screenshot-overlay.has-screenshot-favorites .autoplay-screenshot-btn {
+    bottom: 21.5rem;
+  }
+
+  .screenshot-overlay.has-screenshot-favorites .download-screenshot-btn {
+    bottom: 13rem;
+  }
+
+  .screenshot-overlay .favorite-screenshot-btn {
+    top: unset;
+    right: 2rem;
+    bottom: 4rem;
+    width: 140px;
+    height: 140px;
+    margin-right: 9rem;
+  }
+
+  .screenshot-overlay .favorite-screenshot-btn svg {
+    width: 120px;
+    height: 120px;
+  }
+
+  .screenshot-favorites-filter {
+    font-size: 2rem;
   }
 
 

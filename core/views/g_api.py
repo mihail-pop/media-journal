@@ -9,7 +9,7 @@ from django.views.decorators.http import require_GET
 
 from core.models import MediaItem, FavoritePerson, Collection, CollectionItem
 from core.services.g_utils import normalize_search_text
-from core.services.g_api import get_game_screenshots_data
+from core.services.g_api import get_game_screenshots_data, serialize_game_screenshot
 from core.services.m_games import get_igdb_discover
 from core.services.m_anime_manga import get_anilist_discover
 from core.services.m_movies_tvshows import get_tmdb_discover
@@ -1571,18 +1571,25 @@ def collections_api(request):
 @require_GET
 def game_screenshots_api(request):
     igdb_id = request.GET.get("igdb_id")
-    page = int(request.GET.get("page", 1))
-    page_size = 40
-
+    try:
+        page = max(1, int(request.GET.get("page", 1)))
+        start = max(0, int(request.GET.get("offset", (page - 1) * 40)))
+    except ValueError:
+        return JsonResponse({"error": "Invalid screenshot page."}, status=400)
+    favorites_only = request.GET.get("favorites_only", "false") == "true"
     if not igdb_id:
         return JsonResponse({"error": "Missing igdb_id"}, status=400)
 
-    all_screenshots = get_game_screenshots_data(igdb_id)
-
-    start = (page - 1) * page_size
-    end = start + page_size
-    items = all_screenshots[start:end]
-
-    return JsonResponse(
-        {"screenshots": items, "has_more": end < len(all_screenshots), "page": page}
-    )
+    end = start + 40
+    item = MediaItem.objects.filter(media_type="game", provider_ids__igdb=str(igdb_id)).first()
+    if item:
+        queryset = item.game_screenshots.order_by('position', 'date_added', 'pk')
+        if favorites_only:
+            queryset = queryset.filter(is_favorite=True)
+        total = queryset.count()
+        items = [serialize_game_screenshot(shot) for shot in queryset[start:end]]
+    else:
+        screenshots = [] if favorites_only else get_game_screenshots_data(igdb_id)
+        total = len(screenshots)
+        items = screenshots[start:end]
+    return JsonResponse({"screenshots": items, "has_more": end < total, "page": page, "total": total})

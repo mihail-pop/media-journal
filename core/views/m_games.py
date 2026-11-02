@@ -12,6 +12,7 @@ from django.views.decorators.http import require_GET
 
 from core.models import APIKey, MediaItem
 from core.services.m_games import get_igdb_token
+from core.services.g_api import serialize_game_screenshot
 
 IGDB_ACCESS_TOKEN = None
 IGDB_TOKEN_EXPIRY = 0
@@ -186,16 +187,7 @@ def igdb_detail(request, igdb_id):
     formatted_release_date = ""
 
     if in_my_list:
-        screenshots = [
-            {
-                "id": s.id,
-                "url": s.url,
-                "is_full_url": s.is_full_url,
-                "position": s.position,
-                "is_favorite": s.is_favorite
-            }
-            for s in item.game_screenshots.all()
-        ]
+        screenshots = item.game_screenshots.order_by('position', 'date_added', 'pk')
 
         # Format release date from DB
         if item.release_date:
@@ -206,8 +198,8 @@ def igdb_detail(request, igdb_id):
                 formatted_release_date = item.release_date
 
         # Slice screenshots for initial load
-        total_screenshots = len(screenshots)
-        initial_screenshots = screenshots[:40]
+        total_screenshots = screenshots.count()
+        initial_screenshots = [serialize_game_screenshot(shot) for shot in screenshots[:40]]
 
         # Get theme mode
         AppSettings = apps.get_model("core", "AppSettings")
