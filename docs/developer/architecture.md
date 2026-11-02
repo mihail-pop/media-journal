@@ -17,7 +17,7 @@ I intentionally keep the requirements as small as possible. I don't want to use 
 
 The main `requirements.txt` is extremely lightweight:
 ```text
-Django==5.1.6
+Django==5.2.18
 requests==2.32.3
 whitenoise==6.11.0
 waitress==3.0.2
