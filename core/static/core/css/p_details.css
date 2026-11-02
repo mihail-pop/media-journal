@@ -867,6 +867,10 @@ img.poster[src*="placeholder"] {
   opacity: 1;
 }
 
+.screenshot-rotator .autoplay-screenshot-btn.no-delete {
+  top: 1.5rem;
+}
+
 .autoplay-screenshot-btn svg {
   width: 40px;
   height: 40px;
@@ -983,6 +987,10 @@ img.poster[src*="placeholder"] {
 .screenshot-overlay .autoplay-screenshot-btn svg {
   width: 60px;
   height: 60px;
+}
+
+.screenshot-overlay .autoplay-screenshot-btn.no-delete {
+  top: 2rem;
 }
 
 .screenshot-overlay .fullscreen-screenshot-btn {
@@ -3450,6 +3458,17 @@ select.single-unit ~ .select-arrow {
     font-size: 160px;
     margin-right: 18rem;
     top: unset;
+  }
+
+  .screenshot-rotator .autoplay-screenshot-btn.no-delete {
+    top: 0.5rem;
+    right: 2rem;
+  }
+
+  .screenshot-overlay .autoplay-screenshot-btn.no-delete {
+    top: unset;
+    bottom: 1rem;
+    margin-right: 18rem;
   }
 
 
