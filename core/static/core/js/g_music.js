@@ -16,27 +16,37 @@ const musicPopoutPositionKey = 'music_player_popout_position';
 let pendingMusicPopoutState = null;
 
 function musicPopoutWindowFeatures() {
+    let width = 640;
+    let height = 400;
     const availableLeft = Number.isFinite(screen.availLeft) ? screen.availLeft : 0;
     const availableTop = Number.isFinite(screen.availTop) ? screen.availTop : 0;
     let left = availableLeft + 20;
     let top = availableTop + Math.max(0, screen.availHeight - 400 - 20);
     try {
         const saved = JSON.parse(localStorage.getItem(musicPopoutPositionKey));
+        if (saved && Number.isFinite(saved.width) && saved.width > 0 && Number.isFinite(saved.height) && saved.height > 0) {
+            width = saved.width;
+            height = saved.height;
+            top = availableTop + Math.max(0, screen.availHeight - height - 20);
+        }
         if (saved && Number.isFinite(saved.left) && Number.isFinite(saved.top)) {
             left = saved.left;
             top = saved.top;
         }
     } catch (error) { /* Use the bottom-left default if no valid position is saved. */ }
-    return `popup,width=640,height=400,resizable=yes,left=${Math.round(left)},top=${Math.round(top)}`;
+    return `popup,width=${Math.round(width)},height=${Math.round(height)},resizable=yes,left=${Math.round(left)},top=${Math.round(top)}`;
 }
 
 function saveMusicPopoutPosition() {
     const left = window.screenX;
     const top = window.screenY;
+    const width = window.innerWidth;
+    const height = window.innerHeight;
     // Some window managers place minimized windows far off-screen.
     if (!Number.isFinite(left) || !Number.isFinite(top) || left <= -30000 || top <= -30000) return;
+    if (width <= 0 || height <= 0) return;
     try {
-        const position = JSON.stringify({ left, top });
+        const position = JSON.stringify({ left, top, width, height });
         if (localStorage.getItem(musicPopoutPositionKey) !== position) {
             localStorage.setItem(musicPopoutPositionKey, position);
         }
@@ -1183,6 +1193,7 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Adjust sizing dynamically when phone rotates
   window.addEventListener('resize', () => {
+    if (isMusicPopout) saveMusicPopoutPosition();
     const container = document.getElementById('music-player-container');
     if (container && container.style.display !== 'none') {
         updateContainerSize();
