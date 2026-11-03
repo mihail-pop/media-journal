@@ -1,3 +1,34 @@
+document.addEventListener('DOMContentLoaded', () => {
+  const more = document.querySelector('.nav-more');
+  if (!more) return;
+  const toggle = more.querySelector('.nav-more-toggle');
+  const menu = more.querySelector('.nav-more-menu');
+  const setOpen = open => {
+    more.classList.toggle('is-open', open);
+    toggle.setAttribute('aria-expanded', String(open));
+    menu.inert = !open;
+  };
+  more.addEventListener('mouseenter', () => setOpen(true));
+  more.addEventListener('mouseleave', () => setOpen(false));
+  toggle.addEventListener('click', event => {
+    // A mouse click after hovering should keep the menu open.
+    setOpen(event.detail > 0 && window.matchMedia('(hover: hover)').matches
+      ? true : !more.classList.contains('is-open'));
+  });
+  more.addEventListener('focusout', event => {
+    if (!more.contains(event.relatedTarget)) setOpen(false);
+  });
+  more.addEventListener('keydown', event => {
+    if (event.key === 'Escape') {
+      setOpen(false);
+      toggle.focus();
+    }
+  });
+  document.addEventListener('click', event => {
+    if (!more.contains(event.target)) setOpen(false);
+  });
+});
+
 document.addEventListener("DOMContentLoaded", () => {
   const overlay = document.getElementById("search-overlay");
   const overlaySearchInput = document.getElementById("overlay-search-input");

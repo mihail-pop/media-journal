@@ -1163,8 +1163,8 @@ def settings_page(request):
 
     current_rating_mode = settings.rating_mode
 
-    nav_items = NavItem.objects.all().order_by("position")
-    for item in nav_items:
+    settings_nav_items = NavItem.objects.all().order_by("position")
+    for item in settings_nav_items:
         item.display_name = item.get_name_display()
 
     return render(
@@ -1174,7 +1174,10 @@ def settings_page(request):
             "keys": keys,
             "allowed_names": allowed_names,
             "existing_names": existing_names,
-            "nav_items": nav_items,
+            "settings_nav_items": settings_nav_items,
+            "refresh_nav_items": [item for item in settings_nav_items if item.name in (
+                'movies', 'tvshows', 'anime', 'games', 'manga', 'books', 'music'
+            )],
             "current_rating_mode": current_rating_mode,
             "theme_mode": settings.theme_mode,
             "show_date_field": settings.show_date_field,

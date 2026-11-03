@@ -146,7 +146,11 @@ header {
   body[data-media-type="books"], body[data-media-type="book"],
   body[data-media-type="games"], body[data-media-type="game"],
   body[data-media-type="music"]) header {
-  background-color: rgba(0, 0, 0, 0.3);
+  --nav-more-background: rgba(0, 0, 0, 0.3);
+  --nav-more-text: rgb(236, 236, 236);
+  --nav-more-hover-background: rgb(255 255 255 / 8%);
+  --nav-more-hover-text: #fdfcfc;
+  background-color: var(--nav-more-background);
   box-shadow: none;
 }
 
@@ -326,6 +330,62 @@ body[data-media-type="person-detail"] header {
   margin: 0;
   padding: 0;
   align-items: center;
+}
+
+.nav-more-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.nav-more-arrow {
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 6px solid currentColor;
+  transition: transform 0.2s ease;
+}
+
+.nav-more.is-open .nav-more-arrow { transform: rotate(180deg); }
+
+.nav-more-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  min-width: 170px;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+  margin: 0;
+  padding: 0.5rem;
+  list-style: none;
+  background: var(--nav-more-background, var(--bg-tertiary, #151f2e));
+  border-radius: 8px;
+  box-shadow: 0 6px 20px rgb(0 0 0 / 25%);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+  z-index: 1000;
+}
+
+.nav-more.is-open .nav-more-menu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.nav-center .nav-more .nav-more-menu a {
+  display: block;
+  padding: 0.65rem 0.8rem;
+  white-space: nowrap;
+  color: var(--nav-more-text, var(--text-primary, #8596A5));
+}
+
+.nav-center .nav-more .nav-more-menu a:hover,
+.nav-center .nav-more .nav-more-menu a:focus-visible {
+  background: var(--nav-more-hover-background, var(--hover-bg, rgb(255 255 255 / 8%)));
+  color: var(--nav-more-hover-text, var(--text-secondary, #edf1f5));
 }
 
 .nav-center li,

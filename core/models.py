@@ -1,4 +1,5 @@
 import uuid
+from typing import ClassVar
 
 from django.db import models
 from django.utils import timezone
@@ -6,7 +7,7 @@ from django.db.models import Max
 
 
 class APIKey(models.Model):
-    NAME_CHOICES = [
+    NAME_CHOICES: ClassVar[list[tuple[str, str]]] = [
         ("tmdb", "TMDB"),
         ("igdb", "IGDB"),
         ("mal", "MyAnimeList"),
@@ -21,7 +22,7 @@ class APIKey(models.Model):
         return self.name
     
 class MediaItem(models.Model):
-    MEDIA_TYPES = [
+    MEDIA_TYPES: ClassVar[list[tuple[str, str]]] = [
         ("movie", "Movie"),
         ("tv", "TV Series"),
         ("anime", "Anime"),
@@ -31,7 +32,7 @@ class MediaItem(models.Model):
         ("music", "Music"),
     ]
 
-    STATUS_CHOICES = [
+    STATUS_CHOICES: ClassVar[list[tuple[str, str]]] = [
         ("ongoing", "Ongoing"),
         ("completed", "Completed"),
         ("planned", "Planned"),
@@ -114,13 +115,13 @@ class MediaItemLog(models.Model):
     progress_end = models.PositiveIntegerField(null=True, blank=True)
 
     class Meta:
-        ordering = ['-activity_date', '-date_added']
+        ordering: ClassVar[list[str]] = ['-activity_date', '-date_added']
 
     def __str__(self):
         return f"Log for {self.item.title} on {self.activity_date.strftime('%Y-%m-%d')}"
 
 class FavoritePerson(models.Model):
-    PERSON_TYPE_CHOICES = [
+    PERSON_TYPE_CHOICES: ClassVar[list[tuple[str, str]]] = [
         ('character', 'Character'),
         ('actor', 'Actor'),
     ]
@@ -166,7 +167,7 @@ class MediaPersonLink(models.Model):
     date_added = models.DateTimeField(default=timezone.now)
     
     class Meta:
-        ordering = ['-date_added']
+        ordering: ClassVar[list[str]] = ['-date_added']
         # This prevents assigning the exact same person to the exact same item with the exact same role multiple times
         unique_together = ('item', 'person', 'media_role') 
         
@@ -209,7 +210,7 @@ class Collection(models.Model):
     last_updated = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ['position', '-date_created']
+        ordering: ClassVar[list[str]] = ['position', '-date_created']
 
     def __str__(self):
         return self.title
@@ -222,14 +223,14 @@ class CollectionItem(models.Model):
     date_added = models.DateTimeField(default=timezone.now)
 
     class Meta:
-        ordering = ['position', '-date_added']
+        ordering: ClassVar[list[str]] = ['position', '-date_added']
         unique_together = ('collection', 'item') 
 
     def __str__(self):
         return f"{self.collection.title} - {self.item.title} (Pos: {self.position})"
 
 class NavItem(models.Model):
-    CATEGORY_CHOICES = [
+    CATEGORY_CHOICES: ClassVar[list[tuple[str, str]]] = [
         ("home", "Home"),
         ("movies", "Movies"),
         ("tvshows", "TV Shows"),
@@ -238,6 +239,10 @@ class NavItem(models.Model):
         ("manga", "Manga"),
         ("books", "Books"),
         ("music", "Music"),
+        ("favorites", "Favorites"),
+        ("collections", "Collections"),
+        ("history", "History"),
+        ("calendar", "Calendar"),
     ]
 
     name = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
@@ -308,7 +313,7 @@ class Screenshot(models.Model):
     activity_date = models.DateTimeField(null=True, blank=True)
 
     class Meta:
-        ordering = ['-is_favorite', 'position', 'date_added']
+        ordering: ClassVar[list[str]] = ['-is_favorite', 'position', 'date_added']
 
     def save(self, *args, **kwargs):
         # If this is a new screenshot and position isn't set, auto-increment it
@@ -330,7 +335,7 @@ class MusicVideo(models.Model):
     activity_date = models.DateTimeField(null=True, blank=True)
 
     class Meta:
-        ordering = ['-is_favorite', 'position', 'date_added']
+        ordering: ClassVar[list[str]] = ['-is_favorite', 'position', 'date_added']
 
     def save(self, *args, **kwargs):
         # If this is a new video and position isn't set, auto-increment it
