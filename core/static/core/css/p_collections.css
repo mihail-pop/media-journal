@@ -165,7 +165,7 @@ body {
   text-decoration: none;
 }
 
-.collection-card:hover {
+.collection-card:not(.draggable-mode):hover {
   transform: translateY(-5px);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
 }
@@ -177,6 +177,11 @@ body {
 
 .collection-card.draggable-mode:active {
   cursor: grabbing;
+}
+
+.collection-card.draggable-mode,
+.collection-card.draggable-mode .stack-item {
+  transition: none;
 }
 
 .collection-card.dragging {
@@ -314,26 +319,26 @@ body.drag-active .edit-col-btn {
 }
 
 
-.collection-card:hover .stack-item.pos-0 {
+.collection-card:not(.draggable-mode):hover .stack-item.pos-0 {
   transform: translateX(-50%) translateY(-15px) scale(1.05);
 }
 
-.collection-card:hover .stack-item.pos-1 {
+.collection-card:not(.draggable-mode):hover .stack-item.pos-1 {
   transform: translateX(calc(-50% - 45px)) rotate(-12deg) scale(0.95);
   filter: brightness(0.9);
 }
 
-.collection-card:hover .stack-item.pos-2 {
+.collection-card:not(.draggable-mode):hover .stack-item.pos-2 {
   transform: translateX(calc(-50% + 45px)) rotate(12deg) scale(0.95);
   filter: brightness(0.9);
 }
 
-.collection-card:hover .stack-item.pos-3 {
+.collection-card:not(.draggable-mode):hover .stack-item.pos-3 {
   transform: translateX(calc(-50% - 85px)) rotate(-24deg) scale(0.85);
   filter: brightness(0.7);
 }
 
-.collection-card:hover .stack-item.pos-4 {
+.collection-card:not(.draggable-mode):hover .stack-item.pos-4 {
   transform: translateX(calc(-50% + 85px)) rotate(24deg) scale(0.85);
   filter: brightness(0.7);
 }
@@ -345,7 +350,7 @@ body.drag-active .edit-col-btn {
   transform: translateX(-50%);
 }
 
-.collection-card:hover .cover-stack.items-1 .stack-item.pos-0 {
+.collection-card:not(.draggable-mode):hover .cover-stack.items-1 .stack-item.pos-0 {
   transform: translateX(-50%) translateY(-10px) scale(1.05);
 }
 
@@ -361,12 +366,12 @@ body.drag-active .edit-col-btn {
   filter: brightness(0.8);
 }
 
-.collection-card:hover .cover-stack.items-2 .stack-item.pos-0 {
+.collection-card:not(.draggable-mode):hover .cover-stack.items-2 .stack-item.pos-0 {
   transform: translateX(calc(-50% - 25px)) rotate(-8deg) translateY(-5px) scale(1.02);
   filter: brightness(1);
 }
 
-.collection-card:hover .cover-stack.items-2 .stack-item.pos-1 {
+.collection-card:not(.draggable-mode):hover .cover-stack.items-2 .stack-item.pos-1 {
   transform: translateX(calc(-50% + 25px)) rotate(8deg) scale(0.98);
   filter: brightness(0.9);
 }
@@ -379,11 +384,11 @@ body.drag-active .edit-col-btn {
   transform: translateX(calc(-50% + 35px)) rotate(10deg) scale(0.9);
 }
 
-.collection-card:hover .cover-stack.items-3 .stack-item.pos-1 {
+.collection-card:not(.draggable-mode):hover .cover-stack.items-3 .stack-item.pos-1 {
   transform: translateX(calc(-50% - 55px)) rotate(-15deg) scale(0.95);
 }
 
-.collection-card:hover .cover-stack.items-3 .stack-item.pos-2 {
+.collection-card:not(.draggable-mode):hover .cover-stack.items-3 .stack-item.pos-2 {
   transform: translateX(calc(-50% + 55px)) rotate(15deg) scale(0.95);
 }
 
@@ -644,23 +649,23 @@ body.drag-active .edit-col-btn {
     transform: translateX(calc(-50% + 120px)) rotate(16deg) scale(0.8);
   }
 
-  .collection-card:hover .stack-item.pos-0 {
+  .collection-card:not(.draggable-mode):hover .stack-item.pos-0 {
     transform: translateX(-50%) translateY(-25px) scale(1.05);
   }
 
-  .collection-card:hover .stack-item.pos-1 {
+  .collection-card:not(.draggable-mode):hover .stack-item.pos-1 {
     transform: translateX(calc(-50% - 90px)) rotate(-12deg) scale(0.95);
   }
 
-  .collection-card:hover .stack-item.pos-2 {
+  .collection-card:not(.draggable-mode):hover .stack-item.pos-2 {
     transform: translateX(calc(-50% + 90px)) rotate(12deg) scale(0.95);
   }
 
-  .collection-card:hover .stack-item.pos-3 {
+  .collection-card:not(.draggable-mode):hover .stack-item.pos-3 {
     transform: translateX(calc(-50% - 170px)) rotate(-24deg) scale(0.85);
   }
 
-  .collection-card:hover .stack-item.pos-4 {
+  .collection-card:not(.draggable-mode):hover .stack-item.pos-4 {
     transform: translateX(calc(-50% + 170px)) rotate(24deg) scale(0.85);
   }
 
@@ -668,7 +673,7 @@ body.drag-active .edit-col-btn {
     transform: translateX(-50%);
   }
 
-  .collection-card:hover .cover-stack.items-1 .stack-item.pos-0 {
+  .collection-card:not(.draggable-mode):hover .cover-stack.items-1 .stack-item.pos-0 {
     transform: translateX(-50%) translateY(-20px) scale(1.05);
   }
 
@@ -680,11 +685,11 @@ body.drag-active .edit-col-btn {
     transform: translateX(calc(-50% + 30px)) rotate(4deg);
   }
 
-  .collection-card:hover .cover-stack.items-2 .stack-item.pos-0 {
+  .collection-card:not(.draggable-mode):hover .cover-stack.items-2 .stack-item.pos-0 {
     transform: translateX(calc(-50% - 50px)) rotate(-8deg) translateY(-10px) scale(1.02);
   }
 
-  .collection-card:hover .cover-stack.items-2 .stack-item.pos-1 {
+  .collection-card:not(.draggable-mode):hover .cover-stack.items-2 .stack-item.pos-1 {
     transform: translateX(calc(-50% + 50px)) rotate(8deg) scale(0.98);
   }
 
@@ -696,11 +701,11 @@ body.drag-active .edit-col-btn {
     transform: translateX(calc(-50% + 70px)) rotate(10deg) scale(0.9);
   }
 
-  .collection-card:hover .cover-stack.items-3 .stack-item.pos-1 {
+  .collection-card:not(.draggable-mode):hover .cover-stack.items-3 .stack-item.pos-1 {
     transform: translateX(calc(-50% - 110px)) rotate(-15deg) scale(0.95);
   }
 
-  .collection-card:hover .cover-stack.items-3 .stack-item.pos-2 {
+  .collection-card:not(.draggable-mode):hover .cover-stack.items-3 .stack-item.pos-2 {
     transform: translateX(calc(-50% + 110px)) rotate(15deg) scale(0.95);
   }
 

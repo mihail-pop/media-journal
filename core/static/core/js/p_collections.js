@@ -314,8 +314,9 @@ document.addEventListener("DOMContentLoaded", () => {
         e.preventDefault();
         
         const afterElement = getDragAfterElement(grid, e.clientX, e.clientY);
+        if (afterElement === draggedElement.nextElementSibling) return;
         if (afterElement == null) {
-            grid.appendChild(draggedElement);
+            if (grid.lastElementChild !== draggedElement) grid.appendChild(draggedElement);
         } else {
             grid.insertBefore(draggedElement, afterElement);
         }
