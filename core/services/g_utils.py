@@ -131,8 +131,8 @@ def get_ordered_types():
         'movies': {'data_type': 'movie', 'label': 'Movies'},
         'tvshows': {'data_type': 'tv', 'label': 'TV Shows'},
         'anime': {'data_type': 'anime', 'label': 'Anime'},
-        'manga': {'data_type': 'manga', 'label': 'Manga'},
         'games': {'data_type': 'game', 'label': 'Games'},
+        'manga': {'data_type': 'manga', 'label': 'Manga'},
         'books': {'data_type': 'book', 'label': 'Books'},
         'music': {'data_type': 'music', 'label': 'Music'},
     }

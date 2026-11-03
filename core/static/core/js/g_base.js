@@ -33,160 +33,192 @@ document.addEventListener("DOMContentLoaded", () => {
   const overlay = document.getElementById("search-overlay");
   const overlaySearchInput = document.getElementById("overlay-search-input");
   const resultsContainer = document.getElementById("search-results");
-  const liveSearchToggle = document.getElementById("live-search-toggle");
-  const liveSearchButton = document.getElementById("live-search-button");
   const openSearchBtn = document.getElementById("search-open-btn");
-  const pageType = document.body.dataset.pageType;
-
-  if (openSearchBtn) {
-    openSearchBtn.addEventListener("click", () => {
-      overlay.classList.remove("hidden");
-      overlaySearchInput.value = "";
-      overlaySearchInput.focus();
-    });
-  }
-
-  // Initialize live search state from sessionStorage
-  const savedLiveSearchState = sessionStorage.getItem("liveSearchEnabled") === "true";
-  if (liveSearchToggle && liveSearchButton) {
-    liveSearchToggle.checked = savedLiveSearchState;
-    liveSearchButton.classList.toggle("active", savedLiveSearchState);
-  }
-
-  if (liveSearchButton) {
-    liveSearchButton.addEventListener("click", () => {
-      liveSearchToggle.checked = !liveSearchToggle.checked;
-      liveSearchButton.classList.toggle("active", liveSearchToggle.checked);
-      sessionStorage.setItem("liveSearchEnabled", liveSearchToggle.checked);
-    });
-  }
-
-  function debounce(func, wait = 300) {
-    let timeout;
-    return function (...args) {
-      clearTimeout(timeout);
-      timeout = setTimeout(() => func.apply(this, args), wait);
-    };
-  }
-
+  const mediaSelect = document.getElementById('search-media-select');
+  const mediaToggle = document.getElementById('search-media-toggle');
+  const mediaLabel = document.getElementById('search-media-label');
+  const mediaOptions = document.getElementById('search-media-options');
+  const optionButtons = [...mediaOptions.querySelectorAll('.search-media-option')];
+  const availableTypes = new Set(optionButtons.map(button => button.dataset.type));
   const apiEndpoints = {
-    movie: "/api/tmdb_search/",
-    tv: "/api/tmdb_search/",
-    anime: "/api/anilist_search/",
-    manga: "/api/anilist_search/",
-    game: "/api/igdb_search/",
-    book: "/api/openlib_search/",
-    music: "/api/musicbrainz_search/",
+    movie: '/api/tmdb_search/', tv: '/api/tmdb_search/',
+    anime: '/api/anilist_search/', manga: '/api/anilist_search/',
+    game: '/api/igdb_search/', book: '/api/openlib_search/', music: '/api/musicbrainz_search/',
   };
+  const aliases = { movies: 'movie', tvshows: 'tv', games: 'game', books: 'book' };
+  const normalizeType = value => aliases[value] || value;
+  const pageMediaType = [document.body.dataset.pageType, document.body.dataset.mediaType]
+    .map(normalizeType).find(type => Object.hasOwn(apiEndpoints, type));
+  let selectedType = availableTypes.has(pageMediaType) ? pageMediaType : optionButtons[0]?.dataset.type;
+  try {
+    if (pageMediaType) localStorage.setItem('lastMediaPageType', pageMediaType);
+    else {
+      const saved = localStorage.getItem('lastMediaPageType');
+      if (availableTypes.has(saved)) selectedType = saved;
+    }
+  } catch (error) { /* Search still works without browser storage. */ }
+
+  let searchRevision = 0;
+  let searchController = null;
+  let liveSearchTimer;
+  function cancelSearch() {
+    searchRevision++;
+    searchController?.abort();
+    clearTimeout(liveSearchTimer);
+  }
+
+  // The per-media Settings preferences will supply this value in the next change.
+  function isLiveSearchEnabled() { return false; }
+
+  function setMediaOptionsOpen(open) {
+    mediaOptions.hidden = !open;
+    mediaSelect.classList.toggle('is-open', open);
+    mediaToggle.setAttribute('aria-expanded', String(open));
+  }
+
+  function updateMediaSelection() {
+    overlay.dataset.searchType = selectedType || '';
+    mediaToggle.disabled = !selectedType;
+    overlaySearchInput.disabled = !selectedType;
+    if (!selectedType) mediaLabel.textContent = 'No media';
+    optionButtons.forEach(button => {
+      const selected = button.dataset.type === selectedType;
+      button.setAttribute('aria-pressed', String(selected));
+      if (selected) mediaLabel.textContent = button.textContent;
+    });
+  }
+  updateMediaSelection();
+
+  mediaSelect.addEventListener('mouseenter', () => {
+    if (selectedType && window.matchMedia('(hover: hover)').matches) setMediaOptionsOpen(true);
+  });
+  mediaSelect.addEventListener('mouseleave', () => {
+    if (window.matchMedia('(hover: hover)').matches) setMediaOptionsOpen(false);
+  });
+  mediaToggle.addEventListener('click', event => {
+    setMediaOptionsOpen(event.detail > 0 && window.matchMedia('(hover: hover)').matches
+      ? true : mediaOptions.hidden);
+  });
+  optionButtons.forEach(button => button.addEventListener('click', () => {
+    cancelSearch();
+    selectedType = button.dataset.type;
+    updateMediaSelection();
+    resultsContainer.replaceChildren();
+    setMediaOptionsOpen(false);
+    overlaySearchInput.focus();
+    if (isLiveSearchEnabled()) scheduleLiveSearch();
+  }));
+  document.addEventListener('click', event => {
+    if (!mediaSelect.contains(event.target)) setMediaOptionsOpen(false);
+  });
+
+  openSearchBtn?.addEventListener('click', () => {
+    cancelSearch();
+    overlay.classList.remove('hidden');
+    overlaySearchInput.value = '';
+    resultsContainer.replaceChildren();
+    setMediaOptionsOpen(false);
+    overlaySearchInput.focus();
+  });
+
+  function showSearchMessage(message) {
+    const text = document.createElement('div');
+    text.className = 'search-message';
+    text.textContent = message;
+    resultsContainer.replaceChildren(text);
+  }
 
   async function doSearch(query) {
-    if (!query.trim()) {
-      resultsContainer.innerHTML = "";
+    cancelSearch();
+    if (!query.trim() || !selectedType) {
+      resultsContainer.replaceChildren();
       return;
     }
-
-    const endpoint = apiEndpoints[pageType] || "/api/tmdb_search/";
-
+    const type = selectedType;
+    const revision = searchRevision;
+    searchController = new AbortController();
     try {
-      const params = new URLSearchParams();
-      params.append("q", query);
-      if (["anime", "manga", "movie", "tv", "book", "music"].includes(pageType)) {
-        params.append("type", pageType);
-      }
-
-      const url = endpoint + "?" + params.toString();
-      const response = await fetch(url);
-      if (!response.ok) throw new Error("Network error");
-
+      const params = new URLSearchParams({ q: query, type });
+      const response = await fetch(`${apiEndpoints[type]}?${params}`, { signal: searchController.signal });
+      if (!response.ok) throw new Error('Network error');
       const data = await response.json();
-      if (!data.results || data.results.length === 0) {
-        resultsContainer.innerHTML = "<div style='color:#eee; text-align:center;'>No results found</div>";
-        overlay.classList.remove("hidden");
+      if (revision !== searchRevision) return;
+      if (!data.results?.length) {
+        showSearchMessage('No results found');
         return;
       }
-
-      const cardsHtml = data.results.map(item => {
-        const title = item.title || item.name || "Untitled";
-        let poster = "/static/core/img/placeholder.png";
-
-        if ((pageType === "movie" || pageType === "tv") && item.poster_path) {
+      const grid = document.createElement('div');
+      grid.className = 'search-card-grid';
+      data.results.forEach(item => {
+        const title = item.title || item.name || 'Untitled';
+        let poster = '/static/core/img/placeholder.png';
+        if ((type === 'movie' || type === 'tv') && item.poster_path) {
           poster = `https://image.tmdb.org/t/p/w200${item.poster_path}`;
-        } else if (item.poster_path) {
-          poster = item.poster_path;
-        }
-
-        const prefix = item.source || (
-          pageType === "game" ? "igdb" :
-          pageType === "book" ? "openlib" :
-          pageType === "music" ? "musicbrainz" :
-          "tmdb"
-        );
-
-        return `
-          <div class="search-card">
-            <a href="/${prefix}/${pageType}/${item.id}" class="card-link">
-              <img src="${poster}" alt="${title}" />
-              <div class="search-card-title">${title}</div>
-            </a>
-          </div>`;
-      }).join("");
-
-      resultsContainer.innerHTML = `<div class="search-card-grid">${cardsHtml}</div>`;
-      overlay.classList.remove("hidden");
-      overlaySearchInput.focus();
-
+        } else if (item.poster_path) poster = item.poster_path;
+        const prefix = item.source || ({ game: 'igdb', book: 'openlib', music: 'musicbrainz', anime: 'anilist', manga: 'anilist' }[type] || 'tmdb');
+        const card = document.createElement('div');
+        card.className = 'search-card';
+        const link = document.createElement('a');
+        link.className = 'card-link';
+        link.href = `/${prefix}/${type}/${item.id}`;
+        const image = document.createElement('img');
+        image.src = poster;
+        image.alt = title;
+        const label = document.createElement('div');
+        label.className = 'search-card-title';
+        label.textContent = title;
+        link.append(image, label);
+        card.appendChild(link);
+        grid.appendChild(card);
+      });
+      resultsContainer.replaceChildren(grid);
     } catch (error) {
-      resultsContainer.innerHTML = `<div style="color:#eee; text-align:center;">Error fetching results</div>`;
-      overlay.classList.remove("hidden");
-      console.error("Search error:", error);
+      if (error.name === 'AbortError' || revision !== searchRevision) return;
+      showSearchMessage('Error fetching results');
+      console.error('Search error:', error);
     }
   }
 
-  // === MODIFIED SECTION: Dynamic Debounce ===
-  const debounceDelay = pageType === "game" ? 500 : 300;
-
-  const liveSearchHandler = debounce(e => {
-    doSearch(e.target.value);
-  }, debounceDelay);
-  // === END MODIFIED SECTION ===
-
-  overlaySearchInput.addEventListener("keydown", e => {
-    if (e.key === "Enter") {
-      doSearch(e.target.value);
+  function scheduleLiveSearch() {
+    clearTimeout(liveSearchTimer);
+    liveSearchTimer = setTimeout(() => doSearch(overlaySearchInput.value), selectedType === 'game' ? 500 : 300);
+  }
+  overlaySearchInput.addEventListener('keydown', event => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      setMediaOptionsOpen(false);
+      doSearch(overlaySearchInput.value);
     }
   });
-
-  overlaySearchInput.addEventListener("input", e => {
-    if (liveSearchToggle && liveSearchToggle.checked) {
-      liveSearchHandler(e);
-    } else {
-      resultsContainer.innerHTML = "";
-    }
+  overlaySearchInput.addEventListener('input', () => {
+    cancelSearch();
+    resultsContainer.replaceChildren();
+    if (isLiveSearchEnabled()) scheduleLiveSearch();
   });
 
-  // Close overlay if clicked outside panel
-  overlay.addEventListener("click", e => {
-    if (e.target === overlay) {
-      overlay.classList.add("hidden");
-      resultsContainer.innerHTML = "";
-    }
+  function closeSearch() {
+    cancelSearch();
+    setMediaOptionsOpen(false);
+    overlay.classList.add('hidden');
+    resultsContainer.replaceChildren();
+  }
+  overlay.addEventListener('click', event => {
+    if (event.target === overlay) closeSearch();
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key !== 'Escape' || overlay.classList.contains('hidden')) return;
+    if (!mediaOptions.hidden) {
+      setMediaOptionsOpen(false);
+      mediaToggle.focus();
+    } else closeSearch();
   });
 
-  // Close overlay on Escape key
-  document.addEventListener("keydown", e => {
-    if (e.key === "Escape" && !overlay.classList.contains("hidden")) {
-      overlay.classList.add("hidden");
-      resultsContainer.innerHTML = "";
-    }
-  });
-
-  // Prevent page scrolling when overlay is open and redirect to search results
-  overlay.addEventListener("wheel", e => {
-    e.preventDefault();
-    const searchGrid = resultsContainer.querySelector(".search-card-grid");
-    if (searchGrid) {
-      searchGrid.scrollTop += e.deltaY;
-    }
+  // Keep wheel scrolling inside search results; the media options scroll normally.
+  overlay.addEventListener('wheel', event => {
+    if (event.target.closest('.search-media-options')) return;
+    event.preventDefault();
+    const grid = resultsContainer.querySelector('.search-card-grid');
+    if (grid) grid.scrollTop += event.deltaY;
   }, { passive: false });
 
   // === HEADER MOBILE TOGGLE ===

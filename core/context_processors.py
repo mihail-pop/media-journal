@@ -8,10 +8,19 @@ def nav_items(request):
     for item in items:
         item.display_name = item.get_name_display()
 
+    media_types = {
+        'movies': 'movie', 'tvshows': 'tv', 'anime': 'anime',
+        'games': 'game', 'manga': 'manga', 'books': 'book', 'music': 'music',
+    }
+
     return {
         "nav_items": items,
         "primary_nav_items": items[:5] if len(items) >= 7 else items,
         "overflow_nav_items": items[5:] if len(items) >= 7 else [],
+        "search_media_types": [
+            {"data_type": media_types[item.name], "label": item.display_name}
+            for item in items if item.name in media_types
+        ],
     }
 
 

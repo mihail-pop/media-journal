@@ -61,33 +61,19 @@
                      0-70.7 57.2-128 128-128 70.7 0 128 57.2 128 128
                      0 70.7-57.2 128-128 128z"></path>
           </svg>
-          {% with page_type|lower as page %}
-            {% if page == "tv" %}
-              <input type="text" id="overlay-search-input" placeholder="Search for a TV show.." autocomplete="off">
-            {% elif page == "music" %}
-              <input type="text" id="overlay-search-input" placeholder="Search for a song.." autocomplete="off">
-            {% else %}
-              {% with page|first as first_letter %}
-                {% if first_letter in "aeiou" %}
-                  {% with article="an" %}
-                    <input type="text" id="overlay-search-input"
-                           placeholder="Search for {{ article }} {{ page }}.." autocomplete="off">
-                  {% endwith %}
-                {% else %}
-                  {% with article="a" %}
-                    <input type="text" id="overlay-search-input"
-                           placeholder="Search for {{ article }} {{ page }}.." autocomplete="off">
-                  {% endwith %}
-                {% endif %}
-              {% endwith %}
-            {% endif %}
-          {% endwith %}
+          <input type="text" id="overlay-search-input" placeholder="Search.." aria-label="Search media" autocomplete="off">
         </div>
 
-        <label class="live-search-label" id="live-search-button">
-          Live Search
-          <input type="checkbox" id="live-search-toggle">
-        </label>
+        <div class="search-media-select" id="search-media-select">
+          <button type="button" id="search-media-toggle" aria-expanded="false" aria-controls="search-media-options" aria-label="Choose media type">
+            <span id="search-media-label">Movies</span><span class="search-media-arrow" aria-hidden="true"></span>
+          </button>
+          <div id="search-media-options" class="search-media-options" hidden>
+            {% for media in search_media_types %}
+              <button type="button" class="search-media-option" data-type="{{ media.data_type }}" aria-pressed="false">{{ media.label }}</button>
+            {% endfor %}
+          </div>
+        </div>
       </div>
     </div>
 
