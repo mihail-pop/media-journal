@@ -352,15 +352,13 @@ document.addEventListener('DOMContentLoaded', function() {
         editBtn.addEventListener('click', () => {
             editModal.classList.remove('pc-modal-hidden');
             editOverlay.classList.remove('pc-modal-hidden');
-            document.body.classList.add('c-modal-open');
-            document.documentElement.classList.add('c-modal-open');
+            window.modalScrollLock.lock('edit-person');
         });
 
         const closeEditModal = () => {
             editModal.classList.add('pc-modal-hidden');
             editOverlay.classList.add('pc-modal-hidden');
-            document.body.classList.remove('c-modal-open');
-            document.documentElement.classList.remove('c-modal-open');
+            window.modalScrollLock.unlock('edit-person');
         };
 
         editCloseIcons.forEach(icon => {
@@ -626,7 +624,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function closeRoleModal() {
         roleModal.classList.add('pc-modal-hidden');
         roleOverlay.classList.add('pc-modal-hidden');
-        document.body.classList.remove('c-modal-open');
+        window.modalScrollLock.unlock('edit-role');
     }
 
     document.querySelectorAll('.edit-role-btn').forEach(btn => {
@@ -637,7 +635,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             roleModal.classList.remove('pc-modal-hidden');
             roleOverlay.classList.remove('pc-modal-hidden');
-            document.body.classList.add('c-modal-open');
+            window.modalScrollLock.lock('edit-role');
             roleInput.focus();
         });
     });

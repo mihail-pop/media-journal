@@ -422,7 +422,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('custom-person-close-icon'),
     cpOverlay
   ];
-  let currentCpScrollY = 0;
 
   function openCpModal(personType) {
     cpForm.reset();
@@ -441,20 +440,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     cpModal.classList.remove('pc-modal-hidden');
     cpOverlay.classList.remove('pc-modal-hidden');
-    
-    currentCpScrollY = window.scrollY;
-    document.body.style.top = `-${currentCpScrollY}px`;
-    document.body.classList.add('c-modal-open');
-    document.documentElement.classList.add('c-modal-open');
+    window.modalScrollLock.lock('create-person');
   }
 
   function closeCpModal() {
     cpModal.classList.add('pc-modal-hidden');
     cpOverlay.classList.add('pc-modal-hidden');
-    document.body.classList.remove('c-modal-open');
-    document.documentElement.classList.remove('c-modal-open');
-    document.body.style.top = '';
-    window.scrollTo(0, currentCpScrollY);
+    window.modalScrollLock.unlock('create-person');
   }
 
   document.querySelectorAll('.add-custom-person-btn').forEach(btn => {

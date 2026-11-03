@@ -4,7 +4,6 @@ document.addEventListener("DOMContentLoaded", function () {
   const openBtn = document.getElementById("open-create-modal-btn");
   const closeBtn = document.getElementById("create-close-btn");
   const form = document.getElementById("create-form");
-  let scrollY = 0;
 
   if (!openBtn || !modal) return;
 
@@ -463,20 +462,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
     modal.classList.remove("c-modal-hidden");
     overlay.classList.remove("c-modal-hidden");
-    scrollY = window.scrollY;
-    document.body.style.top = `-${scrollY}px`;
-    document.body.classList.add("c-modal-open");
-    document.documentElement.classList.add("c-modal-open");
+    window.modalScrollLock.lock('create-item');
   });
 
   // Close Modal
   function closeModal() {
     modal.classList.add("c-modal-hidden");
     overlay.classList.add("c-modal-hidden");
-    document.body.classList.remove("c-modal-open");
-    document.documentElement.classList.remove("c-modal-open");
-    document.body.style.top = "";
-    window.scrollTo(0, scrollY);
+    window.modalScrollLock.unlock('create-item');
   }
   closeBtn.addEventListener("click", closeModal);
   overlay.addEventListener("click", closeModal);

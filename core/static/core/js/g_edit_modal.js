@@ -1,7 +1,6 @@
 document.addEventListener("DOMContentLoaded", function () {
   const modal = document.getElementById("edit-modal");
   const overlay = document.getElementById("edit-overlay");
-  let scrollY = 0;
 
   // Collection State
   let editCurrentCollections = [];
@@ -725,11 +724,7 @@ const hiddenInput = form.querySelector('#edit_status_hidden');
           populateForm(form, data.item);
           modal.classList.remove("modal-hidden");
           overlay.classList.remove("modal-hidden");
-          scrollY = window.scrollY;
-          document.body.style.top = `-${scrollY}px`;
-          document.body.style.height = `${document.documentElement.scrollHeight}px`;
-          document.body.classList.add("modal-open");
-          document.documentElement.classList.add("modal-open");
+          window.modalScrollLock.lock('edit-item');
         })
         .catch(err => {
           console.error("Fetch error:", err);
@@ -760,11 +755,7 @@ const hiddenInput = form.querySelector('#edit_status_hidden');
           populateForm(form, data.item);
           modal.classList.remove("modal-hidden");
           overlay.classList.remove("modal-hidden");
-          scrollY = window.scrollY;
-          document.body.style.top = `-${scrollY}px`;
-          document.body.style.height = `${document.documentElement.scrollHeight}px`;
-          document.body.classList.add("modal-open");
-          document.documentElement.classList.add("modal-open");
+          window.modalScrollLock.lock('edit-item');
         })
         .catch(err => {
           console.error("Fetch error:", err);
@@ -777,21 +768,13 @@ const hiddenInput = form.querySelector('#edit_status_hidden');
   document.getElementById("edit-close-btn")?.addEventListener("click", () => {
     modal.classList.add("modal-hidden");
     overlay.classList.add("modal-hidden");
-    document.body.classList.remove("modal-open");
-    document.documentElement.classList.remove("modal-open");
-    document.body.style.top = "";
-    document.body.style.height = "";
-    window.scrollTo(0, scrollY);
+    window.modalScrollLock.unlock('edit-item');
   });
 
   overlay?.addEventListener("click", () => {
     modal.classList.add("modal-hidden");
     overlay.classList.add("modal-hidden");
-    document.body.classList.remove("modal-open");
-    document.documentElement.classList.remove("modal-open");
-    document.body.style.top = "";
-    document.body.style.height = "";
-    window.scrollTo(0, scrollY);
+    window.modalScrollLock.unlock('edit-item');
   });
   
 document.getElementById("edit-delete-btn")?.addEventListener("click", function () {
@@ -838,11 +821,8 @@ document.getElementById("edit-delete-btn")?.addEventListener("click", function (
       // Close modal and notify
       modal.classList.add('modal-hidden');
       overlay.classList.add('modal-hidden');
-      document.body.classList.remove("modal-open");
-      document.documentElement.classList.remove("modal-open");
-      document.body.style.top = "";
-      document.body.style.height = "";
-      window.scrollTo(0, scrollY);
+      window.modalScrollLock.unlock('edit-item');
+
       showNotification('Deleted.', 'success');
     } else {
       alert("Failed to delete item.");
@@ -978,11 +958,8 @@ document.getElementById("edit-delete-btn")?.addEventListener("click", function (
 
             modal.classList.add("modal-hidden");
             overlay.classList.add("modal-hidden");
-            document.body.classList.remove("modal-open");
-            document.documentElement.classList.remove("modal-open");
-            document.body.style.top = "";
-            document.body.style.height = "";
-            window.scrollTo(0, scrollY);
+            window.modalScrollLock.unlock('edit-item');
+
             const title = modal.querySelector('.modal-title')?.textContent || "Item";
             showNotification(`${title} updated successfully!`, "success");
           } else {
