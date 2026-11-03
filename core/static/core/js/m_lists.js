@@ -1879,7 +1879,7 @@ updateSortButtons();
         return;
     }
 
-    if (e.target.classList.contains('play-card-btn')) {
+    if (e.target.closest('.play-card-btn')) {
       e.preventDefault();
       e.stopPropagation();
       

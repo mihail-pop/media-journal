@@ -1005,6 +1005,12 @@ body[data-media-type="games"] .card {
   bottom: -10px;
 }
 
+/* Keep row controls from extending their click areas over neighboring buttons. */
+.list-table .play-card-btn::before,
+.list-table .edit-card-btn::before {
+  content: none;
+}
+
 .card:hover .edit-card-btn {
   display: block;
 }

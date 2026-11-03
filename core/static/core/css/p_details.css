@@ -950,6 +950,23 @@ img.poster[src*="placeholder"] {
 
 .favorite-screenshot-btn {
   top: 10.5rem;
+}
+
+.autoplay-screenshot-btn,
+.download-screenshot-btn,
+.favorite-screenshot-btn,
+.fullscreen-screenshot-btn,
+.rotator-btn,
+.screenshot-crop-btn {
+  color: rgb(243, 243, 243);
+}
+
+.autoplay-screenshot-btn:hover,
+.download-screenshot-btn:hover,
+.favorite-screenshot-btn:hover,
+.fullscreen-screenshot-btn:hover,
+.rotator-btn:hover,
+.screenshot-crop-btn:hover {
   color: white;
 }
 
