@@ -7,6 +7,134 @@ let playedSongs = [];
 let isSequentialMode = false;
 let isRestoringFromBfcache = false;
 const tabId = Date.now() + Math.random();
+const isMusicPopout = document.body.dataset.musicPopout === 'true';
+const musicPopoutOwnerKey = 'music_player_popout_owner';
+const musicPopoutCommandKey = 'music_player_popout_command';
+const musicPopoutModeKey = 'music_player_popout';
+const musicDockStateKey = 'music_player_dock_state';
+let pendingMusicPopoutState = null;
+
+// Call during the initiating click, before fetching a playlist, to allow popups.
+window.prepareMusicPlayerWindow = function(force = false) {
+    if (isMusicPopout || (!force && localStorage.getItem(musicPopoutModeKey) !== 'true') || isMusicPopoutOpen()) return;
+    localStorage.removeItem(musicPopoutCommandKey);
+    const popup = window.open('/music/player/', 'media-journal-music-player', 'popup,width=640,height=400,resizable=yes');
+    if (!popup) {
+        if (!force) localStorage.setItem(musicPopoutModeKey, 'false');
+        alert('Allow pop-ups for Media Journal to open the music player. The player will stay in this page.');
+        return;
+    }
+    localStorage.setItem(musicPopoutModeKey, 'true');
+    localStorage.setItem(musicPopoutOwnerKey, JSON.stringify({ id: 'opening', updated: Date.now() }));
+    popup.focus();
+    return popup;
+};
+
+function isMusicPopoutOpen() {
+    try {
+        const owner = JSON.parse(localStorage.getItem(musicPopoutOwnerKey));
+        return owner && Date.now() - owner.updated < 90000;
+    } catch (e) {
+        return false;
+    }
+}
+
+function claimMusicPlayer() {
+    if (isMusicPopout || !isMusicPopoutOpen()) {
+        localStorage.setItem('music_player_active_tab', tabId);
+    }
+}
+
+function musicPlayerSnapshot(videoId, time = 0, paused = false) {
+    return {
+        playlist: musicPlaylist, index: musicCurrentIndex,
+        history: sessionHistory, historyIndex,
+        played: playedSongs, sequential: isSequentialMode,
+        videoId, time, paused, mode: localStorage.getItem('musicPlayerEnabled'),
+    };
+}
+
+function sendMusicPopoutCommand(action, state = null) {
+    localStorage.setItem(musicPopoutCommandKey, JSON.stringify({ action, state, id: Date.now() + Math.random() }));
+}
+
+function hideEmbeddedMusicPlayer() {
+    if (musicPlayer && musicPlayer.destroy) musicPlayer.destroy();
+    musicPlayer = null;
+    isMusicPlayerReady = false;
+    const container = document.getElementById('music-player-container');
+    if (container) container.style.display = 'none';
+    setMusicPlayerScrollLock(false);
+}
+
+function openMusicPopout() {
+    if (!musicPlayer || !isMusicPlayerReady) return;
+    const state = musicPlayerSnapshot(
+        musicPlayer.getVideoData().video_id,
+        musicPlayer.getCurrentTime(),
+        musicPlayer.getPlayerState() !== YT.PlayerState.PLAYING
+    );
+    const popup = window.prepareMusicPlayerWindow(true);
+    if (!popup) return;
+    sendMusicPopoutCommand('play', state);
+    hideEmbeddedMusicPlayer();
+    popup.focus();
+}
+
+function returnMusicPlayerToPage() {
+    if (!musicPlayer || !isMusicPlayerReady) return;
+    const state = musicPlayerSnapshot(musicPlayer.getVideoData().video_id, musicPlayer.getCurrentTime(),
+        musicPlayer.getPlayerState() !== YT.PlayerState.PLAYING);
+    localStorage.setItem(musicPopoutModeKey, 'false');
+    localStorage.setItem(musicDockStateKey, JSON.stringify(state));
+    localStorage.removeItem(musicPopoutOwnerKey);
+    // Stop this iframe before the other page starts its copy.
+    hideEmbeddedMusicPlayer();
+    if (window.opener && !window.opener.closed) {
+        window.opener.postMessage({ type: 'media-journal-music-dock' }, window.location.origin);
+        window.opener.focus();
+    } else {
+        window.open('/', '_blank');
+    }
+    window.close();
+}
+
+function receiveDockedMusicPlayer() {
+    const saved = localStorage.getItem(musicDockStateKey);
+    if (!saved || isMusicPopout) return false;
+    localStorage.removeItem(musicDockStateKey);
+    receiveMusicPopoutState(JSON.parse(saved));
+    return true;
+}
+
+window.addEventListener('message', event => {
+    if (event.origin === window.location.origin && event.data?.type === 'media-journal-music-dock' && !isMusicPopout) {
+        receiveDockedMusicPlayer();
+    }
+});
+
+function receiveMusicPopoutState(state) {
+    if (!state || !Array.isArray(state.playlist) || !state.playlist.length || !state.videoId) return;
+    pendingMusicPopoutState = state;
+    loadYouTubeAPI();
+    if (window.YT && window.YT.Player) restoreMusicPopoutState();
+}
+
+function restoreMusicPopoutState() {
+    const state = pendingMusicPopoutState;
+    if (!state) return;
+    pendingMusicPopoutState = null;
+    musicPlaylist = state.playlist;
+    musicCurrentIndex = state.index;
+    sessionHistory = state.history || [];
+    historyIndex = state.historyIndex;
+    playedSongs = state.played || [];
+    isSequentialMode = state.sequential;
+    localStorage.setItem('musicPlayerEnabled', state.mode || 'list');
+    saveHistory();
+    claimMusicPlayer();
+    createPlayer(state.videoId, state.time, state.paused);
+}
 
 // New Session History
 let sessionHistory = [];
@@ -35,6 +163,7 @@ const iconHeart = (isFav) => {
 };
 
 window.startCustomPlaylist = function(playlist, startIndex) {
+    window.prepareMusicPlayerWindow();
     sessionHistory = [];
     historyIndex = -1;
     localStorage.removeItem('music_player_history');
@@ -48,10 +177,15 @@ window.startCustomPlaylist = function(playlist, startIndex) {
     localStorage.setItem('musicPlayerEnabled', 'list');
     localStorage.setItem('music_player_playlist', JSON.stringify(playlist));
     localStorage.setItem('music_player_index', startIndex);
-    localStorage.setItem('music_player_active_tab', tabId);
+    claimMusicPlayer();
     
     const toggle = document.getElementById('music-player-toggle');
     if (toggle) toggle.checked = true;
+
+    if (!isMusicPopout && isMusicPopoutOpen()) {
+        createPlayer(musicPlaylist[musicCurrentIndex].video_id, 0);
+        return;
+    }
     
     loadYouTubeAPI();
     if (window.YT && window.YT.Player) {
@@ -95,6 +229,11 @@ window.onYouTubeIframeAPIReady = function() {
 };
 
 function initMusicPlayer() {
+  if (pendingMusicPopoutState) {
+    restoreMusicPopoutState();
+    return;
+  }
+  if (isMusicPopout) return;
   const savedMode = localStorage.getItem('musicPlayerEnabled');
   const toggle = document.getElementById('music-player-toggle');
   
@@ -105,7 +244,11 @@ function initMusicPlayer() {
   }
   
   if (savedMode) {
-    localStorage.setItem('music_player_active_tab', tabId);
+    if (!isMusicPopout && (isMusicPopoutOpen() || localStorage.getItem(musicPopoutModeKey) === 'true')) {
+      hideEmbeddedMusicPlayer();
+      return;
+    }
+    claimMusicPlayer();
     loadYouTubeAPI();
     if (window.YT && window.YT.Player) {
       loadPlaylist();
@@ -197,7 +340,12 @@ function loadPlaylist() {
     });
 }
 
-function createPlayer(videoId, startTime = 0) {
+function createPlayer(videoId, startTime = 0, startPaused = false) {
+  if (!isMusicPopout && isMusicPopoutOpen()) {
+    sendMusicPopoutCommand('play', musicPlayerSnapshot(videoId, startTime, startPaused));
+    hideEmbeddedMusicPlayer();
+    return;
+  }
   const container = document.getElementById('music-player-container');
   if (!container) return;
   
@@ -238,6 +386,8 @@ function createPlayer(videoId, startTime = 0) {
   }
   
   container.style.display = 'block';
+  const emptyMessage = document.getElementById('player-empty');
+  if (emptyMessage) emptyMessage.hidden = true;
   
   const isFavorite = currentData.is_favorite;
   const sourceId = currentData.source_id;
@@ -283,6 +433,19 @@ function createPlayer(videoId, startTime = 0) {
       .mp-btn { background: transparent; color: white; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 5px; border-radius: 4px; transition: background 0.2s; }
       .mp-btn:hover { background: rgba(255,255,255,0.2); }
       .mp-btn svg { width: 24px; height: 24px; fill: currentColor; }
+      .mp-size-menu { position: relative; }
+      .mp-size-popover { display: none; position: absolute; top: 100%; right: 0; padding-top: 4px; z-index: 20; }
+      .mp-size-popover .mp-btn { background: #222; white-space: nowrap; gap: 6px; padding: 8px; font: 13px sans-serif; }
+      .mp-size-menu:hover .mp-size-popover, .mp-size-menu:focus-within .mp-size-popover { display: block; }
+      .mp-size-popover .mp-btn:hover { background: #444; }
+      .mp-fullscreen .mp-size-popover { top: auto; bottom: 100%; padding-top: 0; padding-bottom: 4px; }
+      .mp-popout .mp-size-menu, .mp-popout #mp-fullscreen, .mp-popout .mp-drag-zone { display: none; }
+      #mp-dock { display: none; }
+      .mp-popout #mp-dock { display: flex; }
+      .mp-popout #mp-left { min-width: 0; }
+      .mp-popout #mp-controls { height: 40px; }
+      .mp-popout .mp-ctrl-group { gap: 4px; }
+      .mp-popout #mp-history { position: absolute; top: 40px; right: 0; bottom: 0; width: min(240px, 70vw); z-index: 15; line-height: 1.4; }
       
       .history-item { padding: 10px; cursor: pointer; border-bottom: 1px solid #222; display: flex; align-items: center; gap: 8px; transition: background 0.2s; }
       .history-item:hover { background: #222; }
@@ -406,8 +569,12 @@ function createPlayer(videoId, startTime = 0) {
                 <button id="mp-next" class="mp-btn" title="Next">${iconNext}</button>
              </div>
              <div class="mp-ctrl-group mp-ctrl-right">
-                <button id="mp-expand" class="mp-btn" title=""></button>
+                <div class="mp-size-menu">
+                  <button id="mp-expand" class="mp-btn" title=""></button>
+                  <div class="mp-size-popover"><button id="mp-popout" class="mp-btn" title="Open player in a separate window">${iconInfo}<span>Pop out player</span></button></div>
+                </div>
                 <button id="mp-fullscreen" class="mp-btn" title=""></button>
+                <button id="mp-dock" class="mp-btn" title="Return player to page" aria-label="Return player to page">${iconTheater}</button>
                 <button id="mp-close" class="mp-btn" title="Close">${iconClose}</button>
              </div>
           </div>
@@ -431,14 +598,14 @@ function createPlayer(videoId, startTime = 0) {
     width: '100%',
     videoId: actualVideoToPlay,
     playerVars: {
-      autoplay: 1,
+      autoplay: startPaused ? 0 : 1,
       controls: 1,
       start: Math.floor(startTime)
     },
     events: {
       onReady: (e) => {
         isMusicPlayerReady = true;
-        e.target.playVideo();
+        if (!startPaused) e.target.playVideo();
       },
       onStateChange: onPlayerStateChange
     }
@@ -530,10 +697,10 @@ function updateContainerSize() {
     const historyEl = document.getElementById('mp-history');
     const controlsEl = document.getElementById('mp-controls');
     
-    const isFullscreen = localStorage.getItem('music_player_fullscreen') === 'true';
+    const isFullscreen = !isMusicPopout && localStorage.getItem('music_player_fullscreen') === 'true';
     setMusicPlayerScrollLock(isFullscreen);
     const isExpanded = localStorage.getItem('music_player_expanded') === 'true';
-    const showHist = localStorage.getItem('music_player_history_visible') !== 'false';
+    const showHist = localStorage.getItem('music_player_history_visible') === 'true';
     // Check both orientation matchMedia and physical screen dimensions for 100% detection
     const isMobilePortrait = window.matchMedia('(orientation: portrait)').matches || (window.innerHeight > window.innerWidth);
     const scale = isMobilePortrait ? 1.5 : 1;
@@ -549,7 +716,14 @@ function updateContainerSize() {
     
     container.style.setProperty('position', 'fixed', 'important');
     
-    if (isFullscreen) {
+    if (isMusicPopout) {
+        if (wrapper) wrapper.classList.add('mp-popout');
+        for (const [property, value] of Object.entries({ top: '0', left: '0', right: 'auto', bottom: 'auto', width: '100%', height: '100%', 'border-radius': '0' })) {
+            container.style.setProperty(property, value, 'important');
+        }
+        if (historyEl) { historyEl.style.width = ''; historyEl.style.height = ''; }
+        if (controlsEl) controlsEl.style.height = '40px';
+    } else if (isFullscreen) {
         if (wrapper) wrapper.classList.add('mp-fullscreen');
         container.style.setProperty('top', '0', 'important');
         container.style.setProperty('left', '0', 'important');
@@ -611,12 +785,14 @@ function saveHistory() {
 }
 
 function bindPlayerEvents() {
+    document.getElementById('mp-dock').addEventListener('click', returnMusicPlayerToPage);
+    document.getElementById('mp-popout').addEventListener('click', openMusicPopout);
     document.getElementById('mp-close').addEventListener('click', closePlayer);
     document.getElementById('mp-prev').addEventListener('click', playPrev);
     document.getElementById('mp-next').addEventListener('click', playNext);
     
     document.getElementById('mp-toggle-hist').addEventListener('click', () => {
-        const current = localStorage.getItem('music_player_history_visible') !== 'false';
+        const current = localStorage.getItem('music_player_history_visible') === 'true';
         localStorage.setItem('music_player_history_visible', !current);
         updateContainerSize();
     });
@@ -636,7 +812,17 @@ function bindPlayerEvents() {
         updateContainerSize();
     });
 
-    document.getElementById('mp-info').addEventListener('click', () => {
+    document.getElementById('mp-info').addEventListener('click', event => {
+        if (isMusicPopout) {
+            event.preventDefault();
+            if (window.opener && !window.opener.closed) {
+                window.opener.location.href = event.currentTarget.href;
+                window.opener.focus();
+            } else {
+                window.open(event.currentTarget.href, '_blank', 'noopener');
+            }
+            return;
+        }
         if (localStorage.getItem('music_player_fullscreen') === 'true') {
             localStorage.setItem('music_player_fullscreen', 'false');
             updateContainerSize();
@@ -708,6 +894,7 @@ function closePlayer() {
     
     const toggle = document.getElementById('music-player-toggle');
     if (toggle) toggle.checked = false;
+    if (isMusicPopout) window.close();
 }
 
 function renderHistoryList() {
@@ -855,6 +1042,19 @@ window.addEventListener('pagehide', () => {
       localStorage.setItem('music_player_video', videoId);
     } catch (e) {}
   }
+  if (isMusicPopout) {
+    if (musicPlayer && isMusicPlayerReady && localStorage.getItem('musicPlayerEnabled')) {
+      sendMusicPopoutCommand('play', musicPlayerSnapshot(
+        musicPlayer.getVideoData().video_id, musicPlayer.getCurrentTime(),
+        musicPlayer.getPlayerState() !== YT.PlayerState.PLAYING
+      ));
+    }
+    const owner = JSON.parse(localStorage.getItem(musicPopoutOwnerKey) || 'null');
+    if (owner && owner.id === tabId) {
+      localStorage.removeItem(musicPopoutOwnerKey);
+      localStorage.removeItem('musicPlayerEnabled');
+    }
+  }
 });
 
 // Detect bfcache restoration
@@ -873,8 +1073,21 @@ window.addEventListener('pageshow', (e) => {
 
 // Toggle player
 document.addEventListener('DOMContentLoaded', () => {
+  if (isMusicPopout) {
+    localStorage.setItem(musicPopoutModeKey, 'true');
+    const heartbeat = () => localStorage.setItem(musicPopoutOwnerKey, JSON.stringify({ id: tabId, updated: Date.now() }));
+    heartbeat();
+    const heartbeatTimer = setInterval(heartbeat, 10000);
+    window.addEventListener('pagehide', () => clearInterval(heartbeatTimer), { once: true });
+    try {
+      const command = JSON.parse(localStorage.getItem(musicPopoutCommandKey));
+      if (command && command.action === 'play') receiveMusicPopoutState(command.state);
+    } catch (e) { console.error('Unable to restore pop-out player', e); }
+  }
   const toggle = document.getElementById('music-player-toggle');
   if (toggle) {
+    const savedMode = localStorage.getItem('musicPlayerEnabled');
+    toggle.checked = savedMode === toggle.dataset.mode || (savedMode === 'list' && toggle.dataset.mode === 'filtered');
     toggle.addEventListener('change', function() {
       localStorage.removeItem('music_player_playlist');
       localStorage.removeItem('music_player_index');
@@ -882,6 +1095,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const mode = this.dataset.mode;
       
       if (enabled) {
+        window.prepareMusicPlayerWindow();
         const oldMode = localStorage.getItem('musicPlayerEnabled');
         if (oldMode && oldMode !== mode) {
           localStorage.removeItem('music_player_video');
@@ -895,9 +1109,10 @@ document.addEventListener('DOMContentLoaded', () => {
         historyIndex = -1;
         
         localStorage.setItem('musicPlayerEnabled', mode);
-        localStorage.setItem('music_player_active_tab', tabId);
+        claimMusicPlayer();
         loadYouTubeAPI();
       } else {
+        if (!isMusicPopout && isMusicPopoutOpen()) sendMusicPopoutCommand('stop');
         localStorage.removeItem('musicPlayerEnabled');
         localStorage.removeItem('music_player_video');
         localStorage.removeItem('music_player_time');
@@ -906,7 +1121,7 @@ document.addEventListener('DOMContentLoaded', () => {
       
       const container = document.getElementById('music-player-container');
       if (enabled) {
-        if (window.YT && window.YT.Player) {
+        if ((!isMusicPopout && isMusicPopoutOpen()) || (window.YT && window.YT.Player)) {
           loadPlaylist();
         }
       } else {
@@ -928,7 +1143,8 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Initialize on page load if enabled
   const savedMode = localStorage.getItem('musicPlayerEnabled');
-  if (savedMode) {
+  const receivedDockedPlayer = !isMusicPopout && receiveDockedMusicPlayer();
+  if (!receivedDockedPlayer && savedMode && !isMusicPopout && !isMusicPopoutOpen() && localStorage.getItem(musicPopoutModeKey) !== 'true') {
     loadYouTubeAPI();
     if (window.YT && window.YT.Player && !isMusicInitialized) {
       isMusicInitialized = true;
@@ -946,6 +1162,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Listen for storage changes from other tabs
   window.addEventListener('storage', (e) => {
+    if (e.key === musicPopoutCommandKey && isMusicPopout && e.newValue) {
+      try {
+        const command = JSON.parse(e.newValue);
+        if (command.action === 'play') receiveMusicPopoutState(command.state);
+        if (command.action === 'stop') {
+          pendingMusicPopoutState = null;
+          closePlayer();
+        }
+      } catch (error) { console.error('Unable to update pop-out player', error); }
+      return;
+    }
+    if (e.key === musicPopoutOwnerKey && !isMusicPopout && e.newValue && isMusicPopoutOpen()) {
+      hideEmbeddedMusicPlayer();
+    }
+    if (isMusicPopout) return;
+    if (e.key === 'musicPlayerEnabled' && toggle) {
+      toggle.checked = e.newValue === toggle.dataset.mode || (e.newValue === 'list' && toggle.dataset.mode === 'filtered');
+    }
     if (isRestoringFromBfcache) return; // Skip stale queued storage events
     if (e.key === 'music_player_active_tab' && e.newValue && e.newValue !== String(tabId)) {
       const container = document.getElementById('music-player-container');

@@ -1959,6 +1959,8 @@ updateSortButtons();
 
   // Called when clicking the specific '▶' button on an item card
   window.playContextPlaylist = async function(startItemId) {
+      // Open a remembered pop-out during the click, before the asynchronous fetch.
+      if (window.prepareMusicPlayerWindow) window.prepareMusicPlayerWindow();
       const btnList = document.querySelectorAll(`.card[data-id="${startItemId}"] .play-card-btn, .list-row[data-id="${startItemId}"] .play-card-btn`);
       const playSvg = `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`;
       const loadingSvg = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/></path></svg>`;

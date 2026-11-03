@@ -2,6 +2,7 @@ from django.conf import settings
 from django.urls import path, re_path
 from django.contrib import admin
 from django.views.static import serve
+from django.views.generic import TemplateView
 from django.contrib.auth import views as auth_views
 
 from core import views
@@ -48,6 +49,7 @@ urlpatterns = [
     path('api/manga/', views.manga_api, name='manga_api'),
     path('api/manga/banners/', views.manga_banners_api, name='manga_banners_api'),
     path('music/', views.music, name='music'),
+    path('music/player/', TemplateView.as_view(template_name='core/p_music_player.html'), name='music_player'),
     path('api/music/', views.music_api, name='music_api'),
     path('api/music/banners/', views.music_banners_api, name='music_banners_api'),
     path("discover/", views.discover_view, name="discover"),
