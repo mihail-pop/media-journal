@@ -252,6 +252,28 @@ function createPlayer(videoId, startTime = 0) {
       .mp-ctrl-right { justify-content: flex-end; }
       
       #mp-video-wrap { flex: 1; position: relative; background: #000; }
+      /* Adjust these percentages to move/resize the invisible video drag areas.
+         Width applies to each side; the gap between them leaves the center clickable. */
+      #mp-video-wrap {
+        --mp-drag-top: 25%;
+        --mp-drag-height: 45%;
+        --mp-drag-width: 38%;
+        --mp-drag-edge: 0%;
+      }
+      .mp-drag-zone {
+        position: absolute;
+        top: var(--mp-drag-top);
+        height: var(--mp-drag-height);
+        width: var(--mp-drag-width);
+        z-index: 2;
+        cursor: grab;
+        touch-action: none;
+        user-select: none;
+      }
+      .mp-drag-zone-left { left: var(--mp-drag-edge); }
+      .mp-drag-zone-right { right: var(--mp-drag-edge); }
+      .mp-drag-zone.is-dragging { cursor: grabbing; }
+      .mp-fullscreen .mp-drag-zone { display: none; }
       #mp-history { background: #111; overflow-y: auto; color: white; flex-direction: column; flex-shrink: 0; display: flex; }
       #mp-history::-webkit-scrollbar { width: 6px; }
       #mp-history::-webkit-scrollbar-track { background: #111; }
@@ -392,6 +414,8 @@ function createPlayer(videoId, startTime = 0) {
           </div>
           <div id="mp-video-wrap">
              <div id="music-player"></div>
+             <div class="mp-drag-zone mp-drag-zone-left" title="Drag to move player"></div>
+             <div class="mp-drag-zone mp-drag-zone-right" title="Drag to move player"></div>
              <div id="mp-hover-zone"></div>
           </div>
        </div>
@@ -402,6 +426,7 @@ function createPlayer(videoId, startTime = 0) {
   updateContainerSize();
   renderHistoryList();
   bindPlayerEvents();
+  bindMusicPlayerDragging(container);
   
   musicPlayer = new YT.Player('music-player', {
     height: '100%',
@@ -420,6 +445,64 @@ function createPlayer(videoId, startTime = 0) {
       onStateChange: onPlayerStateChange
     }
   });
+}
+
+function positionMusicPlayer(container, x, y) {
+    // Keep the player within reach when changing size or using a smaller window.
+    const left = Math.max(0, Math.min(x, Math.max(0, window.innerWidth - container.offsetWidth)));
+    const top = Math.max(0, Math.min(y, Math.max(0, window.innerHeight - container.offsetHeight)));
+    container.style.setProperty('left', left + 'px', 'important');
+    container.style.setProperty('top', top + 'px', 'important');
+    container.style.setProperty('right', 'auto', 'important');
+    container.style.setProperty('bottom', 'auto', 'important');
+    return { x: left, y: top };
+}
+
+function restoreMusicPlayerPosition(container) {
+    try {
+        const position = JSON.parse(localStorage.getItem('music_player_position'));
+        if (position && Number.isFinite(position.x) && Number.isFinite(position.y)) {
+            positionMusicPlayer(container, position.x, position.y);
+        }
+    } catch (e) {
+        // An invalid saved position should leave the default placement intact.
+    }
+}
+
+function bindMusicPlayerDragging(container) {
+    container.querySelectorAll('.mp-drag-zone').forEach(zone => {
+        let drag = null;
+        zone.addEventListener('pointerdown', event => {
+            if (!event.isPrimary || event.button !== 0 || localStorage.getItem('music_player_fullscreen') === 'true') return;
+            event.preventDefault();
+            const rect = container.getBoundingClientRect();
+            drag = { pointerId: event.pointerId, x: event.clientX, y: event.clientY, left: rect.left, top: rect.top, moved: false };
+            zone.setPointerCapture(event.pointerId);
+            zone.classList.add('is-dragging');
+        });
+        zone.addEventListener('pointermove', event => {
+            if (!drag || drag.pointerId !== event.pointerId) return;
+            const dx = event.clientX - drag.x;
+            const dy = event.clientY - drag.y;
+            if (!drag.moved && Math.hypot(dx, dy) < 3) return;
+            drag.moved = true;
+            positionMusicPlayer(container, drag.left + dx, drag.top + dy);
+        });
+        const finishDrag = event => {
+            if (!drag || drag.pointerId !== event.pointerId) return;
+            const moved = drag.moved;
+            drag = null;
+            zone.classList.remove('is-dragging');
+            if (zone.hasPointerCapture(event.pointerId)) zone.releasePointerCapture(event.pointerId);
+            if (moved) {
+                const rect = container.getBoundingClientRect();
+                localStorage.setItem('music_player_position', JSON.stringify({ x: rect.left, y: rect.top }));
+            }
+        };
+        zone.addEventListener('pointerup', finishDrag);
+        zone.addEventListener('pointercancel', finishDrag);
+        zone.addEventListener('lostpointercapture', finishDrag);
+    });
 }
 
 function updateContainerSize() {
@@ -486,6 +569,7 @@ function updateContainerSize() {
             container.style.setProperty('top', 'auto', 'important');
             container.style.setProperty('right', 'auto', 'important');
         }
+        restoreMusicPlayerPosition(container);
     }
     
     // Dynamic Tooltips and Icons injection
