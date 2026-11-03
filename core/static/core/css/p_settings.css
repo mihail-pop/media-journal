@@ -641,6 +641,52 @@ table td:last-child .delete-btn {
   color: var(--special-color);
 }
 
+.live-search-section {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+.live-search-types {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 110px));
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.live-search-type {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.8rem 0.25rem;
+  min-width: 0;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 2px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.live-search-type:hover { background: var(--hover-bg); }
+.live-search-type[aria-pressed="true"] { border-color: var(--special-color); }
+.live-search-type[aria-pressed="true"] .live-search-icon { color: var(--special-color); }
+.live-search-icon { display: flex; align-items: center; justify-content: center; height: 1.5rem; }
+.live-search-icon svg { width: 1.5rem; height: 1.5rem; }
+.live-search-provider {
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 0.15rem 0.4rem;
+  border-radius: 999px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 0.65rem;
+  white-space: nowrap;
+}
+.live-search-help { margin: 1.25rem 0 0; text-align: center; font-size: 0.9rem; color: var(--text-primary); line-height: 1.6; }
+
 .preferences-container {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -1011,6 +1057,11 @@ table td:last-child .delete-btn {
 }
 
 @media (orientation: portrait) {
+  .live-search-types { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; }
+  .live-search-type { font-size: 1.5rem; padding: 1rem 0.5rem; }
+  .live-search-icon, .live-search-icon svg { width: 2.5rem; height: 2.5rem; }
+  .live-search-provider { font-size: 1rem; }
+  .live-search-help { font-size: 1.2rem; }
 
   #backup-modal-title,
   #backup-status-text,

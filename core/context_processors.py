@@ -1,8 +1,9 @@
-from .models import NavItem
+from .models import AppSettings, NavItem, default_live_search_settings
 
 
 def nav_items(request):
     items = list(NavItem.objects.filter(visible=True).order_by("position"))
+    settings = AppSettings.objects.first()
 
     # Add display name to each item (from choices)
     for item in items:
@@ -21,6 +22,7 @@ def nav_items(request):
             {"data_type": media_types[item.name], "label": item.display_name}
             for item in items if item.name in media_types
         ],
+        "live_search_settings": settings.get_live_search_settings() if settings else default_live_search_settings(),
     }
 
 

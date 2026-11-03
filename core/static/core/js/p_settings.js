@@ -54,6 +54,39 @@ function saveRatingMode(value) {
 }
 
 document.addEventListener("DOMContentLoaded", function () {
+  const liveSearchSettings = document.getElementById('live-search-settings');
+  if (liveSearchSettings) {
+    const buttons = [...liveSearchSettings.querySelectorAll('.live-search-type')];
+    let saving = false;
+    liveSearchSettings.addEventListener('click', async event => {
+      const button = event.target.closest('.live-search-type');
+      if (!button || saving) return;
+      const previous = button.getAttribute('aria-pressed') === 'true';
+      saving = true;
+      buttons.forEach(item => { item.disabled = true; });
+      button.setAttribute('aria-pressed', String(!previous));
+      try {
+        const response = await fetch('/settings/update_live_search/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+          body: JSON.stringify({ media_type: button.dataset.type, enabled: !previous }),
+        });
+        if (!response.ok) throw new Error('Unable to save live search settings');
+        const data = await response.json();
+        if (!data.success) throw new Error('Unable to save live search settings');
+        buttons.forEach(item => item.setAttribute('aria-pressed', String(data.live_search_settings[item.dataset.type] === true)));
+        window.dispatchEvent(new CustomEvent('live-search-settings-updated', { detail: data.live_search_settings }));
+        showNotification('Live search updated.');
+      } catch (error) {
+        button.setAttribute('aria-pressed', String(previous));
+        alert('Could not save live search settings. Please try again.');
+        console.error(error);
+      } finally {
+        saving = false;
+        buttons.forEach(item => { item.disabled = false; });
+      }
+    });
+  }
   // ----- Custom Select for Rating Mode -----
   function setupCustomSelect() {
     const wrapper = document.querySelector('.custom-select-wrapper');

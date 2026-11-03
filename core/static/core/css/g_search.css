@@ -110,9 +110,15 @@
 }
 
 
+#search-results-panel {
+  width: 960px;
+  max-width: 100%;
+  min-width: 0;
+}
+
 .search-results-frame {
   width: 100%;
-  max-width: 800px;
+  max-width: 960px;
   margin: 0 auto;
   overflow: hidden;
   border-radius: 8px;
@@ -120,14 +126,20 @@
   box-shadow: 0 10px 30px rgb(0 0 0 / 25%);
 }
 
+#search-overlay:not([data-search-type="music"]) .search-results-frame {
+  width: var(--search-natural-width, 960px);
+  min-width: min(100%, var(--search-controls-width, 0px));
+}
+
 .search-card-grid {
   box-sizing: border-box;
   width: 100%;
-  max-width: 800px;
-  max-height: 70vh;
+  max-width: 960px;
+  max-height: max(0px, calc(100dvh - 10rem));
   margin: 0 auto;
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(var(--search-result-columns, 6), minmax(0, var(--search-card-width, 144px)));
+  justify-content: start;
   gap: 12px;
   overflow-y: auto;
   background: var(--bg-tertiary);
@@ -137,8 +149,17 @@
   -ms-overflow-style: none;
 }
 
+#search-overlay[data-search-type="music"] .search-results-frame {
+  max-width: 800px;
+}
+
+#search-overlay:not([data-search-type="music"]) .search-card-grid {
+  scrollbar-gutter: stable;
+}
+
 #search-overlay[data-search-type="music"] .search-card-grid {
-  grid-template-columns: repeat(2, 1fr);
+  max-width: 800px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .search-card-grid::-webkit-scrollbar {
@@ -149,6 +170,7 @@
 
 
 .search-card {
+  min-width: 0;
   position: relative;
   background: color-mix(in srgb, var(--bg-primary) 35%, var(--bg-tertiary));
   padding: 0.5rem;
@@ -170,8 +192,10 @@
 
 .search-card img {
   display: block;
-  width: 120px;
-  height: 180px;
+  width: 100%;
+  max-width: 120px;
+  height: auto;
+  aspect-ratio: 2 / 3;
   border-radius: 4px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
   margin-bottom: 0.6rem;
@@ -201,12 +225,21 @@
 }
 
 #search-overlay[data-search-type="music"] .search-card-title {
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
   min-height: auto;
   padding: 0.2rem;
   text-align: center;
   font-size: 1rem;
-  border: 1px solid var(--border-color);
   border-radius: 4px;
+}
+
+.search-card-year {
+  margin-top: 0.15rem;
+  color: var(--text-search);
+  font-size: 0.9rem;
+  line-height: 1.4;
+  text-align: center;
 }
 
 .search-card .card-link {
@@ -392,7 +425,8 @@
 
 
 @media (orientation: portrait) {
-  .search-results-frame { max-width: 32rem; }
+  .search-results-frame,
+  #search-overlay[data-search-type="music"] .search-results-frame { max-width: 32rem; }
   .search-media-select { flex-basis: 170px; }
   #search-media-toggle, .search-media-option { font-size: 1.5rem; }
   #search-media-toggle, .overlay-search-input-wrapper { background: var(--search-hover-bg); }
@@ -404,10 +438,15 @@
     transform-origin: top;
   }
 
-  .search-card-grid {
+  .search-card-grid,
+  #search-overlay[data-search-type="music"] .search-card-grid {
     max-width: 32rem;
-    grid-template-columns: repeat(3, 1fr) !important;
+    grid-template-columns: repeat(var(--search-result-columns, 3), minmax(0, var(--search-card-width, 152px)));
     max-height: 40vh;
+  }
+
+  #search-overlay[data-search-type="music"] .search-card-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   #overlay-search-input {

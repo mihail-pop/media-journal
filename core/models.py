@@ -252,7 +252,24 @@ class NavItem(models.Model):
     def __str__(self):
         return f"{self.get_name_display()} (pos: {self.position}, visible: {self.visible})"
     
+def default_live_search_settings():
+    return {
+        'movie': True, 'tv': True, 'anime': False, 'manga': False,
+        'game': True, 'book': False, 'music': False,
+    }
+
+
 class AppSettings(models.Model):
+    live_search_settings = models.JSONField(default=default_live_search_settings, blank=True)
+
+    def get_live_search_settings(self):
+        preferences = default_live_search_settings()
+        if isinstance(self.live_search_settings, dict):
+            for media_type, enabled in self.live_search_settings.items():
+                if media_type in preferences and isinstance(enabled, bool):
+                    preferences[media_type] = enabled
+        return preferences
+
     rating_mode = models.CharField(
         max_length=20,
         choices=[

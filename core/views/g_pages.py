@@ -1162,6 +1162,16 @@ def settings_page(request):
         settings = AppSettings.objects.create()  # ensure one exists
 
     current_rating_mode = settings.rating_mode
+    live_search_preferences = settings.get_live_search_settings()
+    live_search_types = [
+        ('movie', 'movies', 'Movies', 'TMDB'),
+        ('tv', 'tvshows', 'TV Shows', 'TMDB'),
+        ('anime', 'anime', 'Anime', 'AniList'),
+        ('manga', 'manga', 'Manga', 'AniList'),
+        ('game', 'games', 'Games', 'IGDB'),
+        ('book', 'books', 'Books', 'OpenLibrary'),
+        ('music', 'music', 'Music', 'MusicBrainz'),
+    ]
 
     settings_nav_items = NavItem.objects.all().order_by("position")
     for item in settings_nav_items:
@@ -1184,5 +1194,10 @@ def settings_page(request):
             "show_repeats_field": settings.show_repeats_field,
             "show_collections_field": settings.show_collections_field,
             "details_sections_order": settings.details_sections_order,
+            "live_search_options": [
+                {'type': media_type, 'nav_name': nav_name, 'label': label,
+                 'provider': provider, 'enabled': live_search_preferences[media_type]}
+                for media_type, nav_name, label, provider in live_search_types
+            ],
         },
     )

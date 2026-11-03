@@ -39,6 +39,31 @@ document.addEventListener("DOMContentLoaded", () => {
   const mediaLabel = document.getElementById('search-media-label');
   const mediaOptions = document.getElementById('search-media-options');
   const optionButtons = [...mediaOptions.querySelectorAll('.search-media-option')];
+  const searchControls = overlay.querySelector('.overlay-search-input-wrapper');
+  function updateSearchResultsSize() {
+    const frame = resultsContainer.querySelector('.search-results-frame');
+    if (!frame || overlay.dataset.searchType === 'music') return;
+    const grid = frame.querySelector('.search-card-grid');
+    const style = getComputedStyle(grid);
+    const padding = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
+    const gap = parseFloat(style.columnGap);
+    const scrollbar = grid.offsetWidth - grid.clientWidth;
+    const maxWidth = parseFloat(getComputedStyle(frame).maxWidth);
+    const fullWidth = Math.min(document.getElementById('search-results-panel').clientWidth, maxWidth);
+    const maxColumns = window.matchMedia('(orientation: portrait)').matches ? 3 : 6;
+    const columns = Math.min(maxColumns, Number(frame.dataset.resultCount));
+    const cardWidth = Math.max(0, Math.floor((fullWidth - padding - scrollbar - gap * (maxColumns - 1)) / maxColumns * 100) / 100);
+    frame.style.setProperty('--search-result-columns', columns);
+    frame.style.setProperty('--search-card-width', `${cardWidth}px`);
+    frame.style.setProperty('--search-natural-width', `${Math.ceil(columns * cardWidth + gap * (columns - 1) + padding + scrollbar)}px`);
+  }
+  const updateSearchControlsWidth = () => {
+    overlay.style.setProperty('--search-controls-width', `${searchControls.offsetWidth}px`);
+    updateSearchResultsSize();
+  };
+  new ResizeObserver(updateSearchControlsWidth).observe(searchControls);
+  updateSearchControlsWidth();
+  window.addEventListener('resize', updateSearchResultsSize);
   const availableTypes = new Set(optionButtons.map(button => button.dataset.type));
   const apiEndpoints = {
     movie: '/api/tmdb_search/', tv: '/api/tmdb_search/',
@@ -67,8 +92,15 @@ document.addEventListener("DOMContentLoaded", () => {
     clearTimeout(liveSearchTimer);
   }
 
-  // The per-media Settings preferences will supply this value in the next change.
-  function isLiveSearchEnabled() { return false; }
+  let liveSearchPreferences = {};
+  try {
+    liveSearchPreferences = JSON.parse(document.getElementById('live-search-preferences').textContent);
+  } catch (error) { /* Keep manual search available if preferences cannot be read. */ }
+  function isLiveSearchEnabled() { return liveSearchPreferences[selectedType] === true; }
+  window.addEventListener('live-search-settings-updated', event => {
+    liveSearchPreferences = event.detail;
+    cancelSearch();
+  });
 
   function setMediaOptionsOpen(open) {
     mediaOptions.hidden = !open;
@@ -168,13 +200,24 @@ document.addEventListener("DOMContentLoaded", () => {
         label.className = 'search-card-title';
         label.textContent = title;
         link.append(image, label);
+        if (type === 'music' && item.year) {
+          const year = document.createElement('div');
+          year.className = 'search-card-year';
+          year.textContent = item.year;
+          link.appendChild(year);
+        }
         card.appendChild(link);
         grid.appendChild(card);
       });
       const frame = document.createElement('div');
       frame.className = 'search-results-frame';
+      if (type !== 'music') {
+        frame.dataset.resultCount = data.results.length;
+        frame.style.setProperty('--search-result-columns', Math.min(6, data.results.length));
+      }
       frame.appendChild(grid);
       resultsContainer.replaceChildren(frame);
+      updateSearchResultsSize();
     } catch (error) {
       if (error.name === 'AbortError' || revision !== searchRevision) return;
       showSearchMessage('Error fetching results');
@@ -184,7 +227,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function scheduleLiveSearch() {
     clearTimeout(liveSearchTimer);
-    liveSearchTimer = setTimeout(() => doSearch(overlaySearchInput.value), selectedType === 'game' ? 500 : 300);
+    if (overlaySearchInput.value.trim().length < 3) return;
+    const delay = selectedType === 'game' ? 750 : ['movie', 'tv'].includes(selectedType) ? 300 : 800;
+    liveSearchTimer = setTimeout(() => doSearch(overlaySearchInput.value), delay);
   }
   overlaySearchInput.addEventListener('keydown', event => {
     if (event.key === 'Enter') {

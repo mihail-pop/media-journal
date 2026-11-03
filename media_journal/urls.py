@@ -66,6 +66,7 @@ urlpatterns = [
     path('get-item/<int:item_id>/', views.get_item, name='get_item'),
     path('settings/', views.settings_page, name='settings'),
     path("settings/update_preferences/", views.update_preferences, name="update_preferences"),
+    path('settings/update_live_search/', views.update_live_search_settings, name='update_live_search_settings'),
     path("settings/update_theme/", views.update_theme, name="update_theme"),
     path("settings/save_username/", views.save_username, name="save_username"),
     path('api/version_info/', views.version_info_api, name='version_info_api'),

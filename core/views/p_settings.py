@@ -7,6 +7,7 @@ import concurrent.futures
 
 import requests
 from django.apps import apps
+from django.db import transaction
 from django.http import FileResponse, JsonResponse, HttpResponseBadRequest
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_POST
@@ -57,6 +58,32 @@ def update_preferences(request):
     settings.save()
 
     return JsonResponse({"success": True})
+
+
+@require_POST
+def update_live_search_settings(request):
+    from core.models import AppSettings, default_live_search_settings
+
+    try:
+        data = json.loads(request.body)
+        if not isinstance(data, dict):
+            raise ValueError
+        media_type = data.get('media_type')
+        enabled = data.get('enabled')
+        if not isinstance(media_type, str) or media_type not in default_live_search_settings() or not isinstance(enabled, bool):
+            raise ValueError
+    except (ValueError, TypeError):
+        return JsonResponse({'success': False, 'error': 'Invalid live search preference.'}, status=400)
+
+    with transaction.atomic():
+        settings = AppSettings.objects.select_for_update().first()
+        if not settings:
+            settings = AppSettings.objects.create()
+        preferences = settings.get_live_search_settings()
+        preferences[media_type] = enabled
+        settings.live_search_settings = preferences
+        settings.save(update_fields=['live_search_settings'])
+    return JsonResponse({'success': True, 'live_search_settings': preferences})
 
 
 @require_POST
