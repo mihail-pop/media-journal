@@ -291,8 +291,8 @@ function createPlayer(videoId, startTime = 0) {
       /* FULLSCREEN OVERRIDES */
       .mp-fullscreen #mp-wrapper { flex-direction: row; width: 100%; height: 100%; }
       .mp-fullscreen #mp-controls {
-         position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
-         background: rgba(0,0,0,0.8); border-radius: 12px; height: 60px; padding: 0 20px; width: 600px; max-width: 90vw;
+         position: absolute; bottom: 0.5rem; left: 50%; transform: translateX(-50%);
+         background: rgba(0,0,0,0.8); border-radius: 12px; height: 60px; padding: 0 20px; width: 600px; max-width: 90vw; box-sizing: border-box;
       }
       .mp-fullscreen #mp-history {
          position: absolute; bottom: 100px; right: 20px; width: 300px; max-height: 50vh;
@@ -303,7 +303,6 @@ function createPlayer(videoId, startTime = 0) {
       .mp-fullscreen #mp-controls { z-index: 10; }
       .mp-fullscreen #mp-history { z-index: 10; pointer-events: auto; }
       .mp-fullscreen .mp-btn svg { width: 32px; height: 32px; }
-      .mp-fullscreen #mp-hover-zone { position: absolute; bottom: 0; left: 0; width: 100%; height: 100px; z-index: 5; }
       
       /* Mobile Portrait Fullscreen (holding phone straight): 2-row layout with big buttons */
       .mp-fullscreen.mp-portrait #mp-controls {
@@ -313,7 +312,7 @@ function createPlayer(videoId, startTime = 0) {
           min-height: 110px !important;
           padding: 12px 16px !important;
           border-radius: 20px !important;
-          bottom: 30px !important;
+          bottom: 0.5rem !important;
           display: flex !important;
           flex-wrap: wrap !important;
           justify-content: space-between !important;
@@ -357,7 +356,7 @@ function createPlayer(videoId, startTime = 0) {
               min-height: 110px !important;
               padding: 12px 16px !important;
               border-radius: 20px !important;
-              bottom: 30px !important;
+              bottom: 0.5rem !important;
               display: flex !important;
               flex-wrap: wrap !important;
               justify-content: space-between !important;
@@ -416,7 +415,6 @@ function createPlayer(videoId, startTime = 0) {
              <div id="music-player"></div>
              <div class="mp-drag-zone mp-drag-zone-left" title="Drag to move player"></div>
              <div class="mp-drag-zone mp-drag-zone-right" title="Drag to move player"></div>
-             <div id="mp-hover-zone"></div>
           </div>
        </div>
        <div id="mp-history"></div>
@@ -505,6 +503,26 @@ function bindMusicPlayerDragging(container) {
     });
 }
 
+let musicPlayerScrollPosition = null;
+
+function setMusicPlayerScrollLock(locked) {
+    if (locked && !musicPlayerScrollPosition) {
+        musicPlayerScrollPosition = { x: window.scrollX, y: window.scrollY };
+        document.body.style.setProperty('--music-player-scroll-top', -musicPlayerScrollPosition.y + 'px');
+        document.body.style.setProperty('--music-player-scroll-left', -musicPlayerScrollPosition.x + 'px');
+        document.documentElement.classList.add('music-player-scroll-locked');
+        document.body.classList.add('music-player-scroll-locked');
+    } else if (!locked && musicPlayerScrollPosition) {
+        const position = musicPlayerScrollPosition;
+        document.documentElement.classList.remove('music-player-scroll-locked');
+        document.body.classList.remove('music-player-scroll-locked');
+        document.body.style.removeProperty('--music-player-scroll-top');
+        document.body.style.removeProperty('--music-player-scroll-left');
+        musicPlayerScrollPosition = null;
+        window.scrollTo({ left: position.x, top: position.y, behavior: 'instant' });
+    }
+}
+
 function updateContainerSize() {
     const container = document.getElementById('music-player-container');
     if (!container) return;
@@ -513,6 +531,7 @@ function updateContainerSize() {
     const controlsEl = document.getElementById('mp-controls');
     
     const isFullscreen = localStorage.getItem('music_player_fullscreen') === 'true';
+    setMusicPlayerScrollLock(isFullscreen);
     const isExpanded = localStorage.getItem('music_player_expanded') === 'true';
     const showHist = localStorage.getItem('music_player_history_visible') !== 'false';
     // Check both orientation matchMedia and physical screen dimensions for 100% detection
@@ -616,6 +635,13 @@ function bindPlayerEvents() {
         localStorage.setItem('music_player_fullscreen', !isFullscreen);
         updateContainerSize();
     });
+
+    document.getElementById('mp-info').addEventListener('click', () => {
+        if (localStorage.getItem('music_player_fullscreen') === 'true') {
+            localStorage.setItem('music_player_fullscreen', 'false');
+            updateContainerSize();
+        }
+    });
     
     document.getElementById('mp-playpause').addEventListener('click', () => {
         if (musicPlayer && isMusicPlayerReady) {
@@ -662,6 +688,7 @@ function bindPlayerEvents() {
 }
 
 function closePlayer() {
+    setMusicPlayerScrollLock(false);
     localStorage.removeItem('music_player_playlist');
     localStorage.removeItem('music_player_index');
     if (musicPlayer && musicPlayer.destroy) {
@@ -889,6 +916,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (container) {
           container.style.display = 'none';
         }
+        setMusicPlayerScrollLock(false);
         localStorage.removeItem('music_player_video');
         localStorage.removeItem('music_player_time');
         localStorage.removeItem('music_player_active_tab');
@@ -937,6 +965,7 @@ document.addEventListener('DOMContentLoaded', () => {
           musicPlayer.destroy();
         }
         container.style.display = 'none';
+        setMusicPlayerScrollLock(false);
       }
     }
   });

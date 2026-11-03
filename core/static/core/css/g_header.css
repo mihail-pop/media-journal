@@ -394,6 +394,17 @@ body[data-media-type="person-detail"] header {
 }
 
 
+html.music-player-scroll-locked {
+  overflow-y: scroll;
+}
+
+body.music-player-scroll-locked {
+  position: fixed;
+  top: var(--music-player-scroll-top);
+  left: var(--music-player-scroll-left);
+  width: 100%;
+}
+
 .music-player-container {
   position: sticky;
   z-index: 9999;
