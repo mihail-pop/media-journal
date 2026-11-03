@@ -379,7 +379,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const viewBigBtn = document.getElementById('view-big');
   const viewSmallBtn = document.getElementById('view-small');
 
-  function setMode(mode) {
+  function setMode(mode, persist = true) {
+    document.documentElement.dataset.favoritesView = mode;
     if (mode === 'small') {
         container.classList.add('small-mode');
         viewSmallBtn.classList.add('active');
@@ -389,7 +390,11 @@ document.addEventListener('DOMContentLoaded', () => {
         viewBigBtn.classList.add('active');
         viewSmallBtn.classList.remove('active');
     }
-    localStorage.setItem('favoritesViewMode', mode);
+    if (persist) {
+      try { localStorage.setItem('favoritesViewMode', mode); } catch (error) {
+        // Keep the selected layout even if browser storage is unavailable.
+      }
+    }
   }
 
   if (viewBigBtn && viewSmallBtn) {
@@ -408,10 +413,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }, true); // Use capture to ensure we catch it before other listeners if needed
 
   // Restore saved mode
-  const savedMode = localStorage.getItem('favoritesViewMode');
-  if (savedMode) {
-      setMode(savedMode);
-  }
+  setMode(document.documentElement.dataset.favoritesView || 'big', false);
 
   // --- Custom Person Modal ---
   const cpModal = document.getElementById('custom-person-modal');

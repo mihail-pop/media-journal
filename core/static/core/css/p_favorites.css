@@ -440,13 +440,13 @@ body.drag-active .card-title {
   overflow: hidden;
 }
 
-.favorites-container.small-mode .card-link {
+html[data-favorites-view="small"] .favorites-container .card-link {
   height: 126px;
   overflow: hidden;
   border-radius: 4px;
 }
 
-.favorites-container.small-mode .card[data-media-type="music"] .card-link {
+html[data-favorites-view="small"] .favorites-container .card[data-media-type="music"] .card-link {
   height: 90px;
 }
 
@@ -559,44 +559,45 @@ body.drag-active .card-favorite {
   color: var(--text-light);
 }
 
-.view-btn.active {
+html[data-favorites-view="big"] #view-big,
+html[data-favorites-view="small"] #view-small {
   background-color: var(--text-primary);
   color: var(--bg-primary);
   border-color: var(--text-primary);
 }
 
 
-.favorites-container.small-mode .card-grid {
+html[data-favorites-view="small"] .favorites-container .card-grid {
   grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
   gap: 0.8rem;
 }
 
-.favorites-container.small-mode .card {
+html[data-favorites-view="small"] .favorites-container .card {
   border-radius: 4px;
   overflow: hidden;
   contain: paint;
 }
 
-.favorites-container.small-mode .card-image {
+html[data-favorites-view="small"] .favorites-container .card-image {
   padding-top: 150%;
 
   border-radius: 4px;
 }
 
-.favorites-container.small-mode .card[data-media-type="music"] .card-image {
+html[data-favorites-view="small"] .favorites-container .card[data-media-type="music"] .card-image {
   padding-top: 0;
 }
 
-.favorites-container.small-mode .card-title {
+html[data-favorites-view="small"] .favorites-container .card-title {
   display: none;
 }
 
-.favorites-container.small-mode .card-favorite {
+html[data-favorites-view="small"] .favorites-container .card-favorite {
   display: none;
 }
 
 
-.favorites-container.small-mode .card-link {
+html[data-favorites-view="small"] .favorites-container .card-link {
   cursor: grab;
 }
 
@@ -709,7 +710,7 @@ body.drag-active .card-favorite {
         gap: 1.5rem;
     }
 
-    .favorites-container.small-mode .card-grid {
+    html[data-favorites-view="small"] .favorites-container .card-grid {
         grid-template-columns: repeat(5, 1fr);
         gap: 0.8rem;
     }
@@ -760,11 +761,11 @@ body.drag-active .card-favorite {
         object-fit: cover;
     }
 
-    .favorites-container.small-mode .card-image {
+    html[data-favorites-view="small"] .favorites-container .card-image {
         border-radius: 8px;
     }
 
-    .favorites-container.small-mode .card-link {
+    html[data-favorites-view="small"] .favorites-container .card-link {
         height: auto !important;
     }
 

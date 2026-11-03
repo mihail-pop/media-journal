@@ -1,4 +1,9 @@
 document.addEventListener("DOMContentLoaded", function () {
+  function saveDashboardChoice(key, value) {
+    try { localStorage.setItem(key, value); } catch (error) {
+      // Switching still works if the browser cannot save the preference.
+    }
+  }
 
   const bannerImg = document.getElementById("rotating-banner");
   const quoteBox = document.querySelector(".banner-quote");
@@ -10,7 +15,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const upcomingContainer = document.getElementById("upcoming-view-container");
 
   if (activityContainer && upcomingContainer) {
-    const savedActView = localStorage.getItem("homeDashboardActivityView") || "activity";
+    const savedActView = document.documentElement.dataset.homeActivityView || "activity";
     
     function triggerHomeSync() {
         fetch('/api/calendar/sync/', {
@@ -58,20 +63,11 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    if (savedActView === "upcoming") {
-      activityContainer.style.display = "none";
-      upcomingContainer.style.display = "block";
-    } else {
-      activityContainer.style.display = "block";
-      upcomingContainer.style.display = "none";
-    }
-
     // Toggle to Upcoming
     document.querySelectorAll('.swap-to-upcoming').forEach(btn => {
       btn.addEventListener('click', () => {
-        activityContainer.style.display = "none";
-        upcomingContainer.style.display = "block";
-        localStorage.setItem("homeDashboardActivityView", "upcoming");
+        document.documentElement.dataset.homeActivityView = 'upcoming';
+        saveDashboardChoice("homeDashboardActivityView", "upcoming");
         centerTodayTile();
         triggerHomeSync();
       });
@@ -80,9 +76,8 @@ document.addEventListener("DOMContentLoaded", function () {
     // Toggle to Activity
     document.querySelectorAll('.swap-to-activity').forEach(btn => {
       btn.addEventListener('click', () => {
-        activityContainer.style.display = "block";
-        upcomingContainer.style.display = "none";
-        localStorage.setItem("homeDashboardActivityView", "activity");
+        document.documentElement.dataset.homeActivityView = 'activity';
+        saveDashboardChoice("homeDashboardActivityView", "activity");
       });
     });
 
@@ -106,6 +101,7 @@ document.addEventListener("DOMContentLoaded", function () {
           // Position today before the next paint rather than animating from the start.
           const scrollPos = tilesContainer.scrollLeft + (tileRect.left - containerRect.left) - containerCenter + tileCenter;
           tilesContainer.scrollTo({ left: scrollPos, behavior: 'instant' });
+          tilesContainer.classList.add('is-centered');
       }
   }
 
@@ -157,32 +153,19 @@ document.addEventListener("DOMContentLoaded", function () {
   attachPillTooltips(); // Attach on initial load
   
   if (statsContainer && collectionsContainer) {
-    const savedView = localStorage.getItem("homeDashboardView") || "stats";
-    
-    // Initial Load Check
-    if (savedView === "collections") {
-      statsContainer.style.display = "none";
-      collectionsContainer.style.display = "block";
-    } else {
-      statsContainer.style.display = "block";
-      collectionsContainer.style.display = "none";
-    }
-
     // Toggle to Collections
     document.querySelectorAll('.swap-to-collections').forEach(btn => {
       btn.addEventListener('click', () => {
-        statsContainer.style.display = "none";
-        collectionsContainer.style.display = "block";
-        localStorage.setItem("homeDashboardView", "collections");
+        document.documentElement.dataset.homeDashboardView = 'collections';
+        saveDashboardChoice("homeDashboardView", "collections");
       });
     });
 
     // Toggle to Stats
     document.querySelectorAll('.swap-to-stats').forEach(btn => {
       btn.addEventListener('click', () => {
-        statsContainer.style.display = "block";
-        collectionsContainer.style.display = "none";
-        localStorage.setItem("homeDashboardView", "stats");
+        document.documentElement.dataset.homeDashboardView = 'stats';
+        saveDashboardChoice("homeDashboardView", "stats");
       });
     });
   }

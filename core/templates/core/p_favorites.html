@@ -5,6 +5,14 @@
 {% block head %}
 {{ block.super }}
 <title>Favorites - Media Journal</title>
+<script>
+  (() => {
+    document.documentElement.dataset.favoritesView = 'big';
+    try {
+      if (localStorage.getItem('favoritesViewMode') === 'small') document.documentElement.dataset.favoritesView = 'small';
+    } catch (error) { /* Keep the default if browser storage is unavailable. */ }
+  })();
+</script>
 <link rel="stylesheet" href="{% static 'core/css/p_favorites.css' %}">
 {% endblock %}
 
@@ -19,7 +27,7 @@
   <div class="favorites-toolbar">
     <input type="text" id="favorites-search" placeholder="Search favorites..." aria-label="Search favorites by title or creator" autocomplete="off" enterkeyhint="search">
     <div class="view-controls">
-      <button class="view-btn active" id="view-big" title="Detail View">
+      <button class="view-btn" id="view-big" title="Detail View">
         <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><path d="M14 4h7"></path><path d="M14 9h7"></path><path d="M14 15h7"></path><path d="M14 20h7"></path></svg>
       </button>
       <button class="view-btn" id="view-small" title="Compact View">

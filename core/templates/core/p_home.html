@@ -5,6 +5,17 @@
 {% block head %}
 {{ block.super }}
 <title>Media Journal</title>
+<script>
+  (() => {
+    const root = document.documentElement;
+    root.dataset.homeDashboardView = 'stats';
+    root.dataset.homeActivityView = 'activity';
+    try {
+      if (localStorage.getItem('homeDashboardView') === 'collections') root.dataset.homeDashboardView = 'collections';
+      if (localStorage.getItem('homeDashboardActivityView') === 'upcoming') root.dataset.homeActivityView = 'upcoming';
+    } catch (error) { /* Keep the defaults if browser storage is unavailable. */ }
+  })();
+</script>
 <link rel="stylesheet" href="{% static 'core/css/p_home.css' %}">
 {% endblock %}
 
@@ -147,7 +158,7 @@
   </div>
 
 <!-- COLLECTIONS VIEW -->
-  <div id="collections-view-container" style="display: none;">
+  <div id="collections-view-container">
     <div class="panel-header">
       <div class="section-title-wrapper swap-to-stats">
         <h3>Collections</h3>
@@ -264,7 +275,7 @@
   </div>
 
   <!-- UPCOMING RELEASES VIEW -->
-  <div id="upcoming-view-container" class="activity-graph" style="display: none;">
+  <div id="upcoming-view-container" class="activity-graph">
     <div class="panel-header" style="max-width: 530px;">
       <div class="section-title-wrapper swap-to-activity">
         <h3>Upcoming Releases</h3>

@@ -416,6 +416,25 @@ h2 {
   flex-direction: column;
 }
 
+#collections-view-container,
+#upcoming-view-container {
+  display: none;
+}
+
+html[data-home-dashboard-view="collections"] #stats-view-container,
+html[data-home-activity-view="upcoming"] #activity-view-container {
+  display: none;
+}
+
+html[data-home-dashboard-view="collections"] #collections-view-container,
+html[data-home-activity-view="upcoming"] #upcoming-view-container {
+  display: block;
+}
+
+html[data-home-activity-view="upcoming"] .upcoming-tiles-container:not(.is-centered) {
+  visibility: hidden;
+}
+
 .upcoming-tiles-container {
   display: flex;
   overflow-x: auto;
