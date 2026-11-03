@@ -88,7 +88,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Center the today tile on load if upcoming is active
     if (savedActView === "upcoming") {
-        setTimeout(centerTodayTile, 100);
+        centerTodayTile();
         setTimeout(triggerHomeSync, 300); // trigger slightly after load
     }
   }
@@ -97,19 +97,15 @@ document.addEventListener("DOMContentLoaded", function () {
       const tilesContainer = document.querySelector('.upcoming-tiles-container');
       const todayTile = document.querySelector('.today-tile');
       
-      if (tilesContainer && todayTile) {
-          requestAnimationFrame(() => {
-              const containerRect = tilesContainer.getBoundingClientRect();
-              const tileRect = todayTile.getBoundingClientRect();
-              
-              const containerCenter = tilesContainer.clientWidth / 2;
-              const tileCenter = todayTile.clientWidth / 2;
-              
-              // Calculate accurate absolute scroll position
-              const scrollPos = tilesContainer.scrollLeft + (tileRect.left - containerRect.left) - containerCenter + tileCenter;
-              
-              tilesContainer.scrollTo({ left: scrollPos, behavior: 'smooth' });
-          });
+      if (tilesContainer && todayTile && tilesContainer.clientWidth > 0) {
+          const containerRect = tilesContainer.getBoundingClientRect();
+          const tileRect = todayTile.getBoundingClientRect();
+          const containerCenter = tilesContainer.clientWidth / 2;
+          const tileCenter = todayTile.clientWidth / 2;
+
+          // Position today before the next paint rather than animating from the start.
+          const scrollPos = tilesContainer.scrollLeft + (tileRect.left - containerRect.left) - containerCenter + tileCenter;
+          tilesContainer.scrollTo({ left: scrollPos, behavior: 'instant' });
       }
   }
 
