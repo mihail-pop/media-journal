@@ -171,7 +171,10 @@ document.addEventListener("DOMContentLoaded", () => {
         card.appendChild(link);
         grid.appendChild(card);
       });
-      resultsContainer.replaceChildren(grid);
+      const frame = document.createElement('div');
+      frame.className = 'search-results-frame';
+      frame.appendChild(grid);
+      resultsContainer.replaceChildren(frame);
     } catch (error) {
       if (error.name === 'AbortError' || revision !== searchRevision) return;
       showSearchMessage('Error fetching results');

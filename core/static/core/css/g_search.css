@@ -110,7 +110,18 @@
 }
 
 
+.search-results-frame {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  overflow: hidden;
+  border-radius: 8px;
+  background: var(--bg-tertiary);
+  box-shadow: 0 10px 30px rgb(0 0 0 / 25%);
+}
+
 .search-card-grid {
+  box-sizing: border-box;
   width: 100%;
   max-width: 800px;
   max-height: 70vh;
@@ -120,8 +131,8 @@
   gap: 12px;
   overflow-y: auto;
   background: var(--bg-tertiary);
-  padding: 12px;
-  border-radius: 4px;
+  padding: 16px;
+  border-radius: 0;
   scrollbar-color: var(--text-overview) var(--bg-tertiary);
   -ms-overflow-style: none;
 }
@@ -138,8 +149,11 @@
 
 
 .search-card {
-  background: none;
+  position: relative;
+  background: color-mix(in srgb, var(--bg-primary) 35%, var(--bg-tertiary));
   padding: 0.5rem;
+  border-radius: 6px;
+  transition: background-color 0.15s ease;
 }
 
 .search-card img[src*="placeholder"] {
@@ -151,14 +165,7 @@
 }
 
 .search-card:hover {
-  transform: scale(1.05);
   background-color: var(--search-hover-bg);
-  border-radius: 4px;
-}
-
-#search-overlay[data-search-type="music"] .search-card:hover {
-  transform: none;
-  background-color: inherit;
 }
 
 .search-card img {
@@ -178,31 +185,28 @@
 }
 
 .search-card-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
   color: var(--text-search);
   font-weight: 600;
   font-size: 0.9rem;
   text-align: center;
-  min-height: 2.6em;
+  line-height: 1.4;
+  min-height: 1.4em;
   user-select: none;
   padding: 0 0.4rem;
 }
 
 #search-overlay[data-search-type="music"] .search-card-title {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
   min-height: auto;
   padding: 0.2rem;
   text-align: center;
   font-size: 1rem;
   border: 1px solid var(--border-color);
   border-radius: 4px;
-}
-
-#search-overlay[data-search-type="music"] .search-card:hover .search-card-title {
-  transform: scale(1.05);
-  background-color: var(--search-hover-bg);
 }
 
 .search-card .card-link {
@@ -219,6 +223,8 @@
 
 
 .overlay-search-bar {
+  position: relative;
+  z-index: 2;
   margin-bottom: 1rem;
   text-align: center;
 }
@@ -386,6 +392,7 @@
 
 
 @media (orientation: portrait) {
+  .search-results-frame { max-width: 32rem; }
   .search-media-select { flex-basis: 170px; }
   #search-media-toggle, .search-media-option { font-size: 1.5rem; }
   #search-media-toggle, .overlay-search-input-wrapper { background: var(--search-hover-bg); }
@@ -425,9 +432,6 @@
     height: 20px;
   }
 
-  .search-card {
-    transform: scale(1.1);
-  }
 
 
 }
