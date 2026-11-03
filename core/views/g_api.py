@@ -1317,6 +1317,7 @@ def history_api(request):
 @require_GET
 def favorites_api(request):
     category_slug = request.GET.get("category")
+    search = normalize_search_text(request.GET.get("search", "").strip())
     page = int(request.GET.get("page", 1))
     offset = request.GET.get("offset")
     page_size = 50
@@ -1347,6 +1348,17 @@ def favorites_api(request):
         qs = MediaItem.objects.filter(favorite=True, media_type=media_type).order_by(
             "favorite_position", "date_added"
         )
+        if search:
+            matching_ids = []
+            for item_id, title, creators in qs.values_list('id', 'title', 'creators'):
+                target = normalize_search_text(title)
+                if isinstance(creators, list):
+                    target += " " + normalize_search_text(" ".join(creators))
+                elif isinstance(creators, str):
+                    target += " " + normalize_search_text(creators)
+                if search in target:
+                    matching_ids.append(item_id)
+            qs = qs.filter(id__in=matching_ids)
         total = qs.count()
         items = qs[start:end]
         has_more = total > end
@@ -1383,6 +1395,10 @@ def favorites_api(request):
     elif category_slug in ["characters", "actors"]:
         p_type = "character" if category_slug == "characters" else "actor"
         qs = FavoritePerson.objects.filter(type=p_type).order_by("position")
+        if search:
+            matching_ids = [person_id for person_id, name in qs.values_list('id', 'name')
+                            if search in normalize_search_text(name)]
+            qs = qs.filter(id__in=matching_ids)
         total = qs.count()
         items = qs[start:end]
         has_more = total > end

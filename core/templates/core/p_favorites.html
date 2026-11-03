@@ -16,6 +16,18 @@
 <div class="separator-bar"></div>
 
 <div class="favorites-container">
+  <div class="favorites-toolbar">
+    <input type="text" id="favorites-search" placeholder="Search favorites..." aria-label="Search favorites by title or creator" autocomplete="off" enterkeyhint="search">
+    <div class="view-controls">
+      <button class="view-btn active" id="view-big" title="Detail View">
+        <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><path d="M14 4h7"></path><path d="M14 9h7"></path><path d="M14 15h7"></path><path d="M14 20h7"></path></svg>
+      </button>
+      <button class="view-btn" id="view-small" title="Compact View">
+        <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+      </button>
+    </div>
+  </div>
+  <p id="favorites-search-status" role="status" hidden></p>
 
   {% for section in sections %}
     <section class="favorite-section" data-category="{{ section.slug }}" data-type="{{ section.type }}" data-page="{{ section.page }}" data-has-more="{{ section.has_more|yesno:'true,false' }}">
@@ -29,16 +41,6 @@
           </button>
           {% endif %}
 
-          {% if forloop.first %}
-          <div class="view-controls">
-            <button class="view-btn active" id="view-big" title="Detail View">
-              <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><path d="M14 4h7"></path><path d="M14 9h7"></path><path d="M14 15h7"></path><path d="M14 20h7"></path></svg>
-            </button>
-            <button class="view-btn" id="view-small" title="Compact View">
-              <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-            </button>
-          </div>
-          {% endif %}
         </div>
       </div>
       <div class="card-grid draggable-container">
