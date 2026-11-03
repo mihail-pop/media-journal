@@ -873,24 +873,26 @@ function bindPlayerEvents() {
     });
 }
 
+function clearMusicPlaybackState() {
+    for (const key of [
+        'musicPlayerEnabled', 'music_player_playlist', 'music_player_index',
+        'music_player_video', 'music_player_time', 'music_player_active_tab',
+        'music_player_history', 'music_player_history_index', musicPopoutCommandKey,
+    ]) {
+        localStorage.removeItem(key);
+    }
+    sessionHistory = [];
+    historyIndex = -1;
+}
+
 function closePlayer() {
     setMusicPlayerScrollLock(false);
-    localStorage.removeItem('music_player_playlist');
-    localStorage.removeItem('music_player_index');
     if (musicPlayer && musicPlayer.destroy) {
       musicPlayer.destroy();
     }
     const container = document.getElementById('music-player-container');
     if (container) container.style.display = 'none';
-    localStorage.removeItem('musicPlayerEnabled');
-    localStorage.removeItem('music_player_video');
-    localStorage.removeItem('music_player_time');
-    localStorage.removeItem('music_player_active_tab');
-    
-    localStorage.removeItem('music_player_history');
-    localStorage.removeItem('music_player_history_index');
-    sessionHistory = [];
-    historyIndex = -1;
+    clearMusicPlaybackState();
     
     const toggle = document.getElementById('music-player-toggle');
     if (toggle) toggle.checked = false;
@@ -1034,6 +1036,15 @@ function shuffleArray(array) {
 
 // Save state before page unload
 window.addEventListener('pagehide', () => { 
+  if (isMusicPopout) {
+    const owner = JSON.parse(localStorage.getItem(musicPopoutOwnerKey) || 'null');
+    // Returning to the page releases ownership before closing this window.
+    if (owner && owner.id === tabId) {
+      localStorage.removeItem(musicPopoutOwnerKey);
+      clearMusicPlaybackState();
+    }
+    return;
+  }
   if (musicPlayer && isMusicPlayerReady && typeof musicPlayer.getCurrentTime === 'function' && localStorage.getItem('musicPlayerEnabled')) {
     try {
       const time = musicPlayer.getCurrentTime();
@@ -1041,19 +1052,6 @@ window.addEventListener('pagehide', () => {
       localStorage.setItem('music_player_time', time);
       localStorage.setItem('music_player_video', videoId);
     } catch (e) {}
-  }
-  if (isMusicPopout) {
-    if (musicPlayer && isMusicPlayerReady && localStorage.getItem('musicPlayerEnabled')) {
-      sendMusicPopoutCommand('play', musicPlayerSnapshot(
-        musicPlayer.getVideoData().video_id, musicPlayer.getCurrentTime(),
-        musicPlayer.getPlayerState() !== YT.PlayerState.PLAYING
-      ));
-    }
-    const owner = JSON.parse(localStorage.getItem(musicPopoutOwnerKey) || 'null');
-    if (owner && owner.id === tabId) {
-      localStorage.removeItem(musicPopoutOwnerKey);
-      localStorage.removeItem('musicPlayerEnabled');
-    }
   }
 });
 
