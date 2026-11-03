@@ -87,13 +87,37 @@ document.addEventListener("DOMContentLoaded", () => {
     
     let searchType = "all";
     let searchTimeout = null;
+    const collectionSearch = document.getElementById('collection-items-search');
+    let currentSearch = '';
+    let searchPending = false;
+    let collectionSearchTimer;
+    let requestRevision = 0;
+    let requestController = new AbortController();
+
+    collectionSearch.addEventListener('input', () => {
+        const query = collectionSearch.value.trim();
+        if (query === currentSearch && !searchPending) return;
+        clearTimeout(collectionSearchTimer);
+        requestController.abort();
+        requestRevision++;
+        isLoading = false;
+        if (isReorderMode) toggleReorderMode();
+        if (isDeleteMode) toggleDeleteMode();
+        if (draggedEl) draggedEl.classList.remove('dragging');
+        draggedEl = null;
+        document.body.classList.remove('drag-active');
+        currentSearch = query;
+        searchPending = true;
+        reorderBtn.disabled = true;
+        collectionSearchTimer = setTimeout(() => loadCollectionItems(1, true), 300);
+    });
 
     // Load initial collection items
     loadCollectionItems(1, true);
 
     // Infinite scroll for main grid
     window.addEventListener('scroll', () => {
-        if (isLoading || !hasMore) return;
+        if (isLoading || searchPending || !hasMore) return;
         const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
         if (scrollTop + window.innerHeight >= document.documentElement.scrollHeight - 500) {
             loadCollectionItems(currentPage + 1);
@@ -230,32 +254,45 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
         
+        card.dataset.signature = JSON.stringify(item);
         return card;
     }
 
     async function loadCollectionItems(page = 1, reset = false) {
-        if (isLoading || (!hasMore && !reset)) return;
-        isLoading = true;
-
         if (reset) {
-            currentPage = 1;
-            hasMore = true;
-            collectionItems = [];
-            grid.innerHTML = "";
-        } else {
-            currentPage = page;
-        }
+            clearTimeout(collectionSearchTimer);
+            requestController.abort();
+            requestController = new AbortController();
+            requestRevision++;
+        } else if (isLoading || searchPending || !hasMore) return;
+        const revision = requestRevision;
+        isLoading = true;
+        const requestedPage = reset ? 1 : page;
 
         try {
-            const res = await fetch(`/api/collection/${colId}/items/?page=${currentPage}&sort_by=${currentSort}&sort_order=${currentSortOrder}`);
+            const params = new URLSearchParams({ page: requestedPage, sort_by: currentSort, sort_order: currentSortOrder, search: currentSearch });
+            const res = await fetch(`/api/collection/${colId}/items/?${params}`, { signal: requestController.signal });
+            if (!res.ok) throw new Error('Unable to load collection items');
             const data = await res.json();
+            if (revision !== requestRevision) return;
             
             hasMore = data.has_more;
+            currentPage = requestedPage;
             const newItems = data.items || [];
-            collectionItems = collectionItems.concat(newItems);
+            collectionItems = reset ? newItems : collectionItems.concat(newItems);
+            const existingCards = new Map(reset ? [...grid.children].map(card => [card.dataset.id, card]) : []);
+            const retained = new Set();
             
-            newItems.forEach(item => {
+            newItems.forEach((item, index) => {
+                const existing = existingCards.get(String(item.id));
+                if (existing?.dataset.signature === JSON.stringify(item)) {
+                    retained.add(existing);
+                    const before = grid.children[index] || null;
+                    if (existing !== before) grid.insertBefore(existing, before);
+                    return;
+                }
                 const card = createCardElement(item, false);
+                retained.add(card);
                 
                 if (isReorderMode) {
                     card.classList.add("draggable-mode");
@@ -273,14 +310,20 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 }
                 
-                grid.appendChild(card);
+                if (reset) grid.insertBefore(card, grid.children[index] || null);
+                else grid.appendChild(card);
             });
+            existingCards.forEach(card => { if (!retained.has(card)) card.remove(); });
+            searchPending = false;
+            reorderBtn.disabled = Boolean(currentSearch);
 
+            noItemsMsg.textContent = currentSearch ? 'No matching items found.' : 'This collection is empty.';
             noItemsMsg.style.display = collectionItems.length === 0 ? "block" : "none";
         } catch (err) {
+            if (revision !== requestRevision || err.name === 'AbortError') return;
             console.error(err);
         } finally {
-            isLoading = false;
+            if (revision === requestRevision) isLoading = false;
         }
     }
 
@@ -521,6 +564,7 @@ document.addEventListener("DOMContentLoaded", () => {
     reorderBtn.addEventListener("click", toggleReorderMode);
 
     async function toggleReorderMode() {
+        if (!isReorderMode && (currentSearch || searchPending)) return;
         if (isDeleteMode) toggleDeleteMode();
 
         let needsReload = false;
@@ -558,6 +602,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let draggedEl = null;
 
     grid.addEventListener('dragstart', (e) => {
+        if (currentSearch || searchPending) { e.preventDefault(); return; }
         if (!isReorderMode) return;
         
         // Disable native drag on touch screens
@@ -612,6 +657,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     async function saveReorder() {
+        if (!isReorderMode || currentSearch || searchPending) return;
         const order = [...grid.querySelectorAll(".card")].map(c => parseInt(c.dataset.id));
         
         try {

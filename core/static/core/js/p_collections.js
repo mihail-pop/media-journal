@@ -23,6 +23,31 @@ document.addEventListener("DOMContentLoaded", () => {
     let hasMore = true;
     let allCollections =[];
     let isSortMode = false;
+    const collectionSearch = document.getElementById('collections-search');
+    let currentSearch = '';
+    let searchPending = false;
+    let searchTimer;
+    let requestRevision = 0;
+    let requestController = new AbortController();
+
+    collectionSearch.addEventListener('input', () => {
+        const query = collectionSearch.value.trim();
+        if (query === currentSearch && !searchPending) return;
+        clearTimeout(searchTimer);
+        requestController.abort();
+        requestRevision++;
+        isLoading = false;
+        currentSearch = query;
+        searchPending = true;
+        isSortMode = false;
+        sortBtn.disabled = true;
+        sortBtn.classList.remove('active-sort');
+        document.body.classList.remove('drag-active');
+        if (draggedElement) draggedElement.classList.remove('dragging');
+        draggedElement = null;
+        updateDraggableState();
+        searchTimer = setTimeout(() => loadCollections(1), 300);
+    });
   
     // Fetch initial data
     loadCollections(1);
@@ -31,7 +56,13 @@ document.addEventListener("DOMContentLoaded", () => {
     // API AND RENDERING
     // ==========================================
     async function loadCollections(page = 1) {
-        if (isLoading || (!hasMore && page !== 1)) return;
+        if (page === 1) {
+            clearTimeout(searchTimer);
+            requestController.abort();
+            requestController = new AbortController();
+            requestRevision++;
+        } else if (isLoading || searchPending || !hasMore) return;
+        const revision = requestRevision;
         isLoading = true;
         
         if (page !== 1) {
@@ -39,12 +70,14 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         
         try {
-            const response = await fetch(`/api/collections/?page=${page}`);
+            const params = new URLSearchParams({ page, search: currentSearch });
+            const response = await fetch(`/api/collections/?${params}`, { signal: requestController.signal });
+            if (!response.ok) throw new Error('Unable to load collections');
             const data = await response.json();
+            if (revision !== requestRevision) return;
             
             if (page === 1) {
                 allCollections = data.items ||[];
-                grid.innerHTML = '';
             } else {
                 allCollections = [...allCollections, ...(data.items || [])];
             }
@@ -52,16 +85,32 @@ document.addEventListener("DOMContentLoaded", () => {
             hasMore = data.has_more;
             currentPage = data.page;
             
-            data.items.forEach(col => grid.appendChild(createCard(col)));
+            if (page === 1) {
+                const cards = new Map([...grid.children].map(card => [card.dataset.id, card]));
+                const retained = new Set();
+                data.items.forEach((col, index) => {
+                    const existing = cards.get(String(col.id));
+                    const card = existing?.dataset.signature === JSON.stringify(col) ? existing : createCard(col);
+                    retained.add(card);
+                    const before = grid.children[index] || null;
+                    if (card !== before) grid.insertBefore(card, before);
+                });
+                cards.forEach(card => { if (!retained.has(card)) card.remove(); });
+            } else data.items.forEach(col => grid.appendChild(createCard(col)));
+            searchPending = false;
+            sortBtn.disabled = Boolean(currentSearch);
             
             noItemsMsg.style.display = allCollections.length === 0 ? "block" : "none";
             updateDraggableState();
             
         } catch (error) {
+            if (revision !== requestRevision || error.name === 'AbortError') return;
             console.error('Error loading collections:', error);
         } finally {
-            isLoading = false;
-            loadingIndicator.style.display = 'none';
+            if (revision === requestRevision) {
+                isLoading = false;
+                loadingIndicator.style.display = 'none';
+            }
         }
     }
   
@@ -71,6 +120,7 @@ document.addEventListener("DOMContentLoaded", () => {
         a.href = `/collection/${col.id}/`; 
         a.className = "collection-card";
         a.dataset.id = col.id;
+        a.dataset.signature = JSON.stringify(col);
         
         // Generate the 5-image fan
         const coversHtml = col.covers.map((cover, idx) => {
@@ -205,6 +255,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // DRAG AND DROP LOGIC (NATIVE)
     // ==========================================
     sortBtn.addEventListener("click", () => {
+        if (currentSearch || searchPending) return;
         isSortMode = !isSortMode;
         sortBtn.classList.toggle("active-sort", isSortMode);
         updateDraggableState();
@@ -229,6 +280,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let draggedElement = null;
 
     grid.addEventListener('dragstart', (e) => {
+        if (currentSearch || searchPending) { e.preventDefault(); return; }
         if (!isSortMode) return;
         
         // Disable native drag on touch screens
@@ -289,6 +341,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   
     async function saveOrder() {
+        if (!isSortMode || currentSearch || searchPending) return;
         const currentOrder = [...grid.querySelectorAll(".collection-card")].map(c => c.dataset.id);
         
         try {

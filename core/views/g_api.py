@@ -1471,6 +1471,18 @@ def collection_items_api(request, collection_id):
     
     # Get items in the collection
     qs = CollectionItem.objects.filter(collection_id=collection_id).select_related('item')
+    search = normalize_search_text(request.GET.get('search', '').strip())
+    if search:
+        matching_ids = []
+        for link_id, title, creators in qs.values_list('id', 'item__title', 'item__creators'):
+            target = normalize_search_text(title)
+            if isinstance(creators, list):
+                target += ' ' + normalize_search_text(' '.join(creators))
+            elif isinstance(creators, str):
+                target += ' ' + normalize_search_text(creators)
+            if search in target:
+                matching_ids.append(link_id)
+        qs = qs.filter(id__in=matching_ids)
     
     # Annotate sorting parameters from the underlying item
     qs = qs.annotate(
@@ -1558,6 +1570,11 @@ def collections_api(request):
         queryset=CollectionItem.objects.select_related('item').order_by('position')
     )
     qs = Collection.objects.all().prefetch_related(prefetch).order_by('position', '-date_created')
+    search = normalize_search_text(request.GET.get('search', '').strip())
+    if search:
+        matching_ids = [col_id for col_id, title in qs.values_list('id', 'title')
+                        if search in normalize_search_text(title)]
+        qs = qs.filter(id__in=matching_ids)
     
     total = qs.count()
     has_more = total > end
