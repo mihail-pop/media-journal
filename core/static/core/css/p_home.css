@@ -894,8 +894,8 @@ html[data-home-activity-view="upcoming"] .upcoming-tiles-container:not(.is-cente
   max-height: 400px;
   overflow-y: auto;
   border-radius: 8px;
-  border: 2px solid var(--bg-quaternary);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  border: none;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
   
   z-index: 1000;
   padding: 0;
@@ -917,8 +917,6 @@ html[data-home-activity-view="upcoming"] .upcoming-tiles-container:not(.is-cente
   width: 10px;
   height: 10px;
   background: var(--bg-tertiary);
-  border-top: 1px solid var(--overview-border);
-  border-left: 1px solid var(--overview-border);
   transform: rotate(45deg);
   z-index: -1;
 }
@@ -1044,11 +1042,16 @@ html[data-home-activity-view="upcoming"] .upcoming-tiles-container:not(.is-cente
 
 .no-notifications {
   margin: 0;
-  padding: 30px 20px;
+  padding: 1rem 1.25rem;
   text-align: center;
-  font-style: italic;
-  color: var(--text-secondary);
+  line-height: 1.4;
+  color: var(--text-primary);
   font-size: 1em;
+}
+
+.notifications-dropdown:has(.no-notifications) {
+  width: max-content;
+  min-width: 220px;
 }
 
 .favorites-section {
