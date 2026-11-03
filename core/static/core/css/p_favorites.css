@@ -557,6 +557,10 @@ body.drag-active .card-favorite {
   border-radius: 4px;
 }
 
+.favorites-container.small-mode .card[data-media-type="music"] .card-image {
+  padding-top: 0;
+}
+
 .favorites-container.small-mode .card-title {
   display: none;
 }
