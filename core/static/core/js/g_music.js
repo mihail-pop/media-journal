@@ -12,13 +12,42 @@ const musicPopoutOwnerKey = 'music_player_popout_owner';
 const musicPopoutCommandKey = 'music_player_popout_command';
 const musicPopoutModeKey = 'music_player_popout';
 const musicDockStateKey = 'music_player_dock_state';
+const musicPopoutPositionKey = 'music_player_popout_position';
 let pendingMusicPopoutState = null;
+
+function musicPopoutWindowFeatures() {
+    const availableLeft = Number.isFinite(screen.availLeft) ? screen.availLeft : 0;
+    const availableTop = Number.isFinite(screen.availTop) ? screen.availTop : 0;
+    let left = availableLeft + 20;
+    let top = availableTop + Math.max(0, screen.availHeight - 400 - 20);
+    try {
+        const saved = JSON.parse(localStorage.getItem(musicPopoutPositionKey));
+        if (saved && Number.isFinite(saved.left) && Number.isFinite(saved.top)) {
+            left = saved.left;
+            top = saved.top;
+        }
+    } catch (error) { /* Use the bottom-left default if no valid position is saved. */ }
+    return `popup,width=640,height=400,resizable=yes,left=${Math.round(left)},top=${Math.round(top)}`;
+}
+
+function saveMusicPopoutPosition() {
+    const left = window.screenX;
+    const top = window.screenY;
+    // Some window managers place minimized windows far off-screen.
+    if (!Number.isFinite(left) || !Number.isFinite(top) || left <= -30000 || top <= -30000) return;
+    try {
+        const position = JSON.stringify({ left, top });
+        if (localStorage.getItem(musicPopoutPositionKey) !== position) {
+            localStorage.setItem(musicPopoutPositionKey, position);
+        }
+    } catch (error) { /* Position saving is optional if browser storage is unavailable. */ }
+}
 
 // Call during the initiating click, before fetching a playlist, to allow popups.
 window.prepareMusicPlayerWindow = function(force = false) {
     if (isMusicPopout || (!force && localStorage.getItem(musicPopoutModeKey) !== 'true') || isMusicPopoutOpen()) return;
     localStorage.removeItem(musicPopoutCommandKey);
-    const popup = window.open('/music/player/', 'media-journal-music-player', 'popup,width=640,height=400,resizable=yes');
+    const popup = window.open('/music/player/', 'media-journal-music-player', musicPopoutWindowFeatures());
     if (!popup) {
         if (!force) localStorage.setItem(musicPopoutModeKey, 'false');
         alert('Allow pop-ups for Media Journal to open the music player. The player will stay in this page.');
@@ -1035,6 +1064,7 @@ function shuffleArray(array) {
 // Save state before page unload
 window.addEventListener('pagehide', () => { 
   if (isMusicPopout) {
+    saveMusicPopoutPosition();
     const owner = JSON.parse(localStorage.getItem(musicPopoutOwnerKey) || 'null');
     // Returning to the page releases ownership before closing this window.
     if (owner && owner.id === tabId) {
@@ -1075,6 +1105,9 @@ document.addEventListener('DOMContentLoaded', () => {
     heartbeat();
     const heartbeatTimer = setInterval(heartbeat, 10000);
     window.addEventListener('pagehide', () => clearInterval(heartbeatTimer), { once: true });
+    // Browsers have no standard window-move event, so only write when position changes.
+    const positionTimer = setInterval(saveMusicPopoutPosition, 1000);
+    window.addEventListener('pagehide', () => clearInterval(positionTimer), { once: true });
     try {
       const command = JSON.parse(localStorage.getItem(musicPopoutCommandKey));
       if (command && command.action === 'play') receiveMusicPopoutState(command.state);
