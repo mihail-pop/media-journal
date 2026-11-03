@@ -110,7 +110,7 @@ body {
 
 .add-custom-person-btn {
   background-color: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
+  border: 0px solid var(--border-color);
   color: var(--text-secondary);
   width: 40px;
   height: 40px;
@@ -367,7 +367,7 @@ body:not([data-theme="light"]) .pc-actor-dates input {
   flex-direction: column;
   position: relative;
   transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-  cursor: grab;
+  cursor: default;
 }
 
 .card.dragging {
@@ -381,6 +381,7 @@ body:not([data-theme="light"]) .pc-actor-dates input {
 
 .card a {
   text-decoration: none;
+  cursor: inherit;
 }
 
 .card-image {
@@ -602,7 +603,7 @@ html[data-favorites-view="small"] .favorites-container .card-favorite {
 
 
 html[data-favorites-view="small"] .favorites-container .card-link {
-  cursor: grab;
+  cursor: inherit;
 }
 
 

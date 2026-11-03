@@ -9,6 +9,10 @@ document.addEventListener('DOMContentLoaded', () => {
   let searchRevision = 0;
   let searchTimer;
   let searchRequests = new AbortController();
+  let suppressCardClick = false;
+
+  // A fresh press is a new interaction, so the next deliberate click works immediately.
+  document.addEventListener('pointerdown', () => { suppressCardClick = false; }, true);
   
   // Infinite Scroll Observer
   const observerOptions = {
@@ -61,6 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const draggable = e.target.closest('.draggable');
       if (draggable) {
         draggedItem = draggable;
+        suppressCardClick = true;
         
         if (e.dataTransfer) {
             // Use the WHOLE card for the snapshot
@@ -192,7 +197,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const slug = section.dataset.category;
           
           card.innerHTML = `
-            <a href="${item.url}" class="card-link">
+            <a href="${item.url}" class="card-link" draggable="false">
               <div class="card-image"><img src="${item.cover_url}" alt="${item.title}" draggable="false"></div>
             </a>
             <div class="card-title">${item.title}</div>
@@ -402,15 +407,14 @@ document.addEventListener('DOMContentLoaded', () => {
       viewSmallBtn.addEventListener('click', () => setMode('small'));
   }
 
-  // Prevent link navigation in small mode
+  // Allow normal link clicks in both views, but never navigate after dropping a card.
   document.addEventListener('click', function(e) {
-    if (container.classList.contains('small-mode')) {
-        const link = e.target.closest('.card-link');
-        if (link) {
-            e.preventDefault();
-        }
+    if (suppressCardClick && e.detail > 0 && e.target.closest('.favorites-container .card-link')) {
+      suppressCardClick = false;
+      e.preventDefault();
+      e.stopPropagation();
     }
-  }, true); // Use capture to ensure we catch it before other listeners if needed
+  }, true);
 
   // Restore saved mode
   setMode(document.documentElement.dataset.favoritesView || 'big', false);
