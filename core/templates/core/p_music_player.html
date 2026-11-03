@@ -9,12 +9,10 @@
   <style>
     html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #000; color: white; font-family: sans-serif; }
     #music-player-container { display: none; }
-    #player-empty { padding: 1.5rem; line-height: 1.5; }
   </style>
 </head>
 <body data-music-popout="true">
   {% csrf_token %}
-  <p id="player-empty">Select a song in Media Journal to start playing.</p>
   <div id="music-player-container" class="music-player-container"></div>
   <script src="{% static 'core/js/g_music.js' %}"></script>
 </body>

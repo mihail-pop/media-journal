@@ -386,8 +386,6 @@ function createPlayer(videoId, startTime = 0, startPaused = false) {
   }
   
   container.style.display = 'block';
-  const emptyMessage = document.getElementById('player-empty');
-  if (emptyMessage) emptyMessage.hidden = true;
   
   const isFavorite = currentData.is_favorite;
   const sourceId = currentData.source_id;
