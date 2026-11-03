@@ -478,6 +478,10 @@ html[data-favorites-view="small"] .favorites-container .card[data-media-type="mu
   min-height: 20px;
 }
 
+.favorite-section[data-has-more="false"] .loading-sentinel {
+  display: none;
+}
+
 .card-favorite {
   position: absolute;
   top: 8px;
