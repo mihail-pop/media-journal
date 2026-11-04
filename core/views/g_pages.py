@@ -1200,6 +1200,7 @@ def settings_page(request):
 
     current_rating_mode = settings.rating_mode
     live_search_preferences = settings.get_live_search_settings()
+    card_overlay_preferences = settings.get_list_card_overlay_settings()
     live_search_types = [
         ('movie', 'movies', 'Movies', 'TMDB'),
         ('tv', 'tvshows', 'TV Shows', 'TMDB'),
@@ -1232,6 +1233,11 @@ def settings_page(request):
             "show_collections_field": settings.show_collections_field,
             "details_sections_order": settings.details_sections_order,
             "favorite_sections_order": settings.get_favorite_sections_order(),
+            "card_overlay_options": [
+                {'type': media_type, 'nav_name': nav_name, 'label': label,
+                 'mode': card_overlay_preferences[media_type]}
+                for media_type, nav_name, label, _ in live_search_types
+            ],
             "live_search_options": [
                 {'type': media_type, 'nav_name': nav_name, 'label': label,
                  'provider': provider, 'enabled': live_search_preferences[media_type]}

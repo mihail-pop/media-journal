@@ -1275,3 +1275,46 @@ table td:last-child .delete-btn {
   border-width: 0 2px 2px 0;
   transform: rotate(45deg);
 }
+
+.banner-notes-controls {
+  justify-content: center;
+}
+
+.card-overlay-section { grid-column: 1 / -1; min-width: 0; }
+.card-overlay-types {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+.card-overlay-type { display: flex; flex-direction: column; gap: 0.5rem; min-width: 0; }
+.card-overlay-heading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 2rem;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.card-overlay-icon { display: flex; flex-shrink: 0; }
+.card-overlay-icon svg { width: 1.3rem; height: 1.3rem; }
+.card-overlay-type button {
+  padding: 0.5rem 0.25rem;
+  border: 2px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+.card-overlay-type button:hover { background: var(--hover-bg); }
+.card-overlay-type button[aria-pressed="true"] { border-color: var(--special-color); color: var(--text-secondary); }
+@media (orientation: portrait) {
+  .card-overlay-types { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem; }
+  .card-overlay-heading { font-size: 1.5rem; }
+  .card-overlay-icon svg { width: 2rem; height: 2rem; }
+  .card-overlay-type button { font-size: 1.3rem; padding: 0.75rem 0.5rem; }
+}

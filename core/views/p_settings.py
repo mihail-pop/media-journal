@@ -114,6 +114,31 @@ def update_favorite_sections(request):
 
 
 @require_POST
+def update_list_card_overlays(request):
+    from core.models import AppSettings, default_list_card_overlay_settings
+
+    try:
+        data = json.loads(request.body)
+        if not isinstance(data, dict):
+            raise ValueError
+        media_type, mode = data.get('media_type'), data.get('mode')
+        if not isinstance(media_type, str) or media_type not in default_list_card_overlay_settings() or mode not in ('full', 'compact', 'hidden'):
+            raise ValueError
+    except (ValueError, TypeError):
+        return JsonResponse({'success': False, 'error': 'Invalid card overlay preference.'}, status=400)
+
+    with transaction.atomic():
+        settings = AppSettings.objects.select_for_update().first()
+        if not settings:
+            settings = AppSettings.objects.create()
+        preferences = settings.get_list_card_overlay_settings()
+        preferences[media_type] = mode
+        settings.list_card_overlay_settings = preferences
+        settings.save(update_fields=['list_card_overlay_settings'])
+    return JsonResponse({'success': True})
+
+
+@require_POST
 def update_live_search_settings(request):
     from core.models import AppSettings, default_live_search_settings
 

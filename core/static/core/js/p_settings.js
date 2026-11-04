@@ -54,6 +54,33 @@ function saveRatingMode(value) {
 }
 
 document.addEventListener("DOMContentLoaded", function () {
+  const cardOverlaySettings = document.getElementById('list-card-overlay-settings');
+  cardOverlaySettings?.addEventListener('click', async event => {
+    const button = event.target.closest('button[data-mode]');
+    const group = button?.closest('.card-overlay-type');
+    if (!group || button.disabled || button.getAttribute('aria-pressed') === 'true') return;
+    const buttons = [...group.querySelectorAll('button[data-mode]')];
+    const previousMode = buttons.find(control => control.getAttribute('aria-pressed') === 'true')?.dataset.mode || 'full';
+    const selectMode = mode => buttons.forEach(control => control.setAttribute('aria-pressed', String(control.dataset.mode === mode)));
+    buttons.forEach(control => { control.disabled = true; });
+    selectMode(button.dataset.mode);
+    try {
+      const response = await fetch('/settings/update_list_card_overlays/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+        body: JSON.stringify({ media_type: group.dataset.type, mode: button.dataset.mode }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error('Unable to save card overlay preference.');
+      showNotification('List card overlay updated!');
+    } catch (error) {
+      selectMode(previousMode);
+      alert('Could not save card overlay preference. Please try again.');
+    } finally {
+      buttons.forEach(control => { control.disabled = false; });
+    }
+  });
+
   const bannerNotesToggle = document.getElementById('show-banner-notes');
   if (bannerNotesToggle) {
     const stateText = document.getElementById('banner-notes-state');

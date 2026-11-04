@@ -39,6 +39,18 @@ document.addEventListener("DOMContentLoaded", function () {
   let bannerPool = [];
 
   const mediaType = document.body.dataset.mediaType || "default";
+  if (cardView) {
+    const overlayMediaType = {
+      movies: 'movie', tvshows: 'tv', anime: 'anime', manga: 'manga',
+      games: 'game', books: 'book', music: 'music',
+    }[mediaType];
+    let overlayMode = 'full';
+    try {
+      const preferences = JSON.parse(document.getElementById('list-card-overlay-preferences')?.textContent || '{}');
+      if (['full', 'compact', 'hidden'].includes(preferences[overlayMediaType])) overlayMode = preferences[overlayMediaType];
+    } catch (error) { /* Keep the existing full overlay if preferences are unavailable. */ }
+    cardView.dataset.overlayMode = overlayMode;
+  }
   const filterKey = `listFilterStatus_${mediaType}`;
   const viewKey = `listViewType_${mediaType}`;
   const typeKey = `listTypeFilter_${mediaType}`;
@@ -656,7 +668,7 @@ function createListRowElement(item, isDetailed = false) {
     const label = action === 'complete' ? 'Mark completed' :
       action === 'secondary' ? 'Add one season' :
       item.media_type === 'manga' ? 'Add one chapter' : 'Add one episode';
-    return `<span class="quick-progress">${text ? `<span>${text}</span>` : ''}<button type="button" class="progress-increment-btn" data-progress-action="${action}" aria-label="${label}"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></span>`;
+    return `<span class="quick-progress">${text ? `<span class="quick-progress-value">${text}</span>` : ''}<button type="button" class="progress-increment-btn" data-progress-action="${action}" aria-label="${label}"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></span>`;
   }
 
   function getTitleHtml(item, titleClass) {

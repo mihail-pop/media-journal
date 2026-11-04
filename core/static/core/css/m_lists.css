@@ -2004,3 +2004,68 @@ body[data-media-type="tvshows"] .simple-title-cell a {
 @media (hover: none) {
   .progress-increment-btn { opacity: 1; pointer-events: auto; }
 }
+
+/* Container-level preferences apply to initial, paginated and edited cards alike. */
+#card-view[data-overlay-mode="hidden"] .card-title-overlay { display: none; }
+#card-view[data-overlay-mode="compact"] .card-title-overlay {
+  background: transparent;
+  min-height: 0;
+  padding: 0.35rem;
+  gap: 0;
+}
+#card-view[data-overlay-mode="compact"] .card-title-overlay > .card-title { display: none; }
+#card-view[data-overlay-mode="compact"] .card-meta-row {
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+#card-view[data-overlay-mode="compact"] .card-progress,
+#card-view[data-overlay-mode="compact"] .card-rating {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-height: 1.5em;
+  min-width: 1.5em;
+  line-height: 1;
+  background: rgba(14, 15, 15, 0.8);
+  padding: 0.2em 0.4em;
+  border-radius: 999px;
+}
+#card-view[data-overlay-mode="compact"] .card-progress { padding: 0.2em 0.6em; }
+#card-view[data-overlay-mode="compact"] .quick-progress { gap: 0; }
+/* Collapse the plus until hover so the progress pill grows around it. */
+#card-view[data-overlay-mode="compact"] .progress-increment-btn {
+  width: 0;
+  height: 1.1em;
+  padding: 0;
+  margin-left: 0;
+  overflow: hidden;
+  background: transparent;
+  transition: width 0.15s, margin-left 0.15s, opacity 0.15s, color 0.15s;
+}
+#card-view[data-overlay-mode="compact"] .progress-increment-btn svg {
+  width: 1.1em;
+  height: 1.1em;
+  flex-shrink: 0;
+}
+#card-view[data-overlay-mode="compact"] .card:hover .progress-increment-btn,
+#card-view[data-overlay-mode="compact"] .progress-increment-btn:focus-visible {
+  width: 1.1em;
+  margin-left: 0.05em;
+}
+@media (hover: none) {
+  #card-view[data-overlay-mode="compact"] .progress-increment-btn {
+    width: 1.1em;
+    margin-left: 0.05em;
+  }
+}
+#card-view[data-overlay-mode="compact"] .card-rating:has(> svg) { padding: 0.2em; }
+#card-view[data-overlay-mode="compact"] .card-rating:has(> .rating-number) { font-size: 0.82rem; }
+#card-view[data-overlay-mode="compact"] .star-rating {
+  display: inline-flex;
+  align-items: center;
+  height: auto;
+  top: 0;
+}
+#card-view[data-overlay-mode="compact"] .star-rating .star-icon { display: block; }

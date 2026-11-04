@@ -68,6 +68,7 @@ urlpatterns = [
     path("settings/update_banner_notes/", views.update_banner_notes, name="update_banner_notes"),
     path("settings/update_preferences/", views.update_preferences, name="update_preferences"),
     path('settings/update_favorite_sections/', views.update_favorite_sections, name='update_favorite_sections'),
+    path('settings/update_list_card_overlays/', views.update_list_card_overlays, name='update_list_card_overlays'),
     path('settings/update_live_search/', views.update_live_search_settings, name='update_live_search_settings'),
     path("settings/update_theme/", views.update_theme, name="update_theme"),
     path("settings/save_username/", views.save_username, name="save_username"),

@@ -275,6 +275,10 @@ def default_live_search_settings():
     }
 
 
+def default_list_card_overlay_settings():
+    return {media_type: 'full' for media_type in ('movie', 'tv', 'anime', 'manga', 'game', 'book', 'music')}
+
+
 def default_favorite_sections_order():
     return [
         {'id': key, 'name': name, 'visible': True}
@@ -287,6 +291,16 @@ def default_favorite_sections_order():
 
 
 class AppSettings(models.Model):
+    list_card_overlay_settings = models.JSONField(default=default_list_card_overlay_settings, blank=True)
+
+    def get_list_card_overlay_settings(self):
+        preferences = default_list_card_overlay_settings()
+        if isinstance(self.list_card_overlay_settings, dict):
+            for media_type, mode in self.list_card_overlay_settings.items():
+                if media_type in preferences and mode in ('full', 'compact', 'hidden'):
+                    preferences[media_type] = mode
+        return preferences
+
     favorite_sections_order = models.JSONField(default=default_favorite_sections_order, blank=True)
 
     def get_favorite_sections_order(self):

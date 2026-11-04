@@ -214,6 +214,23 @@
           </div>
           <p class="live-search-help"><b>Click to enable/disable live search for each media type • These defaults reduce API requests so you don't get rate limited</b></p>
         </section>
+        <section class="preferences-section card-overlay-section">
+          <h3>List Card Overlays</h3>
+          <div class="card-overlay-types" id="list-card-overlay-settings">
+            {% for option in card_overlay_options %}
+              <div class="card-overlay-type" data-type="{{ option.type }}" role="group" aria-label="{{ option.label }} card overlay">
+                <div class="card-overlay-heading">
+                  <span class="card-overlay-icon" aria-hidden="true">{% include 'core/g_nav_icon.html' with name=option.nav_name %}</span>
+                  <span>{{ option.label }}</span>
+                </div>
+                <button type="button" data-mode="full" aria-pressed="{% if option.mode == 'full' %}true{% else %}false{% endif %}">Full</button>
+                <button type="button" data-mode="compact" aria-pressed="{% if option.mode == 'compact' %}true{% else %}false{% endif %}">Progress &amp; Score</button>
+                <button type="button" data-mode="hidden" aria-pressed="{% if option.mode == 'hidden' %}true{% else %}false{% endif %}">Hidden</button>
+              </div>
+            {% endfor %}
+          </div>
+          <p class="live-search-help"><b>Choose what appears over cards on each list page. List views stay the same.</b></p>
+        </section>
       <div class="preferences-section">
         <h3>App Font</h3>
         <form id="font-family-form" class="scoring-system-form">
@@ -259,7 +276,7 @@
       </div>
       <div class="preferences-section">
         <h3>Banner Notes</h3>
-        <div class="preferences-form">
+        <div class="preferences-form banner-notes-controls">
           <label class="preference-toggle-label">
             <input type="checkbox" id="show-banner-notes" aria-label="Show notes on banner rotators" {% if show_banner_notes %}checked{% endif %}>
             <div class="preference-toggle-content">
@@ -267,6 +284,7 @@
             </div>
           </label>
         </div>
+        <p class="live-search-help"><b>Show or hide item notes on home and list page banner rotators.</b></p>
       </div>
     </div>
   </div>
