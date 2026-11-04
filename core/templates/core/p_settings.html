@@ -257,6 +257,17 @@
           </div>
         </form>
       </div>
+      <div class="preferences-section">
+        <h3>Banner Notes</h3>
+        <div class="preferences-form">
+          <label class="preference-toggle-label">
+            <input type="checkbox" id="show-banner-notes" aria-label="Show notes on banner rotators" {% if show_banner_notes %}checked{% endif %}>
+            <div class="preference-toggle-content">
+              <div class="preference-toggle-text" id="banner-notes-state">{{ show_banner_notes|yesno:'Enabled,Disabled' }}</div>
+            </div>
+          </label>
+        </div>
+      </div>
     </div>
   </div>
 

@@ -23,6 +23,7 @@ def nav_items(request):
             for item in items if item.name in media_types
         ],
         "live_search_settings": settings.get_live_search_settings() if settings else default_live_search_settings(),
+        "show_banner_notes": settings.show_banner_notes if settings else True,
     }
 
 

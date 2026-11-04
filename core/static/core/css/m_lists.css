@@ -1081,7 +1081,7 @@ body[data-media-type="games"] .card {
 
 
 [data-theme="light"] .list-table tr.detailed-row:hover {
-  background-image: linear-gradient(rgba(100, 100, 148, 0.5)rgba(87, 74, 146, 0.5)), var(--banner-url, none);
+  background-image: linear-gradient(rgba(100, 100, 148, 0.5), rgba(87, 74, 146, 0.5)), var(--banner-url, none);
 }
 
 [data-theme="brown"] .list-table tr.detailed-row:hover {

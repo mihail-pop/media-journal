@@ -61,6 +61,26 @@ def update_preferences(request):
 
 
 @require_POST
+def update_banner_notes(request):
+    try:
+        data = json.loads(request.body)
+        enabled = data.get('enabled') if isinstance(data, dict) else None
+        if not isinstance(enabled, bool):
+            raise ValueError
+    except (ValueError, TypeError):
+        return JsonResponse({'success': False, 'error': 'Invalid banner notes preference.'}, status=400)
+
+    AppSettings = apps.get_model('core', 'AppSettings')
+    with transaction.atomic():
+        settings = AppSettings.objects.select_for_update().first()
+        if not settings:
+            settings = AppSettings.objects.create()
+        settings.show_banner_notes = enabled
+        settings.save(update_fields=['show_banner_notes'])
+    return JsonResponse({'success': True})
+
+
+@require_POST
 def update_favorite_sections(request):
     from core.models import AppSettings, default_favorite_sections_order
 

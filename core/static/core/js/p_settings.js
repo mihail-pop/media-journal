@@ -54,6 +54,32 @@ function saveRatingMode(value) {
 }
 
 document.addEventListener("DOMContentLoaded", function () {
+  const bannerNotesToggle = document.getElementById('show-banner-notes');
+  if (bannerNotesToggle) {
+    const stateText = document.getElementById('banner-notes-state');
+    bannerNotesToggle.addEventListener('change', async () => {
+      const enabled = bannerNotesToggle.checked;
+      bannerNotesToggle.disabled = true;
+      stateText.textContent = enabled ? 'Enabled' : 'Disabled';
+      try {
+        const response = await fetch('/settings/update_banner_notes/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+          body: JSON.stringify({ enabled }),
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error('Unable to save banner notes preference.');
+        showNotification('Banner notes updated!');
+      } catch (error) {
+        bannerNotesToggle.checked = !enabled;
+        stateText.textContent = bannerNotesToggle.checked ? 'Enabled' : 'Disabled';
+        alert('Could not save banner notes preference. Please try again.');
+      } finally {
+        bannerNotesToggle.disabled = false;
+      }
+    });
+  }
+
   const favoriteSectionsForm = document.getElementById('favorite-sections-form');
   if (favoriteSectionsForm) {
     let dragged = null;

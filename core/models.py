@@ -325,6 +325,7 @@ class AppSettings(models.Model):
         ],
         default='faces'
     )
+    show_banner_notes = models.BooleanField(default=True)
     show_date_field = models.BooleanField(default=False)
     show_repeats_field = models.BooleanField(default=False)
     show_collections_field = models.BooleanField(default=False)
