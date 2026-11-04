@@ -263,7 +263,10 @@ document.addEventListener("DOMContentLoaded", () => {
     resultsContainer.replaceChildren();
   }
   overlay.addEventListener('click', event => {
-    if (event.target === overlay) closeSearch();
+    // The wide layout container also has empty space around the visible content.
+    if (!event.target.closest('.overlay-search-input-wrapper, .search-results-frame, .search-message')) {
+      closeSearch();
+    }
   });
   document.addEventListener('keydown', event => {
     if (event.key !== 'Escape' || overlay.classList.contains('hidden')) return;

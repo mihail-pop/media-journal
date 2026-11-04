@@ -1198,6 +1198,8 @@ def settings_page(request):
     if not settings:
         settings = AppSettings.objects.create()  # ensure one exists
 
+    from core.services.g_favorites_export import favorite_export_options
+
     current_rating_mode = settings.rating_mode
     live_search_preferences = settings.get_live_search_settings()
     card_overlay_preferences = settings.get_list_card_overlay_settings()
@@ -1233,6 +1235,7 @@ def settings_page(request):
             "show_collections_field": settings.show_collections_field,
             "details_sections_order": settings.details_sections_order,
             "favorite_sections_order": settings.get_favorite_sections_order(),
+            "share_favorite_sections": favorite_export_options(settings),
             "card_overlay_options": [
                 {'type': media_type, 'nav_name': nav_name, 'label': label,
                  'mode': card_overlay_preferences[media_type]}

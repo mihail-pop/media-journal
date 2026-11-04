@@ -10,6 +10,7 @@ from django.apps import apps
 from django.db import transaction
 from django.http import FileResponse, JsonResponse, HttpResponseBadRequest
 from django.views.decorators.csrf import ensure_csrf_cookie
+from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_GET, require_POST
 
 from core.models import APIKey, NavItem
@@ -19,6 +20,68 @@ from core.services.p_settings import (
     RefreshTask,
     cleanup_old_tasks,
 )
+
+
+@never_cache
+@require_GET
+def export_favorites_data(request):
+    from core.models import default_favorite_sections_order
+    from core.services.g_favorites_export import favorite_export_data
+
+    selected = request.GET.getlist('sections')
+    valid = {section['id'] for section in default_favorite_sections_order()}
+    if not selected or any(section not in valid for section in selected):
+        return JsonResponse({'error': 'Choose at least one favorite section.'}, status=400)
+    try:
+        limit = int(request.GET.get('limit', '25'))
+    except (TypeError, ValueError):
+        limit = 0
+    if limit not in (5, 10, 15, 20, 25):
+        return JsonResponse({'error': 'Choose a maximum of 5, 10, 15, 20 or 25 items.'}, status=400)
+    return JsonResponse({'sections': favorite_export_data(set(selected), limit=limit)})
+
+
+@never_cache
+@require_GET
+def export_favorites_image(request, kind, item_id):
+    from core.services.g_favorites_export import favorite_export_image_response
+    return favorite_export_image_response(kind, item_id)
+
+
+@require_POST
+def export_favorites_png_archive(request):
+    import re
+    import zipfile
+    from pathlib import PurePosixPath
+
+    images = request.FILES.getlist('images')
+    if not 1 <= len(images) <= 9 or sum(image.size for image in images) > 200 * 1024 * 1024:
+        return JsonResponse({'error': 'The PNG export is too large.'}, status=400)
+    for image in images:
+        if image.read(8) != b'\x89PNG\r\n\x1a\n':
+            return JsonResponse({'error': 'Only PNG images can be archived.'}, status=400)
+        image.seek(0)
+
+    archive = tempfile.TemporaryFile()
+    try:
+        # PNGs are already compressed; store them without recompressing.
+        with zipfile.ZipFile(archive, 'w', compression=zipfile.ZIP_STORED) as output:
+            for index, image in enumerate(images, 1):
+                name = PurePosixPath(image.name.replace('\\', '/')).name
+                name = re.sub(r'[^A-Za-z0-9 ._-]', '', name).strip(' .') or 'Favorites.png'
+                if not name.lower().endswith('.png'):
+                    name += '.png'
+                with output.open(f'{index:02d} - {name}', 'w') as destination:
+                    for chunk in image.chunks():
+                        destination.write(chunk)
+        archive.seek(0)
+        return FileResponse(
+            archive, as_attachment=True, filename='Media Journal - Favorites.zip',
+            content_type='application/zip',
+        )
+    except Exception:
+        archive.close()
+        raise
 
 
 @ensure_csrf_cookie

@@ -1318,3 +1318,49 @@ table td:last-child .delete-btn {
   .card-overlay-icon svg { width: 2rem; height: 2rem; }
   .card-overlay-type button { font-size: 1.3rem; padding: 0.75rem 0.5rem; }
 }
+
+.share-favorites-section { grid-column: 1 / -1; min-width: 0; }
+.share-favorite-sections { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 0.75rem; }
+.share-section-option, .share-format-option { cursor: pointer; }
+.share-section-option input, .share-format-option input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+.share-option-body, .share-format-option > span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  padding: 0.6rem 0.8rem;
+  border: 2px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+.share-option-body, .share-format-option > span { transition: background-color 0.2s, color 0.2s; }
+.share-section-option:hover input:not(:disabled) + span,
+.share-format-option:hover input:not(:disabled) + span {
+  background-color: var(--hover-bg);
+  color: var(--text-secondary);
+}
+.share-section-option input:checked + span, .share-format-option input:checked + span { border-color: var(--special-color); color: var(--text-secondary); }
+.share-section-option input:focus-visible + span, .share-format-option input:focus-visible + span { outline: 2px solid var(--special-color); outline-offset: 3px; }
+.share-section-option input:disabled + span { opacity: 0.4; cursor: default; }
+.share-section-count { border-radius: 999px; padding: 0.1rem 0.4rem; background: var(--bg-secondary); font-size: 0.8em; }
+.share-export-layout { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 2rem; }
+.share-export-options { display: flex; flex-direction: column; align-items: flex-start; gap: 1.5rem; min-width: 0; }
+.share-sections-fieldset { border: none; padding: 0; margin: 0; min-width: 0; }
+.share-format-options { display: flex; flex-wrap: wrap; gap: 0.5rem; border: none; padding: 0; margin: 0; }
+.share-sections-fieldset legend, .share-format-options legend { color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 0.4rem; }
+.favorites-export-status { text-align: left; margin: 1rem 0 0; line-height: 1.5; }
+#export-favorites-btn:disabled { opacity: 0.6; cursor: default; }
+@media (orientation: portrait) {
+  .share-favorite-sections { gap: 1rem; }
+  .share-option-body, .share-format-option > span { font-size: 1.4rem; padding: 0.8rem 1rem; }
+  .share-export-layout { grid-template-columns: 1fr; gap: 1.5rem; }
+  #export-favorites-btn { justify-self: end; }
+  .share-sections-fieldset legend, .share-format-options legend { font-size: 1.2rem; }
+  .favorites-export-status { font-size: 1.3rem; }
+}

@@ -16,6 +16,7 @@
     <button class="tab-button" data-tab="api-keys">API Keys</button>
     <button class="tab-button" data-tab="refresh">Refresh</button>
     <button class="tab-button" data-tab="information">Information</button>
+    <button class="tab-button" data-tab="extras">Extras</button>
   </div>
 
   <div class="tab-content active" id="preferences">
@@ -301,6 +302,50 @@
     </div>
   </div>
 
+  <div class="tab-content" id="extras">
+    <div class="preferences-container">
+      <section class="preferences-section share-favorites-section">
+        <h3>Share Favorites</h3>
+        <form id="share-favorites-form">
+          <div class="share-export-layout">
+            <div class="share-export-options">
+              <fieldset class="share-sections-fieldset">
+                <legend>Sections</legend>
+                <div class="share-favorite-sections">
+                  {% for section in share_favorite_sections %}
+                    <label class="share-section-option">
+                      <input type="checkbox" name="sections" value="{{ section.id }}" {% if section.count and section.visible %}checked{% endif %} {% if not section.count %}disabled{% endif %}>
+                      <span class="share-option-body"><span>{{ section.name }}</span><span class="share-section-count">{{ section.count }}</span></span>
+                    </label>
+                  {% endfor %}
+                </div>
+              </fieldset>
+              <fieldset class="share-format-options">
+                <legend>Format</legend>
+                <label class="share-format-option"><input type="radio" name="format" value="png" checked><span>PNG</span></label>
+                <label class="share-format-option"><input type="radio" name="format" value="pdf"><span>PDF</span></label>
+              </fieldset>
+              <fieldset class="share-format-options">
+                <legend>Maximum items per section</legend>
+                <label class="share-format-option"><input type="radio" name="max_items" value="5"><span>5</span></label>
+                <label class="share-format-option"><input type="radio" name="max_items" value="10"><span>10</span></label>
+                <label class="share-format-option"><input type="radio" name="max_items" value="15"><span>15</span></label>
+                <label class="share-format-option"><input type="radio" name="max_items" value="20"><span>20</span></label>
+                <label class="share-format-option"><input type="radio" name="max_items" value="25" checked><span>25</span></label>
+              </fieldset>
+              <label class="preference-toggle-label">
+                <input type="checkbox" name="show_titles" checked>
+                <span class="preference-toggle-content"><span class="preference-toggle-text">Show titles</span></span>
+              </label>
+            </div>
+            <button type="submit" class="backup-btn" id="export-favorites-btn">Export Favorites</button>
+          </div>
+          <p id="favorites-export-status" class="favorites-export-status" role="status" aria-live="polite" hidden></p>
+        </form>
+      </section>
+    </div>
+  </div>
+
   <div class="tab-content" id="backup">
     <div class="preferences-container">
       <div class="preferences-section" style="grid-column: 1 / -1; max-width: 900px; margin: 0 auto;">
@@ -528,4 +573,5 @@
 {% block script %}
 {{ block.super }}
 <script src="{% static 'core/js/p_settings.js' %}"></script>
+<script src="{% static 'core/js/p_settings_extras.js' %}"></script>
 {% endblock %}
