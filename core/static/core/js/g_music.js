@@ -473,7 +473,7 @@ function createPlayer(videoId, startTime = 0, startPaused = false) {
       .mp-size-menu { position: relative; }
       .mp-size-popover { display: none; position: absolute; top: 100%; right: 0; padding-top: 4px; z-index: 20; }
       .mp-size-popover .mp-btn { background: #222; white-space: nowrap; gap: 6px; padding: 8px; font: 13px sans-serif; }
-      .mp-size-menu:hover .mp-size-popover, .mp-size-menu:focus-within .mp-size-popover { display: block; }
+      .mp-size-menu:hover .mp-size-popover, .mp-size-menu:has(:focus-visible) .mp-size-popover { display: block; }
       .mp-size-popover .mp-btn:hover { background: #444; }
       .mp-fullscreen .mp-size-popover { top: auto; bottom: 100%; padding-top: 0; padding-bottom: 4px; }
       .mp-popout .mp-size-menu, .mp-popout #mp-fullscreen, .mp-popout .mp-drag-zone { display: none; }

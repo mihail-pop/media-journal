@@ -11,6 +11,7 @@ from django.http import JsonResponse
 from django.utils import timezone
 from django.core.files.storage import FileSystemStorage
 from django.views.decorators.csrf import ensure_csrf_cookie
+from django.db import transaction
 from django.db.models import Max, F
 from django.views.decorators.http import require_GET, require_POST
 
@@ -371,13 +372,35 @@ def edit_metadata(request, item_id):
     return JsonResponse({"success": False, "error": "Invalid request"})
 
 @ensure_csrf_cookie
+@transaction.atomic
 def edit_item(request, item_id):
     if request.method == "POST":
         try:
             data = json.loads(request.body)
-            item = MediaItem.objects.get(id=item_id)
+            item = MediaItem.objects.select_for_update().get(id=item_id)
 
             old_status = item.status
+            quick_complete = False
+            if 'increment_progress' in data:
+                action = data['increment_progress']
+                if old_status != 'ongoing':
+                    return JsonResponse({'success': False, 'error': 'Progress shortcuts are only available for active items.'}, status=409)
+                episodic = item.media_type in ('tv', 'anime', 'manga')
+                if not episodic and action == 'complete':
+                    # 0/1 is a status shortcut, not minutes, hours or pages.
+                    quick_complete = True
+                    data = {'status': 'completed'}
+                elif episodic and (action == 'main' or (action == 'secondary' and item.media_type == 'tv')):
+                    progress_field = 'progress_main' if action == 'main' else 'progress_secondary'
+                    total = item.total_main if action == 'main' else item.total_secondary
+                    progress = (getattr(item, progress_field) or 0) + 1
+                    if total is not None and total > 0:
+                        progress = min(progress, total)
+                    data = {progress_field: progress}
+                    if total is not None and total > 0 and progress >= total:
+                        data['status'] = 'completed'
+                else:
+                    return JsonResponse({'success': False, 'error': 'Invalid progress shortcut.'}, status=400)
 
             # Update totals if present
             if "total_main" in data and data["total_main"] not in [None, ""]:
@@ -420,8 +443,11 @@ def edit_item(request, item_id):
             # --- Handle date_added ---
             status_changed = new_status != old_status
             
-            # The rule: Only auto-update if BOTH status and score changed.
-            auto_update_date = status_changed and rating_changed
+            # Keep the status + score rule, and also date active items when
+            # they are finished or dropped, even without a rating change.
+            auto_update_date = status_changed and (
+                rating_changed or (old_status == 'ongoing' and new_status in ('completed', 'dropped'))
+            )
 
             user_date = data.get("date_added")
 
@@ -449,7 +475,7 @@ def edit_item(request, item_id):
                     item.progress_main = 0
                 else:
                     progress_main = int(data["progress_main"])
-                    if item.media_type != "book" and item.total_main is not None and progress_main > item.total_main:
+                    if item.media_type != "book" and item.total_main is not None and item.total_main > 0 and progress_main > item.total_main:
                         progress_main = item.total_main
                     item.progress_main = progress_main
 
@@ -460,13 +486,14 @@ def edit_item(request, item_id):
                     progress_secondary = int(data["progress_secondary"])
                     if (
                         item.total_secondary is not None
+                        and item.total_secondary > 0
                         and progress_secondary > item.total_secondary
                     ):
                         progress_secondary = item.total_secondary
                     item.progress_secondary = progress_secondary
 
             # If status changed TO "completed", override progress with totals
-            if old_status != "completed" and new_status == "completed":
+            if old_status != "completed" and new_status == "completed" and not quick_complete:
                 if item.total_main is not None and item.progress_main < item.total_main:
                     item.progress_main = item.total_main
                 if item.total_secondary is not None:

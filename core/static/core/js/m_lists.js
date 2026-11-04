@@ -524,7 +524,7 @@ function createListRowElement(item, isDetailed = false) {
               <img src="${coverSrc}" alt="${imgAlt}" loading="lazy">
             </div>
             <div class="detailed-text-content">
-              <span class="detailed-title">${item.title}</span>
+              ${getTitleHtml(item, 'detailed-title')}
               ${getDetailedJournalHtml(item)}
             </div>
             <div class="list-row-actions">
@@ -539,7 +539,7 @@ function createListRowElement(item, isDetailed = false) {
       firstCellHtml = `
         <td class="simple-title-cell">
           <a href="${linkUrl}">
-            <span class="simple-title">${item.title}</span>
+            ${getTitleHtml(item, 'simple-title')}
             <div class="list-row-actions">
               ${repeatHtml}
               ${playBtnHtml}
@@ -648,7 +648,33 @@ function createListRowElement(item, isDetailed = false) {
     return '';
   }
 
+  function hasEpisodeProgress(item) {
+    return ['tv', 'anime', 'manga'].includes(item.media_type);
+  }
+
+  function getQuickProgressHtml(item, action, text) {
+    const label = action === 'complete' ? 'Mark completed' :
+      action === 'secondary' ? 'Add one season' :
+      item.media_type === 'manga' ? 'Add one chapter' : 'Add one episode';
+    return `<span class="quick-progress">${text ? `<span>${text}</span>` : ''}<button type="button" class="progress-increment-btn" data-progress-action="${action}" aria-label="${label}"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></span>`;
+  }
+
+  function getTitleHtml(item, titleClass) {
+    const title = `<span class="${titleClass}">${item.title}</span>`;
+    if (item.status !== 'ongoing' || hasEpisodeProgress(item)) return title;
+    return `<span class="quick-progress-title">${title}${getQuickProgressHtml(item, 'complete', '')}</span>`;
+  }
+
+  function activeProgressText(current, total) {
+    const count = Number(current) || 0;
+    return `${count}/${Number(total) > 0 ? Number(total) : '?'}`;
+  }
+
   function getProgressHtml(item) {
+    if (item.status === 'ongoing') {
+      if (!hasEpisodeProgress(item)) return `<div class="card-progress">${getQuickProgressHtml(item, 'complete', '0/1')}</div>`;
+      return `<div class="card-progress">${getQuickProgressHtml(item, 'main', activeProgressText(item.progress_main, item.total_main))}</div>`;
+    }
     if (!item.progress_main) return '';
     
     if (item.progress_main === item.total_main || item.progress_main > item.total_main) {
@@ -672,6 +698,9 @@ function createListRowElement(item, isDetailed = false) {
   }
 
   function getListMainProgressHtml(item) {
+    if (item.status === 'ongoing' && hasEpisodeProgress(item)) {
+      return getQuickProgressHtml(item, 'main', activeProgressText(item.progress_main, item.total_main));
+    }
     if (mediaType === 'games') {
       return formatListProgress(item.progress_main);
     }
@@ -682,6 +711,9 @@ function createListRowElement(item, isDetailed = false) {
   }
 
   function getSeasonsHtml(item) {
+    if (item.status === 'ongoing' && item.media_type === 'tv') {
+      return getQuickProgressHtml(item, 'secondary', activeProgressText(item.progress_secondary, item.total_secondary));
+    }
     return formatListProgress(item.progress_secondary, item.total_secondary);
   }
 
@@ -1842,6 +1874,36 @@ updateSortButtons();
     sessionStorage.setItem(pageKey, currentPage);
   });
   
+  const progressUpdates = new Set();
+  document.addEventListener('click', async event => {
+    const button = event.target.closest('.progress-increment-btn');
+    if (!button) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const itemElement = button.closest('.card, .list-row');
+    const id = itemElement?.dataset.id;
+    if (!id || progressUpdates.has(id)) return;
+    progressUpdates.add(id);
+    const buttons = itemElement.querySelectorAll('.progress-increment-btn');
+    buttons.forEach(control => { control.disabled = true; });
+    try {
+      const csrf = document.cookie.split('; ').find(value => value.startsWith('csrftoken='))?.split('=').slice(1).join('=') || '';
+      const response = await fetch(`/edit-item/${id}/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': decodeURIComponent(csrf) },
+        body: JSON.stringify({ increment_progress: button.dataset.progressAction }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.error || 'Unable to update progress.');
+      replaceItemElement(data.item);
+    } catch (error) {
+      alert(error.message || 'Unable to update progress. Please try again.');
+    } finally {
+      progressUpdates.delete(id);
+      buttons.forEach(control => { control.disabled = false; });
+    }
+  }, true);
+
   // === EVENT DELEGATION FOR EDIT BUTTONS ===
   document.addEventListener('click', function(e) {
     const entryBody = e.target.closest('.expandable-entry');

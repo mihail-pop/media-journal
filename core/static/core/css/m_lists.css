@@ -1950,3 +1950,57 @@ body[data-media-type="tvshows"] .simple-title-cell a {
     display: none;
   }
 }
+
+/* Quick progress controls share the existing card and list text sizing. */
+.quick-progress {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.05em;
+  white-space: nowrap;
+}
+.progress-increment-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 1.1em;
+  height: 1.1em;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s, color 0.15s;
+}
+.progress-increment-btn svg { width: 100%; height: 100%; }
+.card:hover .progress-increment-btn,
+.list-row:hover .progress-increment-btn,
+.progress-increment-btn:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+.progress-increment-btn:hover { color: var(--special-color); }
+.progress-increment-btn:disabled { opacity: 0.4; cursor: wait; }
+.quick-progress-title {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5em;
+  min-width: 0;
+  width: 100%;
+}
+.quick-progress-title > .detailed-title,
+.quick-progress-title > .simple-title {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+.quick-progress-title > .quick-progress {
+  flex-shrink: 0;
+  font-size: 0.85em;
+  font-weight: normal;
+}
+@media (hover: none) {
+  .progress-increment-btn { opacity: 1; pointer-events: auto; }
+}
