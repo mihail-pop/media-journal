@@ -1062,9 +1062,9 @@ body[data-media-type="games"] .card {
 
 
 .list-table tr.detailed-row {
-
-  background-size: cover;
-  background-position: center 25%;
+  /* Overscan only the dark gradient so fractional edges cannot expose the banner. */
+  background-size: calc(100% + 2px) calc(100% + 2px), cover;
+  background-position: center, center 25%;
   background-repeat: no-repeat;
 }
 

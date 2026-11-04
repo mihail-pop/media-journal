@@ -214,6 +214,8 @@ body {
   height: 200px;
   overflow: hidden;
   position: relative;
+  /* Keep the darkening layers inside the banner's own paint order. */
+  isolation: isolate;
 }
 
 .modal-banner img[alt="movie"],
@@ -346,6 +348,9 @@ body {
 .modal-body {
   padding: 1.5rem 2rem 2rem 2rem;
   background: var(--modal-bg);
+  isolation: isolate;
+  /* Paint over the fractional-pixel join without changing either box's size. */
+  box-shadow: 0 -1px 0 0 var(--modal-bg);
 }
 
 
