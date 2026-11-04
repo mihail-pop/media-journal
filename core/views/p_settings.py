@@ -61,6 +61,26 @@ def update_preferences(request):
 
 
 @require_POST
+def update_adult_content(request):
+    try:
+        data = json.loads(request.body)
+        enabled = data.get('enabled') if isinstance(data, dict) else None
+        if not isinstance(enabled, bool):
+            raise ValueError
+    except (ValueError, TypeError):
+        return JsonResponse({'success': False, 'error': 'Invalid adult content preference.'}, status=400)
+
+    AppSettings = apps.get_model('core', 'AppSettings')
+    with transaction.atomic():
+        settings = AppSettings.objects.select_for_update().first()
+        if not settings:
+            settings = AppSettings.objects.create()
+        settings.allow_adult_content = enabled
+        settings.save(update_fields=['allow_adult_content'])
+    return JsonResponse({'success': True})
+
+
+@require_POST
 def update_banner_notes(request):
     try:
         data = json.loads(request.body)

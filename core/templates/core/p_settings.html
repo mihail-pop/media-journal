@@ -286,6 +286,18 @@
         </div>
         <p class="live-search-help"><b>Show or hide item notes on home and list page banner rotators.</b></p>
       </div>
+      <div class="preferences-section">
+        <h3>18+ Content</h3>
+        <div class="preferences-form banner-notes-controls">
+          <label class="preference-toggle-label">
+            <input type="checkbox" id="allow-adult-content" aria-label="Include adult content in search and Discover" {% if allow_adult_content %}checked{% endif %}>
+            <div class="preference-toggle-content">
+              <div class="preference-toggle-text" id="adult-content-state">{{ allow_adult_content|yesno:'Enabled,Disabled' }}</div>
+            </div>
+          </label>
+        </div>
+        <p class="live-search-help"><b>Include adult and erotic titles in search and Discover. Saved items are unaffected.</b></p>
+      </div>
     </div>
   </div>
 

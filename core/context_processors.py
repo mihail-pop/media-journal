@@ -24,6 +24,7 @@ def nav_items(request):
         ],
         "live_search_settings": settings.get_live_search_settings() if settings else default_live_search_settings(),
         "show_banner_notes": settings.show_banner_notes if settings else True,
+        "allow_adult_content": settings.allow_adult_content if settings else True,
         "list_card_overlay_settings": settings.get_list_card_overlay_settings() if settings else default_list_card_overlay_settings(),
     }
 

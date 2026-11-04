@@ -10,6 +10,7 @@ from django.db.models import Q
 
 from core.models import MediaItem
 from core.services.m_anime_manga import fetch_anilist_data
+from core.services.g_utils import adult_content_allowed
 
 
 @ensure_csrf_cookie
@@ -28,9 +29,9 @@ def anilist_search(request):
 
     # UPDATED: Fetch both 'id' (AniList) and 'idMal' (MAL)
     graphql_query = """
-    query ($search: String, $type: MediaType) {
+    query ($search: String, $type: MediaType, $isAdult: Boolean) {
       Page(perPage: 20) {
-        media(search: $search, type: $type) {
+        media(search: $search, type: $type, isAdult: $isAdult) {
           id
           idMal
           title {
@@ -49,6 +50,9 @@ def anilist_search(request):
         "search": query_str,
         "type": search_type.upper(),
     }
+    # AniList treats explicit null differently from an omitted filter.
+    if not adult_content_allowed():
+        variables['isAdult'] = False
 
     headers = {"Content-Type": "application/json"}
     response = requests.post(

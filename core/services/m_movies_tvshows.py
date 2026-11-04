@@ -591,7 +591,7 @@ def get_tv_extra_info(tmdb_id):
         return {}
 
 
-def get_tmdb_discover(media_type, page, query="", sort="popularity.desc", year="", genre=""):
+def get_tmdb_discover(media_type, page, query="", sort="popularity.desc", year="", genre="", allow_adult=True):
     try:
         api_key = APIKey.objects.get(name="tmdb").key_1
     except APIKey.DoesNotExist:
@@ -609,7 +609,7 @@ def get_tmdb_discover(media_type, page, query="", sort="popularity.desc", year="
                 "api_key": api_key,
                 "sort_by": "popularity.desc",
                 "page": page,
-                "include_adult": "false",
+                "include_adult": str(allow_adult).lower(),
                 "vote_count.gte": 100,
                 "with_genres": genre,
             }
@@ -622,7 +622,7 @@ def get_tmdb_discover(media_type, page, query="", sort="popularity.desc", year="
             "api_key": api_key,
             "sort_by": sort,
             "page": page,
-            "include_adult": "false",
+            "include_adult": str(allow_adult).lower(),
             "vote_count.gte": 100,
         }
 
@@ -637,6 +637,9 @@ def get_tmdb_discover(media_type, page, query="", sort="popularity.desc", year="
         if genre:
             params["with_genres"] = genre
 
+    if '/trending/' not in url:
+        params['include_adult'] = str(allow_adult).lower()
+
     try:
         response = requests.get(url, params=params)
         if response.status_code != 200:
@@ -645,10 +648,13 @@ def get_tmdb_discover(media_type, page, query="", sort="popularity.desc", year="
         data = response.json()
         raw_results = data.get("results", [])
         
-        # Return early if no results
+        # Pagination follows the raw page, not the number left after filtering.
+        has_more = bool(raw_results)
+        if not allow_adult:
+            raw_results = [item for item in raw_results if not item.get('adult', False)]
         if not raw_results:
-            return []
-        
+            return {'results': [], 'hasMore': has_more}
+
         results =[]
 
         # --- Fetch Next Episode Data for TV Shows Concurrently ---
@@ -738,7 +744,7 @@ def get_tmdb_discover(media_type, page, query="", sort="popularity.desc", year="
 
             results.append(result_dict)
 
-        return results
+        return {'results': results, 'hasMore': has_more}
     except Exception as e:
         print(f"Discover Error: {e}")
         return []

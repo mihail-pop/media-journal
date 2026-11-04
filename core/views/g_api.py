@@ -1423,6 +1423,8 @@ def favorites_api(request):
 
 @require_GET
 def discover_api(request):
+    from core.services.g_utils import adult_content_allowed
+    allow_adult = adult_content_allowed()
     media_type = request.GET.get("type", "movie")
     page = int(request.GET.get("page", 1))
     query = request.GET.get("q", "").strip()
@@ -1442,15 +1444,16 @@ def discover_api(request):
             if status == "upcoming":
                 status = "NOT_YET_RELEASED"
             data = get_anilist_discover(
-                media_type, page, query, sort, season, year, format_filter, status, genre
+                media_type, page, query, sort, season, year, format_filter, status, genre, allow_adult=allow_adult
             )
             if isinstance(data, list):
                 data = {"results": data, "hasMore": False}
             return JsonResponse(data)
         elif media_type in ["movie", "tv"]:
-            results = get_tmdb_discover(media_type, page, query, sort, year, genre)
+            data = get_tmdb_discover(media_type, page, query, sort, year, genre, allow_adult=allow_adult)
+            return JsonResponse(data if isinstance(data, dict) else {'results': data, 'hasMore': bool(data)})
         elif media_type == "game":
-            results = get_igdb_discover(page, query, sort, genre, platform, year, free_to_play=free_to_play)
+            results = get_igdb_discover(page, query, sort, genre, platform, year, free_to_play=free_to_play, allow_adult=allow_adult)
         elif media_type == "book":
             results = get_openlib_discover(page, query, sort, genre, year)
         elif media_type == "music":

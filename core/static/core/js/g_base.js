@@ -1,3 +1,15 @@
+(() => {
+  let initialAdultContentVersion;
+  try { initialAdultContentVersion = localStorage.getItem('adult-content-preference-version'); }
+  catch (error) { return; }
+  window.addEventListener('pageshow', event => {
+    if (!event.persisted) return;
+    try {
+      if (localStorage.getItem('adult-content-preference-version') !== initialAdultContentVersion) window.location.reload();
+    } catch (error) { /* Normal navigation still uses the saved server preference. */ }
+  });
+})();
+
 document.addEventListener('DOMContentLoaded', () => {
   const more = document.querySelector('.nav-more');
   if (!more) return;

@@ -65,6 +65,7 @@ urlpatterns = [
     path('api/history/', views.history_api, name='history_api'),
     path('get-item/<int:item_id>/', views.get_item, name='get_item'),
     path('settings/', views.settings_page, name='settings'),
+    path("settings/update_adult_content/", views.update_adult_content, name="update_adult_content"),
     path("settings/update_banner_notes/", views.update_banner_notes, name="update_banner_notes"),
     path("settings/update_preferences/", views.update_preferences, name="update_preferences"),
     path('settings/update_favorite_sections/', views.update_favorite_sections, name='update_favorite_sections'),

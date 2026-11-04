@@ -54,6 +54,31 @@ function saveRatingMode(value) {
 }
 
 document.addEventListener("DOMContentLoaded", function () {
+  const adultContentToggle = document.getElementById('allow-adult-content');
+  adultContentToggle?.addEventListener('change', async () => {
+    const enabled = adultContentToggle.checked;
+    const stateText = document.getElementById('adult-content-state');
+    adultContentToggle.disabled = true;
+    stateText.textContent = enabled ? 'Enabled' : 'Disabled';
+    try {
+      const response = await fetch('/settings/update_adult_content/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+        body: JSON.stringify({ enabled }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error('Unable to save adult content preference.');
+      try { localStorage.setItem('adult-content-preference-version', Date.now().toString()); } catch (error) { /* Storage is optional. */ }
+      showNotification('18+ content preference updated!');
+    } catch (error) {
+      adultContentToggle.checked = !enabled;
+      stateText.textContent = adultContentToggle.checked ? 'Enabled' : 'Disabled';
+      alert('Could not save adult content preference. Please try again.');
+    } finally {
+      adultContentToggle.disabled = false;
+    }
+  });
+
   const cardOverlaySettings = document.getElementById('list-card-overlay-settings');
   cardOverlaySettings?.addEventListener('click', async event => {
     const button = event.target.closest('button[data-mode]');

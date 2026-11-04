@@ -329,6 +329,12 @@ document.addEventListener('DOMContentLoaded', () => {
     
     updateURL();
     
+    // Continue over fully filtered pages when there are no cards to scroll yet.
+    while (hasMorePages && cardGrid.children.length === 0) {
+      await loadPage(currentPage);
+      currentPage++;
+    }
+
     isLoading = false;
     clearTimeout(loadingTimeout);
     loadingDiv.style.display = 'none';
@@ -374,6 +380,7 @@ document.addEventListener('DOMContentLoaded', () => {
       
       if (data.error) {
         console.error('API Error:', data.error);
+        hasMorePages = false;
         return;
       }
       

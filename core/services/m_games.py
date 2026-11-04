@@ -403,7 +403,7 @@ def get_game_extra_info(game_id):
 
 
 def get_igdb_discover(
-    page, query="", sort="rating", genre="", platform="", year="", free_to_play=False
+    page, query="", sort="rating", genre="", platform="", year="", free_to_play=False, allow_adult=True
 ):
     token = get_igdb_token()
     if not token:
@@ -423,8 +423,9 @@ def get_igdb_discover(
 
     fields_to_request = "id, name, cover.url, summary, rating, genres.name, first_release_date, artworks.url, screenshots.url, hypes"
 
+    adult_conditions = [] if allow_adult else ['(themes = null | themes != (42))']
     if query:
-        conditions = []
+        conditions = list(adult_conditions)
         if free_to_play:
             conditions.append('keywords.slug = "free-to-play"')
         where_clause = f"where {' & '.join(conditions)};" if conditions else ""
@@ -458,6 +459,7 @@ def get_igdb_discover(
                     
             sort_clause = f"sort {sort} desc" if sort else "sort total_rating desc"
 
+        conditions.extend(adult_conditions)
         if genre:
             conditions.append(f"genres = ({genre})")
         if platform:

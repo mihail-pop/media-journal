@@ -13,6 +13,7 @@ from django.views.decorators.http import require_GET
 from core.models import APIKey, MediaItem
 from core.services.m_games import get_igdb_token
 from core.services.g_api import serialize_game_screenshot
+from core.services.g_utils import adult_content_allowed
 
 IGDB_ACCESS_TOKEN = None
 IGDB_TOKEN_EXPIRY = 0
@@ -57,12 +58,17 @@ def igdb_search(request):
     )
     query_slug = re.sub(r"[^a-z0-9\s-]", "", query_norm).strip().replace(" ", "-")
 
+    # Exclude only IGDB's Erotic theme, retaining games with no theme metadata.
+    adult_condition = '' if adult_content_allowed() else '(themes = null | themes != (42))'
+    adult_search_filter = f'where {adult_condition};' if adult_condition else ''
+
     # 2. Primary Search (Fast)
     # Uses IGDB's text search index. Fast, but can occasionally bury exact matches.
     clean_query = query.replace('"', '\\"')
     data_search = f'''
     search "{clean_query}";
     fields id, name, cover.url, slug;
+    {adult_search_filter}
     limit 30;
     '''
 
@@ -96,7 +102,7 @@ def igdb_search(request):
     if not found_exact_slug and len(query_slug) > 2:
         data_slug_check = f'''
         fields id, name, cover.url, slug;
-        where slug = "{query_slug}";
+        where slug = "{query_slug}"{f" & {adult_condition}" if adult_condition else ""};
         '''
         try:
             slug_response = requests.post(

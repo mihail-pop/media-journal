@@ -6,7 +6,13 @@ from pathlib import Path
 import requests
 from django.conf import settings
 
-from core.models import NavItem
+from core.models import AppSettings, NavItem
+
+
+def adult_content_allowed():
+    """Only external search/discovery callers use this preference, never ID lookups."""
+    enabled = AppSettings.objects.values_list('allow_adult_content', flat=True).first()
+    return enabled if enabled is not None else True
 
 
 def normalize_search_text(text):

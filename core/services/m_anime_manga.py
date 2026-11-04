@@ -811,11 +811,12 @@ def get_anilist_discover(
     format_filter="",
     status="",
     genre="",
+    allow_adult=True,
 ):
     query_text = """
-    query ($page: Int, $search: String, $type: MediaType, $sort: [MediaSort], $season: MediaSeason, $seasonYear: Int, $startDate_like: String, $format: MediaFormat, $status: MediaStatus, $genre: String) {
+    query ($page: Int, $search: String, $type: MediaType, $sort: [MediaSort], $season: MediaSeason, $seasonYear: Int, $startDate_like: String, $format: MediaFormat, $status: MediaStatus, $genre: String, $isAdult: Boolean) {
       Page(page: $page, perPage: 20) {
-        media(search: $search, type: $type, sort: $sort, season: $season, seasonYear: $seasonYear, startDate_like: $startDate_like, format: $format, status: $status, genre: $genre) {
+        media(search: $search, type: $type, sort: $sort, season: $season, seasonYear: $seasonYear, startDate_like: $startDate_like, format: $format, status: $status, genre: $genre, isAdult: $isAdult) {
           id
           idMal
           title {
@@ -849,6 +850,10 @@ def get_anilist_discover(
         "type": media_type.upper(),
         "sort": [sort] if sort else ["TRENDING_DESC"],
     }
+
+    # Include everything by omitting the filter, not by sending null.
+    if not allow_adult:
+        variables['isAdult'] = False
 
     if query:
         variables["search"] = query
