@@ -4,6 +4,7 @@ import time
 import logging
 
 from django.conf import settings
+from django.db import transaction
 from django.http import JsonResponse
 from django.utils.text import slugify
 from django.views.decorators.csrf import ensure_csrf_cookie
@@ -13,6 +14,7 @@ from core.services.g_utils import normalize_search_text
 
 from core.services.m_people import (
     favorite_person_queryset,
+    resolve_person_identity,
     fetch_actor_data,
     fetch_character_data,
     delete_favorite_person_and_reorder,
@@ -204,19 +206,26 @@ def assign_media_to_person(request):
         person_type = data.get('person_type')
         media_ids = data.get('media_ids', [])
         
-        person = favorite_person_queryset(person_type, person_id, data.get('source')).get()
-        for m_id in media_ids:
-            item = MediaItem.objects.get(id=m_id)
-            MediaPersonLink.objects.get_or_create(item=item, person=person)
-            
-            # Automatically append the person's name to the media item's creators list
-            if not isinstance(item.creators, list):
-                item.creators = []
-                
-            if person.name not in item.creators:
-                item.creators.append(person.name)
-                item.save(update_fields=['creators'])
-                
+        person_type, source = resolve_person_identity(person_type, person_id, data.get('source'))
+        if not person_id or not isinstance(media_ids, list) or not media_ids:
+            return JsonResponse({'error': 'Select at least one library item.'}, status=400)
+        items = list(MediaItem.objects.filter(pk__in=media_ids))
+        if len(items) != len(set(media_ids)):
+            return JsonResponse({'error': 'One or more library items no longer exist.'}, status=400)
+
+        person = favorite_person_queryset(person_type, person_id, source).first()
+        if person is None:
+            return JsonResponse({'error': 'Favorite this person or character before assigning media.'}, status=400)
+
+        with transaction.atomic():
+            for item in items:
+                MediaPersonLink.objects.get_or_create(item=item, person=person)
+                if not isinstance(item.creators, list):
+                    item.creators = []
+                if person.name not in item.creators:
+                    item.creators.append(person.name)
+                    item.save(update_fields=['creators'])
+
         return JsonResponse({'success': True})
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=400)

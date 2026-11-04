@@ -4365,3 +4365,19 @@ select.single-unit ~ .select-arrow {
     border-radius: 12px;
   }
 }
+
+body[data-page-type="person-detail"] .main-colored-section > .detail-container {
+  padding-bottom: 3rem;
+}
+
+/* Before a person has sections, align panels with the centered input only. */
+.assign-search-wrapper.assign-search-standalone {
+  --assign-input-width: 320px;
+}
+.assign-search-standalone .assign-tags-container,
+.assign-search-standalone .assign-search-dropdown {
+  box-sizing: border-box;
+  left: var(--assign-input-left, 0px);
+  width: var(--assign-input-width);
+  min-width: 0;
+}

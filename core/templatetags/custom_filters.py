@@ -1,6 +1,7 @@
 import re
 import html
 from html.parser import HTMLParser
+from urllib.parse import urlsplit
 
 from django import template
 from django.utils.timezone import now
@@ -87,9 +88,13 @@ def timesince_one_unit(value):
         return f"{years} year{'s' if years != 1 else ''} ago"
 
 class SecureHTMLParser(HTMLParser):
-    def __init__(self):
+    def __init__(self, allow_links=False):
         super().__init__()
+        self.allow_links = allow_links
+        self.link_stack = []
         self.allowed_tags = {'br', 'strong', 'b', 'em', 'i', 'u', 'p', 'span', 'div'}
+        if allow_links:
+            self.allowed_tags.add('a')
         self.result = []
         self.in_script = 0  # Counter to completely ignore content inside <script> or <style>
 
@@ -99,6 +104,24 @@ class SecureHTMLParser(HTMLParser):
             self.in_script += 1
         elif not self.in_script and tag in self.allowed_tags:
             
+            if tag == 'a':
+                href = next((value for name, value in attrs if name == 'href'), '') or ''
+                href = href.strip()
+                try:
+                    url = urlsplit(href)
+                    valid = (
+                        url.scheme.lower() in ('https', 'http') and bool(url.hostname)
+                        and not any(ord(char) < 32 or ord(char) == 127 for char in href)
+                    )
+                except ValueError:
+                    valid = False
+                self.link_stack.append(valid)
+                if valid:
+                    self.result.append(
+                        f'<a href="{html.escape(href, quote=True)}" target="_blank" rel="noopener noreferrer">'
+                    )
+                return
+
             # Allow spoiler class on spans
             if tag == 'span':
                 for attr_name, attr_value in attrs:
@@ -114,12 +137,22 @@ class SecureHTMLParser(HTMLParser):
         if tag in ['script', 'style']:
             self.in_script = max(0, self.in_script - 1)
         elif not self.in_script and tag in self.allowed_tags:
-            self.result.append(f"</{tag}>")
+            if tag == 'a':
+                if self.link_stack and self.link_stack.pop():
+                    self.result.append('</a>')
+            else:
+                self.result.append(f"</{tag}>")
 
     def handle_data(self, data):
         if not self.in_script:
             # Safely escape any random text (e.g. converting < and > to &lt; and &gt;)
-            self.result.append(html.escape(data))
+            escaped = html.escape(data)
+            if self.allow_links:
+                # Format only text nodes, never underscores or asterisks inside URLs.
+                escaped = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', escaped)
+                escaped = re.sub(r'\*(.+?)\*', r'<em>\1</em>', escaped)
+                escaped = re.sub(r'\_(.+?)\_', r'<em>\1</em>', escaped)
+            self.result.append(escaped)
 
     # Handle special characters like &amp; 
     def handle_entityref(self, name):
@@ -131,25 +164,26 @@ class SecureHTMLParser(HTMLParser):
             self.result.append(f"&#{name};")
 
     def get_clean_html(self):
-        return "".join(self.result)
+        return "".join(self.result) + "</a>" * sum(self.link_stack)
 
 
 @register.filter
-def safe_html(value):
+def safe_html(value, allow_links=False):
     """
-    Whitelist safe HTML tags, strip ALL attributes, remove scripts,
-    convert Markdown bold to HTML and smartly convert text newlines.
+    Whitelist formatting tags, remove scripts and convert Markdown/newlines.
+    Optionally retain HTTP(S) links, with all incoming link attributes stripped.
     """
     if not value:
         return ''
     
-    # Convert markdown to html
-    value = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', value)
-    value = re.sub(r'\*(.+?)\*', r'<em>\1</em>', value)
-    value = re.sub(r'\_(.+?)\_', r'<em>\1</em>', value)
+    # Link-enabled content formats text nodes in the parser to preserve URLs.
+    if not allow_links:
+        value = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', value)
+        value = re.sub(r'\*(.+?)\*', r'<em>\1</em>', value)
+        value = re.sub(r'\_(.+?)\_', r'<em>\1</em>', value)
 
     # Parse and sanitize the HTML
-    parser = SecureHTMLParser()
+    parser = SecureHTMLParser(allow_links=allow_links)
     parser.feed(value)
     clean_text = parser.get_clean_html()
     

@@ -89,6 +89,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Check favorite status
     const favForm = document.getElementById('favorite-form');
+    let favoriteStatusReady = false;
+    let favoriteSaving = false;
     if (favForm) {
         const personName = favForm.dataset.personName;
         const personType = favForm.dataset.personType;
@@ -98,17 +100,23 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(res => res.json())
             .then(result => {
                 checkbox.checked = result.is_favorited;
+                favoriteStatusReady = true;
+                updateAssignmentVisibility();
                 updateRefreshButton();
                 updateUploadButton();
                 favForm.parentElement.classList.add('loaded');
             })
             .catch(() => {
                 checkbox.checked = false;
+                favoriteStatusReady = false;
+                updateAssignmentVisibility();
                 favForm.parentElement.classList.add('loaded');
             });
         
         // Toggle favorite
         checkbox.addEventListener('change', function() {
+            favoriteSaving = true;
+            updateAssignmentVisibility();
             const personImage = favForm.dataset.personImage;
             const personId = favForm.dataset.personId;
             
@@ -127,12 +135,19 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(res => res.json())
             .then(data => {
-                if (!data.status) {
+                if (data.status === 'added' || data.status === 'removed') {
+                    checkbox.checked = data.status === 'added';
+                    favoriteStatusReady = true;
+                } else {
                     checkbox.checked = !checkbox.checked;
                 }
             })
             .catch(() => {
                 checkbox.checked = !checkbox.checked;
+            })
+            .finally(() => {
+                favoriteSaving = false;
+                updateAssignmentVisibility();
             });
         });
     }
@@ -442,6 +457,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // 2. Move the search bar to the main container (centered)
             if (mainDetailContainer) {
                 mainDetailContainer.prepend(assignWrapper);
+                assignWrapper.classList.add('assign-search-standalone');
                 assignWrapper.style.position = 'relative';
                 assignWrapper.style.justifyContent = 'center';
                 assignWrapper.style.marginTop = '2rem';
@@ -452,6 +468,32 @@ document.addEventListener('DOMContentLoaded', function() {
             // Hide the original container
             assignContainer.style.display = 'none';
         }
+    }
+
+    function updateAssignmentVisibility() {
+        if (!showAssignBtn || !assignWrapper) return;
+        const saved = favoriteStatusReady && !favoriteSaving &&
+            favForm?.querySelector('input[name="favorite"]')?.checked;
+        if (!saved) {
+            showAssignBtn.style.display = 'none';
+            assignWrapper.style.display = 'none';
+        } else if (assignWrapper.style.display !== 'flex') {
+            showAssignBtn.style.display = 'flex';
+        }
+    }
+    updateAssignmentVisibility();
+
+    if (assignWrapper?.classList.contains('assign-search-standalone')) {
+        const searchInner = assignWrapper.querySelector('.assign-search-inner');
+        const alignStandalonePanels = () => {
+            const wrapperRect = assignWrapper.getBoundingClientRect();
+            const inputRect = searchInner.getBoundingClientRect();
+            assignWrapper.style.setProperty('--assign-input-left', `${inputRect.left - wrapperRect.left}px`);
+            assignWrapper.style.setProperty('--assign-input-width', `${inputRect.width}px`);
+        };
+        const standaloneObserver = new ResizeObserver(alignStandalonePanels);
+        standaloneObserver.observe(assignWrapper);
+        standaloneObserver.observe(searchInner);
     }
 
     const assignInput = document.getElementById('assign-search-input');
@@ -465,6 +507,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (showAssignBtn) {
         showAssignBtn.addEventListener('click', () => {
+            if (!favoriteStatusReady || favoriteSaving || !favForm?.querySelector('input[name="favorite"]')?.checked) return;
             showAssignBtn.style.display = 'none';
             assignWrapper.style.display = 'flex';
             assignInput.focus();
@@ -573,8 +616,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Save Assignment
         confirmAssignBtn.addEventListener('click', () => {
-            if (selectedMediaIds.size === 0) return;
-            
+            if (selectedMediaIds.size === 0 || confirmAssignBtn.disabled) return;
+            confirmAssignBtn.disabled = true;
+
             const favForm = document.getElementById('favorite-form');
             const personId = favForm.dataset.personId;
             const personType = favForm.dataset.personType;
@@ -592,7 +636,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else {
                     showNotification(data.error, "warning");
                 }
-            });
+            })
+            .catch(() => showNotification('Unable to assign media. Please try again.', 'warning'))
+            .finally(() => { confirmAssignBtn.disabled = false; });
         });
     }
 
