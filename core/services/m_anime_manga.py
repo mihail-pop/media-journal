@@ -123,7 +123,7 @@ def fetch_anilist_data(media_type, anilist_id=None, mal_id=None):
           romaji
           english
         }
-        description(asHtml: false)
+        description(asHtml: true)
         startDate {
           year
           month

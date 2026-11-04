@@ -1,5 +1,4 @@
 import os
-import re
 import logging
 import datetime
 import time
@@ -621,7 +620,7 @@ def fetch_character_data(character_id, force_refresh=False):
             image {
               large
             }
-            description
+            description(asHtml: true)
             age
             media(sort: [START_DATE_DESC], perPage: 24) { # Fetch latest 24
               edges {
@@ -776,19 +775,6 @@ def fetch_character_data(character_id, force_refresh=False):
                     )
 
         description = character_data.get("description", "")
-        if description:
-            # Markdown processing (unchanged)
-            parts = description.split("__")
-            result = []
-            for i, part in enumerate(parts):
-                if i % 2 == 1:
-                    result.append(f"<strong>{part}</strong> ") if i == 1 else result.append(f"<br><strong>{part}</strong> ")
-                else:
-                    result.append(part)
-            description = "".join(result)
-            description = re.sub(r"~!([^!]+)!~", r'<span class="spoiler">\1</span>', description)
-            description = re.sub(r"\[([^\]]+)\]\(([^\)]+)\)", r'<a href="\2" target="_blank">\1</a>', description)
-
         age = character_data.get("age")
         if age and isinstance(age, str) and age.endswith("-") and "-" not in age[:-1]:
             age = age[:-1]

@@ -485,15 +485,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (assignWrapper?.classList.contains('assign-search-standalone')) {
         const searchInner = assignWrapper.querySelector('.assign-search-inner');
+        const lastButton = assignWrapper.querySelector('#cancel-assign-btn');
         const alignStandalonePanels = () => {
             const wrapperRect = assignWrapper.getBoundingClientRect();
             const inputRect = searchInner.getBoundingClientRect();
-            assignWrapper.style.setProperty('--assign-input-left', `${inputRect.left - wrapperRect.left}px`);
-            assignWrapper.style.setProperty('--assign-input-width', `${inputRect.width}px`);
+            const endRect = lastButton.getBoundingClientRect();
+            assignWrapper.style.setProperty('--assign-panel-left', `${inputRect.left - wrapperRect.left}px`);
+            assignWrapper.style.setProperty('--assign-panel-width', `${endRect.right - inputRect.left}px`);
         };
         const standaloneObserver = new ResizeObserver(alignStandalonePanels);
         standaloneObserver.observe(assignWrapper);
         standaloneObserver.observe(searchInner);
+        standaloneObserver.observe(lastButton);
     }
 
     const assignInput = document.getElementById('assign-search-input');

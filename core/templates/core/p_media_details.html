@@ -90,7 +90,7 @@
   <div class="text-info">
     <h1>{{ title }}</h1>
     <div class="overview-container">
-      <p class="overview">{{ overview|safe_html }}</p>
+      <p class="overview">{% if media_type == 'anime' or media_type == 'manga' %}{{ overview|safe_html:True }}{% else %}{{ overview|safe_html }}{% endif %}</p>
       <button class="read-more-btn">Read More</button>
     </div>
     <p class="release-date">{{ release_date }}</p>
