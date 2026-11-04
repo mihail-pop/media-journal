@@ -13,6 +13,8 @@ from django.views.decorators.http import require_GET, require_POST
 from core.models import APIKey, FavoritePerson
 from core.services.g_utils import get_sharded_path
 from core.services.m_people import (
+    favorite_person_queryset,
+    resolve_person_identity,
     actor_search,
     character_search,
     save_favorite_actor_character,
@@ -41,7 +43,12 @@ def check_favorite_person_view(request):
     if not name or not person_type:
         return JsonResponse({"error": "Missing parameters"}, status=400)
 
-    is_favorited = FavoritePerson.objects.filter(name=name, type=person_type).exists()
+    try:
+        is_favorited = favorite_person_queryset(
+            person_type, request.GET.get('person_id'), request.GET.get('source'), name,
+        ).exists()
+    except ValueError as error:
+        return JsonResponse({'error': str(error)}, status=400)
     return JsonResponse({"is_favorited": is_favorited})
 
 
@@ -57,13 +64,17 @@ def toggle_favorite_person_view(request):
     person_id = data.get("person_id")  # New parameter for ID
 
     # Check if already favorited
-    existing = FavoritePerson.objects.filter(name=name, type=person_type).first()
+    try:
+        person_type, source = resolve_person_identity(person_type, person_id, data.get('source'))
+    except ValueError as error:
+        return JsonResponse({'error': str(error)}, status=400)
+    existing = favorite_person_queryset(person_type, person_id, source, name).first()
     if existing:
         # Delete favorite and reorder positions
         delete_favorite_person_and_reorder(existing.id)
         return JsonResponse({"status": "removed"})
     else:
-        save_favorite_actor_character(name, image_url, person_type, person_id)
+        save_favorite_actor_character(name, image_url, person_type, person_id, source=source)
         return JsonResponse({"status": "added"})
 
 
@@ -251,7 +262,7 @@ def create_custom_person(request):
         # Determine Role
         role = request.POST.get("role")
         if not role:
-            role = "Actor" if person_type == "actor" else "Character"
+            role = "Person" if person_type == "actor" else "Character"
         additional_data["role"] = role
 
         if person_type == "actor":
@@ -291,6 +302,7 @@ def create_custom_person(request):
             name=name,
             type=person_type,
             person_id=custom_id,
+            source='custom',
             position=position,
             image_url=image_url,
             **additional_data
@@ -315,7 +327,7 @@ def edit_custom_person(request):
             return JsonResponse({"error": "Missing required fields."}, status=400)
 
         # Find the FavoritePerson by person_id (the custom_xxx ID)
-        person = FavoritePerson.objects.filter(person_id=person_id, type=person_type).first()
+        person = favorite_person_queryset(person_type, person_id, request.POST.get('source')).first()
         if not person:
             return JsonResponse({"error": "Person not found."}, status=404)
 
@@ -326,7 +338,7 @@ def edit_custom_person(request):
         if role:
             person.role = role
         elif not person.role:
-            person.role = "Actor" if person_type == "actor" else "Character"
+            person.role = "Person" if person_type == "actor" else "Character"
             
         if person_type == "actor":
             person.biography = overview

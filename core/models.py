@@ -123,14 +123,30 @@ class MediaItemLog(models.Model):
 class FavoritePerson(models.Model):
     PERSON_TYPE_CHOICES: ClassVar[list[tuple[str, str]]] = [
         ('character', 'Character'),
-        ('actor', 'Actor'),
+        ('actor', 'Person'),  # Keep the stored value and actors image folder for existing libraries.
     ]
 
     name = models.CharField(max_length=200)
     image_url = models.URLField(blank=True, null=True)
     type = models.CharField(max_length=10, choices=PERSON_TYPE_CHOICES)
     position = models.PositiveIntegerField()
-    person_id = models.CharField(max_length=50, blank=True, null=True)  # ID from TMDB/AniList
+    person_id = models.CharField(max_length=50, blank=True, null=True)  # ID within source
+    source = models.CharField(max_length=32, blank=True, default='')
+
+    @property
+    def resolved_source(self):
+        # Also supports old backups that predate the source field.
+        if str(self.person_id or '').startswith('custom_'):
+            return 'custom'
+        return self.source or ('anilist' if self.type == 'character' else 'tmdb')
+
+    def get_absolute_url(self):
+        if not self.person_id:
+            return '#'
+        if self.type == 'character':
+            return f'/character/{self.person_id}/'
+        return f'/person/{self.resolved_source}/{self.person_id}/'
+
     
     # General Role field (e.g., "Director", "Actor", "Character")
     role = models.CharField(max_length=100, blank=True, null=True)
@@ -259,7 +275,36 @@ def default_live_search_settings():
     }
 
 
+def default_favorite_sections_order():
+    return [
+        {'id': key, 'name': name, 'visible': True}
+        for key, name in (
+            ('movie', 'Movies'), ('tv', 'TV Shows'), ('anime', 'Anime'),
+            ('game', 'Games'), ('manga', 'Manga'), ('book', 'Books'),
+            ('music', 'Music'), ('characters', 'Characters'), ('actors', 'People'),
+        )
+    ]
+
+
 class AppSettings(models.Model):
+    favorite_sections_order = models.JSONField(default=default_favorite_sections_order, blank=True)
+
+    def get_favorite_sections_order(self):
+        defaults = {section['id']: section for section in default_favorite_sections_order()}
+        sections = []
+        if isinstance(self.favorite_sections_order, list):
+            for saved in self.favorite_sections_order:
+                if not isinstance(saved, dict):
+                    continue
+                key = saved.get('id')
+                if not isinstance(key, str) or key not in defaults:
+                    continue
+                section = defaults.pop(key)
+                if isinstance(saved.get('visible'), bool):
+                    section['visible'] = saved['visible']
+                sections.append(section)
+        return sections + list(defaults.values())
+
     live_search_settings = models.JSONField(default=default_live_search_settings, blank=True)
 
     def get_live_search_settings(self):

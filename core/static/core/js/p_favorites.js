@@ -356,19 +356,9 @@ document.addEventListener('DOMContentLoaded', () => {
                             body: JSON.stringify({ favorite: false }),
                         });
                     } else if (type === 'person') {
-                        const name = label.dataset.title;
-                        const img = label.dataset.img;
-                        const slug = label.dataset.slug;
-                        const personType = slug === 'characters' ? 'character' : 'actor';
-                        const requestData = { name: name, image_url: img, type: personType };
-                        
-                        await fetch("/api/toggle_favorite_person/", {
-                            method: "POST",
-                            headers: {
-                              "Content-Type": "application/json",
-                              "X-CSRFToken": getCookie("csrftoken"),
-                            },
-                            body: JSON.stringify(requestData),
+                        await fetch(`/api/delete_favorite_person/${id}/`, {
+                            method: 'POST',
+                            headers: { 'X-CSRFToken': getCookie('csrftoken') },
                         });
                     }
                 } catch (error) {

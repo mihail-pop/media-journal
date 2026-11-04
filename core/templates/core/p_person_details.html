@@ -28,7 +28,7 @@
       
       <!-- Favorite heart and refresh -->
       <div class="favorite-refresh-wrapper">
-        <form id="favorite-form" data-person-name="{{ person_name }}" data-person-type="{{ person_type }}" data-person-id="{{ person_data.id }}" data-person-image="{{ person_data.image }}">
+        <form id="favorite-form" data-person-source="{{ person_source }}" data-person-name="{{ person_name }}" data-person-type="{{ person_type }}" data-person-id="{{ person_data.id }}" data-person-image="{{ person_data.image }}">
           <label class="favorite-checkbox">
             <input type="checkbox" name="favorite">
             <span class="heart"></span>
@@ -205,7 +205,7 @@
       </div>
       <div class="voice-actors-list">
         {% for va in person_data.voice_actors %}
-        <div class="media-card">
+        <a class="media-card" href="/person/anilist/{{ va.id }}/" style="color: inherit; text-decoration: none;">
           <div class="media-image-wrapper">
             <img src="{% if va.image %}{{ va.image }}{% else %}{% static 'core/img/placeholder.png' %}{% endif %}" alt="{{ va.name }}" onerror="this.src='{% static 'core/img/placeholder.png' %}'" />
           </div>
@@ -213,7 +213,7 @@
             <p class="media-title">{{ va.name }}</p>
             <span class="media-language">{{ va.language }}</span>
           </div>
-        </div>
+        </a>
         {% endfor %}
       </div>
     </section>
@@ -316,6 +316,7 @@
 
         <div class="pc-form-fields">
           <input type="hidden" name="person_id" value="{{ person_data.id }}">
+          <input type="hidden" name="source" value="{{ person_source }}">
           <input type="hidden" name="person_type" value="{{ person_type }}">
           <input type="text" name="name" class="pc-title-input" value="{{ person_name }}" required autocomplete="off">
           

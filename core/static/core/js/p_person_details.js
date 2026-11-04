@@ -94,7 +94,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const personType = favForm.dataset.personType;
         const checkbox = favForm.querySelector('input[name="favorite"]');
         
-        fetch(`/api/check_favorite_person/?name=${encodeURIComponent(personName)}&type=${personType}`)
+        fetch(`/api/check_favorite_person/?name=${encodeURIComponent(personName)}&type=${personType}&person_id=${encodeURIComponent(favForm.dataset.personId || '')}&source=${encodeURIComponent(favForm.dataset.personSource)}`)
             .then(res => res.json())
             .then(result => {
                 checkbox.checked = result.is_favorited;
@@ -112,7 +112,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const personImage = favForm.dataset.personImage;
             const personId = favForm.dataset.personId;
             
-            const requestData = { name: personName, image_url: personImage, type: personType };
+            const requestData = { name: personName, image_url: personImage, type: personType, source: favForm.dataset.personSource };
             if (personId) {
                 requestData.person_id = personId;
             }
@@ -181,7 +181,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     'Content-Type': 'application/json',
                     'X-CSRFToken': getCookie('csrftoken'),
                 },
-                body: JSON.stringify({ person_id: personId, person_type: personType, refresh_mode: mode }),
+                body: JSON.stringify({ person_id: personId, person_type: personType, source: favForm.dataset.personSource, refresh_mode: mode }),
             })
             .then(res => res.json())
             .then(data => {
@@ -252,6 +252,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 formData.append('image', file);
                 formData.append('person_id', personId);
                 formData.append('person_type', personType);
+                formData.append('source', favForm.dataset.personSource);
                 
                 fetch('/api/upload_person_image/', {
                     method: 'POST',
@@ -492,7 +493,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const pType = favForm ? favForm.dataset.personType : '';
             
             searchTimeout = setTimeout(() => {
-                fetch(`/api/person/search_media/?q=${encodeURIComponent(query)}&person_id=${encodeURIComponent(pId)}&person_type=${encodeURIComponent(pType)}`)
+                fetch(`/api/person/search_media/?q=${encodeURIComponent(query)}&person_id=${encodeURIComponent(pId)}&person_type=${encodeURIComponent(pType)}&source=${encodeURIComponent(favForm.dataset.personSource)}`)
                 .then(res => res.json())
                 .then(data => {
                     assignDropdown.innerHTML = '';
@@ -581,7 +582,7 @@ document.addEventListener('DOMContentLoaded', function() {
             fetch('/api/person/assign_media/', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
-                body: JSON.stringify({ person_id: personId, person_type: personType, media_ids: Array.from(selectedMediaIds.keys()) })
+                body: JSON.stringify({ person_id: personId, person_type: personType, source: favForm.dataset.personSource, media_ids: Array.from(selectedMediaIds.keys()) })
             })
             .then(res => res.json())
             .then(data => {

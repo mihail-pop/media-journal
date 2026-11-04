@@ -356,7 +356,7 @@ document.addEventListener("DOMContentLoaded", function() {
             card.className = "person-card";
             
             card.innerHTML = `
-              ${person.id ? `<a href="/person/actor/${person.id}/" class="person-card-link">` : ''}
+              ${person.id ? `<a href="/person/tmdb/${person.id}/" class="person-card-link">` : ''}
                 <img src="${person.image || "/static/core/img/placeholder.png"}" alt="${person.name}">
                 <p class="person-name">${person.name}</p>
               ${person.id ? '</a>' : ''}
@@ -512,7 +512,7 @@ document.addEventListener("DOMContentLoaded", function() {
         
         if (member.id) {
           castMember.innerHTML = `
-            <a href="/person/actor/${member.id}/" class="cast-member">
+            <a href="/person/tmdb/${member.id}/" class="cast-member">
               <img src="${member.profile_path || '/static/core/img/placeholder.png'}" 
                    alt="${member.name}" 
                    data-placeholder="/static/core/img/placeholder.png" 
@@ -598,7 +598,7 @@ document.addEventListener("DOMContentLoaded", function() {
               
               if (member.id) {
                 castMember.innerHTML = `
-                  <a href="/person/actor/${member.id}/" class="cast-member">
+                  <a href="/person/tmdb/${member.id}/" class="cast-member">
                     <img src="${member.profile_path || '/static/core/img/placeholder.png'}" 
                          alt="${member.name}" 
                          data-placeholder="/static/core/img/placeholder.png" 

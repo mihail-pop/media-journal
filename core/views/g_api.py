@@ -1406,7 +1406,7 @@ def favorites_api(request):
         for person in items:
             url = "#"
             if person.person_id:
-                url = f"/person/{person.type}/{person.person_id}/"
+                url = person.get_absolute_url()
 
             items_data.append(
                 {

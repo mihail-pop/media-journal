@@ -6,20 +6,21 @@ from django.apps import apps
 from django.urls import reverse
 from django.utils import timezone
 from django.db.models import Q, Sum
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
+from django.http import Http404
 from django.utils.text import slugify
 from django.utils.timesince import timesince
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET
 
-from core.models import APIKey, NavItem, MediaItem, Collection, FavoritePerson, CalendarEvent, AppSettings
+from core.models import APIKey, NavItem, MediaItem, Collection, FavoritePerson, CalendarEvent, AppSettings, default_favorite_sections_order
 from django.utils.timesince import timeuntil
 from core.services.p_home import (
     start_media_cleanup_loop,
     start_tmdb_background_loop,
     start_anilist_background_loop,
 )
-from core.services.m_people import fetch_actor_data, fetch_character_data
+from core.services.m_people import fetch_actor_data, fetch_character_data, resolve_person_identity
 from core.services.g_utils import get_ordered_types
 
 logger = logging.getLogger(__name__)
@@ -344,6 +345,23 @@ def home(request):
 
     favorite_characters = FavoritePerson.objects.filter(type="character").order_by("position")[:limit]
     favorite_actors = FavoritePerson.objects.filter(type="actor").order_by("position")[:limit]
+    favorite_preferences = settings.get_favorite_sections_order() if settings else default_favorite_sections_order()
+    favorite_home_sections = []
+    visible_media_sections = {}
+    for section in favorite_preferences:
+        if not section['visible']:
+            continue
+        key = section['id']
+        is_person = key in ('characters', 'actors')
+        if is_person:
+            items = list(favorite_characters if key == 'characters' else favorite_actors)
+        else:
+            items = favorite_sections[section['name']]
+            visible_media_sections[section['name']] = items
+        if items:
+            favorite_home_sections.append({
+                'name': section['name'], 'items': items, 'is_person': is_person,
+            })
 
     recent_items = MediaItem.objects.order_by("-date_added")[:12]
     recent_activity = []
@@ -436,10 +454,8 @@ def home(request):
         request,
         "core/p_home.html",
         {
-            "favorite_sections": favorite_sections.items(),
-            "favorite_sections_dict": favorite_sections,
-            "favorite_characters": favorite_characters,
-            "favorite_actors": favorite_actors,
+            "favorite_home_sections": favorite_home_sections,
+            "favorite_sections_dict": visible_media_sections,
             "stats": stats,
             "stats_blocks": stats_blocks,
             "extra_stats": extra_stats,
@@ -901,11 +917,20 @@ def favorites_page(request):
         ("Books", "book", "media", favorite_media.filter(media_type="book")),
         ("Music", "music", "media", favorite_media.filter(media_type="music")),
         ("Characters", "characters", "person", favorite_characters),
-        ("Actors", "actors", "person", favorite_actors),
+        ("People", "actors", "person", favorite_actors),
+    ]
+
+    section_defs_by_key = {definition[1]: definition for definition in all_section_defs}
+    favorite_preferences = settings.get_favorite_sections_order() if settings else default_favorite_sections_order()
+    all_section_defs = [
+        section_defs_by_key[section['id']]
+        for section in favorite_preferences if section['visible']
     ]
 
     # Reorder based on requested section
     requested_section = request.GET.get("section")
+    if requested_section == 'Actors':
+        requested_section = 'People'  # Keep existing links working during the label transition.
     if requested_section:
         # Find the index of the requested section
         index = next(
@@ -976,7 +1001,7 @@ def favorites_page(request):
                     title = item.name
                     cover_url = item.image_url or "/static/core/img/placeholder.png"
                     if item.person_id:
-                        url = f"/person/{item.type}/{item.person_id}/"
+                        url = item.get_absolute_url()
 
                 items_data.append(
                     {
@@ -1017,12 +1042,23 @@ def person_detail(request, person_type, person_id):
     settings = AppSettings.objects.first()
     theme_mode = settings.theme_mode if settings else "dark"
 
-    if person_type == "actor":
-        person_data = fetch_actor_data(person_id)
-    elif person_type == "character":
-        person_data = fetch_character_data(person_id)
+    # Legacy /person/actor/ and /person/character/ links remain valid.
+    if person_type in ('tmdb', 'anilist', 'custom'):
+        source = person_type
+        person_type = 'actor'
     else:
-        person_data = None
+        source = None
+    try:
+        person_type, source = resolve_person_identity(person_type, person_id, source)
+    except ValueError:
+        raise Http404('Unknown person source or type.')
+    canonical_url = f'/character/{person_id}/' if person_type == 'character' else f'/person/{source}/{person_id}/'
+    if request.path != canonical_url:
+        return redirect(canonical_url)
+    if person_type == 'actor':
+        person_data = fetch_actor_data(person_id, source=source)
+    else:
+        person_data = fetch_character_data(person_id)
 
     person_name = (
         person_data.get("name")
@@ -1035,6 +1071,7 @@ def person_detail(request, person_type, person_id):
         "core/p_person_details.html",
         {
             "person_type": person_type,
+            "person_source": source,
             "person_id": person_id,
             "person_name": person_name,
             "person_data": person_data,
@@ -1194,6 +1231,7 @@ def settings_page(request):
             "show_repeats_field": settings.show_repeats_field,
             "show_collections_field": settings.show_collections_field,
             "details_sections_order": settings.details_sections_order,
+            "favorite_sections_order": settings.get_favorite_sections_order(),
             "live_search_options": [
                 {'type': media_type, 'nav_name': nav_name, 'label': label,
                  'provider': provider, 'enabled': live_search_preferences[media_type]}

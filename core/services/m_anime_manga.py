@@ -146,6 +146,7 @@ def fetch_anilist_data(media_type, anilist_id=None, mal_id=None):
           edges {
             role
             node {
+              id
               name {
                 full
               }
@@ -424,6 +425,7 @@ def get_anime_extra_info(media_type, anilist_id=None, mal_id=None):
           edges {
             role
             node {
+              id
               name {
                 full
               }
@@ -529,7 +531,7 @@ def get_anime_extra_info(media_type, anilist_id=None, mal_id=None):
             and l["url"].startswith(('http://', 'https://', '/'))
         ]
         staff_list = [
-            f"{e['node']['name']['full']} ({e['role']})"
+            {'id': e['node'].get('id'), 'name': e['node']['name']['full'], 'role': e['role']}
             for e in data.get("staff", {}).get("edges", [])
             if e.get("node") and e["node"].get("name") and e.get("role")
         ]
@@ -640,6 +642,7 @@ def get_manga_extra_info(media_type, anilist_id=None, mal_id=None):
           edges {
             role
             node {
+              id
               name {
                 full
               }
@@ -723,7 +726,7 @@ def get_manga_extra_info(media_type, anilist_id=None, mal_id=None):
 
         # --- Staff ---
         staff_list = [
-            f"{e['node']['name']['full']} ({e['role']})"
+            {'id': e['node'].get('id'), 'name': e['node']['name']['full'], 'role': e['role']}
             for e in data.get("staff", {}).get("edges", [])
             if e.get("node") and e["node"].get("name") and e.get("role")
         ]

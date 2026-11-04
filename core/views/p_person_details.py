@@ -12,6 +12,7 @@ from core.models import FavoritePerson, MediaItem, MediaPersonLink
 from core.services.g_utils import normalize_search_text
 
 from core.services.m_people import (
+    favorite_person_queryset,
     fetch_actor_data,
     fetch_character_data,
     delete_favorite_person_and_reorder,
@@ -41,7 +42,7 @@ def refresh_favorite_person_view(request):
 
     # Find the database record using API ID and type
     try:
-        person = FavoritePerson.objects.get(person_id=api_person_id, type=person_type)
+        person = favorite_person_queryset(person_type, api_person_id, data.get('source')).get()
         success = refresh_favorite_person(person.id, refresh_mode)  # Pass database ID and mode
         return JsonResponse({"success": success})
     except FavoritePerson.DoesNotExist:
@@ -63,7 +64,7 @@ def upload_person_image(request):
         return JsonResponse({"error": "Unsupported file type."}, status=400)
 
     try:
-        person = FavoritePerson.objects.get(person_id=person_id, type=person_type)
+        person = favorite_person_queryset(person_type, person_id, request.POST.get('source')).get()
 
         # Generate cache-busting filename
         timestamp = int(time.time() * 1000)
@@ -158,7 +159,7 @@ def search_local_media(request):
         # Exclude items that are already assigned to this person
         if person_id and person_type:
             try:
-                person = FavoritePerson.objects.get(person_id=person_id, type=person_type)
+                person = favorite_person_queryset(person_type, person_id, request.GET.get('source')).get()
                 assigned_item_ids = MediaPersonLink.objects.filter(person=person).values_list('item_id', flat=True)
                 queryset = queryset.exclude(id__in=assigned_item_ids)
             except FavoritePerson.DoesNotExist:
@@ -203,7 +204,7 @@ def assign_media_to_person(request):
         person_type = data.get('person_type')
         media_ids = data.get('media_ids', [])
         
-        person = FavoritePerson.objects.get(person_id=person_id, type=person_type)
+        person = favorite_person_queryset(person_type, person_id, data.get('source')).get()
         for m_id in media_ids:
             item = MediaItem.objects.get(id=m_id)
             MediaPersonLink.objects.get_or_create(item=item, person=person)

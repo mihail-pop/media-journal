@@ -54,6 +54,96 @@ function saveRatingMode(value) {
 }
 
 document.addEventListener("DOMContentLoaded", function () {
+  const favoriteSectionsForm = document.getElementById('favorite-sections-form');
+  if (favoriteSectionsForm) {
+    let dragged = null;
+    let suppressClick = false;
+    let pendingSections = null;
+    let saving = false;
+
+    // Serialize saves so a slower earlier request cannot overwrite a later change.
+    async function saveFavoriteSections() {
+      pendingSections = [...favoriteSectionsForm.children].map(button => ({
+        id: button.dataset.id,
+        visible: button.getAttribute('aria-pressed') === 'true',
+      }));
+      if (saving) return;
+      saving = true;
+      let failed = false;
+      while (pendingSections) {
+        const sections = pendingSections;
+        pendingSections = null;
+        try {
+          const response = await fetch('/settings/update_favorite_sections/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+            body: JSON.stringify({ sections }),
+          });
+          const data = await response.json();
+          if (!response.ok || !data.success) throw new Error('Unable to save favorite sections');
+          failed = false;
+        } catch (error) {
+          failed = true;
+        }
+      }
+      saving = false;
+      if (failed) alert('Could not save favorite sections. Please try again.');
+      else showNotification('Favorite sections updated!');
+    }
+
+    favoriteSectionsForm.addEventListener('pointerdown', () => { suppressClick = false; });
+    favoriteSectionsForm.addEventListener('keydown', event => {
+      const button = event.target.closest('.details-section-box[data-id]');
+      if (button && (event.key === 'Enter' || event.key === ' ')) {
+        event.preventDefault();
+        button.click();
+      }
+    });
+    favoriteSectionsForm.addEventListener('click', event => {
+      const button = event.target.closest('.details-section-box[data-id]');
+      if (!button || (suppressClick && event.detail > 0)) return;
+      const visible = button.getAttribute('aria-pressed') !== 'true';
+      button.setAttribute('aria-pressed', String(visible));
+      button.classList.toggle('active', visible);
+      saveFavoriteSections();
+    });
+    favoriteSectionsForm.addEventListener('dragstart', event => {
+      dragged = event.target.closest('.details-section-box[data-id]');
+      if (!dragged) return;
+      suppressClick = true;
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', dragged.dataset.id);
+      // Let the browser capture the drag image before changing hit testing.
+      const item = dragged;
+      setTimeout(() => {
+        if (dragged === item) item.classList.add('dragging');
+      }, 0);
+    });
+    favoriteSectionsForm.addEventListener('dragover', event => {
+      if (!dragged) return;
+      event.preventDefault();
+      event.dataTransfer.dropEffect = 'move';
+      const others = [...favoriteSectionsForm.children].filter(button => button !== dragged);
+      const next = others.find(button => {
+        const rect = button.getBoundingClientRect();
+        return event.clientY < rect.top ||
+          (event.clientY <= rect.bottom && event.clientX < rect.left + rect.width / 2);
+      });
+      if (next) {
+        if (dragged.nextElementSibling !== next) favoriteSectionsForm.insertBefore(dragged, next);
+      } else if (favoriteSectionsForm.lastElementChild !== dragged) {
+        favoriteSectionsForm.appendChild(dragged);
+      }
+    });
+    favoriteSectionsForm.addEventListener('drop', event => { if (dragged) event.preventDefault(); });
+    favoriteSectionsForm.addEventListener('dragend', () => {
+      if (!dragged) return;
+      dragged.classList.remove('dragging');
+      dragged = null;
+      saveFavoriteSections();
+    });
+  }
+
   const liveSearchSettings = document.getElementById('live-search-settings');
   if (liveSearchSettings) {
     const buttons = [...liveSearchSettings.querySelectorAll('.live-search-type')];

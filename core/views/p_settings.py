@@ -61,6 +61,39 @@ def update_preferences(request):
 
 
 @require_POST
+def update_favorite_sections(request):
+    from core.models import AppSettings, default_favorite_sections_order
+
+    try:
+        data = json.loads(request.body)
+        sections = data.get('sections') if isinstance(data, dict) else None
+        valid_ids = {section['id'] for section in default_favorite_sections_order()}
+        if not isinstance(sections, list) or len(sections) != len(valid_ids):
+            raise ValueError
+        seen = set()
+        cleaned = []
+        for section in sections:
+            if not isinstance(section, dict):
+                raise ValueError
+            key = section.get('id')
+            visible = section.get('visible')
+            if not isinstance(key, str) or key not in valid_ids or key in seen or not isinstance(visible, bool):
+                raise ValueError
+            seen.add(key)
+            cleaned.append({'id': key, 'visible': visible})
+    except (ValueError, TypeError):
+        return JsonResponse({'success': False, 'error': 'Invalid favorite sections.'}, status=400)
+
+    with transaction.atomic():
+        settings = AppSettings.objects.select_for_update().first()
+        if not settings:
+            settings = AppSettings.objects.create()
+        settings.favorite_sections_order = cleaned
+        settings.save(update_fields=['favorite_sections_order'])
+    return JsonResponse({'success': True})
+
+
+@require_POST
 def update_live_search_settings(request):
     from core.models import AppSettings, default_live_search_settings
 

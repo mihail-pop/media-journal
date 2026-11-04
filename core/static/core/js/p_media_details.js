@@ -1259,7 +1259,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const isClickable = firstMember.tagName === 'A';
     
     if (!isClickable) {
-      showNotification("Automatically refreshing item to fetch actors/characters IDs", "warning");
+      showNotification("Automatically refreshing item to fetch people/character IDs", "warning");
       // Get the item_id from the refresh button or edit button
       const refreshBtn = document.querySelector('.refresh-btn');
       const editBtn = document.querySelector('#edit-button');
@@ -1313,7 +1313,7 @@ document.addEventListener("DOMContentLoaded", function () {
             card.className = "person-card";
             const type = mediaType === "anime" || mediaType === "manga" ? "character" : "actor";
             const personLink = person.id ? 
-              (type === 'character' ? `/person/character/${person.id}/` : `/person/actor/${person.id}/`) : 
+              (type === 'character' ? `/character/${person.id}/` : `/person/tmdb/${person.id}/`) :
               '#';
             
             card.innerHTML = `
@@ -1690,7 +1690,7 @@ swapBtn?.addEventListener('click', () => {
         
         if (member.id && (mediaType === 'tv' || mediaType === 'movie')) {
           castMember.innerHTML = `
-            <a href="/person/actor/${member.id}/" class="cast-member">
+            <a href="/person/tmdb/${member.id}/" class="cast-member">
               <img src="${member.profile_path || '/static/core/img/placeholder.png'}" 
                    alt="${member.name}" 
                    data-placeholder="/static/core/img/placeholder.png" 
@@ -1707,7 +1707,7 @@ swapBtn?.addEventListener('click', () => {
           `;
         } else if (member.id && (mediaType === 'anime' || mediaType === 'manga')) {
           castMember.innerHTML = `
-            <a href="/person/character/${member.id}/" class="cast-member">
+            <a href="/character/${member.id}/" class="cast-member">
               <img src="${member.profile_path || '/static/core/img/placeholder.png'}" 
                    alt="${member.name}" 
                    data-placeholder="/static/core/img/placeholder.png" 
@@ -1797,7 +1797,7 @@ swapBtn?.addEventListener('click', () => {
               
               if (member.id && (mediaType === 'tv' || mediaType === 'movie')) {
                 castMember.innerHTML = `
-                  <a href="/person/actor/${member.id}/" class="cast-member">
+                  <a href="/person/tmdb/${member.id}/" class="cast-member">
                     <img src="${member.profile_path || '/static/core/img/placeholder.png'}" 
                          alt="${member.name}" 
                          data-placeholder="/static/core/img/placeholder.png" 
@@ -1814,7 +1814,7 @@ swapBtn?.addEventListener('click', () => {
                 `;
               } else if (member.id && (mediaType === 'anime' || mediaType === 'manga')) {
                 castMember.innerHTML = `
-                  <a href="/person/character/${member.id}/" class="cast-member">
+                  <a href="/character/${member.id}/" class="cast-member">
                     <img src="${member.profile_path || '/static/core/img/placeholder.png'}" 
                          alt="${member.name}" 
                          data-placeholder="/static/core/img/placeholder.png" 
@@ -1896,7 +1896,7 @@ swapBtn?.addEventListener('click', () => {
     
     // Save scroll position and cast data when navigating away
     document.addEventListener('click', function(e) {
-      const link = e.target.closest('a[href*="/person/"]');
+      const link = e.target.closest('a[href*="/person/"], a[href*="/character/"]');
       if (link) {
         sessionStorage.setItem('castScrollPosition', window.scrollY.toString());
       }
@@ -1914,7 +1914,7 @@ swapBtn?.addEventListener('click', () => {
   
   // Clear cast state when leaving the page (not to person pages)
   window.addEventListener('pagehide', function() {
-    if (!document.activeElement || !document.activeElement.href || !document.activeElement.href.includes('/person/')) {
+    if (!document.activeElement || !document.activeElement.href || (!document.activeElement.href.includes('/person/') && !document.activeElement.href.includes('/character/'))) {
       sessionStorage.removeItem('loadedCastData');
       sessionStorage.removeItem('castCurrentPage');
       sessionStorage.removeItem('castScrollPosition');
@@ -2354,7 +2354,7 @@ function renderExtraInfo(mediaType, data) {
 if (data.staff?.length) {
   const staffHTML = data.staff.map(s => {
     if (s.id) {
-      return `<a href="/person/actor/${s.id}/" class="staff-member">${s.name} (${s.job})</a>`;
+      return `<a href="/person/tmdb/${s.id}/" class="staff-member">${s.name} (${s.job})</a>`;
     }
     return `<span class="staff-member">${s.name} (${s.job})</span>`;
   }).join(", ");
@@ -2561,7 +2561,7 @@ if (data.homepage) {
 if (data.staff?.length) {
   const staffHTML = data.staff.map(s => {
     if (s.id) {
-      return `<a href="/person/actor/${s.id}/" class="staff-member">${s.name} (${s.job})</a>`;
+      return `<a href="/person/tmdb/${s.id}/" class="staff-member">${s.name} (${s.job})</a>`;
     }
     return `<span class="staff-member">${s.name} (${s.job})</span>`;
   }).join(", ");
@@ -2742,24 +2742,22 @@ if (data.staff?.length) {
     "Art"
   ];
 
-  const filteredStaff = data.staff.filter(s => {
-    const match = s.match(/\(([^)]+)\)/); // first parentheses
-    if (!match) return false;
-    let role = match[1].trim();
-
-    // remove any inner parentheses
-    role = role.split("(")[0].trim();
-
-    // exact match only
-    return allowedRoles.includes(role);
+  // Accept older cached text entries as well as source IDs from AniList.
+  const filteredStaff = data.staff.filter(staff => {
+    const role = typeof staff === 'string'
+      ? staff.match(/\(([^)]+)\)/)?.[1]
+      : staff.role;
+    return role && allowedRoles.includes(role.split('(')[0].trim());
   });
 
   if (filteredStaff.length) {
-    safeHTML.push(`
-      <p><span class="label">Staff:</span>
-        ${filteredStaff.join(", ")}
-      </p>
-    `);
+    const staffHTML = filteredStaff.map(staff => {
+      const element = document.createElement(typeof staff === 'object' && staff.id ? 'a' : 'span');
+      element.textContent = typeof staff === 'string' ? staff : `${staff.name} (${staff.role})`;
+      if (element.tagName === 'A') element.href = `/person/anilist/${encodeURIComponent(staff.id)}/`;
+      return element.outerHTML;
+    }).join(', ');
+    safeHTML.push(`<p><span class="label">Staff:</span> ${staffHTML}</p>`);
   }
 }
 

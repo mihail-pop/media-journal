@@ -641,6 +641,15 @@ table td:last-child .delete-btn {
   color: var(--special-color);
 }
 
+.favorite-sections-settings { grid-column: 1 / -1; min-width: 0; }
+#favorite-sections-form {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+#favorite-sections-form .details-section-box { font-family: inherit; transition: background 0.2s, border-color 0.2s; }
+
 .live-search-section {
   grid-column: 1 / -1;
   min-width: 0;

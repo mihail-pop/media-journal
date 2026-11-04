@@ -366,6 +366,16 @@ body {
   margin-bottom: 0rem;
 }
 
+.favorites-row::after {
+  content: '';
+  flex: 1;
+  max-width: 40%;
+}
+
+.favorites-row:has(> .favorites-column:nth-child(2))::after {
+  display: none;
+}
+
 .favorites-column {
   flex: 1;
   display: flex;
@@ -1531,6 +1541,8 @@ a.all-collections-btn:hover {
     display: none !important;
   }
 
+  .favorites-row::after { max-width: 43.2%; }
+
   .favorites-column {
     max-width: 43.2%;
   }
@@ -1665,6 +1677,8 @@ a.all-collections-btn:hover {
   }
 
   
+  .favorites-row::after { display: none; }
+
   .favorites-row {
     display: flex;
     flex-direction: column;

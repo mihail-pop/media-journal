@@ -185,6 +185,22 @@
         </p>
       </div>
 
+        <section class="preferences-section favorite-sections-settings">
+          <div class="section-header-with-labels">
+            <span class="order-label">First</span>
+            <h3>Favorite Sections</h3>
+            <span class="order-label">Last</span>
+          </div>
+          <div id="favorite-sections-form">
+            {% for section in favorite_sections_order %}
+              <div role="button" tabindex="0" class="details-section-box{% if section.visible %} active{% endif %}" data-id="{{ section.id }}" draggable="true" aria-pressed="{{ section.visible|yesno:'true,false' }}">
+                <span class="details-name">{{ section.name }}</span>
+              </div>
+            {% endfor %}
+          </div>
+          <p class="live-search-help"><b>Click to show/hide • Drag to reorder</b></p>
+        </section>
+
         <section class="preferences-section live-search-section">
           <h3>Live Search</h3>
           <div class="live-search-types" id="live-search-settings">

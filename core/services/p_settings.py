@@ -244,9 +244,10 @@ class BackupTask(threading.Thread):
                                 },
                             )
                         elif isinstance(obj, FavoritePerson):
-                            # Try to find existing by name and type to avoid duplicates
-                            existing = FavoritePerson.objects.filter(
-                                name=obj.name, type=obj.type
+                            from core.services.m_people import favorite_person_queryset
+                            obj.source = obj.resolved_source
+                            existing = favorite_person_queryset(
+                                obj.type, obj.person_id, obj.source, obj.name,
                             ).first()
                             if existing:
                                 for field in FavoritePerson._meta.fields:

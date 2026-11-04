@@ -346,13 +346,12 @@
 
 <!-- Favorites Section -->
 <section class="favorites-section">
-  {% for row in favorite_sections|slice:":10"|chunk:2 %}
+  {% for row in favorite_home_sections|chunk:2 %}
     <div class="favorites-row">
-      {% for category, items in row %}
-        {% if items %}
+      {% for section in row %}
         <div class="favorites-column">
-          <a href="{% url 'favorites' %}?section={{ category }}" class="section-title-wrapper favorites-link-wrapper">
-            <h2 class="favorites-header">{{ category }}</h2>
+          <a href="{% url 'favorites' %}?section={{ section.name }}" class="section-title-wrapper favorites-link-wrapper">
+            <h2 class="favorites-header">{{ section.name }}</h2>
             <span class="swap-hint">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M5 12h14M12 5l7 7-7 7"/>
@@ -361,7 +360,26 @@
             </span>
           </a>
           <div class="card-grid">
-            {% for item in items|slice:":25" %}
+            {% if section.is_person %}
+              {% for person in section.items|slice:":25" %}
+              {% if person.person_id %}
+                <a href="{{ person.get_absolute_url }}" class="card">
+                  <div class="card-image"><img src="{{ person.image_url|default:'/static/core/img/placeholder.png' }}" alt="{{ person.name }}"></div>
+                  <div class="hover-title-overlay">
+                    <span class="hover-title-text">{{ person.name }}</span>
+                  </div>
+                </a>
+              {% else %}
+                <div class="card">
+                  <div class="card-image"><img src="{{ person.image_url|default:'/static/core/img/placeholder.png' }}" alt="{{ person.name }}"></div>
+                  <div class="hover-title-overlay">
+                    <span class="hover-title-text">{{ person.name }}</span>
+                  </div>
+                </div>
+              {% endif %}
+              {% endfor %}
+            {% else %}
+            {% for item in section.items|slice:":25" %}
             <div class="card"
                  data-banner-url="{{ item.banner_url|default:'/static/core/img/placeholder.png' }}"
                  data-notes="{{ item.notes|escape }}"
@@ -388,86 +406,12 @@
 
             </div>
             {% endfor %}
+            {% endif %}
           </div>
         </div>
-        {% endif %}
       {% endfor %}
     </div>
   {% endfor %}
-</section>
-
-<section class="favorites-section">
-{% if favorite_characters or favorite_actors %}
-<section class="favorite-people-section">
-  <div class="favorites-row">
-    {% if favorite_characters %}
-    <div class="favorites-column">
-      <a href="{% url 'favorites' %}?section=Characters" class="section-title-wrapper favorites-link-wrapper">
-        <h2 class="favorites-header">Characters</h2>
-        <span class="swap-hint">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M5 12h14M12 5l7 7-7 7"/>
-          </svg>
-          Favorites
-        </span>
-      </a>
-      <div class="card-grid">
-        {% for person in favorite_characters|slice:":25" %}
-        {% if person.person_id %}
-          <a href="/person/character/{{ person.person_id }}/" class="card">
-            <div class="card-image"><img src="{{ person.image_url|default:'/static/core/img/placeholder.png' }}" alt="{{ person.name }}"></div>
-            <div class="hover-title-overlay">
-              <span class="hover-title-text">{{ person.name }}</span>
-            </div>
-          </a>
-        {% else %}
-          <div class="card">
-            <div class="card-image"><img src="{{ person.image_url|default:'/static/core/img/placeholder.png' }}" alt="{{ person.name }}"></div>
-            <div class="hover-title-overlay">
-              <span class="hover-title-text">{{ person.name }}</span>
-            </div>
-          </div>
-        {% endif %}
-        {% endfor %}
-      </div>
-    </div>
-    {% endif %}
-
-    {% if favorite_actors %}
-    <div class="favorites-column">
-      <a href="{% url 'favorites' %}?section=Actors" class="section-title-wrapper favorites-link-wrapper">
-        <h2 class="favorites-header">Actors</h2>
-        <span class="swap-hint">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M5 12h14M12 5l7 7-7 7"/>
-          </svg>
-          Favorites
-        </span>
-      </a>
-      <div class="card-grid">
-        {% for person in favorite_actors|slice:":25" %}
-        {% if person.person_id %}
-          <a href="/person/actor/{{ person.person_id }}/" class="card">
-            <div class="card-image"><img src="{{ person.image_url|default:'/static/core/img/placeholder.png' }}" alt="{{ person.name }}"></div>
-            <div class="hover-title-overlay">
-              <span class="hover-title-text">{{ person.name }}</span>
-            </div>
-          </a>
-        {% else %}
-          <div class="card">
-            <div class="card-image"><img src="{{ person.image_url|default:'/static/core/img/placeholder.png' }}" alt="{{ person.name }}"></div>
-            <div class="hover-title-overlay">
-              <span class="hover-title-text">{{ person.name }}</span>
-            </div>
-          </div>
-        {% endif %}
-        {% endfor %}
-      </div>
-    </div>
-    {% endif %}
-  </div>
-</section>
-{% endif %}
 </section>
 
 {% endblock %}
