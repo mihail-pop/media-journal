@@ -153,17 +153,41 @@ p {
   gap: 1.2rem;
 }
 
-#rating-mode-select {
+.rating-mode-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
   width: 100%;
-  max-width: 220px;
-  font-size: 1rem;
-  text-align: center;
-  background-color: var(--bg-tertiary);
-  color: var(--text-primary);
-  border: 1px solid var(--border-color);
+  max-width: 260px;
+}
+
+.rating-mode-button {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.6rem;
+  border: 2px solid var(--border-color);
   border-radius: 6px;
-  padding: 0.6rem;
-  margin-bottom: 4.7rem;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  font: inherit;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.rating-mode-button:hover,
+.rating-mode-button:focus-visible {
+  background: var(--hover-bg);
+}
+
+.rating-mode-button.active {
+  border-color: var(--special-color);
+  color: var(--text-secondary);
+}
+
+.rating-mode-button:disabled {
+  cursor: wait;
 }
 
 
@@ -662,6 +686,17 @@ table td:last-child .delete-btn {
   gap: 0.8rem;
 }
 
+#preferences-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+#preferences-form .preference-toggle-label {
+  width: 100%;
+}
+
 .preference-toggle-label {
   display: block;
   cursor: pointer;
@@ -1037,11 +1072,16 @@ table td:last-child .delete-btn {
 
 
 .theme-selector {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.5rem;
   margin-top: 0.5rem;
+  max-height: 10.5rem;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-primary) var(--bg-secondary);
+  padding: 0.25rem;
 }
 
 .theme-option {
@@ -1055,76 +1095,53 @@ table td:last-child .delete-btn {
   transition: all 0.2s ease;
 }
 
-.theme-option:hover:not(.disabled) {
-  background: var(--hover-bg);
+.theme-option:hover:not(.disabled),
+.theme-option:focus-visible {
+  box-shadow: inset 0 0 0 2px currentColor;
 }
 
-.theme-option[data-theme="dark"]:hover {
+.theme-option[data-theme="dark"] {
   background: #2a3441;
-}
-
-.theme-option[data-theme="light"]:hover {
-  background: #E5E5E5;
-}
-
-.theme-option[data-theme="brown"]:hover {
-  background: #3f2d28;
-}
-
-.theme-option[data-theme="green"]:hover {
-  background: #25362b;
-}
-
-.theme-option[data-theme="plum"]:hover {
-  background: #352c3b;
-}
-
-.theme-option[data-theme="charcoal"]:hover {
-  background: #302d29;
-}
-
-.theme-option[data-theme="teal"]:hover {
-  background: #273b3f;
-}
-
-.theme-option[data-theme="pink"]:hover {
-  background: #efd0d8;
-}
-
-.theme-option[data-theme="dark"] span {
   color: #8596a5;
 }
 
-.theme-option[data-theme="light"] span {
+.theme-option[data-theme="light"] {
+  background: #E5E5E5;
   color: #606060;
 }
 
-.theme-option[data-theme="brown"] span {
+.theme-option[data-theme="brown"] {
+  background: #3f2d28;
   color: #faeee7;
 }
 
-.theme-option[data-theme="green"] span {
+.theme-option[data-theme="green"] {
+  background: #25362b;
   color: #e5e8d9;
 }
 
-.theme-option[data-theme="plum"] span {
+.theme-option[data-theme="plum"] {
+  background: #352c3b;
   color: #eee3da;
 }
 
-.theme-option[data-theme="charcoal"] span {
+.theme-option[data-theme="charcoal"] {
+  background: #302d29;
   color: #ece6db;
 }
 
-.theme-option[data-theme="teal"] span {
+.theme-option[data-theme="teal"] {
+  background: #273b3f;
   color: #e6e8dc;
 }
 
-.theme-option[data-theme="pink"] span {
+.theme-option[data-theme="pink"] {
+  background: #efd0d8;
   color: #54363e;
 }
 
 .theme-option.active {
-  background: var(--bg-quaternary);
+  box-shadow: inset 0 0 0 2px currentColor;
 }
 
 .theme-option.disabled {
@@ -1187,10 +1204,6 @@ table td:last-child .delete-btn {
 .theme-option span {
   font-size: 0.9rem;
   font-weight: 500;
-}
-
-.theme-option.active span {
-  color: var(--text-secondary);
 }
 
 

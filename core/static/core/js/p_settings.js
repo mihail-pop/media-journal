@@ -32,7 +32,7 @@ function showNotification(message, type) {
 
 // ----- Rating Mode (Scoring System) -----
 function saveRatingMode(value) {
-  fetch("/update-rating-mode/", {
+  return fetch("/update-rating-mode/", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -44,12 +44,15 @@ function saveRatingMode(value) {
     .then(res => {
       if (res.success) {
         showNotification("Scoring system updated!");
+        return true;
       } else {
         alert(res.error || "Failed to update scoring system.");
+        return false;
       }
     })
     .catch(err => {
       alert("Request failed.");
+      return false;
     });
 }
 
@@ -255,73 +258,29 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     });
   }
-  // ----- Custom Select for Rating Mode -----
-  function setupCustomSelect() {
-    const wrapper = document.querySelector('.custom-select-wrapper');
-    if (!wrapper) return;
-
-    const select = wrapper.querySelector('.custom-select');
-    const trigger = select.querySelector('.custom-select-trigger');
-    const options = select.querySelectorAll('.custom-option');
-    const originalSelect = document.getElementById('rating-mode-select');
-
-    trigger.addEventListener('click', () => {
-      if (!select.classList.contains('open')) {
-        const rect = trigger.getBoundingClientRect();
-        const spaceBelow = window.innerHeight - rect.bottom;
-        
-        if (spaceBelow < 220 && rect.top > spaceBelow) {
-          select.classList.add('drop-up');
-        } else {
-          select.classList.remove('drop-up');
-        }
-      }
-      select.classList.toggle('open');
+  // ----- Scoring System Buttons -----
+  const ratingButtons = [...document.querySelectorAll('#rating-mode-form .rating-mode-button')];
+  let savingRatingMode = false;
+  function selectRatingMode(value) {
+    ratingButtons.forEach(button => {
+      const selected = button.dataset.value === value;
+      button.classList.toggle('active', selected);
+      button.setAttribute('aria-pressed', String(selected));
     });
-
-    // Handle option click
-    options.forEach(option => {
-      option.addEventListener('click', () => {
-        // Update original select
-        originalSelect.value = option.dataset.value;
-
-        // Update trigger
-        trigger.innerHTML = option.innerHTML;
-        const arrow = document.createElement('div');
-        arrow.className = 'arrow';
-        trigger.appendChild(arrow);
-
-        // Update selected class
-        options.forEach(opt => opt.classList.remove('selected'));
-        option.classList.add('selected');
-
-        // Close dropdown
-        select.classList.remove('open');
-
-        // Auto-save
-        saveRatingMode(option.dataset.value);
-      });
-    });
-
-    // Close when clicking outside
-    window.addEventListener('click', e => {
-      if (!select.contains(e.target)) {
-        select.classList.remove('open');
-      }
-    });
-
-    // Set initial value from the original select
-    const selectedValue = originalSelect.value;
-    const initialOption = select.querySelector(`.custom-option[data-value="${selectedValue}"]`);
-    if (initialOption) {
-      trigger.innerHTML = initialOption.innerHTML;
-      const arrow = document.createElement('div');
-      arrow.className = 'arrow';
-      trigger.appendChild(arrow);
-      initialOption.classList.add('selected');
-    }
   }
-  setupCustomSelect();
+  ratingButtons.forEach(button => button.addEventListener('click', async () => {
+    if (savingRatingMode || button.getAttribute('aria-pressed') === 'true') return;
+    const previous = ratingButtons.find(item => item.getAttribute('aria-pressed') === 'true')?.dataset.value;
+    savingRatingMode = true;
+    selectRatingMode(button.dataset.value);
+    ratingButtons.forEach(item => { item.disabled = true; });
+    try {
+      if (!await saveRatingMode(button.dataset.value)) selectRatingMode(previous);
+    } finally {
+      savingRatingMode = false;
+      ratingButtons.forEach(item => { item.disabled = false; });
+    }
+  }));
 
   // ----- Custom Select for Font Family -----
   function setupFontCustomSelect() {
