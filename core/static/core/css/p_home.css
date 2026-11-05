@@ -1217,7 +1217,7 @@ html[data-home-activity-view="upcoming"] .upcoming-tiles-container:not(.is-cente
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 24.8rem;
+  max-width: 23.8rem;
 }
 
 .activity-right {

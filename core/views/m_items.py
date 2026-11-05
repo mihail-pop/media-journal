@@ -470,7 +470,11 @@ def edit_item(request, item_id):
                 item.date_added = dt.datetime.now()
 
             # Update progress fields if present (manual input)
-            if "progress_main" in data:
+            if item.media_type in ('movie', 'music'):
+                # Their totals are runtimes, not user progress. Also clear values
+                # previously copied from runtime when marking an item completed.
+                item.progress_main = 0
+            elif "progress_main" in data:
                 if data["progress_main"] in [None, ""]:
                     item.progress_main = 0
                 else:
@@ -493,7 +497,10 @@ def edit_item(request, item_id):
                     item.progress_secondary = progress_secondary
 
             # If status changed TO "completed", override progress with totals
-            if old_status != "completed" and new_status == "completed" and not quick_complete:
+            if (
+                old_status != "completed" and new_status == "completed"
+                and not quick_complete and item.media_type not in ('movie', 'music')
+            ):
                 if item.total_main is not None and item.progress_main < item.total_main:
                     item.progress_main = item.total_main
                 if item.total_secondary is not None:

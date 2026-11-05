@@ -382,7 +382,7 @@ advancedBtn?.addEventListener("click", () => {
 });
 
 // Upcoming List toggle
-upcomingContainer?.addEventListener("click", (event) => {
+document.getElementById("upcoming-view-container")?.addEventListener("click", (event) => {
   const upcomingToggleBtn = event.target.closest("#toggle-upcoming-btn");
   if (!upcomingToggleBtn) return;
   // Dynamically query items > 2 at the exact moment of click

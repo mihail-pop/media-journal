@@ -18,6 +18,13 @@ from core.services.m_music import get_musicbrainz_discover
 
 logger = logging.getLogger(__name__)
 
+# Shared response fields; source_id also reads source and provider_ids.
+_LIST_ITEM_FIELDS = (
+    "id", "title", "media_type", "status", "personal_rating", "cover_url",
+    "banner_url", "notes", "source", "provider_ids", "repeats", "date_added",
+    "release_date",
+)
+
 @require_GET
 def movies_api(request):
     page = int(request.GET.get("page", 1))
@@ -44,7 +51,9 @@ def movies_api(request):
         output_field=IntegerField(),
     )
 
-    queryset = MediaItem.objects.filter(media_type="movie")
+    queryset = MediaItem.objects.filter(media_type="movie").only(
+        *_LIST_ITEM_FIELDS, "total_main",
+    )
 
     if status != "all":
         queryset = queryset.filter(status=status)
@@ -205,7 +214,9 @@ def tvshows_api(request):
         output_field=IntegerField(),
     )
 
-    queryset = MediaItem.objects.filter(media_type="tv")
+    queryset = MediaItem.objects.filter(media_type="tv").only(
+        *_LIST_ITEM_FIELDS, "progress_main", "total_main", "progress_secondary", "total_secondary",
+    )
 
     if status != "all":
         queryset = queryset.filter(status=status)
@@ -385,7 +396,9 @@ def anime_api(request):
         output_field=IntegerField(),
     )
 
-    queryset = MediaItem.objects.filter(media_type="anime")
+    queryset = MediaItem.objects.filter(media_type="anime").only(
+        *_LIST_ITEM_FIELDS, "progress_main", "total_main",
+    )
 
     if status != "all":
         queryset = queryset.filter(status=status)
@@ -549,7 +562,9 @@ def manga_api(request):
         output_field=IntegerField(),
     )
 
-    queryset = MediaItem.objects.filter(media_type="manga")
+    queryset = MediaItem.objects.filter(media_type="manga").only(
+        *_LIST_ITEM_FIELDS, "progress_main", "total_main", "progress_secondary", "total_secondary",
+    )
 
     if status != "all":
         queryset = queryset.filter(status=status)
@@ -724,7 +739,9 @@ def games_api(request):
         output_field=IntegerField(),
     )
 
-    queryset = MediaItem.objects.filter(media_type="game")
+    queryset = MediaItem.objects.filter(media_type="game").only(
+        *_LIST_ITEM_FIELDS, "progress_main", "total_main",
+    )
 
     if status != "all":
         queryset = queryset.filter(status=status)
@@ -766,7 +783,7 @@ def games_api(request):
 
     queryset = queryset.annotate(
         status_order=status_ordering, rating_order=rating_ordering
-    ).prefetch_related('logs', 'music_videos')
+    ).prefetch_related('logs')
 
     # Apply sorting
     order_fields = ["status_order"]
@@ -879,7 +896,9 @@ def music_api(request):
         output_field=IntegerField(),
     )
 
-    queryset = MediaItem.objects.filter(media_type="music")
+    queryset = MediaItem.objects.filter(media_type="music").only(
+        *_LIST_ITEM_FIELDS, "favorite",
+    )
 
     if status != "all":
         queryset = queryset.filter(status=status)
@@ -921,7 +940,7 @@ def music_api(request):
 
     queryset = queryset.annotate(
         status_order=status_ordering, rating_order=rating_ordering
-    ).prefetch_related('logs')
+    ).prefetch_related('logs', 'music_videos')
 
     # Apply sorting
     order_fields = ["status_order"]
@@ -1035,7 +1054,9 @@ def books_api(request):
         output_field=IntegerField(),
     )
 
-    queryset = MediaItem.objects.filter(media_type="book")
+    queryset = MediaItem.objects.filter(media_type="book").only(
+        *_LIST_ITEM_FIELDS, "progress_main", "total_main",
+    )
 
     if status != "all":
         queryset = queryset.filter(status=status)
