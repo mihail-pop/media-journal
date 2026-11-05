@@ -154,6 +154,28 @@
     --button-danger: #dc3545;
 }
 
+/* Light rose, with warm ivory backgrounds, cocoa text and berry accents. */
+[data-theme="pink"] {
+    --bg-primary: #fff8f6;
+    --bg-tertiary: #f7e3e6;
+    --bg-quaternary: #efd0d8;
+    --bg-filter: #f4e3e5;
+
+    --text-primary: #54363e;
+    --text-secondary: #684851;
+    --text-tertiary: #78535e;
+    --text-light: #54363e;
+
+    --border-color: #cca4b0;
+    --hover-bg: #eed0d8;
+    --table-bg: #f8eaec;
+
+    --activity-high: #b74c74;
+    --button-primary: #b64268;
+    --button-primary-hover: #a52f58;
+    --button-danger: #c93650;
+}
+
 html {
     overflow-y: scroll;
 }

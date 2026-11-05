@@ -164,6 +164,36 @@
   --close-hover-text: #eaf0e1;
 }
 
+/* Light rose, with warm ivory backgrounds, cocoa text and berry accents. */
+[data-theme="pink"] {
+  --bg-primary: #fff8f6;
+  --bg-tertiary: #f7e3e6;
+  --modal-bg: #f7e3e6;
+  --modal-bg-rgb: 247, 227, 230;
+
+  --text-tertiary: #78535e;
+  --text-light: #54363e;
+  --text-dark: #54363e;
+  --text-label: #63424d;
+  --text-muted: #805965;
+  --text-close: #fff8fb;
+
+  --button-primary: #b64268;
+  --button-primary-hover: #a52f58;
+  --button-cancel: #80636d;
+  --button-cancel-hover: #6e515d;
+  --button-danger: #c93650;
+
+  --close-hover-bg: #efd0d8;
+  --close-hover-text: #6b3b4c;
+}
+
+/* Keep text over dark image overlays light in this light theme. */
+[data-theme="pink"] .md-title-input,
+[data-theme="pink"] .md-modal-title {
+  --text-light: #fff8fb;
+}
+
 #metadata-genre-wrapper .md-custom-options {
   background-color: var(--bg-primary);
 }

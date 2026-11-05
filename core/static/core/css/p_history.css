@@ -115,6 +115,28 @@
   --table-bg: #3c575a;
 }
 
+/* Light rose, with warm ivory backgrounds, cocoa text and berry accents. */
+[data-theme="pink"] {
+  --bg-primary: #fff8f6;
+  --bg-tertiary: #f7e3e6;
+  --bg-quaternary: #efd0d8;
+  --bg-filter: #f4e3e5;
+
+  --text-primary: #54363e;
+  --text-secondary: #684851;
+  --text-tertiary: #78535e;
+  --text-light: #54363e;
+
+  --border-color: #cca4b0;
+  --hover-bg: #eed0d8;
+  --table-bg: #f8eaec;
+}
+
+/* Keep text over dark image overlays light in this light theme. */
+[data-theme="pink"] .card-title-overlay {
+  --text-light: #fff8fb;
+}
+
 
 .star-rating {
   display: flex;

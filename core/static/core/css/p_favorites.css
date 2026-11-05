@@ -80,6 +80,18 @@
   --border-color: #547174;
 }
 
+/* Light rose, with warm ivory backgrounds, cocoa text and berry accents. */
+[data-theme="pink"] {
+  --bg-primary: #fff8f6;
+  --bg-tertiary: #f7e3e6;
+
+  --text-primary: #704d59;
+  --text-secondary: #684851;
+  --text-light: #54363e;
+
+  --border-color: #cca4b0;
+}
+
 html {
   overflow-y: scroll;
 }
@@ -363,7 +375,7 @@ body {
   outline: none;
 }
 
-body:not([data-theme="light"]) .pc-actor-dates input {
+body:not([data-theme="light"]):not([data-theme="pink"]) .pc-actor-dates input {
   color-scheme: dark;
 }
 

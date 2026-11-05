@@ -115,6 +115,23 @@
   --special-color-hover: #c6dfcb;
 }
 
+/* Light rose, with warm ivory backgrounds, cocoa text and berry accents. */
+[data-theme="pink"] {
+  --bg-primary: #fff8f6;
+  --bg-secondary: #f8e9e9;
+  --bg-tertiary: #f2dce1;
+  --bg-quaternary: #efd0d8;
+
+  --text-primary: #54363e;
+  --text-secondary: #684851;
+
+  --border-color: #cca4b0;
+  --hover-bg: #eac6d1;
+
+  --special-color: #b13661;
+  --special-color-hover: #8f204c;
+}
+
 a {
   color: var(--special-color);
   text-decoration: none;
@@ -1070,6 +1087,10 @@ table td:last-child .delete-btn {
   background: #273b3f;
 }
 
+.theme-option[data-theme="pink"]:hover {
+  background: #efd0d8;
+}
+
 .theme-option[data-theme="dark"] span {
   color: #8596a5;
 }
@@ -1096,6 +1117,10 @@ table td:last-child .delete-btn {
 
 .theme-option[data-theme="teal"] span {
   color: #e6e8dc;
+}
+
+.theme-option[data-theme="pink"] span {
+  color: #54363e;
 }
 
 .theme-option.active {
@@ -1152,6 +1177,11 @@ table td:last-child .delete-btn {
 .theme-teal {
   background: #203033;
   color: #e6e8dc;
+}
+
+.theme-pink {
+  background: #fff8f6;
+  color: #b13661;
 }
 
 .theme-option span {
