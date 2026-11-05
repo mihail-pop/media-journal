@@ -259,6 +259,8 @@ class NavItem(models.Model):
         ("collections", "Collections"),
         ("history", "History"),
         ("calendar", "Calendar"),
+        ("discover", "Discover"),
+        ("community", "Community"),
     ]
 
     name = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
