@@ -80,6 +80,27 @@
   --special-color-hover: #cfdeb1;
 }
 
+/* Warm plum, with parchment text and muted brass accents. */
+[data-theme="plum"] {
+  --bg-primary: #29232d;
+  --bg-tertiary: #493c4d;
+  --bg-quaternary: #655068;
+
+  --text-primary: #eee3da;
+  --text-secondary: #dac9cc;
+  --text-tertiary: #c0a9bb;
+  --text-light: #f0e6df;
+
+  --border-color: #725d74;
+  --hover-bg: #5a485d;
+  --table-bg: #59475b;
+
+  --activity-high: #c4a3bb;
+
+  --special-color: #d4b78e;
+  --special-color-hover: #e2caa3;
+}
+
 
 .star-rating {
   display: inline-block;
@@ -1111,6 +1132,10 @@ body[data-media-type="games"] .card {
 
 [data-theme="green"] .list-table tr.detailed-row:hover {
   background-image: linear-gradient(rgba(30, 41, 35, 0.88), rgba(30, 41, 35, 0.88)), var(--banner-url, none);
+}
+
+[data-theme="plum"] .list-table tr.detailed-row:hover {
+  background-image: linear-gradient(rgba(41, 35, 45, 0.88), rgba(41, 35, 45, 0.88)), var(--banner-url, none);
 }
 
 

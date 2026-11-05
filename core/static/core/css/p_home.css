@@ -64,6 +64,23 @@
   --activity-low: #455c47;
 }
 
+/* Warm plum, with parchment text and muted brass accents. */
+[data-theme="plum"] {
+  --bg-primary: #29232d;
+  --bg-tertiary: #493c4d;
+  --bg-quaternary: #655068;
+
+  --text-primary: #eee3da;
+  --text-secondary: #dac9cc;
+
+  --overlay-bg: #29232d;
+  --overview-border: #604c63;
+  --button-bg: #5b485c;
+
+  --activity-high: #c4a3bb;
+  --activity-low: #614b63;
+}
+
 
 
 html {

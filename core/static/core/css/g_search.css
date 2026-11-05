@@ -94,6 +94,31 @@
   --scrollbar-thumb: #687f5f;
 }
 
+/* Warm plum, with parchment text and muted brass accents. */
+[data-theme="plum"] {
+  --bg-primary: #29232d;
+  --bg-tertiary: #493c4d;
+  --bg-quaternary: #655068;
+
+  --text-primary: #eee3da;
+  --text-secondary: #dac9cc;
+  --text-overview: #cbb8c2;
+  --text-search: #eee3da;
+  --text-search-link: #cbb0bf;
+  --text-search-hover: #f0e6df;
+  --text-light: #f0e6df;
+  --header-light: #e5cdb8;
+
+
+  --border-color: #725d74;
+  --hover-bg: #5a485d;
+  --search-bg: #29232d;
+  --search-hover-bg: #403346;
+  --search-border-active: #ad8fa7;
+
+  --scrollbar-thumb: #93778e;
+}
+
 
 #search-overlay {
   position: fixed;

@@ -64,6 +64,23 @@
   --table-bg: #3b5140;
 }
 
+/* Warm plum, with parchment text and muted brass accents. */
+[data-theme="plum"] {
+  --bg-primary: #29232d;
+  --bg-tertiary: #493c4d;
+  --bg-quaternary: #655068;
+  --bg-filter: #382f3e;
+
+  --text-primary: #eee3da;
+  --text-secondary: #dac9cc;
+  --text-tertiary: #c0a9bb;
+  --text-light: #f0e6df;
+
+  --border-color: #725d74;
+  --hover-bg: #5a485d;
+  --table-bg: #514254;
+}
+
 
 .star-rating {
   display: flex;

@@ -64,6 +64,23 @@
   --special-color-hover: #cfdeb1;
 }
 
+/* Warm plum, with parchment text and muted brass accents. */
+[data-theme="plum"] {
+  --bg-primary: #29232d;
+  --bg-secondary: #413546;
+  --bg-tertiary: #4d3f51;
+  --bg-quaternary: #352c3b;
+
+  --text-primary: #eee3da;
+  --text-secondary: #dac9cc;
+
+  --border-color: #58495e;
+  --hover-bg: #4e3e53;
+
+  --special-color: #d4b78e;
+  --special-color-hover: #e2caa3;
+}
+
 a {
   color: var(--special-color);
   text-decoration: none;
@@ -970,6 +987,7 @@ table td:last-child .delete-btn {
 
 .theme-selector {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
   gap: 0.5rem;
   margin-top: 0.5rem;
@@ -1006,6 +1024,10 @@ table td:last-child .delete-btn {
   background: #25362b;
 }
 
+.theme-option[data-theme="plum"]:hover {
+  background: #352c3b;
+}
+
 .theme-option[data-theme="dark"] span {
   color: #8596a5;
 }
@@ -1020,6 +1042,10 @@ table td:last-child .delete-btn {
 
 .theme-option[data-theme="green"] span {
   color: #e5e8d9;
+}
+
+.theme-option[data-theme="plum"] span {
+  color: #eee3da;
 }
 
 .theme-option.active {
@@ -1061,6 +1087,11 @@ table td:last-child .delete-btn {
 .theme-green {
   background: #1e2923;
   color: #e5e8d9;
+}
+
+.theme-plum {
+  background: #29232d;
+  color: #eee3da;
 }
 
 .theme-option span {

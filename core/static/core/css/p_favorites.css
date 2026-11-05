@@ -44,6 +44,18 @@
   --border-color: #51694f;
 }
 
+/* Warm plum, with parchment text and muted brass accents. */
+[data-theme="plum"] {
+  --bg-primary: #29232d;
+  --bg-tertiary: #493c4d;
+
+  --text-primary: #d2b9be;
+  --text-secondary: #dac9cc;
+  --text-light: #f0e6df;
+
+  --border-color: #725d74;
+}
+
 html {
   overflow-y: scroll;
 }
