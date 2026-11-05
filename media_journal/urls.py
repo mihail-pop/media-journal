@@ -29,6 +29,7 @@ urlpatterns = [
     path('openlib/book/<str:work_id>/', views.openlib_detail, name='openlib_detail'),
     path('musicbrainz/music/<str:recording_id>/', views.musicbrainz_detail, name='musicbrainz_detail'),
     path('', views.home, name='home'),
+    path('api/home/upcoming/', views.home_upcoming, name='home_upcoming'),
     path('notifications/dismiss-sys/<str:sys_id>/', views.dismiss_sys_notification, name='dismiss_sys_notification'),
     path('movies/', views.movies, name='movies'),
     path('api/movies/', views.movies_api, name='movies_api'),

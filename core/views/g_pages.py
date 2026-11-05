@@ -1,21 +1,22 @@
 import logging
-from datetime import date, timedelta
+from datetime import date, datetime, time, timedelta
 from collections import defaultdict
 
 from django.apps import apps
 from django.urls import reverse
 from django.utils import timezone
-from django.db.models import Q, Sum
+from django.db.models import Case, Count, IntegerField, Prefetch, Q, Sum, When
 from django.shortcuts import render, get_object_or_404, redirect
-from django.http import Http404
+from django.http import Http404, HttpResponse
+from django.template.loader import render_to_string
 from django.utils.text import slugify
 from django.utils.timesince import timesince
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET
 
-from core.models import APIKey, NavItem, MediaItem, Collection, FavoritePerson, CalendarEvent, AppSettings, default_favorite_sections_order
-from django.utils.timesince import timeuntil
+from core.models import APIKey, NavItem, MediaItem, Collection, CollectionItem, FavoritePerson, CalendarEvent, AppSettings, default_favorite_sections_order
 from core.services.p_home import (
+    get_home_upcoming,
     start_media_cleanup_loop,
     start_tmdb_background_loop,
     start_anilist_background_loop,
@@ -34,6 +35,12 @@ SYSTEM_NOTIFICATIONS = [
     # }
 ]
 
+@require_GET
+def home_upcoming(request):
+    # This fragment needs no navigation/settings context or other Home queries.
+    return HttpResponse(render_to_string("core/p_home_upcoming.html", get_home_upcoming()))
+
+
 @ensure_csrf_cookie
 def home(request):
     start_tmdb_background_loop()
@@ -44,8 +51,11 @@ def home(request):
 
     limit = 25
 
-    # Single query for favorites with prefetch
-    favorites = list(MediaItem.objects.filter(favorite=True).order_by(
+    # Keep large API metadata out of the Home queries.
+    favorites = list(MediaItem.objects.filter(favorite=True).only(
+        "title", "media_type", "source", "provider_ids", "cover_url",
+        "banner_url", "notes", "favorite_position", "date_added",
+    ).order_by(
         "favorite_position", "date_added"
     ))
     
@@ -60,8 +70,7 @@ def home(request):
         "Music": [f for f in favorites if f.media_type == "music"][:limit],
     }
 
-    # Single query with Count aggregation by media_type
-    from django.db.models import Case, When, Count, IntegerField
+    # Calculate counts and progress statistics together in one table scan.
     counts_result = MediaItem.objects.aggregate(
         movies=Count(Case(When(media_type="movie", then=1), output_field=IntegerField())),
         tv=Count(Case(When(media_type="tv", then=1), output_field=IntegerField())),
@@ -70,6 +79,12 @@ def home(request):
         books=Count(Case(When(media_type="book", then=1), output_field=IntegerField())),
         manga=Count(Case(When(media_type="manga", then=1), output_field=IntegerField())),
         music=Count(Case(When(media_type="music", then=1), output_field=IntegerField())),
+        movie_count=Count(Case(When(media_type="movie", status="completed", then=1), output_field=IntegerField())),
+        tv_episodes=Sum(Case(When(media_type="tv", then="progress_main"), output_field=IntegerField())),
+        anime_episodes=Sum(Case(When(media_type="anime", then="progress_main"), output_field=IntegerField())),
+        game_hours=Sum(Case(When(media_type="game", then="progress_main"), output_field=IntegerField())),
+        chapters_read=Sum(Case(When(media_type="manga", then="progress_main"), output_field=IntegerField())),
+        pages_read=Sum(Case(When(media_type="book", then="progress_main"), output_field=IntegerField())),
     )
     
     media_counts = {
@@ -117,19 +132,9 @@ def home(request):
     stats["Total Entries"] = total_entries
     stats["Favorites"] = len(favorites)
 
-    # Extra stats - single aggregate query
-    extra_aggregates = MediaItem.objects.aggregate(
-        movie_count=Count(Case(When(media_type="movie", status="completed", then=1), output_field=IntegerField())),
-        tv_episodes=Sum(Case(When(media_type="tv", then="progress_main"), output_field=IntegerField())),
-        anime_episodes=Sum(Case(When(media_type="anime", then="progress_main"), output_field=IntegerField())),
-        game_hours=Sum(Case(When(media_type="game", then="progress_main"), output_field=IntegerField())),
-        chapters_read=Sum(Case(When(media_type="manga", then="progress_main"), output_field=IntegerField())),
-        pages_read=Sum(Case(When(media_type="book", then="progress_main"), output_field=IntegerField())),
-    )
-    
-    movie_count = extra_aggregates["movie_count"] or 0
-    tv_episodes = extra_aggregates["tv_episodes"] or 0
-    anime_episodes = extra_aggregates["anime_episodes"] or 0
+    movie_count = counts_result["movie_count"] or 0
+    tv_episodes = counts_result["tv_episodes"] or 0
+    anime_episodes = counts_result["anime_episodes"] or 0
 
     total_hours = (
         movie_count * (90 / 60) + tv_episodes * (40 / 60) + anime_episodes * (24 / 60)
@@ -138,13 +143,13 @@ def home(request):
     if days_watched.is_integer():
         days_watched = int(days_watched)
 
-    game_hours = extra_aggregates["game_hours"] or 0
+    game_hours = counts_result["game_hours"] or 0
     days_played = round(game_hours / 24, 1)
     if days_played.is_integer():
         days_played = int(days_played)
 
-    chapters_read = extra_aggregates["chapters_read"] or 0
-    pages_read = extra_aggregates["pages_read"] or 0
+    chapters_read = counts_result["chapters_read"] or 0
+    pages_read = counts_result["pages_read"] or 0
 
     extra_stats = {}
     if days_watched > 0:
@@ -161,8 +166,11 @@ def home(request):
     start_date = raw_start - timedelta(days=raw_start.weekday()) 
     num_days = (today - start_date).days + 1 
 
+    activity_start = datetime.combine(start_date, time.min)
+    if timezone.is_aware(timezone.now()):
+        activity_start = timezone.make_aware(activity_start)
     activity_counts = MediaItem.objects.filter(
-        date_added__date__gte=start_date
+        date_added__gte=activity_start
     ).values_list("date_added", flat=True)
 
     count_by_day = defaultdict(int)
@@ -181,96 +189,11 @@ def home(request):
 
     columns = [activity_data[i : i + 7] for i in range(0, len(activity_data), 7)]
 
-    # --- UPCOMING RELEASES ---
-    now = timezone.now()
-    today_date = now.date()
-    cal_start_date = today_date - timedelta(days=7)
-    cal_end_date = today_date + timedelta(days=7)
+    upcoming_context = get_home_upcoming()
 
-    calendar_events = CalendarEvent.objects.filter(
-        date__date__gte=cal_start_date, 
-        date__date__lte=cal_end_date
-    ).select_related('item').order_by('date')
-
-    events_by_date = defaultdict(list)
-    for e in calendar_events:
-        if e.title == "__API_SYNC__": 
-            continue
-        events_by_date[e.date.date()].append(e)
-
-    upcoming_tiles = []
-    for i in range(15):
-        d = cal_start_date + timedelta(days=i)
-        if d == today_date:
-            day_label = "Today"
-        else:
-            day_label = d.strftime("%A")
-        
-        day_events = []
-        for e in events_by_date.get(d, []):
-            time_str = ""
-            if e.date.strftime("%H:%M") != "00:00":
-                time_str = e.date.strftime("%H:%M")
-            
-            day_events.append({
-                "title": e.item.title,
-                "event_title": e.title,
-                "time_str": time_str,
-                "media_type": e.item.media_type,
-                "cover_url": e.item.cover_url or "/static/core/img/placeholder.png",
-            })
-
-        upcoming_tiles.append({
-            "date_str": d.strftime("%Y-%m-%d"),
-            "display_date": d.strftime("%d %b"),
-            "day_label": day_label,
-            "is_today": d == today_date,
-            "events": day_events
-        })
-
-    future_events = CalendarEvent.objects.filter(
-        date__gte=now
-    ).exclude(title="__API_SYNC__").select_related('item').order_by('date')[:12]
-
-    upcoming_list = []
-    for e in future_events:
-        url = "#"
-        if e.item.source == "tmdb" and e.item.media_type in ["movie", "tv"]:
-            if "_s" in str(e.item.source_id):
-                show_id = str(e.item.source_id).split("_s")[0]
-                season_number = str(e.item.source_id).split("_s")[1]
-                url = reverse("tmdb_season_detail", args=[show_id, season_number])
-            else:
-                url = reverse("tmdb_detail", args=[e.item.media_type, e.item.source_id])
-        elif e.item.media_type in ["anime", "manga"]:
-            url = reverse("anilist_detail", args=[e.item.source, e.item.media_type, e.item.source_id])
-        elif e.item.source == "igdb" and e.item.media_type == "game":
-            url = reverse("igdb_detail", args=[e.item.source_id])
-        elif e.item.source == "openlib" and e.item.media_type == "book":
-            url = reverse("openlib_detail", args=[e.item.source_id])
-        elif e.item.source == "musicbrainz" and e.item.media_type == "music":
-            url = reverse("musicbrainz_detail", args=[e.item.source_id])
-
-        time_until = timeuntil(e.date, now).split(',')[0]
-        
-        if e.title and e.title not in ["Global Release", "Release Date", "Game Release"]:
-            action = f"{e.item.title} {e.title}"
-        else:
-            action = f"{e.item.title}"
-            
-        time_str_list = ""
-        if e.date.strftime("%H:%M") != "00:00":
-            time_str_list = f" ({e.date.strftime('%H:%M')})"
-
-        upcoming_list.append({
-            "message_main": action,
-            "message_time": f"in {time_until}{time_str_list}",
-            "media_type": e.item.media_type,
-            "cover_url": e.item.cover_url or "/static/core/img/placeholder.png",
-            "url": url,
-        })
-
-    notifications = MediaItem.objects.filter(notification=True).order_by(
+    notifications = MediaItem.objects.filter(notification=True).only(
+        "title", "media_type", "source", "provider_ids",
+    ).order_by(
         "-last_updated"
     )
 
@@ -313,7 +236,9 @@ def home(request):
         notify=True, 
         notified=False, 
         date__lte=timezone.now()
-    ).exclude(title="__API_SYNC__").select_related('item').order_by('-date')
+    ).exclude(title="__API_SYNC__").select_related('item').only(
+        "title", "item__title", "item__media_type", "item__source", "item__provider_ids",
+    ).order_by('-date')
 
     for ce in cal_notifications:
         url = "#"
@@ -343,8 +268,11 @@ def home(request):
             "is_calendar": True
         })
 
-    favorite_characters = FavoritePerson.objects.filter(type="character").order_by("position")[:limit]
-    favorite_actors = FavoritePerson.objects.filter(type="actor").order_by("position")[:limit]
+    favorite_people = FavoritePerson.objects.only(
+        "name", "image_url", "type", "person_id", "source", "position",
+    ).order_by("position")
+    favorite_characters = favorite_people.filter(type="character")[:limit]
+    favorite_actors = favorite_people.filter(type="actor")[:limit]
     favorite_preferences = settings.get_favorite_sections_order() if settings else default_favorite_sections_order()
     favorite_home_sections = []
     visible_media_sections = {}
@@ -363,7 +291,9 @@ def home(request):
                 'name': section['name'], 'items': items, 'is_person': is_person,
             })
 
-    recent_items = MediaItem.objects.order_by("-date_added")[:12]
+    recent_items = MediaItem.objects.only(
+        "title", "status", "date_added", "source", "provider_ids", "media_type", "cover_url",
+    ).order_by("-date_added")[:12]
     recent_activity = []
 
     for item in recent_items:
@@ -428,17 +358,23 @@ def home(request):
             "media_type":random_item.media_type
         }
 
-    top_collections_qs = Collection.objects.order_by("position", "-date_created")[:10]
+    top_collections_qs = Collection.objects.only("title").order_by(
+        "position", "-date_created",
+    ).prefetch_related(Prefetch(
+        "collectionitem_set",
+        queryset=CollectionItem.objects.select_related("item").only(
+            "collection_id", "item_id", "item__cover_url", "item__media_type",
+        ).order_by("position", "-date_added")[:3],
+        to_attr="home_preview_items",
+    ))[:10]
     home_collections = []
     for col in top_collections_qs:
-        # Fetch up to 3 covers ordered by their position in the collection
-        items = col.items.order_by("collectionitem__position", "-collectionitem__date_added")[:3]
         covers = [
             {
-                "url": item.cover_url or "/static/core/img/placeholder.png",
-                "media_type": item.media_type
+                "url": entry.item.cover_url or "/static/core/img/placeholder.png",
+                "media_type": entry.item.media_type
             } 
-            for item in items
+            for entry in col.home_preview_items
         ]
         
         home_collections.append({
@@ -461,8 +397,7 @@ def home(request):
             "extra_stats": extra_stats,
             "activity_data": activity_data,
             "activity_columns": columns,
-            "upcoming_tiles": upcoming_tiles,
-            "upcoming_list": upcoming_list,
+            **upcoming_context,
             "notifications": notifications_list,
             "recent_activity": recent_activity,
             "theme_mode": theme_mode,

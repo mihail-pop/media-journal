@@ -25,9 +25,12 @@ document.addEventListener("DOMContentLoaded", function () {
         }).then(res => res.json()).then(data => {
             // ONLY refresh the DOM if the API actually synced/found updates
             if (data.synced_count > 0) {
-                // Silently fetch the home page again
-                fetch(window.location.href)
-                    .then(response => response.text())
+                // Refresh only Upcoming; keep the fully rendered initial page.
+                return fetch(upcomingContainer.dataset.refreshUrl)
+                    .then(response => {
+                        if (!response.ok) throw new Error('Unable to refresh Upcoming');
+                        return response.text();
+                    })
                     .then(html => {
                         const parser = new DOMParser();
                         const doc = parser.parseFromString(html, 'text/html');
@@ -39,18 +42,12 @@ document.addEventListener("DOMContentLoaded", function () {
                             oldTiles.innerHTML = newTiles.innerHTML;
                         }
 
-                        // Swap the List Container
-                        const newList = doc.querySelector('#upcoming-activity-list');
-                        const oldList = document.querySelector('#upcoming-activity-list');
+                        // Refresh the list and its controls together, including when
+                        // syncing changes whether a Show More button is needed.
+                        const newList = doc.querySelector('.recent-activity');
+                        const oldList = upcomingContainer.querySelector('.recent-activity');
                         if (newList && oldList) {
                             oldList.innerHTML = newList.innerHTML;
-                            
-                            // Reset the Show More button state if it exists
-                            const upcToggle = document.getElementById("toggle-upcoming-btn");
-                            if (upcToggle) {
-                                upcToggle.textContent = "Show More";
-                                upcToggle.dataset.state = "more";
-                            }
                         }
 
                         // Re-attach the tooltips to the newly injected elements
@@ -60,6 +57,9 @@ document.addEventListener("DOMContentLoaded", function () {
                         centerTodayTile();
                     });
             }
+        }).catch(error => {
+            // Leave the currently displayed content in place if syncing fails.
+            console.warn('Unable to update Upcoming releases:', error);
         });
     }
 
@@ -382,9 +382,9 @@ advancedBtn?.addEventListener("click", () => {
 });
 
 // Upcoming List toggle
-const upcomingToggleBtn = document.getElementById("toggle-upcoming-btn");
-
-upcomingToggleBtn?.addEventListener("click", () => {
+upcomingContainer?.addEventListener("click", (event) => {
+  const upcomingToggleBtn = event.target.closest("#toggle-upcoming-btn");
+  if (!upcomingToggleBtn) return;
   // Dynamically query items > 2 at the exact moment of click
   const itemsToToggle = document.querySelectorAll("#upcoming-activity-list li:nth-child(n+3)");
   if (upcomingToggleBtn.dataset.state === "more") {
