@@ -175,8 +175,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const category = section.dataset.category;
     const currentCount = container.querySelectorAll('.card').length;
     
-    // Show loading state
-    sentinel.textContent = 'Loading...';
+    // Keep the scroll trigger empty while loading.
+    sentinel.textContent = '';
     sentinel.style.display = 'block';
 
     const params = new URLSearchParams({ category, offset: currentCount, search: currentSearch });

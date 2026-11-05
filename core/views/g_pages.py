@@ -831,15 +831,20 @@ def favorites_page(request):
     theme_mode = settings.theme_mode if settings else "dark"
 
     # Fetch favorite media items
-    favorite_media = MediaItem.objects.filter(favorite=True).order_by(
+    favorite_media = MediaItem.objects.filter(favorite=True).only(
+        "id", "title", "media_type", "cover_url", "source", "provider_ids",
+    ).order_by(
         "favorite_position", "date_added"
     )
 
     # Fetch favorite people
-    favorite_characters = FavoritePerson.objects.filter(type="character").order_by(
+    favorite_people = FavoritePerson.objects.only(
+        "id", "name", "image_url", "type", "person_id", "source",
+    ).order_by(
         "position"
     )
-    favorite_actors = FavoritePerson.objects.filter(type="actor").order_by("position")
+    favorite_characters = favorite_people.filter(type="character")
+    favorite_actors = favorite_people.filter(type="actor")
 
     # Define all sections with their metadata
     # (Display Name, Slug/Key, Type, QuerySet)
@@ -876,13 +881,28 @@ def favorites_page(request):
             item = all_section_defs.pop(index)
             all_section_defs.insert(0, item)
 
+    # Count visible section types together; clear item ordering before grouping.
+    section_counts = {}
+    if any(kind == "media" for _, _, kind, _ in all_section_defs):
+        section_counts.update(favorite_media.order_by().values("media_type").annotate(
+            total=Count("id"),
+        ).values_list("media_type", "total"))
+    if any(kind == "person" for _, _, kind, _ in all_section_defs):
+        person_counts = dict(favorite_people.order_by().values("type").annotate(
+            total=Count("id"),
+        ).values_list("type", "total"))
+        section_counts.update({
+            "characters": person_counts.get("character", 0),
+            "actors": person_counts.get("actor", 0),
+        })
+
     # Build the final list of sections to render
     sections = []
     global_limit = 100
     current_total = 0
 
     for display_name, key, kind, queryset in all_section_defs:
-        count = queryset.count()
+        count = section_counts.get(key, 0)
         if count > 0:
             # For media, key is the media_type code (e.g. 'movie')
             # For person, key is the slug (e.g. 'characters')

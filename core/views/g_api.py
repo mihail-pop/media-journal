@@ -1366,7 +1366,9 @@ def favorites_api(request):
 
     if category_slug in slug_map:
         media_type = slug_map[category_slug]
-        qs = MediaItem.objects.filter(favorite=True, media_type=media_type).order_by(
+        qs = MediaItem.objects.filter(favorite=True, media_type=media_type).only(
+            "id", "title", "media_type", "cover_url", "source", "provider_ids",
+        ).order_by(
             "favorite_position", "date_added"
         )
         if search:
@@ -1415,7 +1417,9 @@ def favorites_api(request):
 
     elif category_slug in ["characters", "actors"]:
         p_type = "character" if category_slug == "characters" else "actor"
-        qs = FavoritePerson.objects.filter(type=p_type).order_by("position")
+        qs = FavoritePerson.objects.filter(type=p_type).only(
+            "id", "name", "image_url", "type", "person_id", "source",
+        ).order_by("position")
         if search:
             matching_ids = [person_id for person_id, name in qs.values_list('id', 'name')
                             if search in normalize_search_text(name)]
