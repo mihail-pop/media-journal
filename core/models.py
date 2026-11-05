@@ -357,6 +357,7 @@ class AppSettings(models.Model):
             ('charcoal', 'Charcoal'),
             ('teal', 'Teal'),
             ('pink', 'Pink'),
+            ('cake', 'Cake'),
         ],
         default='dark'
     )

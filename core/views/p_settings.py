@@ -252,7 +252,7 @@ def update_theme(request):
     data = json.loads(request.body.decode("utf-8"))
     theme_mode = data.get("theme_mode")
 
-    if theme_mode not in ["light", "dark", "brown", "green", "plum", "charcoal", "teal", "pink"]:
+    if theme_mode not in ["light", "dark", "brown", "green", "plum", "charcoal", "teal", "pink", "cake"]:
         return JsonResponse({"error": "Invalid theme mode"}, status=400)
 
     AppSettings = apps.get_model("core", "AppSettings")

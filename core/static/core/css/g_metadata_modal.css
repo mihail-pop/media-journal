@@ -188,6 +188,36 @@
   --close-hover-text: #6b3b4c;
 }
 
+/* Cake: creamy ivory, peach layers and red accents. */
+[data-theme="cake"] {
+  --bg-primary: #fff6e9;
+  --bg-tertiary: #f6dfca;
+  --modal-bg: #f6dfca;
+  --modal-bg-rgb: 246, 223, 202;
+
+  --text-tertiary: #7e5140;
+  --text-light: #573326;
+  --text-dark: #573326;
+  --text-label: #65412f;
+  --text-muted: #845744;
+  --text-close: #fff7e8;
+
+  --button-primary: #b73522;
+  --button-primary-hover: #994017;
+  --button-cancel: #85654d;
+  --button-cancel-hover: #72513c;
+  --button-danger: #b82925;
+
+  --close-hover-bg: #ebc29f;
+  --close-hover-text: #6e3d26;
+}
+
+/* Keep text over dark image overlays light in this light theme. */
+[data-theme="cake"] .md-title-input,
+[data-theme="cake"] .md-modal-title {
+  --text-light: #fff7e8;
+}
+
 /* Keep text over dark image overlays light in this light theme. */
 [data-theme="pink"] .md-title-input,
 [data-theme="pink"] .md-modal-title {

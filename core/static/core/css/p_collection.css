@@ -176,6 +176,28 @@
     --button-danger: #c93650;
 }
 
+/* Cake: creamy ivory, peach layers and red accents. */
+[data-theme="cake"] {
+    --bg-primary: #fff6e9;
+    --bg-tertiary: #f6dfca;
+    --bg-quaternary: #ebc29f;
+    --bg-filter: #f6e4d0;
+
+    --text-primary: #573326;
+    --text-secondary: #6b4433;
+    --text-tertiary: #7e5140;
+    --text-light: #573326;
+
+    --border-color: #d4a482;
+    --hover-bg: #edc7a7;
+    --table-bg: #f7e5d1;
+
+    --activity-high: #c14d2b;
+    --button-primary: #b73522;
+    --button-primary-hover: #994017;
+    --button-danger: #b82925;
+}
+
 html {
     overflow-y: scroll;
 }

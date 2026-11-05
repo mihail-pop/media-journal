@@ -164,6 +164,35 @@
   --special-color-hover: #8f204c;
 }
 
+/* Cake: creamy ivory, peach layers and red accents. */
+[data-theme="cake"] {
+  --bg-primary: #fff6e9;
+  --bg-tertiary: #f6dfca;
+  --bg-quaternary: #ebc29f;
+
+  --text-primary: #573326;
+  --text-secondary: #6b4433;
+  --text-tertiary: #7e5140;
+  --text-light: #573326;
+
+  --border-color: #d4a482;
+  --hover-bg: #edc7a7;
+  --table-bg: #efd3b7;
+
+  --activity-high: #c14d2b;
+
+  --special-color: #b52f20;
+  --special-color-hover: #a04a1b;
+}
+
+/* Keep text over dark image overlays light in this light theme. */
+[data-theme="cake"] .card-title-overlay,
+[data-theme="cake"] .play-card-btn,
+[data-theme="cake"] .edit-card-btn,
+[data-theme="cake"] .repeat-icon {
+  --text-light: #fff7e8;
+}
+
 /* Keep text over dark image overlays light in this light theme. */
 [data-theme="pink"] .card-title-overlay,
 [data-theme="pink"] .play-card-btn,
@@ -1219,6 +1248,10 @@ body[data-media-type="games"] .card {
 
 [data-theme="pink"] .list-table tr.detailed-row:hover {
   background-image: linear-gradient(rgba(247, 227, 230, 0.88), rgba(247, 227, 230, 0.88)), var(--banner-url, none);
+}
+
+[data-theme="cake"] .list-table tr.detailed-row:hover {
+  background-image: linear-gradient(rgba(246, 223, 202, 0.88), rgba(246, 223, 202, 0.88)), var(--banner-url, none);
 }
 
 

@@ -92,6 +92,18 @@
   --border-color: #cca4b0;
 }
 
+/* Cake: creamy ivory, peach layers and red accents. */
+[data-theme="cake"] {
+  --bg-primary: #fff6e9;
+  --bg-tertiary: #f6dfca;
+
+  --text-primary: #74503b;
+  --text-secondary: #6b4433;
+  --text-light: #573326;
+
+  --border-color: #d4a482;
+}
+
 html {
   overflow-y: scroll;
 }
@@ -375,7 +387,7 @@ body {
   outline: none;
 }
 
-body:not([data-theme="light"]):not([data-theme="pink"]) .pc-actor-dates input {
+body:not([data-theme="light"]):not([data-theme="pink"]):not([data-theme="cake"]) .pc-actor-dates input {
   color-scheme: dark;
 }
 

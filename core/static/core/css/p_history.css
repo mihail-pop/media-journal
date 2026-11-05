@@ -132,6 +132,28 @@
   --table-bg: #f8eaec;
 }
 
+/* Cake: creamy ivory, peach layers and red accents. */
+[data-theme="cake"] {
+  --bg-primary: #fff6e9;
+  --bg-tertiary: #f6dfca;
+  --bg-quaternary: #ebc29f;
+  --bg-filter: #f6e4d0;
+
+  --text-primary: #573326;
+  --text-secondary: #6b4433;
+  --text-tertiary: #7e5140;
+  --text-light: #573326;
+
+  --border-color: #d4a482;
+  --hover-bg: #edc7a7;
+  --table-bg: #f7e5d1;
+}
+
+/* Keep text over dark image overlays light in this light theme. */
+[data-theme="cake"] .card-title-overlay {
+  --text-light: #fff7e8;
+}
+
 /* Keep text over dark image overlays light in this light theme. */
 [data-theme="pink"] .card-title-overlay {
   --text-light: #fff8fb;

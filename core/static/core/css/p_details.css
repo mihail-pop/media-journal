@@ -141,6 +141,29 @@
   --special-color-hover: #8f204c;
 }
 
+/* Cake: creamy ivory, peach layers and red accents. */
+[data-theme="cake"] {
+  --bg-primary: #fff6e9;
+  --bg-tertiary: #f6dfca;
+  --bg-quaternary: #ebc29f;
+
+  --text-primary: #573326;
+  --text-secondary: #74503b;
+  --text-overview: #7e5140;
+  --text-title: #4b291e;
+
+  --border-color: #d4a482;
+  --hover-bg: #edc7a7;
+
+  --special-color: #b52f20;
+  --special-color-hover: #a04a1b;
+}
+
+/* Keep text over dark image overlays light in this light theme. */
+[data-theme="cake"] .card-title-overlay {
+  --text-light: #fff7e8;
+}
+
 /* Keep text over dark image overlays light in this light theme. */
 [data-theme="pink"] .card-title-overlay {
   --text-light: #fff8fb;
@@ -2731,7 +2754,7 @@ body[data-page-type="person-detail"] .overview {
   outline: none;
 }
 
-body:not([data-theme="light"]):not([data-theme="pink"]) .pc-actor-dates input {
+body:not([data-theme="light"]):not([data-theme="pink"]):not([data-theme="cake"]) .pc-actor-dates input {
   color-scheme: dark;
 }
 
@@ -3402,7 +3425,7 @@ body:not([data-theme="light"]):not([data-theme="pink"]) .pc-actor-dates input {
   text-align: left;
 }
 
-body:not([data-theme="light"]):not([data-theme="pink"]) .composer-log-fields input[type="date"] {
+body:not([data-theme="light"]):not([data-theme="pink"]):not([data-theme="cake"]) .composer-log-fields input[type="date"] {
   color-scheme: dark;
 }
 

@@ -132,6 +132,23 @@
   --special-color-hover: #8f204c;
 }
 
+/* Cake: creamy ivory, peach layers and red accents. */
+[data-theme="cake"] {
+  --bg-primary: #fff6e9;
+  --bg-secondary: #f9e7d4;
+  --bg-tertiary: #f1d3b9;
+  --bg-quaternary: #ebc29f;
+
+  --text-primary: #573326;
+  --text-secondary: #6b4433;
+
+  --border-color: #d4a482;
+  --hover-bg: #e9ba93;
+
+  --special-color: #b52f20;
+  --special-color-hover: #a04a1b;
+}
+
 a {
   color: var(--special-color);
   text-decoration: none;
@@ -1140,6 +1157,11 @@ table td:last-child .delete-btn {
   color: #54363e;
 }
 
+.theme-option[data-theme="cake"] {
+  background: #ebc29f;
+  color: #573326;
+}
+
 .theme-option.active {
   box-shadow: inset 0 0 0 2px currentColor;
 }
@@ -1199,6 +1221,11 @@ table td:last-child .delete-btn {
 .theme-pink {
   background: #fff8f6;
   color: #b13661;
+}
+
+.theme-cake {
+  background: #fff6e9;
+  color: #b52f20;
 }
 
 .theme-option span {

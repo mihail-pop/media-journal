@@ -194,6 +194,36 @@
   --scrollbar-thumb: #bc8c9e;
 }
 
+/* Cake: creamy ivory, peach layers and red accents. */
+[data-theme="cake"] {
+  --bg-primary: #fff6e9;
+  --bg-tertiary: #f6dfca;
+  --bg-quaternary: #ebc29f;
+
+  --text-primary: #573326;
+  --text-secondary: #6b4433;
+  --text-overview: #7e5140;
+  --text-search: #573326;
+  --text-search-link: #8e5439;
+  --text-search-hover: #4b291e;
+  --text-light: #573326;
+  --header-light: #b52f20;
+
+
+  --border-color: #d4a482;
+  --hover-bg: #edc7a7;
+  --search-bg: #fff6e9;
+  --search-hover-bg: #f4dbc0;
+  --search-border-active: #bd4527;
+
+  --scrollbar-thumb: #b87a51;
+}
+
+/* Search messages sit directly on the dimmed backdrop. */
+[data-theme="cake"] .search-message {
+  color: #fff7e8;
+}
+
 /* Search messages sit directly on the dimmed backdrop. */
 [data-theme="pink"] .search-message {
   color: #fff8fb;
