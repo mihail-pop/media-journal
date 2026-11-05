@@ -101,6 +101,48 @@
   --special-color-hover: #e2caa3;
 }
 
+/* Warm charcoal, with ivory text and restrained amber accents. */
+[data-theme="charcoal"] {
+  --bg-primary: #252422;
+  --bg-tertiary: #413e39;
+  --bg-quaternary: #5d574d;
+
+  --text-primary: #ece6db;
+  --text-secondary: #d2c9bb;
+  --text-tertiary: #b4aa9b;
+  --text-light: #f0eadd;
+
+  --border-color: #6b6153;
+  --hover-bg: #514b41;
+  --table-bg: #4e473d;
+
+  --activity-high: #c2a77e;
+
+  --special-color: #d4b17b;
+  --special-color-hover: #e5c996;
+}
+
+/* Muted ocean teal, with warm linen text and sea-glass accents. */
+[data-theme="teal"] {
+  --bg-primary: #203033;
+  --bg-tertiary: #354e52;
+  --bg-quaternary: #4b686b;
+
+  --text-primary: #e6e8dc;
+  --text-secondary: #c8d8ce;
+  --text-tertiary: #aec3b9;
+  --text-light: #eaf0e1;
+
+  --border-color: #547174;
+  --hover-bg: #456568;
+  --table-bg: #426063;
+
+  --activity-high: #9fc6b4;
+
+  --special-color: #a5c9b8;
+  --special-color-hover: #c6dfcb;
+}
+
 
 .star-rating {
   display: inline-block;
@@ -1136,6 +1178,14 @@ body[data-media-type="games"] .card {
 
 [data-theme="plum"] .list-table tr.detailed-row:hover {
   background-image: linear-gradient(rgba(41, 35, 45, 0.88), rgba(41, 35, 45, 0.88)), var(--banner-url, none);
+}
+
+[data-theme="charcoal"] .list-table tr.detailed-row:hover {
+  background-image: linear-gradient(rgba(37, 36, 34, 0.88), rgba(37, 36, 34, 0.88)), var(--banner-url, none);
+}
+
+[data-theme="teal"] .list-table tr.detailed-row:hover {
+  background-image: linear-gradient(rgba(32, 48, 51, 0.88), rgba(32, 48, 51, 0.88)), var(--banner-url, none);
 }
 
 

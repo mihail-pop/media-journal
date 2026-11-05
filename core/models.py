@@ -354,6 +354,8 @@ class AppSettings(models.Model):
             ('brown', 'Brown'),
             ('green', 'Green'),
             ('plum', 'Plum'),
+            ('charcoal', 'Charcoal'),
+            ('teal', 'Teal'),
         ],
         default='dark'
     )

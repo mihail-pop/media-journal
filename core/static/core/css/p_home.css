@@ -81,6 +81,40 @@
   --activity-low: #614b63;
 }
 
+/* Warm charcoal, with ivory text and restrained amber accents. */
+[data-theme="charcoal"] {
+  --bg-primary: #252422;
+  --bg-tertiary: #413e39;
+  --bg-quaternary: #5d574d;
+
+  --text-primary: #ece6db;
+  --text-secondary: #d2c9bb;
+
+  --overlay-bg: #252422;
+  --overview-border: #5d574d;
+  --button-bg: #504a41;
+
+  --activity-high: #c2a77e;
+  --activity-low: #5a5144;
+}
+
+/* Muted ocean teal, with warm linen text and sea-glass accents. */
+[data-theme="teal"] {
+  --bg-primary: #203033;
+  --bg-tertiary: #354e52;
+  --bg-quaternary: #4b686b;
+
+  --text-primary: #e6e8dc;
+  --text-secondary: #c8d8ce;
+
+  --overlay-bg: #203033;
+  --overview-border: #49696b;
+  --button-bg: #476361;
+
+  --activity-high: #9fc6b4;
+  --activity-low: #476762;
+}
+
 
 
 html {

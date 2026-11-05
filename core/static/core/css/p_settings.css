@@ -81,6 +81,40 @@
   --special-color-hover: #e2caa3;
 }
 
+/* Warm charcoal, with ivory text and restrained amber accents. */
+[data-theme="charcoal"] {
+  --bg-primary: #252422;
+  --bg-secondary: #393631;
+  --bg-tertiary: #47423b;
+  --bg-quaternary: #302d29;
+
+  --text-primary: #ece6db;
+  --text-secondary: #d2c9bb;
+
+  --border-color: #514b42;
+  --hover-bg: #49433b;
+
+  --special-color: #d4b17b;
+  --special-color-hover: #e5c996;
+}
+
+/* Muted ocean teal, with warm linen text and sea-glass accents. */
+[data-theme="teal"] {
+  --bg-primary: #203033;
+  --bg-secondary: #30464a;
+  --bg-tertiary: #3b5355;
+  --bg-quaternary: #273b3f;
+
+  --text-primary: #e6e8dc;
+  --text-secondary: #c8d8ce;
+
+  --border-color: #486368;
+  --hover-bg: #3b575a;
+
+  --special-color: #a5c9b8;
+  --special-color-hover: #c6dfcb;
+}
+
 a {
   color: var(--special-color);
   text-decoration: none;
@@ -1028,6 +1062,14 @@ table td:last-child .delete-btn {
   background: #352c3b;
 }
 
+.theme-option[data-theme="charcoal"]:hover {
+  background: #302d29;
+}
+
+.theme-option[data-theme="teal"]:hover {
+  background: #273b3f;
+}
+
 .theme-option[data-theme="dark"] span {
   color: #8596a5;
 }
@@ -1046,6 +1088,14 @@ table td:last-child .delete-btn {
 
 .theme-option[data-theme="plum"] span {
   color: #eee3da;
+}
+
+.theme-option[data-theme="charcoal"] span {
+  color: #ece6db;
+}
+
+.theme-option[data-theme="teal"] span {
+  color: #e6e8dc;
 }
 
 .theme-option.active {
@@ -1092,6 +1142,16 @@ table td:last-child .delete-btn {
 .theme-plum {
   background: #29232d;
   color: #eee3da;
+}
+
+.theme-charcoal {
+  background: #252422;
+  color: #ece6db;
+}
+
+.theme-teal {
+  background: #203033;
+  color: #e6e8dc;
 }
 
 .theme-option span {

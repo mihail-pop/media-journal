@@ -119,6 +119,56 @@
   --scrollbar-thumb: #93778e;
 }
 
+/* Warm charcoal, with ivory text and restrained amber accents. */
+[data-theme="charcoal"] {
+  --bg-primary: #252422;
+  --bg-tertiary: #413e39;
+  --bg-quaternary: #5d574d;
+
+  --text-primary: #ece6db;
+  --text-secondary: #d2c9bb;
+  --text-overview: #c4b8a5;
+  --text-search: #ece6db;
+  --text-search-link: #c5af8d;
+  --text-search-hover: #f0eadd;
+  --text-light: #f0eadd;
+  --header-light: #edd1a2;
+
+
+  --border-color: #6b6153;
+  --hover-bg: #514b41;
+  --search-bg: #252422;
+  --search-hover-bg: #38342f;
+  --search-border-active: #9b8668;
+
+  --scrollbar-thumb: #847867;
+}
+
+/* Muted ocean teal, with warm linen text and sea-glass accents. */
+[data-theme="teal"] {
+  --bg-primary: #203033;
+  --bg-tertiary: #354e52;
+  --bg-quaternary: #4b686b;
+
+  --text-primary: #e6e8dc;
+  --text-secondary: #c8d8ce;
+  --text-overview: #bdcfc4;
+  --text-search: #e6e8dc;
+  --text-search-link: #b1cfc0;
+  --text-search-hover: #eaf0e1;
+  --text-light: #eaf0e1;
+  --header-light: #d8e4cb;
+
+
+  --border-color: #547174;
+  --hover-bg: #456568;
+  --search-bg: #203033;
+  --search-hover-bg: #2c4346;
+  --search-border-active: #88aaa4;
+
+  --scrollbar-thumb: #6d918c;
+}
+
 
 #search-overlay {
   position: fixed;

@@ -96,6 +96,46 @@
   --border: #d4b78e;
 }
 
+/* Warm charcoal, with ivory text and restrained amber accents. */
+[data-theme="charcoal"] {
+  --bg-primary: #252422;
+  --bg-tertiary: #413e39;
+  --bg-quaternary: #5d574d;
+
+  --text-primary: #ece6db;
+  --text-secondary: #d2c9bb;
+  --text-overview: #c4b8a5;
+
+  --border-color: #6b6153;
+  --hover-bg: #514b41;
+  --overlay-bg: #252422;
+  --button-bg: #5b5348;
+
+  --special-color: #d4b17b;
+  --special-color-hover: #e5c996;
+  --border: #d4b17b;
+}
+
+/* Muted ocean teal, with warm linen text and sea-glass accents. */
+[data-theme="teal"] {
+  --bg-primary: #203033;
+  --bg-tertiary: #354e52;
+  --bg-quaternary: #4b686b;
+
+  --text-primary: #e6e8dc;
+  --text-secondary: #c8d8ce;
+  --text-overview: #bdcfc4;
+
+  --border-color: #547174;
+  --hover-bg: #456568;
+  --overlay-bg: #203033;
+  --button-bg: #4d6b6b;
+
+  --special-color: #a5c9b8;
+  --special-color-hover: #c6dfcb;
+  --border: #a5c9b8;
+}
+
 html {
   overflow-y: scroll;
 }
