@@ -37,6 +37,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   const bannerImg = document.getElementById("rotating-banner");
   let bannerPool = [];
+  let stopBannerRotator = null;
 
   const mediaType = document.body.dataset.mediaType || "default";
   if (cardView) {
@@ -1964,72 +1965,11 @@ updateSortButtons();
   }
 
   // === BANNER ROTATOR ===
-  let firstLoad = true;
-  let bannerInterval;
-  let lastBannerIndex = -1;
-
- function initBannerRotator() {
-    if (bannerPool.length === 0) return;
-    
-    // If the HTML already loaded an image, skip replacing it on the very first tick
-    const currentSrc = bannerImg.getAttribute("src");
-    if (firstLoad && !currentSrc.includes("placeholder.png")) {
-        firstLoad = false;
-        // Just start the 30-second timer for the NEXT image
-        bannerInterval = setInterval(updateBanner, 30000);
-        return;
-    }
-
-    // Otherwise, run normally
-    updateBanner();
-    if (bannerInterval) clearInterval(bannerInterval);
-    bannerInterval = setInterval(updateBanner, 30000);
+  function initBannerRotator() {
+    stopBannerRotator?.();
+    stopBannerRotator = window.createBannerRotator({
+      image: bannerImg, quote: document.querySelector('.banner-quote'), banners: bannerPool,
+    });
   }
-  
-  function updateBanner() {
-    if (bannerPool.length === 0) return;
-    
-    let random;
-    if (bannerPool.length > 1) {
-      do {
-        random = Math.floor(Math.random() * bannerPool.length);
-      } while (random === lastBannerIndex);
-    } else {
-      random = 0;
-    }
-    lastBannerIndex = random;
-
-    const { bannerUrl, notes } = bannerPool[random];
-
-    const quoteBox = document.querySelector(".banner-quote");
-
-    if (firstLoad) {
-      bannerImg.src = bannerUrl;
-      bannerImg.style.opacity = 1;
-
-      if (quoteBox) {
-        quoteBox.innerText = notes ? `“${notes}”\n\n~You` : "";
-        quoteBox.style.display = notes ? "block" : "none";
-        quoteBox.style.opacity = notes ? 1 : 0;
-      }
-
-      firstLoad = false;
-      return;
-    }
-
-    bannerImg.style.opacity = 0;
-    if (quoteBox) quoteBox.style.opacity = 0;
-
-    setTimeout(() => {
-      bannerImg.src = bannerUrl;
-      if (quoteBox) {
-        quoteBox.innerText = notes ? `“${notes}”\n\n~You` : "";
-        quoteBox.style.display = notes ? "block" : "none";
-        quoteBox.style.opacity = notes ? 1 : 0;
-      }
-      bannerImg.style.opacity = 1;
-    }, 1000);
-  }
-
 
 });
