@@ -736,8 +736,22 @@ function showProgressModal(title) {
   const statusText = document.getElementById('backup-status-text');
   let pollInterval = null;
   let currentTaskId = null;
+  let uploadCancel = null;
+  let stopped = false;
+  let message = 'Initializing…';
+  let details = '';
+  const startedAt = performance.now();
+  const renderStatus = () => {
+    const seconds = Math.floor((performance.now() - startedAt) / 1000);
+    const elapsed = seconds >= 60 ? `${Math.floor(seconds / 60)}m ${seconds % 60}s` : `${seconds}s`;
+    statusText.textContent = `${message}${details ? `: ${details}` : ''} • ${elapsed} elapsed`;
+  };
+  renderStatus();
+  const elapsedTimer = setInterval(renderStatus, 1000);
 
   const closeModal = () => {
+    stopped = true;
+    clearInterval(elapsedTimer);
     modal.classList.remove('visible');
     setTimeout(() => {
       modal.style.display = 'none';
@@ -748,20 +762,40 @@ function showProgressModal(title) {
   cancelBtn.onclick = () => {
     if (currentTaskId) {
       fetch(`/backup/cancel/${currentTaskId}/`);
+    } else if (uploadCancel) {
+      uploadCancel();
     }
     closeModal();
   };
 
   return {
     updateMessage: (msg) => {
-      statusText.textContent = msg;
+      if (stopped) return;
+      message = msg;
+      details = '';
+      renderStatus();
     },
+    updateProgress: (percent, msg) => {
+      if (stopped) return;
+      progressBar.style.width = `${Math.max(0, Math.min(100, percent))}%`;
+      message = msg;
+      details = '';
+      renderStatus();
+    },
+    setUploadCancel: (handler) => { uploadCancel = handler; },
     startPolling: (taskId, isDownload = true, successMsg = "Process completed successfully!") => {
+      if (stopped) return;
       currentTaskId = taskId;
+      uploadCancel = null;
+      progressBar.style.width = '0%';
+      message = 'Starting…';
+      details = '';
+      renderStatus();
       pollInterval = setInterval(() => {
         fetch(`/backup/status/${taskId}/`)
           .then(res => res.json())
           .then(data => {
+            if (stopped) return;
             if (data.error) {
               clearInterval(pollInterval);
               alert("Error: " + data.error);
@@ -771,13 +805,13 @@ function showProgressModal(title) {
 
             progressBar.style.width = `${data.progress}%`;
             
-            // Format: "Message... Details"
-            const message = data.message || 'Processing';
-            const details = data.details || '';
-            statusText.textContent = `${message}... ${details}`;
+            message = data.message || 'Processing';
+            details = data.details || '';
+            renderStatus();
 
             if (data.status === 'completed') {
               clearInterval(pollInterval);
+              clearInterval(elapsedTimer);
               statusText.textContent = "Completed!";
               progressBar.style.width = '100%';
               
@@ -797,6 +831,7 @@ function showProgressModal(title) {
             }
           })
           .catch(err => {
+            if (stopped) return;
             console.error(err);
             clearInterval(pollInterval);
             closeModal();
@@ -848,28 +883,37 @@ if (uploadBtn && uploadInput) {
     formData.append("backup_file", file);
     const csrftoken = getCookie("csrftoken");
 
-    fetch("/backup/import/", {
-      method: "POST",
-      headers: {
-        "X-CSRFToken": csrftoken,
-      },
-      body: formData,
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        if (data.task_id) {
-          modal.startPolling(data.task_id, false, "Backup restored successfully!");
-        } else {
-          alert(data.error || "Upload failed.");
-          modal.close();
-        }
-      })
-      .catch((err) => {
-        console.error("Backup import failed:", err);
-        alert("Backup import failed.");
+    // XMLHttpRequest exposes upload progress; fetch does not provide it here.
+    const request = new XMLHttpRequest();
+    request.open('POST', '/backup/import/');
+    request.setRequestHeader('X-CSRFToken', csrftoken);
+    request.responseType = 'json';
+    modal.setUploadCancel(() => request.abort());
+    request.upload.onprogress = event => {
+      if (!event.lengthComputable || event.total <= 0) return;
+      const unit = event.total >= 1024 ** 3 ? 'GB' : 'MB';
+      const divisor = unit === 'GB' ? 1024 ** 3 : 1024 ** 2;
+      const transferred = `${(event.loaded / divisor).toFixed(1)} / ${(event.total / divisor).toFixed(1)} ${unit}`;
+      modal.updateProgress(event.loaded / event.total * 100, `Uploading backup: ${transferred}`);
+    };
+    request.upload.onload = () => {
+      modal.updateProgress(100, 'Upload sent. Waiting for the server…');
+    };
+    request.onload = () => {
+      const data = request.response;
+      if (request.status >= 200 && request.status < 300 && data?.task_id) {
+        modal.startPolling(data.task_id, false, 'Backup restored successfully!');
+      } else {
+        alert(data?.error || 'Upload failed.');
         modal.close();
-      })
-      .finally(() => { uploadInput.value = ""; });
+      }
+    };
+    request.onerror = () => {
+      alert('Backup upload failed.');
+      modal.close();
+    };
+    request.onloadend = () => { uploadInput.value = ''; };
+    request.send(formData);
   });
 }
 
