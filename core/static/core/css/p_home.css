@@ -47,6 +47,23 @@
   --activity-low: #74544d;
 }
 
+/* Muted forest green, with warm sage text and moss accents. */
+[data-theme="green"] {
+  --bg-primary: #1e2923;
+  --bg-tertiary: #34473a;
+  --bg-quaternary: #4a604c;
+
+  --text-primary: #e5e8d9;
+  --text-secondary: #d2dcc6;
+
+  --overlay-bg: #1e2923;
+  --overview-border: #4a604c;
+  --button-bg: #425b46;
+
+  --activity-high: #9cb589;
+  --activity-low: #455c47;
+}
+
 
 
 html {

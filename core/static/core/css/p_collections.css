@@ -63,6 +63,28 @@
   --button-danger: #dc3545;
 }
 
+/* Muted forest green, with warm sage text and moss accents. */
+[data-theme="green"] {
+  --bg-primary: #1e2923;
+  --bg-tertiary: #34473a;
+  --bg-quaternary: #4a604c;
+  --bg-filter: #26382c;
+
+  --text-primary: #e5e8d9;
+  --text-secondary: #d2dcc6;
+  --text-tertiary: #aab99c;
+  --text-light: #e9eddf;
+
+  --border-color: #51694f;
+  --hover-bg: #415a46;
+  --table-bg: #3b5140;
+
+  --activity-high: #9cb589;
+  --button-primary: #526c4d;
+  --button-primary-hover: #5d7553;
+  --button-danger: #dc3545;
+}
+
 html {
   overflow-y: scroll;
 }

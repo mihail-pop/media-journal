@@ -32,6 +32,18 @@
   --border-color: #8d6f5d;
 }
 
+/* Muted forest green, with warm sage text and moss accents. */
+[data-theme="green"] {
+  --bg-primary: #1e2923;
+  --bg-tertiary: #34473a;
+
+  --text-primary: #c1ceb6;
+  --text-secondary: #d2dcc6;
+  --text-light: #e9eddf;
+
+  --border-color: #51694f;
+}
+
 html {
   overflow-y: scroll;
 }
