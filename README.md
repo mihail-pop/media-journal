@@ -14,7 +14,7 @@ This is the self-hosted media tracker app I always wanted to have. From now on I
 - Discover trending or popular media.
 - Play saved songs through a YouTube music player while browsing the site.
 
-## Demo - [Youtube Video](https://youtu.be/JXOvpvdVZpY?si=LIvj2CKixBAZ0Pp)
+## Demo - [Youtube Video](https://youtu.be/x0M_JOOEuhQ)
 | <img src="https://github.com/user-attachments/assets/56ffa42a-ca27-486e-adb2-cc2796a8376d" width="500" /> | <img src="https://github.com/user-attachments/assets/80cffc96-d54b-4987-a3b6-94d02165cf1c" width="500" /> |
 | :-----------------------------------------: | :-----------------------------------------: |
 |                 Home                    |               Lists                   |
