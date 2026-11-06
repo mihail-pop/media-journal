@@ -16,7 +16,7 @@ from django.db.models import Max, F
 from django.views.decorators.http import require_GET, require_POST
 
 from core.models import MediaItem, Collection, CollectionItem, MediaItemLog, AppSettings
-from core.services.g_utils import display_to_rating, rating_to_display, get_sharded_path
+from core.services.g_utils import display_to_rating, rating_to_display, rating_from_edit, get_sharded_path
 from core.services.m_books import save_openlib_item
 from core.services.m_games import save_igdb_item
 from core.services.m_music import save_musicbrainz_item
@@ -287,6 +287,7 @@ def create_custom_item(request):
                 "source_id": custom_id,
                 "status": new_item.status,
                 "personal_rating": display_rating,
+                "personal_rating_raw": new_item.personal_rating,
                 "notes": new_item.notes,
                 "progress_main": new_item.progress_main,
                 "total_main": new_item.total_main,
@@ -449,15 +450,10 @@ def edit_item(request, item_id):
                 except Exception:
                     rating_mode = "faces"
 
-                display_value = data["personal_rating"]
-                new_rating = None
-                
-                if display_value not in [None, "", "null"]:
-                    try:
-                        display_value_int = int(display_value)
-                        new_rating = display_to_rating(display_value_int, rating_mode)
-                    except ValueError:
-                        pass
+                try:
+                    new_rating = rating_from_edit(data["personal_rating"], rating_mode, item.personal_rating)
+                except (ValueError, TypeError):
+                    new_rating = None
                 
                 if item.personal_rating != new_rating:
                     rating_changed = True
@@ -605,6 +601,7 @@ def edit_item(request, item_id):
                         "source_id": item.source_id,
                         "status": item.status,
                         "personal_rating": display_rating,
+                        "personal_rating_raw": item.personal_rating,
                         "notes": item.notes,
                         "progress_main": item.progress_main
                         if item.progress_main
@@ -1028,17 +1025,13 @@ def manage_journal_log(request):
                     pass
                     
             # Handle empty strings converting to None securely
-            score_str = data.get("score")
-            if score_str:
+            if "score" in data:
                 try:
                     app_settings = AppSettings.objects.first()
                     r_mode = app_settings.rating_mode if app_settings else "faces"
-                    display_val = int(score_str)
-                    log.score = display_to_rating(display_val, r_mode)
-                except ValueError:
+                    log.score = rating_from_edit(data["score"], r_mode, log.score)
+                except (ValueError, TypeError):
                     log.score = None
-            else:
-                log.score = None
             
             log.is_spoiler = data.get("is_spoiler", False)
             log.progress_unit = data.get("progress_unit")

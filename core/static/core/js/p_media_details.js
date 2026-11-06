@@ -3195,14 +3195,9 @@ function getRatingHtml(rating) {
   const rnum = Number(rating);
   if (isNaN(rnum)) return '';
 
-  let normalized = rnum;
-  if (appRatingMode === 'stars_5') {
-    normalized = (rnum > 0 && rnum <= 5) ? (rnum * 20) : rnum;
-  } else if (appRatingMode === 'scale_10') {
-    normalized = rnum;
-  }
-
-  const rounded = Math.round(normalized);
+  const displayRating = window.ratingToDisplay(rnum, appRatingMode);
+  if (displayRating === null) return '';
+  const rounded = Math.round(rnum);
   
   let color = '#f5c518';
   if (rnum <= 33) color = '#ff3b38';
@@ -3218,10 +3213,7 @@ function getRatingHtml(rating) {
       return `<span class="card-rating" style="color: ${color};"><svg aria-hidden="true" focusable="false" data-prefix="far" data-icon="smile" class="svg-inline--fa fa-smile fa-w-16 fa-lg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><path fill="currentColor" d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zm0 448c-110.3 0-200-89.7-200-200S137.7 56 248 56s200 89.7 200 200-89.7 200-200 200zm-80-216c17.7 0 32-14.3 32-32s-14.3-32-32-32-32 14.3-32 32 14.3 32 32 32zm160 0c17.7 0 32-14.3 32-32s-14.3-32-32-32-32 14.3-32 32 14.3 32 32 32zm4 72.6c-20.8 25-51.5 39.4-84 39.4s-63.2-14.3-84-39.4c-8.5-10.2-23.7-11.5-33.8-3.1-10.2 8.5-11.5 23.6-3.1 33.8 30 36 74.1 56.6 120.9 56.6s90.9-20.6 120.9-56.6c8.5-10.2 7.1-25.3-3.1-33.8-10.1-8.4-25.3-7.1-33.8 3.1z"></path></svg></span>`;
     }
   } else if (appRatingMode === 'stars_5') {
-    let starsCount = 0;
-    if (rnum > 0 && rnum <= 5) starsCount = Math.round(rnum);
-    else starsCount = Math.round(normalized / 20);
-    
+    const starsCount = displayRating;
     let starsHtml = '<span class="card-rating"><span class="star-rating">';
     for (let i = 1; i <= 5; i++) {
       if (i <= starsCount) {
@@ -3233,9 +3225,7 @@ function getRatingHtml(rating) {
     starsHtml += '</span></span>';
     return starsHtml;
   } else if (appRatingMode === 'scale_10') {
-    let displayVal = rnum;
-    if (rnum > 10) displayVal = Math.round(rnum / 10);
-    else displayVal = 1;
+    const displayVal = displayRating;
     return `<span class="card-rating" style="color: ${color}; font-weight: bold;"><span class="rating-number">${displayVal}</span></span>`;
   } else if (appRatingMode === 'scale_100') {
     return `<span class="card-rating" style="color: ${color}; font-weight: bold;"><span class="rating-number">${Math.round(rnum)}</span></span>`;
@@ -3468,8 +3458,10 @@ function setupLogRatingUI() {
 function updateLogRatingUI(internalScore) {
   const hiddenInput = document.getElementById('log-score');
   const rnum = Number(internalScore);
+  const displayVal = window.ratingToDisplay(internalScore, appRatingMode);
+  hiddenInput.dataset.initialRating = displayVal === null ? '' : String(displayVal);
   
-  if (!internalScore || isNaN(rnum)) {
+  if (displayVal === null) {
     hiddenInput.value = '';
     if (appRatingMode === 'faces') {
         document.querySelectorAll('#log-rating-faces .face').forEach(f => {
@@ -3494,25 +3486,20 @@ function updateLogRatingUI(internalScore) {
   else if (rnum <= 66) color = '#f5c518';
   else color = '#4CAF50';
   
-  let displayVal = rnum;
   if (appRatingMode === 'faces') {
-     hiddenInput.value = rnum;
+     hiddenInput.value = displayVal;
      document.querySelectorAll('#log-rating-faces .face').forEach(f => {
-         const isSelected = parseInt(f.dataset.value) === rnum;
+         const isSelected = parseInt(f.dataset.value) === displayVal;
          f.classList.toggle('selected', isSelected);
          if (isSelected) f.style.color = color;
          else f.style.color = '';
      });
   } else if (appRatingMode === 'stars_5') {
-     displayVal = Math.round(rnum / 20);
-     if (rnum > 0 && displayVal < 1) displayVal = 1;
      hiddenInput.value = displayVal;
      document.querySelectorAll('#log-dynamic-rating .star').forEach((s, idx) => {
          s.classList.toggle('selected', idx < displayVal);
      });
   } else if (appRatingMode === 'scale_10') {
-     displayVal = Math.round(rnum / 10);
-     if (rnum > 0 && displayVal < 1) displayVal = 1;
      hiddenInput.value = displayVal;
      const inp = document.getElementById('log-score-input-visible');
      if (inp) {
@@ -3521,7 +3508,6 @@ function updateLogRatingUI(internalScore) {
          inp.style.borderColor = color;
      }
   } else if (appRatingMode === 'scale_100') {
-     displayVal = Math.round(rnum);
      hiddenInput.value = displayVal;
      const inp = document.getElementById('log-score-input-visible');
      if (inp) {
@@ -3794,6 +3780,8 @@ function saveJournalEntry() {
       progress_end: document.getElementById('log-progress-end').value,
       is_spoiler: document.getElementById('log-spoiler').checked
     };
+
+    if (editingLogId && payload.score === document.getElementById('log-score').dataset.initialRating) delete payload.score;
 
     fetch(`/api/manage-journal-log/`, {
       method: "POST",

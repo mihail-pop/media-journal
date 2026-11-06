@@ -354,6 +354,7 @@ function updateTotalDisplays(item) {
     form.dataset.mediaType = item.media_type;
     form.dataset.itemId = item.id;
     form.dataset.ratingMode = item.rating_mode;
+    form.dataset.initialRating = String(item.personal_rating ?? '');
     
     const coverContainer = document.querySelector('.modal-cover');
     if (coverContainer) {
@@ -932,6 +933,8 @@ document.getElementById("edit-delete-btn")?.addEventListener("click", function (
 
 
       const formData = Object.fromEntries(new FormData(form));
+      // Unrelated edits must not replace the stored score with its rounded display value.
+      if (formData.personal_rating === form.dataset.initialRating) delete formData.personal_rating;
       formData.collections = editCurrentCollections; // Append custom array to payload
       // Debug: log the value being sent for personal_rating
 

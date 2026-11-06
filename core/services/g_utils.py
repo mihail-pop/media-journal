@@ -130,6 +130,15 @@ def display_to_rating(display_value: int | None, rating_mode: str) -> int | None
 
     return None
 
+
+def rating_from_edit(display_value, rating_mode, current_rating):
+    """Preserve the stored score when an edit submits its unchanged display value."""
+    value = None if display_value in (None, '', 'null') else int(display_value)
+    if value == rating_to_display(current_rating, rating_mode):
+        return current_rating
+    return display_to_rating(value, rating_mode)
+
+
 def get_ordered_types():
     nav_items = NavItem.objects.all().order_by("position")
     

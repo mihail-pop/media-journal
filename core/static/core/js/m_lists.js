@@ -634,18 +634,9 @@ function createListRowElement(item, isDetailed = false) {
     const rnum = Number(rating);
     if (isNaN(rnum)) return '';
 
-    // Normalize rating depending on detected ratingMode and possible formats
-    // Some updates may send 1-5 (stars) or 1-10 (scale_10) while UI expects 0-100
-    let normalized = rnum;
-    if (ratingMode === 'stars_5') {
-      // If value is 1-5, convert to 0-100 scale
-      normalized = (rnum > 0 && rnum <= 5) ? (rnum * 20) : rnum;
-    } else if (ratingMode === 'scale_10') {
-      // If value is 1-10, keep as-is for display; if it's 0-100, convert to 1-10 later
-      normalized = rnum;
-    }
-
-    const rounded = Math.round(normalized);
+    const displayRating = window.ratingToDisplay(rnum, ratingMode);
+    if (displayRating === null) return '';
+    const rounded = Math.round(rnum);
 
     if (ratingMode === 'faces') {
       if (rounded <= 33) {
@@ -656,13 +647,7 @@ function createListRowElement(item, isDetailed = false) {
         return '<span class="card-rating"><svg aria-hidden="true" focusable="false" data-prefix="far" data-icon="smile" class="svg-inline--fa fa-smile fa-w-16 fa-lg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><path fill="currentColor" d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zm0 448c-110.3 0-200-89.7-200-200S137.7 56 248 56s200 89.7 200 200-89.7 200-200 200zm-80-216c17.7 0 32-14.3 32-32s-14.3-32-32-32-32 14.3-32 32 14.3 32 32 32zm160 0c17.7 0 32-14.3 32-32s-14.3-32-32-32-32 14.3-32 32 14.3 32 32 32zm4 72.6c-20.8 25-51.5 39.4-84 39.4s-63.2-14.3-84-39.4c-8.5-10.2-23.7-11.5-33.8-3.1-10.2 8.5-11.5 23.6-3.1 33.8 30 36 74.1 56.6 120.9 56.6s90.9-20.6 120.9-56.6c8.5-10.2 7.1-25.3-3.1-33.8-10.1-8.4-25.3-7.1-33.8 3.1z"></path></svg></span>';
       }
     } else if (ratingMode === 'stars_5') {
-      // Determine star count from normalized 0-100 scale or raw 1-5
-      let starsCount = 0;
-      if (rnum > 0 && rnum <= 5) {
-        starsCount = Math.round(rnum);
-      } else {
-        starsCount = Math.round(normalized / 20);
-      }
+      const starsCount = displayRating;
       let starsHtml = '<span class="card-rating"><span class="star-rating">';
       for (let i = 1; i <= 5; i++) {
         if (i <= starsCount) {
@@ -674,10 +659,7 @@ function createListRowElement(item, isDetailed = false) {
       starsHtml += '</span></span>';
       return starsHtml;
     } else if (ratingMode === 'scale_10') {
-      // If rating is above 10, divide and round. If it's under 10, to not round to 0 when its 5 or under, display 1.
-      let displayVal = rnum;
-      if (rnum > 10) displayVal = Math.round(rnum / 10)
-        else displayVal = 1;
+      const displayVal = displayRating;
       return `<span class="card-rating"><span class="rating-number">${displayVal}</span></span>`;
     } else if (ratingMode === 'scale_100') {
       return `<span class="card-rating"><span class="rating-number">${Math.round(rnum)}</span></span>`;

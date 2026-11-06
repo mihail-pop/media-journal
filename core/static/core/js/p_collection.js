@@ -130,21 +130,16 @@ document.addEventListener("DOMContentLoaded", () => {
         const rnum = Number(rating);
         if (isNaN(rnum)) return '';
 
-        let normalized = rnum;
-        if (ratingMode === 'stars_5') {
-            normalized = (rnum > 0 && rnum <= 5) ? (rnum * 20) : rnum;
-        } else if (ratingMode === 'scale_10') {
-            normalized = rnum;
-        }
-
-        const rounded = Math.round(normalized);
+        const displayRating = window.ratingToDisplay(rnum, ratingMode);
+        if (displayRating === null) return '';
+        const rounded = Math.round(rnum);
 
         if (ratingMode === 'faces') {
             if (rounded <= 33) return '<svg aria-hidden="true" focusable="false" data-prefix="far" data-icon="frown" class="svg-inline--fa fa-frown fa-w-16 fa-lg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512" style="width: 1.2em; height: 1.2em; color: grey;"><path fill="currentColor" d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zm0 448c-110.3 0-200-89.7-200-200S137.7 56 248 56s200 89.7 200 200-89.7 200-200 200zm-80-216c17.7 0 32-14.3 32-32s-14.3-32-32-32-32 14.3-32 32 14.3 32 32 32zm160-64c-17.7 0-32 14.3-32 32s14.3 32 32 32 32-14.3 32-32-14.3-32-32-32zm-80 128c-40.2 0-78 17.7-103.8 48.6-8.5 10.2-7.1 25.3 3.1 33.8 10.2 8.4 25.3 7.1 33.8-3.1 16.6-19.9 41-31.4 66.9-31.4s50.3 11.4 66.9 31.4c8.1 9.7 23.1 11.9 33.8 3.1 10.2-8.5 11.5-23.6 3.1-33.8C326 321.7 288.2 304 248 304z"></path></svg>';
             else if (rounded <= 66) return '<svg aria-hidden="true" focusable="false" data-prefix="far" data-icon="meh" class="svg-inline--fa fa-meh fa-w-16 fa-lg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512" style="width: 1.2em; height: 1.2em; color: grey;"><path fill="currentColor" d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zm0 448c-110.3 0-200-89.7-200-200S137.7 56 248 56s200 89.7 200 200-89.7 200-200 200zm-80-216c17.7 0 32-14.3 32-32s-14.3-32-32-32-32 14.3-32 32 14.3 32 32 32zm160-64c-17.7 0-32 14.3-32 32s14.3 32 32 32 32-14.3 32-32-14.3-32-32-32zm8 144H160c-13.2 0-24 10.8-24 24s10.8 24 24 24h176c13.2 0 24-10.8 24-24s-10.8-24-24-24z"></path></svg>';
             else return '<svg aria-hidden="true" focusable="false" data-prefix="far" data-icon="smile" class="svg-inline--fa fa-smile fa-w-16 fa-lg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512" style="width: 1.2em; height: 1.2em; color: grey;"><path fill="currentColor" d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zm0 448c-110.3 0-200-89.7-200-200S137.7 56 248 56s200 89.7 200 200-89.7 200-200 200zm-80-216c17.7 0 32-14.3 32-32s-14.3-32-32-32-32 14.3-32 32 14.3 32 32 32zm160 0c17.7 0 32-14.3 32-32s-14.3-32-32-32-32 14.3-32 32 14.3 32 32 32zm4 72.6c-20.8 25-51.5 39.4-84 39.4s-63.2-14.3-84-39.4c-8.5-10.2-23.7-11.5-33.8-3.1-10.2 8.5-11.5 23.6-3.1 33.8 30 36 74.1 56.6 120.9 56.6s90.9-20.6 120.9-56.6c8.5-10.2 7.1-25.3-3.1-33.8-10.1-8.4-25.3-7.1-33.8 3.1z"></path></svg>';
         } else if (ratingMode === 'stars_5') {
-            let starsCount = (rnum > 0 && rnum <= 5) ? Math.round(rnum) : Math.round(normalized / 20);
+            const starsCount = displayRating;
             let starsHtml = '<span style="display:inline-block; height:1.1em; line-height:1;">';
             for (let i = 1; i <= 5; i++) {
                 if (i <= starsCount) starsHtml += '<svg viewBox="0 0 32 32" style="color:gold; width:1.1em; height:1.1em; margin-left:-0.25em; vertical-align:middle; z-index:1; position:relative;"><path fill="currentColor" stroke="#000" stroke-width="1.2" d="M16 2.5l4.09 8.29 9.16 1.33-6.62 6.45 1.56 9.09L16 23.13l-8.19 4.32 1.56-9.09-6.62-6.45 9.16-1.33L16 2.5z"/></svg>';
@@ -152,9 +147,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             return starsHtml.replace('margin-left:-0.25em;', 'margin-left:0;') + '</span>';
         } else if (ratingMode === 'scale_10') {
-            let displayVal = rnum;
-            if (rnum > 10) displayVal = Math.round(rnum / 10);
-            else displayVal = 1;
+            const displayVal = displayRating;
             return `<span style="font-size: 0.95rem; font-weight:bold;">${displayVal}</span>`;
         } else if (ratingMode === 'scale_100') {
             return `<span style="font-size: 0.95rem; font-weight:bold;">${Math.round(rnum)}</span>`;
