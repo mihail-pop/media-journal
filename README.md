@@ -14,16 +14,16 @@ This is the self-hosted media tracker app I always wanted to have. From now on I
 - Discover trending or popular media.
 - Play saved songs through a YouTube music player while browsing the site.
 
-## Demo - [Youtube Demo](https://youtu.be/JXOvpvdVZpY?si=LIvj2CKixBAZ0Pp)
-| <img src="https://github.com/user-attachments/assets/59ff70c5-46ce-4b69-a5ad-70e811b33f0b" width="500" /> | <img src="https://github.com/user-attachments/assets/48fdb9d3-aa17-4b2f-a8a2-173e5b2a3cb6" width="500" /> |
+## Demo - [Youtube Video](https://youtu.be/JXOvpvdVZpY?si=LIvj2CKixBAZ0Pp)
+| <img src="https://github.com/user-attachments/assets/48eed8b0-2a8d-4ce7-95fd-f86f391c6229" width="500" /> | <img src="https://github.com/user-attachments/assets/80cffc96-d54b-4987-a3b6-94d02165cf1c" width="500" /> |
 | :-----------------------------------------: | :-----------------------------------------: |
 |                 Home                    |               Lists                   |
 
-| <img src="https://github.com/user-attachments/assets/91a077d6-10ed-46a3-af85-9576b21824cd" width="500" /> | <img src="https://github.com/user-attachments/assets/6de5cc3d-bf77-4b0d-90f3-71d33e62bf5f" width="500" /> |
+| <img src="https://github.com/user-attachments/assets/4869c2d1-9169-4d98-874b-5c6411c0b20d" width="500" /> | <img src="https://github.com/user-attachments/assets/624eb94c-21c5-4b59-ba1a-e17bc931d0c8" width="500" /> |
 | :-----------------------------------------: | :-----------------------------------------: |
 |               Discover                  |               History                   |
 
-| <img src="https://github.com/user-attachments/assets/613761d3-7ca5-4071-8c11-2aa51eba208f"  width="500" /> | <img src="https://github.com/user-attachments/assets/6b44aaec-4d52-40d6-99e1-08089493c9f5" width="500" /> |
+| <img src="https://github.com/user-attachments/assets/795d67aa-09a0-4725-98d8-1040dc5e53de"  width="500" /> | <img src="https://github.com/user-attachments/assets/0b9b0b98-fa7a-4942-9d0a-c2ede86c86ee" width="500" /> |
 | :-----------------------------------------: | :-----------------------------------------: |
 |               Details                  |               Edit                   |
 
