@@ -23,7 +23,7 @@ This is the self-hosted media tracker app I always wanted to have. From now on I
 | :-----------------------------------------: | :-----------------------------------------: |
 |               Discover                  |               History                   |
 
-| <img src="https://github.com/user-attachments/assets/795d67aa-09a0-4725-98d8-1040dc5e53de"  width="500" /> | <img src="https://github.com/user-attachments/assets/0b9b0b98-fa7a-4942-9d0a-c2ede86c86ee" width="500" /> |
+| <img src="https://github.com/user-attachments/assets/795d67aa-09a0-4725-98d8-1040dc5e53de"  width="500" /> | <img src="https://github.com/user-attachments/assets/2e742662-2f66-4932-9550-a8e4df2dbe2d" width="500" /> |
 | :-----------------------------------------: | :-----------------------------------------: |
 |               Details                  |               Edit                   |
 
