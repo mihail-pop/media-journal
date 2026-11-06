@@ -445,12 +445,22 @@ table select {
   background: var(--bg-quaternary);
 }
 
-table td:last-child .save-btn {
-  float: left;
+#api-keys th:last-child {
+  text-align: center;
 }
 
-table td:last-child .delete-btn {
-  float: right;
+.api-key-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(4.5rem, 1fr));
+  gap: 0.5rem;
+}
+
+.api-key-actions button {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 2rem;
+  padding: 0.4rem 0.6rem;
+  white-space: nowrap;
 }
 
 .backup-actions {
@@ -1248,10 +1258,6 @@ table td:last-child .delete-btn {
 }
 
 @media (orientation: portrait) {
-  .live-search-types { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; }
-  .live-search-type { font-size: 1.5rem; padding: 1rem 0.5rem; }
-  .live-search-icon, .live-search-icon svg { width: 2.5rem; height: 2.5rem; }
-  .live-search-provider { font-size: 1rem; }
   .live-search-help { font-size: 1.2rem; }
 
   #backup-modal-title,
@@ -1345,6 +1351,16 @@ table td:last-child .delete-btn {
   table select {
     font-size: 0.7rem;
     padding: 2px 4px;
+  }
+
+  .api-key-actions {
+    grid-template-columns: minmax(4.5rem, 1fr);
+    gap: 0.4rem;
+  }
+
+  .api-key-actions button {
+    min-height: 2.5rem;
+    font-size: 0.85rem;
   }
 
   .info-bottom-row {
@@ -1494,12 +1510,6 @@ table td:last-child .delete-btn {
 }
 .card-overlay-type button:hover { background: var(--hover-bg); }
 .card-overlay-type button[aria-pressed="true"] { border-color: var(--special-color); color: var(--text-secondary); }
-@media (orientation: portrait) {
-  .card-overlay-types { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem; }
-  .card-overlay-heading { font-size: 1.5rem; }
-  .card-overlay-icon svg { width: 2rem; height: 2rem; }
-  .card-overlay-type button { font-size: 1.3rem; padding: 0.75rem 0.5rem; }
-}
 
 .share-favorites-section { grid-column: 1 / -1; min-width: 0; }
 .share-favorite-sections { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 0.75rem; }
@@ -1539,10 +1549,118 @@ table td:last-child .delete-btn {
 .favorites-export-status { text-align: left; margin: 1rem 0 0; line-height: 1.5; }
 #export-favorites-btn:disabled { opacity: 0.6; cursor: default; }
 @media (orientation: portrait) {
-  .share-favorite-sections { gap: 1rem; }
-  .share-option-body, .share-format-option > span { font-size: 1.4rem; padding: 0.8rem 1rem; }
-  .share-export-layout { grid-template-columns: 1fr; gap: 1.5rem; }
-  #export-favorites-btn { justify-self: end; }
-  .share-sections-fieldset legend, .share-format-options legend { font-size: 1.2rem; }
-  .favorites-export-status { font-size: 1.3rem; }
+  /* Settings already scales up in portrait; keep these controls within that layout. */
+  .live-search-types {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.65rem;
+  }
+
+  .live-search-type {
+    min-height: 7rem;
+    padding: 0.75rem 0.5rem;
+    gap: 0.4rem;
+    font-size: 1.05rem;
+    line-height: 1.3;
+  }
+
+  .live-search-icon,
+  .live-search-icon svg {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+
+  .live-search-provider {
+    font-size: 0.8rem;
+    text-align: center;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .live-search-section .live-search-help,
+  .card-overlay-section .live-search-help {
+    margin-top: 1rem;
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
+  .card-overlay-types {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.25rem;
+  }
+
+  .card-overlay-type {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
+  }
+
+  .card-overlay-heading {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+    min-height: 1.75rem;
+    font-size: 1.05rem;
+  }
+
+  .card-overlay-icon svg { width: 1.5rem; height: 1.5rem; }
+
+  .card-overlay-type button {
+    min-width: 0;
+    min-height: 3rem;
+    padding: 0.6rem 0.35rem;
+    font-size: 0.95rem;
+    line-height: 1.35;
+  }
+
+  .share-export-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.25rem;
+  }
+
+  .share-export-options {
+    align-items: stretch;
+    gap: 1.25rem;
+  }
+
+  .share-favorite-sections {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.65rem;
+  }
+
+  .share-section-option { display: block; min-width: 0; }
+  .share-format-option { flex: 1 1 0; min-width: 0; }
+
+  .share-option-body,
+  .share-format-option > span {
+    box-sizing: border-box;
+    min-height: 3rem;
+    height: 100%;
+    padding: 0.65rem 0.5rem;
+    font-size: 1rem;
+    line-height: 1.3;
+  }
+
+  .share-option-body { justify-content: space-between; gap: 0.4rem; }
+  .share-option-body > span:first-child { min-width: 0; overflow-wrap: anywhere; }
+  .share-section-count { flex-shrink: 0; }
+
+  .share-sections-fieldset legend,
+  .share-format-options legend {
+    margin-bottom: 0.65rem;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  .share-favorites-section .preference-toggle-label { width: 100%; max-width: none; }
+  .share-favorites-section .preference-toggle-content { box-sizing: border-box; min-height: 3rem; }
+
+  #export-favorites-btn {
+    justify-self: stretch;
+    width: 100%;
+    min-width: 0;
+    min-height: 3rem;
+    font-size: 1.05rem;
+  }
+
+  .favorites-export-status { font-size: 0.9rem; overflow-wrap: anywhere; }
 }

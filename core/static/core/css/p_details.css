@@ -1299,41 +1299,6 @@ img.poster[src*="placeholder"] {
   bottom: calc(var(--screenshot-date-bottom, 1.5rem) + var(--screenshot-date-height, 70px) + 0.75rem);
 }
 
-@media (orientation: portrait) {
-  .screenshot-date-control {
-    width: 3rem;
-    height: 3rem;
-  }
-
-  .screenshot-date-control.is-expanded {
-    width: auto;
-    height: 100px;
-    padding: 0 2rem;
-    font-size: 2rem;
-  }
-
-  .screenshot-overlay {
-    --screenshot-date-height: 140px;
-    --screenshot-date-bottom: 3.5rem;
-  }
-
-  .screenshot-overlay .screenshot-date-control.is-expanded {
-    font-size: 2.5rem;
-  }
-
-  .screenshot-overlay:fullscreen {
-    --screenshot-date-height: 100px;
-  }
-
-  .screenshot-overlay:fullscreen .screenshot-date-control.is-expanded {
-    font-size: 2rem;
-  }
-
-  .screenshot-overlay.has-screenshot-date:not(.screenshot-date-expanded) .screenshot-zoom-reset {
-    left: 3.75rem;
-  }
-}
-
 .screenshot-overlay {
   position: fixed;
   top: 0;
@@ -1467,14 +1432,6 @@ img.poster[src*="placeholder"] {
     opacity: 1;
     visibility: visible;
     pointer-events: auto;
-  }
-}
-
-@media (orientation: portrait) {
-  .screenshot-crop-btn {
-    width: 5rem;
-    height: 5rem;
-    padding: 0.6rem;
   }
 }
 
@@ -4110,146 +4067,199 @@ select.single-unit ~ .select-arrow {
     min-height: 115px;
   }
 
-  .rotator-btn {
-    font-size: 7rem;
-    width: 100px;
-    height: 140px;
+  /* Share one compact layout between the page and both fullscreen modes. */
+  .screenshot-rotator,
+  .screenshot-overlay {
+    --screenshot-control-size: clamp(44px, 10vw, 100px);
+    --screenshot-control-gap: clamp(6px, 1vw, 12px);
+    --screenshot-control-inset: clamp(12px, 2.5vw, 24px);
+    --screenshot-control-step: calc(var(--screenshot-control-size) + var(--screenshot-control-gap));
+    --screenshot-control-top: max(var(--screenshot-control-inset), env(safe-area-inset-top, 0px));
+    --screenshot-control-right: max(var(--screenshot-control-inset), env(safe-area-inset-right, 0px));
+    --screenshot-control-bottom: max(var(--screenshot-control-inset), env(safe-area-inset-bottom, 0px));
+    --screenshot-control-left: max(var(--screenshot-control-inset), env(safe-area-inset-left, 0px));
   }
 
-  .screenshot-overlay .rotator-btn {
-    bottom: 10rem;
-    top: unset;
+  :is(.screenshot-rotator, .screenshot-overlay) > :is(.delete-screenshot-btn, .autoplay-screenshot-btn, .download-screenshot-btn, .favorite-screenshot-btn, .fullscreen-screenshot-btn) {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--screenshot-control-size);
+    height: var(--screenshot-control-size);
+    margin: 0;
+    padding: 0;
+    top: var(--screenshot-control-top);
+    bottom: auto;
+    right: var(--screenshot-control-right);
+    touch-action: manipulation;
   }
 
-  .fullscreen-screenshot-btn svg,
-  .favorite-screenshot-btn svg,
-  .download-screenshot-btn svg,
-  .autoplay-screenshot-btn svg {
-    width: 5rem;
-    height: 5rem;
+  .screenshot-rotator > button,
+  .screenshot-rotator > .rotator-btn {
+    opacity: 1;
+    pointer-events: auto;
   }
 
-  .autoplay-screenshot-btn {
-    top: 5.5rem;
+  :is(.screenshot-rotator, .screenshot-overlay) > .delete-screenshot-btn {
+    font-size: calc(var(--screenshot-control-size) * 1.2);
+    line-height: 1;
   }
 
-  .screenshot-overlay .autoplay-screenshot-btn svg {
-    width: 120px;
-    height: 120px;
+  :is(.screenshot-rotator, .screenshot-overlay) > .autoplay-screenshot-btn {
+    right: calc(var(--screenshot-control-right) + var(--screenshot-control-step));
   }
 
-  .autoplay-screenshot-btn,
-  .favorite-screenshot-btn,
-  .download-screenshot-btn,
-  .fullscreen-screenshot-btn {
-    width: 100px;
-    height: 100px;
+  :is(.screenshot-rotator, .screenshot-overlay) > .download-screenshot-btn {
+    right: calc(var(--screenshot-control-right) + 2 * var(--screenshot-control-step));
   }
 
-  .delete-screenshot-btn {
-    top: -0.5rem;
-    right: 2rem;
-    font-size: 7rem;
+  :is(.screenshot-rotator, .screenshot-overlay) > .favorite-screenshot-btn {
+    right: calc(var(--screenshot-control-right) + 3 * var(--screenshot-control-step));
   }
 
-  .screenshot-overlay .autoplay-screenshot-btn {
-    bottom: 12.5rem;
-    width: 140px;
-    height: 140px;
-    margin-right: 9rem;
-    top: unset;
+  :is(.screenshot-rotator, .screenshot-overlay) > .autoplay-screenshot-btn.no-delete {
+    top: var(--screenshot-control-top);
+    right: var(--screenshot-control-right);
   }
 
-  .screenshot-overlay .delete-screenshot-btn {
-    bottom: 2rem;
-    font-size: 160px;
-    margin-right: 18rem;
-    top: unset;
+  :is(.screenshot-rotator, .screenshot-overlay) > .download-screenshot-btn.no-delete,
+  :is(.screenshot-rotator, .screenshot-overlay).single-screenshot > .download-screenshot-btn {
+    top: var(--screenshot-control-top);
+    right: calc(var(--screenshot-control-right) + var(--screenshot-control-step));
   }
 
-  .screenshot-rotator .autoplay-screenshot-btn.no-delete {
-    top: 0.5rem;
-    right: 2rem;
+  :is(.screenshot-rotator, .screenshot-overlay).single-screenshot > .favorite-screenshot-btn {
+    right: calc(var(--screenshot-control-right) + 2 * var(--screenshot-control-step));
   }
 
-  .screenshot-overlay .autoplay-screenshot-btn.no-delete {
-    top: unset;
-    bottom: 10rem;
-    margin-right: 18rem;
+  :is(.screenshot-rotator, .screenshot-overlay).single-screenshot > .download-screenshot-btn.no-delete {
+    right: var(--screenshot-control-right);
   }
 
-  .screenshot-rotator .download-screenshot-btn {
-    top: 11.5rem;
+  :is(.screenshot-rotator, .screenshot-overlay) > :is(.autoplay-screenshot-btn, .download-screenshot-btn, .favorite-screenshot-btn, .fullscreen-screenshot-btn) svg {
+    width: 80%;
+    height: 80%;
   }
 
-  .screenshot-rotator .download-screenshot-btn.no-delete {
-    top: 6.5rem;
-    right: 2rem;
+  :is(.screenshot-rotator, .screenshot-overlay) > .fullscreen-screenshot-btn {
+    top: auto;
+    bottom: var(--screenshot-control-bottom);
   }
 
-  .screenshot-overlay .download-screenshot-btn {
-    top: unset;
-    bottom: 4rem;
-    width: 140px;
-    height: 140px;
-    margin-right: 9rem;
+  :is(.screenshot-rotator, .screenshot-overlay) > .rotator-btn {
+    top: 50%;
+    bottom: auto;
+    width: var(--screenshot-control-size);
+    height: calc(var(--screenshot-control-size) * 1.25);
+    font-size: calc(var(--screenshot-control-size) * 1.1);
+    padding: 0 0 0.1em;
   }
 
-  .screenshot-overlay .download-screenshot-btn.no-delete {
-    bottom: 1.5rem;
-    margin-right: 18rem;
+  :is(.screenshot-rotator, .screenshot-overlay) > .rotator-btn.left {
+    left: var(--screenshot-control-left);
   }
 
-  .screenshot-overlay .download-screenshot-btn svg {
-    width: 120px;
-    height: 120px;
+  :is(.screenshot-rotator, .screenshot-overlay) > .rotator-btn.right {
+    right: var(--screenshot-control-right);
   }
 
-  .screenshot-rotator .favorite-screenshot-btn {
-    top: 18rem;
+  /* Reserve space below the fullscreen image for navigation and the bottom controls. */
+  .screenshot-overlay .screenshot-zoom-stage {
+    bottom: calc(var(--screenshot-control-bottom) + 2.25 * var(--screenshot-control-size) + 2 * var(--screenshot-control-gap));
   }
 
-  .screenshot-overlay.has-screenshot-favorites .autoplay-screenshot-btn {
-    bottom: 21.5rem;
+  .screenshot-overlay > .rotator-btn {
+    box-sizing: border-box;
+    top: auto;
+    bottom: calc(var(--screenshot-control-bottom) + var(--screenshot-control-step));
+    transform: none;
   }
 
-  .screenshot-overlay.has-screenshot-favorites .download-screenshot-btn {
-    bottom: 13rem;
+  .screenshot-overlay > .rotator-btn.left {
+    left: calc(50% - var(--screenshot-control-size) - var(--screenshot-control-gap) / 2);
   }
 
-  .screenshot-overlay .favorite-screenshot-btn {
-    top: unset;
-    right: 2rem;
-    bottom: 4rem;
-    width: 140px;
-    height: 140px;
-    margin-right: 9rem;
+  .screenshot-overlay > .rotator-btn.right {
+    right: calc(50% - var(--screenshot-control-size) - var(--screenshot-control-gap) / 2);
   }
 
-  .screenshot-overlay .favorite-screenshot-btn svg {
-    width: 120px;
-    height: 120px;
+  /* Keep secondary actions directly accessible in a second row in portrait. */
+  :is(.screenshot-rotator, .screenshot-overlay) .screenshot-favorite-options {
+    top: calc(var(--screenshot-control-top) + var(--screenshot-control-step)) !important;
+    right: auto !important;
+    left: var(--screenshot-control-left);
+    transform: none;
+    padding: 0;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+
+  .screenshot-overlay .screenshot-crop-options {
+    top: calc(var(--screenshot-control-top) + var(--screenshot-control-step)) !important;
+    right: var(--screenshot-control-right) !important;
+    transform: none;
+    padding: 0;
+    gap: var(--screenshot-control-gap);
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+
+  .screenshot-crop-btn {
+    box-sizing: border-box;
+    width: var(--screenshot-control-size);
+    height: var(--screenshot-control-size);
+    padding: calc(var(--screenshot-control-size) * 0.18);
   }
 
   .screenshot-favorites-filter {
-    font-size: 2rem;
+    min-height: var(--screenshot-control-size);
+    padding: 0 var(--screenshot-control-inset);
+    font-size: clamp(14px, 3.2vw, 32px);
   }
 
-
-  .screenshot-overlay .fullscreen-screenshot-btn {
-    width: 140px;
-    height: 140px;
-    margin-bottom: 2rem;
+  .screenshot-overlay,
+  .screenshot-overlay:fullscreen {
+    --screenshot-date-height: var(--screenshot-control-size);
+    --screenshot-date-bottom: var(--screenshot-control-bottom);
   }
 
-  .screenshot-overlay .fullscreen-screenshot-btn svg {
-    width: 120px;
-    height: 120px;
+  :is(.screenshot-rotator, .screenshot-overlay) .screenshot-date-control {
+    width: clamp(24px, 5vw, 48px);
+    height: clamp(24px, 5vw, 48px);
   }
 
-  .screenshot-overlay .rotator-btn {
-    font-size: 7rem;
-    height: 150px;
+  :is(.screenshot-rotator, .screenshot-overlay) .screenshot-date-control.is-expanded {
+    left: var(--screenshot-control-left);
+    bottom: var(--screenshot-control-bottom);
+    width: auto;
+    max-width: calc(100% - var(--screenshot-control-left) - var(--screenshot-control-right) - var(--screenshot-control-step));
+    height: var(--screenshot-control-size);
+    padding: 0 var(--screenshot-control-inset);
+    font-size: clamp(14px, 3.2vw, 32px);
+  }
+
+  .screenshot-date-pill {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .screenshot-overlay .screenshot-zoom-reset {
+    left: var(--screenshot-control-left);
+    bottom: var(--screenshot-control-bottom);
+    padding: 0.5em 0.75em;
+    font-size: clamp(14px, 3.2vw, 32px);
+  }
+
+  .screenshot-overlay.has-screenshot-date:not(.screenshot-date-expanded) .screenshot-zoom-reset {
+    left: calc(var(--screenshot-control-left) + clamp(24px, 5vw, 48px));
+  }
+
+  .screenshots-resize-handle {
+    width: clamp(36px, 6vw, 64px);
+    height: clamp(36px, 6vw, 64px);
   }
 
   .relation-item:hover .relation-hover-img-container {

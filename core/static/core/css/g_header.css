@@ -486,7 +486,8 @@ body.music-player-scroll-locked {
 }
 
 
-.header-toggle-btn {
+.header-toggle-btn,
+.header-menu-popup {
   display: none;
 }
 
@@ -511,7 +512,7 @@ body.music-player-scroll-locked {
 
   .header-menu-popup {
     position: fixed;
-    bottom: -35rem;
+    bottom: 140px;
     right: 40px;
     z-index: 999;
     width: 30rem;
@@ -519,10 +520,13 @@ body.music-player-scroll-locked {
     border-radius: 20px;
     padding: 1.5rem;
     backdrop-filter: blur(10px);
+    max-height: calc(100vh - 180px - 3rem);
+    max-height: calc(100dvh - 180px - 3rem);
+    overflow-y: auto;
   }
 
   .header-menu-popup.header-menu-visible {
-    bottom: 140px;
+    display: block;
   }
 
   .header-menu-grid {

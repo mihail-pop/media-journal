@@ -393,8 +393,10 @@
               <td><input type="password" class="key-1 api-key-input" value="{{ key.key_1 }}" data-value="{{ key.key_1 }}" /></td>
               <td><input type="password" class="key-2 api-key-input" value="{{ key.key_2 }}" data-value="{{ key.key_2 }}" /></td>
               <td>
-                <button class="save-btn">Save</button>
-                <button class="delete-btn">Delete</button>
+                <div class="api-key-actions">
+                  <button class="save-btn">Save</button>
+                  <button class="delete-btn">Delete</button>
+                </div>
               </td>
             </tr>
             {% endfor %}

@@ -504,92 +504,82 @@ function createPlayer(videoId, startTime = 0, startPaused = false) {
       .mp-fullscreen #mp-history { z-index: 10; pointer-events: auto; }
       .mp-fullscreen .mp-btn svg { width: 32px; height: 32px; }
       
-      /* Mobile Portrait Fullscreen (holding phone straight): 2-row layout with big buttons */
-      .mp-fullscreen.mp-portrait #mp-controls {
-          width: 92vw !important;
-          max-width: 420px !important;
+      /* Scale for both the app's wide mobile viewport and the pop-out's device viewport. */
+      .mp-portrait {
+          --mp-button-size: clamp(44px, 11.5vw, 112px);
+          --mp-control-gap: clamp(4px, 1vw, 10px);
+          --mp-control-padding: clamp(6px, 1.5vw, 14px);
+          --mp-history-font-size: calc(var(--mp-button-size) * 0.34);
+          position: relative;
+      }
+      .mp-portrait #mp-left { min-width: 0; }
+      .mp-portrait #mp-controls {
+          display: grid;
+          grid-template-columns: repeat(5, minmax(0, 1fr));
+          grid-template-areas: "favorite details history popout close" "size previous play next fullscreen";
+          gap: var(--mp-control-gap);
+          justify-items: center;
+          align-items: center;
+          box-sizing: border-box;
+          min-width: calc(5 * var(--mp-button-size) + 4 * var(--mp-control-gap) + 2 * var(--mp-control-padding));
           height: auto !important;
-          min-height: 110px !important;
-          padding: 12px 16px !important;
-          border-radius: 20px !important;
-          bottom: 0.5rem !important;
-          display: flex !important;
-          flex-wrap: wrap !important;
-          justify-content: space-between !important;
-          align-items: center !important;
-          row-gap: 12px !important;
+          padding: var(--mp-control-padding);
       }
-      .mp-fullscreen.mp-portrait .mp-ctrl-group:not(.mp-ctrl-center) {
-          order: 1 !important;
-          flex: 0 0 auto !important;
-          display: flex !important;
-          gap: 14px !important;
+      .mp-portrait .mp-ctrl-group,
+      .mp-portrait:not(.mp-popout) .mp-size-menu,
+      .mp-portrait:not(.mp-popout) .mp-size-popover { display: contents; }
+      .mp-portrait .mp-btn {
+          box-sizing: border-box;
+          width: var(--mp-button-size);
+          height: var(--mp-button-size);
+          padding: 0;
+          line-height: 1;
+          touch-action: manipulation;
       }
-      .mp-fullscreen.mp-portrait .mp-ctrl-group:not(.mp-ctrl-center) .mp-btn svg {
-          width: 28px !important;
-          height: 28px !important;
+      .mp-portrait .mp-btn svg { width: 60%; height: 60%; }
+      .mp-portrait #mp-playpause svg { width: 72%; height: 72%; }
+      .mp-portrait #mp-heart { grid-area: favorite; }
+      .mp-portrait #mp-info { grid-area: details; }
+      .mp-portrait #mp-toggle-hist { grid-area: history; }
+      .mp-portrait #mp-expand { grid-area: size; }
+      .mp-portrait #mp-prev { grid-area: previous; }
+      .mp-portrait #mp-playpause { grid-area: play; }
+      .mp-portrait #mp-next { grid-area: next; }
+      .mp-portrait #mp-fullscreen { grid-area: fullscreen; }
+      .mp-portrait #mp-close { grid-area: close; }
+      .mp-portrait #mp-dock { grid-area: dock; }
+      .mp-portrait #mp-popout { grid-area: popout; background: transparent; padding: 0; }
+      .mp-portrait #mp-popout:hover { background: rgba(255,255,255,0.2); }
+      .mp-portrait #mp-popout span { display: none; }
+      .mp-portrait.mp-popout #mp-controls {
+          grid-template-areas: "favorite details history dock close" ". previous play next .";
       }
-      .mp-fullscreen.mp-portrait .mp-ctrl-group.mp-ctrl-center {
-          order: 2 !important;
-          flex: 0 0 100% !important;
-          width: 100% !important;
-          display: flex !important;
-          justify-content: center !important;
-          gap: 40px !important;
-          padding-top: 4px !important;
+      .mp-portrait #mp-history {
+          position: absolute;
+          top: var(--mp-controls-height);
+          right: 0;
+          bottom: 0;
+          width: min(85%, calc(6 * var(--mp-button-size)));
+          max-height: none;
+          z-index: 15;
+          line-height: 1.4;
       }
-      .mp-fullscreen.mp-portrait .mp-ctrl-group.mp-ctrl-center .mp-btn svg {
-          width: 46px !important;
-          height: 46px !important;
+      .mp-portrait .history-item {
+          box-sizing: border-box;
+          min-height: var(--mp-button-size);
+          padding: calc(var(--mp-button-size) * 0.18);
+          font-size: var(--mp-history-font-size);
       }
-      .mp-fullscreen.mp-portrait #mp-playpause svg {
-          width: 56px !important;
-          height: 56px !important;
+      .mp-fullscreen.mp-portrait #mp-controls {
+          width: 94vw;
+          max-width: calc(7 * var(--mp-button-size) + 6 * var(--mp-control-gap) + 2 * var(--mp-control-padding));
+          bottom: max(var(--mp-control-padding), env(safe-area-inset-bottom, 0px));
       }
-
-      /* Fallback native media query */
-      @media (orientation: portrait) {
-          .mp-fullscreen #mp-controls {
-              width: 92vw !important;
-              max-width: 420px !important;
-              height: auto !important;
-              min-height: 110px !important;
-              padding: 12px 16px !important;
-              border-radius: 20px !important;
-              bottom: 0.5rem !important;
-              display: flex !important;
-              flex-wrap: wrap !important;
-              justify-content: space-between !important;
-              align-items: center !important;
-              row-gap: 12px !important;
-          }
-          .mp-fullscreen .mp-ctrl-group:not(.mp-ctrl-center) {
-              order: 1 !important;
-              flex: 0 0 auto !important;
-              display: flex !important;
-              gap: 14px !important;
-          }
-          .mp-fullscreen .mp-ctrl-group:not(.mp-ctrl-center) .mp-btn svg {
-              width: 28px !important;
-              height: 28px !important;
-          }
-          .mp-fullscreen .mp-ctrl-group.mp-ctrl-center {
-              order: 2 !important;
-              flex: 0 0 100% !important;
-              width: 100% !important;
-              display: flex !important;
-              justify-content: center !important;
-              gap: 40px !important;
-              padding-top: 4px !important;
-          }
-          .mp-fullscreen .mp-ctrl-group.mp-ctrl-center .mp-btn svg {
-              width: 46px !important;
-              height: 46px !important;
-          }
-          .mp-fullscreen #mp-playpause svg {
-              width: 56px !important;
-              height: 56px !important;
-          }
+      .mp-fullscreen.mp-portrait #mp-history {
+          top: auto;
+          right: var(--mp-control-padding);
+          bottom: calc(var(--mp-controls-height) + 2 * var(--mp-control-padding) + env(safe-area-inset-bottom, 0px));
+          max-height: 50vh;
       }
     </style>
     <div id="mp-wrapper">
@@ -746,6 +736,9 @@ function updateContainerSize() {
     if (wrapper) {
         wrapper.classList.toggle('mp-portrait', isMobilePortrait);
     }
+
+    const portraitControlsStyle = isMobilePortrait && controlsEl ? getComputedStyle(controlsEl) : null;
+    const portraitControlsHeight = portraitControlsStyle ? Math.ceil(controlsEl.getBoundingClientRect().height) : 0;
     
     if (historyEl) {
         historyEl.style.display = showHist ? 'flex' : 'none';
@@ -777,15 +770,22 @@ function updateContainerSize() {
         if (wrapper) wrapper.classList.remove('mp-fullscreen');
         let w = (isExpanded ? 480 : 384) * scale;
         let h = (isExpanded ? 270 : 216) * scale;
-        let hw = showHist ? (200 * scale) : 0;
-        let ch = 40 * scale;
+        const hw = showHist && !isMobilePortrait ? 200 * scale : 0;
+        const ch = portraitControlsHeight || 40 * scale;
+
+        if (portraitControlsStyle) {
+            const minimumWidth = parseFloat(portraitControlsStyle.minWidth) || 0;
+            const padding = parseFloat(portraitControlsStyle.paddingLeft) || 0;
+            w = Math.min(Math.max(w, minimumWidth), Math.max(1, window.innerWidth - 2 * padding));
+            h = w * 9 / 16;
+        }
         
         container.style.setProperty('width', (w + hw) + 'px', 'important');
         container.style.setProperty('height', (h + ch) + 'px', 'important');
         container.style.setProperty('border-radius', '8px', 'important');
         container.style.setProperty('z-index', '9999', 'important');
         
-        if (historyEl) historyEl.style.width = showHist ? (hw + 'px') : '0';
+        if (historyEl) historyEl.style.width = isMobilePortrait ? '' : showHist ? (hw + 'px') : '0';
         if (controlsEl) controlsEl.style.height = ch + 'px';
         
         if (isMobilePortrait) {
@@ -800,6 +800,10 @@ function updateContainerSize() {
             container.style.setProperty('right', 'auto', 'important');
         }
         restoreMusicPlayerPosition(container);
+    }
+
+    if (isMobilePortrait && wrapper && controlsEl) {
+        wrapper.style.setProperty('--mp-controls-height', Math.ceil(controlsEl.getBoundingClientRect().height) + 'px');
     }
     
     // Dynamic Tooltips and Icons injection
@@ -947,7 +951,7 @@ function renderHistoryList() {
         const titleText = item.title || ('Track ' + item.video_id); 
         
         div.innerHTML = `
-            <div style="width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; line-height: 1.5; color: inherit;" title="${titleText}">
+            <div style="width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--mp-history-font-size, 13px); line-height: 1.5; color: inherit;" title="${titleText}">
                 ${titleText}
             </div>
         `;

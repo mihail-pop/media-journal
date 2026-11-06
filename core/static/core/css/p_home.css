@@ -1723,11 +1723,27 @@ a.all-collections-btn:hover {
   }
 
   .separator-bar {
+    position: relative;
     height: 6rem;
     justify-content: center;
     
     align-items: center;
     
+  }
+
+  .separator-bar .music-player-btn {
+    position: absolute;
+    right: 1.5rem;
+    bottom: calc(100% + 1.5rem);
+    z-index: 2;
+    background: var(--bg-tertiary) !important;
+    border-radius: 20%;
+  }
+
+  .separator-bar .music-player-btn .music-icon {
+    width: 3rem;
+    height: 3rem;
+    border: none;
   }
 
   .notifications-button,
@@ -1833,8 +1849,8 @@ a.all-collections-btn:hover {
   }
 
   .card[data-media-type="music"] .card-image img {
+    transform: translateX(-22.1%);
     height: unset;
-    width: 210%;
   }
 
   .card[data-media-type="music"] a {
