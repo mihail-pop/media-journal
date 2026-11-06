@@ -578,13 +578,21 @@ class RefreshTask(threading.Thread):
     def run(self):
         self.status = "running"
         self.start_processing_time = time.time()
+        acquired = False
         try:
+            close_old_connections()
+            acquired = BACKUP_LOCK.acquire(blocking=False)
+            if not acquired:
+                raise ValueError("Another backup, restore, refresh or CSV transfer is already running.")
             self.do_refresh()
         except Exception as e:
             self.status = "error"
             self.error = str(e)
             logger.error(f"Refresh task error: {e}")
         finally:
+            if acquired:
+                BACKUP_LOCK.release()
+            close_old_connections()
             if self.status == "running":
                 self.status = "completed"
                 self.progress = 100

@@ -12,8 +12,8 @@ IGDB_ACCESS_TOKEN = None
 IGDB_TOKEN_EXPIRY = 0
 
 
-def save_igdb_item(igdb_id):
-    token = get_igdb_token()
+def save_igdb_item(igdb_id, *, http=None, prepare_only=False):
+    token = get_igdb_token(http=http)
     if not token:
         raise Exception("Failed to get IGDB access token.")
 
@@ -36,7 +36,7 @@ def save_igdb_item(igdb_id):
     where id = {igdb_id};
     """
 
-    response = requests.post(
+    response = (http or requests).post(
         "https://api.igdb.com/v4/games", headers=headers, data=query
     )
     if response.status_code != 200:
@@ -134,7 +134,7 @@ def save_igdb_item(igdb_id):
     ]
 
     # Save to DB
-    item = MediaItem.objects.create(
+    item_data = dict(
         title=title,
         media_type="game",
         source="igdb",
@@ -149,6 +149,9 @@ def save_igdb_item(igdb_id):
         genres=genres,
         creators=creators,
     )
+    if prepare_only:
+        return {"item": item_data, "screenshots": local_screenshots}
+    item = MediaItem.objects.create(**item_data)
 
     from core.models import Screenshot
     Screenshot.objects.bulk_create([
@@ -164,7 +167,7 @@ def save_igdb_item(igdb_id):
     return JsonResponse({"success": True, "message": "Game added to list"})
 
 
-def get_igdb_token():
+def get_igdb_token(*, http=None):
     global IGDB_ACCESS_TOKEN, IGDB_TOKEN_EXPIRY
 
     if IGDB_ACCESS_TOKEN and IGDB_TOKEN_EXPIRY > time.time():
@@ -182,7 +185,7 @@ def get_igdb_token():
         "grant_type": "client_credentials",
     }
 
-    resp = requests.post(url, params=params)
+    resp = (http or requests).post(url, params=params)
     if resp.status_code != 200:
         return None
 

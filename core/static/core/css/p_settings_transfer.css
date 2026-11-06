@@ -1,0 +1,57 @@
+#transfer .transfer-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem; }
+#transfer .transfer-section { min-width: 0; text-align: left; }
+#transfer .transfer-wide { grid-column: 1 / -1; }
+#transfer [hidden] { display: none !important; }
+#transfer .transfer-help { color: var(--text-primary); font-size: .9rem; line-height: 1.5; margin: 0 0 1rem; }
+#transfer .transfer-note { margin: 0; text-align: center; }
+#transfer .transfer-options { display: flex; flex-wrap: wrap; align-items: end; gap: 1rem; margin-bottom: 1rem; }
+#transfer .transfer-field { display: flex; flex-direction: column; gap: .5rem; font-weight: 600; min-width: 0; margin-bottom: 1rem; }
+#transfer .transfer-options .transfer-field { flex: 1 1 12rem; margin-bottom: 0; }
+#transfer :is(select, input[type="text"], input[type="file"]) { box-sizing: border-box; width: 100%; min-height: 2.6rem; padding: .6rem .75rem; border: 0; border-radius: 6px; color: var(--text-primary); background: var(--bg-tertiary); font: inherit; }
+#transfer :is(select, input):focus-visible { outline: 2px solid var(--text-secondary); outline-offset: 2px; }
+#transfer .transfer-types { display: flex; flex-wrap: wrap; gap: .75rem 1.2rem; padding: 0; border: 0; margin: 0 0 1.5rem; }
+#transfer .transfer-types legend { margin-bottom: .75rem; font-weight: 600; }
+#transfer .transfer-types label { display: inline-flex; gap: .5rem; align-items: center; cursor: pointer; }
+#transfer input[type="checkbox"] { accent-color: var(--text-secondary); width: 1rem; height: 1rem; }
+#transfer .transfer-actions { display: flex; align-items: center; flex-wrap: wrap; gap: .75rem; margin: 1rem 0; }
+#transfer .transfer-mapping-actions { justify-content: space-between; margin-bottom: 0; }
+#transfer .backup-btn { min-width: 0; margin: 0; text-decoration: none; font: inherit; }
+#transfer .backup-btn:disabled { background-color: var(--bg-tertiary); color: var(--text-secondary); border-color: var(--border-color); cursor: default; opacity: .5; }
+#transfer .transfer-progress { margin-top: 1.25rem; }
+#transfer .transfer-progress p { margin: .5rem 0; line-height: 1.5; overflow-wrap: anywhere; }
+#transfer .transfer-track { height: .6rem; overflow: hidden; border-radius: 999px; background: var(--bg-tertiary); }
+#transfer .transfer-bar { height: 100%; width: 0; background: var(--text-secondary); transition: width .2s ease; }
+#transfer .transfer-progress.is-error { color: #dc5159; }
+#transfer .transfer-table-wrap { overflow-x: auto; margin: 1rem 0; }
+#transfer .transfer-table { width: 100%; table-layout: fixed; border-collapse: collapse; }
+#transfer .transfer-table th, #transfer .transfer-table td { text-align: left; padding: .65rem; border-bottom: 1px solid var(--border-color); overflow-wrap: anywhere; }
+#transfer .transfer-table th { color: var(--text-secondary); }
+#transfer .transfer-table td:nth-child(2) { white-space: pre-wrap; font-size: .9rem; color: var(--text-primary); }
+#transfer .transfer-table td:nth-child(3) { width: 36%; }
+#transfer .transfer-value-group { flex: 1 1 18rem; min-width: 0; }
+#transfer .transfer-value-group h4 { margin: .5rem 0 1rem; }
+#transfer .transfer-value-group .transfer-field { margin-bottom: .75rem; overflow-wrap: anywhere; }
+#transfer .transfer-filter { max-width: 20rem; margin: 1.5rem 0 1rem; }
+#transfer .transfer-review-row { background: var(--bg-tertiary); padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
+#transfer .transfer-review-row h4 { margin: 0 0 .5rem; overflow-wrap: anywhere; }
+#transfer .transfer-row-meta { color: var(--text-primary); margin: .5rem 0; font-size: .9rem; }
+#transfer .transfer-candidates { display: flex; flex-wrap: wrap; gap: .75rem; }
+#transfer .transfer-candidate { display: flex; align-items: center; gap: .75rem; flex: 1 1 15rem; min-width: 0; background: var(--bg-secondary); border-radius: 6px; padding: .75rem; }
+#transfer .transfer-candidate img { width: 3.5rem; height: 5rem; object-fit: cover; border-radius: 4px; flex-shrink: 0; }
+#transfer .transfer-candidate div { min-width: 0; overflow-wrap: anywhere; }
+#transfer .transfer-candidate .backup-btn { margin-top: .5rem; padding: .4rem .75rem; }
+#transfer .transfer-search-again { display: flex; gap: .75rem; margin-top: .75rem; align-items: center; }
+#transfer .transfer-search-again input { flex: 1; min-width: 0; }
+#transfer .transfer-pagination { justify-content: center; }
+@media (orientation: portrait) {
+  #transfer .transfer-grid { grid-template-columns: minmax(0, 1fr); gap: 1.25rem; }
+  #transfer .transfer-options { gap: .75rem; }
+  #transfer .transfer-options .transfer-field { flex-basis: 100%; }
+  #transfer .backup-btn { min-height: 2.8rem; padding: .65rem .9rem; font-size: .95rem; }
+  #transfer .transfer-actions .backup-btn { flex: 1 1 auto; text-align: center; justify-content: center; }
+  #transfer .transfer-table { min-width: 36rem; }
+  #transfer .transfer-candidate { flex-basis: 100%; }
+  #transfer .transfer-search-again { flex-wrap: wrap; }
+  #transfer .transfer-search-again input { flex-basis: 100%; }
+  #transfer .transfer-search-again .backup-btn { flex: 1; }
+}

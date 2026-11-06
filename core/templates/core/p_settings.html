@@ -4,6 +4,7 @@
 {{ block.super }}
 <title>Settings - Media Journal</title>
 <link rel="stylesheet" href="/static/core/css/p_settings.css">
+<link rel="stylesheet" href="{% static 'core/css/p_settings_transfer.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -13,6 +14,7 @@
   <div class="settings-tabs">
     <button class="tab-button active" data-tab="preferences">Preferences</button>
     <button class="tab-button" data-tab="backup">Backup</button>
+    <button class="tab-button" data-tab="transfer">Transfer</button>
     <button class="tab-button" data-tab="api-keys">API Keys</button>
     <button class="tab-button" data-tab="refresh">Refresh</button>
     <button class="tab-button" data-tab="information">Information</button>
@@ -301,7 +303,7 @@
             </div>
           </label>
         </div>
-        <p class="live-search-help"><b>Include adult and erotic titles in search and Discover. Saved items are unaffected.</b></p>
+        <p class="live-search-help"><b>Include adult titles in search and Discover. Saved items are unaffected.</b></p>
       </div>
     </div>
   </div>
@@ -372,6 +374,8 @@
       </div>
     </div>
   </div>
+
+  {% include 'core/p_settings_transfer.html' %}
 
   <div class="tab-content" id="api-keys">
     <div class="preferences-container">
@@ -580,4 +584,5 @@
 {{ block.super }}
 <script src="{% static 'core/js/p_settings.js' %}"></script>
 <script src="{% static 'core/js/p_settings_extras.js' %}"></script>
+<script src="{% static 'core/js/p_settings_transfer.js' %}"></script>
 {% endblock %}

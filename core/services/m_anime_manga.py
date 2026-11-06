@@ -9,9 +9,9 @@ from core.models import MediaItem
 from core.services.g_utils import download_image
 
 
-def save_anilist_item(media_type, anilist_id=None, mal_id=None):
+def save_anilist_item(media_type, anilist_id=None, mal_id=None, *, http=None, prepare_only=False):
     try:
-        data = fetch_anilist_data(media_type, anilist_id=anilist_id, mal_id=mal_id)
+        data = fetch_anilist_data(media_type, anilist_id=anilist_id, mal_id=mal_id, http=http)
 
         canonical_id = data["anilist_id"]
         cache_bust = int(time.time() * 1000)
@@ -79,7 +79,7 @@ def save_anilist_item(media_type, anilist_id=None, mal_id=None):
             new_provider_ids["mal"] = str(data["mal_id"])
 
         # --- Save to DB
-        MediaItem.objects.create(
+        item_data = dict(
             title=data["title"],
             media_type=media_type,
             source="anilist",
@@ -96,6 +96,9 @@ def save_anilist_item(media_type, anilist_id=None, mal_id=None):
             genres=data["genres"],
             creators=data["creators"],
         )
+        if prepare_only:
+            return {"item": item_data}
+        MediaItem.objects.create(**item_data)
 
         return JsonResponse({"message": "Saved to your list."})
 
@@ -103,7 +106,7 @@ def save_anilist_item(media_type, anilist_id=None, mal_id=None):
         return JsonResponse({"error": f"Save failed: {str(e)}"})
 
 
-def fetch_anilist_data(media_type, anilist_id=None, mal_id=None):
+def fetch_anilist_data(media_type, anilist_id=None, mal_id=None, *, http=None):
     # Determine which ID to use for the query
     if anilist_id:
         id_field = "id"
@@ -210,7 +213,7 @@ def fetch_anilist_data(media_type, anilist_id=None, mal_id=None):
 
     headers = {"Content-Type": "application/json"}
 
-    response = requests.post(
+    response = (http or requests).post(
         "https://graphql.anilist.co",
         json={"query": query, "variables": variables},
         headers=headers,

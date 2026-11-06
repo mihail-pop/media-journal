@@ -54,7 +54,7 @@ def wait_for_rate_limit():
     last_request_time = time.time()
 
 
-def save_musicbrainz_item(recording_id):
+def save_musicbrainz_item(recording_id, *, http=None, prepare_only=False):
     wait_for_rate_limit()
 
     # Get recording details
@@ -66,7 +66,7 @@ def save_musicbrainz_item(recording_id):
 
     try:
         # Use our smart mb_session which will retry on 503/429
-        recording_response = mb_session.get(
+        recording_response = (http or mb_session).get(
             recording_url, params=recording_params, timeout=10
         )
         recording_response.raise_for_status()
@@ -360,7 +360,7 @@ def save_musicbrainz_item(recording_id):
                 pass
 
     # Save to database
-    item = MediaItem.objects.create(
+    item_data = dict(
         title=title,
         media_type="music",
         source="musicbrainz",
@@ -375,6 +375,9 @@ def save_musicbrainz_item(recording_id):
         genres=genres,
         creators=creators,
     )
+    if prepare_only:
+        return {"item": item_data, "music_videos": youtube_links}
+    item = MediaItem.objects.create(**item_data)
 
     from core.models import MusicVideo
     MusicVideo.objects.bulk_create([

@@ -1,4 +1,5 @@
 /data/db.sqlite3
+/data/transfer/
 __pycache__/
 *.pyc
 .env
