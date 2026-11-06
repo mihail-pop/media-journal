@@ -72,3 +72,6 @@ extra:
 
 extra_css:
   - stylesheets/custom.css
+
+extra_javascript:
+  - javascripts/screenshot-viewer.js
