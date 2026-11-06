@@ -15,7 +15,7 @@ This is the self-hosted media tracker app I always wanted to have. From now on I
 - Play saved songs through a YouTube music player while browsing the site.
 
 ## Demo - [Youtube Video](https://youtu.be/JXOvpvdVZpY?si=LIvj2CKixBAZ0Pp)
-| <img src="https://github.com/user-attachments/assets/48eed8b0-2a8d-4ce7-95fd-f86f391c6229" width="500" /> | <img src="https://github.com/user-attachments/assets/80cffc96-d54b-4987-a3b6-94d02165cf1c" width="500" /> |
+| <img src="https://github.com/user-attachments/assets/56ffa42a-ca27-486e-adb2-cc2796a8376d" width="500" /> | <img src="https://github.com/user-attachments/assets/80cffc96-d54b-4987-a3b6-94d02165cf1c" width="500" /> |
 | :-----------------------------------------: | :-----------------------------------------: |
 |                 Home                    |               Lists                   |
 
