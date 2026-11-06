@@ -1099,6 +1099,78 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#26-collections-page" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.6 Collections Page
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#27-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.7 Settings
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2.7 Settings">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#271-backups" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.7.1 Backups
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#272-csv-import-and-export" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.7.2 CSV Import and Export
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#273-share-favorites" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.7.3 Share Favorites
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#28-add-to-your-home-screen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.8 Add to Your Home Screen
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1643,6 +1715,78 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#26-collections-page" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.6 Collections Page
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#27-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.7 Settings
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2.7 Settings">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#271-backups" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.7.1 Backups
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#272-csv-import-and-export" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.7.2 CSV Import and Export
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#273-share-favorites" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.7.3 Share Favorites
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#28-add-to-your-home-screen" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.8 Add to Your Home Screen
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1672,11 +1816,13 @@
 <p>On this page I will describe how you can use the app and explain some of its meaningful functionalities and details.</p>
 <h2 id="1-media-items">1. Media Items<a class="headerlink" href="#1-media-items" title="Permanent link">#</a></h2>
 <h3 id="11-search-and-discover">1.1 Search and Discover<a class="headerlink" href="#11-search-and-discover" title="Permanent link">#</a></h3>
-<p>After you add your API keys you can start adding items. You can go to any list page from the header (like Movies) which will make the search bar symbol appear. The search bar automatically adapts to the page you are on. For example the TV shows page will open the search bar for TV shows, anime for anime and so on. </p>
+<p>After you add your API keys you can start adding items. The search button is available on every page. On a media list or details page it automatically selects that media type. On other pages, like Home or Settings, it remembers the last type you used.</p>
+<p>You can also change the media type using the dropdown attached to the search bar. Its options follow your navigation button order and leave out media types you have hidden in Settings.</p>
 <blockquote>
-<p><strong>Note:</strong> You can turn on live search next to the search bar so that results come as you type. Keep in mind this consumes extra API calls and might time you out.</p>
+<p><strong>Note:</strong> Live search is controlled per media type from Settings &gt; Preferences &gt; Live Search. Movies, TV shows and games have it enabled by default. Anime, manga, books and music start with it disabled to reduce API requests. You can always press Enter to search manually.</p>
 </blockquote>
 <p>Alternatively you can open the discover page from the home page. There you can just hover over an item and press the plus button to quickly add it. </p>
+<p>Discover has different sorting and filtering options for each media type. For games, the Free to Play filter can be combined with Top Rated or Upcoming, genres and any available release year filter.</p>
 <p>When using the search bar, clicking on an item will open its details page where you can press the add to my list button.</p>
 <h3 id="12-details-page">1.2 Details Page<a class="headerlink" href="#12-details-page" title="Permanent link">#</a></h3>
 <p>Each media type has different sections on its details page. You can rearrange them or hide them completely from Settings &gt; Preferences &gt; Details Page Sections.</p>
@@ -1688,21 +1834,30 @@
 <p><strong>Note:</strong> Both your notes and logs will appear under each media item when you use the Detailed List View on list pages.</p>
 </blockquote>
 <h4 id="122-cast-characters-section">1.2.2 Cast &amp; Characters Section<a class="headerlink" href="#122-cast-characters-section" title="Permanent link">#</a></h4>
-<p>Here you will see 8 actors or characters by default and you can see the rest with the load more button. When you hover over them you can favorite or unfavorite using the heart icon. There is also a search button here to search for any specific character or actor. This is the only place in the app where you can search for them.</p>
+<p>Here you will see 8 people or characters by default and you can see the rest with the load more button. When you hover over them you can favorite or unfavorite using the heart icon. There is also a search button here to search for a specific person or character.</p>
+<p>People come from TMDB or AniList. Voice actors on character pages and original creators under More Information for anime and manga are clickable too, so you can open their person page and favorite them.</p>
 <h4 id="123-music-section">1.2.3 Music Section<a class="headerlink" href="#123-music-section" title="Permanent link">#</a></h4>
 <p>In this section you can add YouTube URLs to link videos for a music item. Just note that only the video at the top of the list will be played in the built-in music player.</p>
 <h4 id="124-screenshots-section">1.2.4 Screenshots Section<a class="headerlink" href="#124-screenshots-section" title="Permanent link">#</a></h4>
-<p>Games automatically come with some screenshots fetched from the API but you can also add your own. The ADD button will simply put your new screenshots after the existing ones. The SWAP button will delete all existing screenshots and replace them entirely with the ones you upload. From here you can also delete individual screenshots, make them fullscreen and turn on autoplay.</p>
+<p>Games automatically come with some screenshots fetched from the API but you can also add your own. The ADD button puts your new screenshots after the existing ones. The SWAP button asks for confirmation before you choose replacement images, then replaces all existing screenshots and removes their favorites.</p>
+<p>You can delete a single screenshot or choose Delete More in the confirmation popup to select several previews for deletion. This selection mode is available outside fullscreen. Use the star to favorite a screenshot; favorites have a golden border in the preview strip. Hover over the star to show the option to view only favorites.</p>
+<p>The fullscreen button opens a larger viewer. Double-click the image to switch between that view and true fullscreen. Use the mouse wheel to zoom towards the pointer, drag to move a zoomed image, and use the left/right arrow keys to change screenshots. Autoplay is available too.</p>
+<p>The download button saves the current screenshot, or the visible part when zoomed in. In either fullscreen view, hover over Download to choose a square or circular crop. Your browser's download settings still decide whether it asks where to save the file.</p>
+<p>You can also drag the bottom-right corner of the preview strip down to see more thumbnails. Its height resets when you open the page again. The small bottom-left corner on the main image reveals the screenshot's added date when one is available.</p>
 <h3 id="13-custom-media-items">1.3 Custom Media Items<a class="headerlink" href="#13-custom-media-items" title="Permanent link">#</a></h3>
 <p>If you cannot find the media you are looking for you can create a custom item. Just press the + button directly from the list page of the media type where you want it placed. This is also very useful if you want to add media types that are not officially supported like comics, podcasts or board games.</p>
+<p>You can select one or more existing collections directly in the create modal, so you don't have to assign them afterwards.</p>
 <blockquote>
 <p><strong>Note:</strong> You can make a Collection of all your custom items of an unsupported type so it basically acts as a dedicated custom list.</p>
 </blockquote>
 <h3 id="14-edit-item">1.4 Edit Item<a class="headerlink" href="#14-edit-item" title="Permanent link">#</a></h3>
 <p>After adding your items you can start editing them by pressing the ... button from the list pages or the history page. You can also press Edit Item directly from the details page. </p>
 <p>Besides the default tracking fields you can enable additional ones from Settings &gt; Preferences &gt; Edit Modal Fields. Options like Activity Date, Repeats and Collections are disabled by default so they don't clutter the edit modal if you don't need them.</p>
+<p>You can also use the small + next to progress on list pages while an item is Watching, Reading or Playing. It adds one episode or chapter, with separate episode and season controls in TV list views. Movies, games, books and music use a simple complete action instead of adding minutes, hours or pages. Reaching the known total marks the item as Completed without assigning a score.</p>
+<p>Activity Date updates when you change both status and score, or when an item moves from Watching/Reading/Playing to Completed or Dropped even without a score change. This also applies when the progress + completes an item. A date you explicitly change in the edit modal takes priority.</p>
 <h4 id="141-scoring-system">1.4.1 Scoring System<a class="headerlink" href="#141-scoring-system" title="Permanent link">#</a></h4>
-<p>The app lets you change your scoring system at any time. All score values are saved locally on a 1 to 100 scale. For example a 5 gets saved as 50, 3 stars get saved as 60 and a neutral face gets saved as 50. Because everything is standardized behind the scenes you can change from one scoring system to another without breaking your existing ratings.</p>
+<p>The app lets you change your scoring system at any time. All score values are saved locally on a 1 to 100 scale. For example a 5 out of 10 gets saved as 50, 3 stars get saved as 60 and a neutral face gets saved as 50. Because everything is standardized behind the scenes you can change from one scoring system to another without breaking your existing ratings.</p>
+<p>The 1–10 and star views round to whole numbers when displaying a score. More precise values, such as 25 from a CSV import, stay saved in the database even if the 1–10 view displays them as 3.</p>
 <h3 id="15-edit-metadata">1.5 Edit Metadata<a class="headerlink" href="#15-edit-metadata" title="Permanent link">#</a></h3>
 <p>By going to the details page and clicking the Gear icon &gt; Edit Metadata you can manually edit the data fetched from the API. This includes things like genres, creators, release dates and so on.</p>
 <blockquote>
@@ -1714,17 +1869,19 @@
 <p><strong>Note:</strong> Some APIs are slower than others during this process because of their call limits or infrastructure speed.</p>
 </blockquote>
 <h3 id="17-music-player">1.7 Music Player<a class="headerlink" href="#17-music-player" title="Permanent link">#</a></h3>
-<p>You can start the music player using the ♪ button that appears next to the community button when you have favorited at least 1 song. There is also a similar button that starts the player on the music list page. When the music player is started from the home page it will play only your favorited songs in a random order. The one started from the list page will play the songs from your currently selected status (All, Completed, Dropped etc) in a random order. </p>
-<p>If you want to play a specific song you can hover over a music card and press the ▶ button. This will play the selected song and continue with the songs next to it in their current order from left to right.</p>
+<p>You can start the music player using the ♪ button on the home page when you have favorited at least 1 song. There is also a similar button that starts the player on the music list page. When the music player is started from the home page it will play only your favorited songs in a random order. The one started from the list page will play the songs from your currently selected status (All, Completed, Dropped etc) in a random order.</p>
+<p>If you want to play a specific song you can hover over a music card and press the ▶ button, or use the play button on its row in a list view. This will play the selected song and continue with the songs next to it in their current order.</p>
+<p>The player has small, medium, fullscreen and pop-out modes. In the small modes you can drag it using the grab areas over the video, leaving the center and YouTube controls available. Your mode and position are remembered in the browser. The history panel starts closed unless you choose to open it.</p>
+<p>For uninterrupted playback while navigating, use the pop-out button that appears when you hover over the small/medium mode control. It opens the player in a separate window, which keeps playing while you browse the main app. Its size and position are remembered too, although the browser may adjust where it opens. The button beside X in that window brings it back into the page.</p>
 <blockquote>
-<p><strong>Note:</strong> The music player is rebuilt every time you go to a new page because the app is built as a multiple page app rather than a single page app (like Spotify for example). If it was a single page app that YouTube player would stay continuously while you navigate from page to page. I added music and the music player later on and they weren't planned from the start so that's why we are stuck with the way it works now. I would have to rebuild the whole app if I wanted to make it single page and it's not worth it for one feature. But as it stands now it works well enough. Plus on pages like Discover you can browse multiple sections like movies and TV shows without navigating away so the player is not being rebuilt which is nice.</p>
+<p><strong>Note:</strong> The in-page player still reloads when you navigate to another page. Pop-out mode avoids that without needing to rebuild the app as a single page app. It is a normal browser window, so it does not stay on top of other windows automatically.</p>
 </blockquote>
 <h2 id="2-main-pages-features">2. Main Pages &amp; Features<a class="headerlink" href="#2-main-pages-features" title="Permanent link">#</a></h2>
 <p>Now that you have your media items and your lists are growing here are some useful pages and functionalities you can use.</p>
 <h3 id="21-home-page">2.1 Home Page<a class="headerlink" href="#21-home-page" title="Permanent link">#</a></h3>
 <p>The home page has multiple sections for favorites, stats, activity history, collections and upcoming releases.</p>
 <blockquote>
-<p><strong>Note:</strong> If you press on the Stats or Activity History titles they will swap to show Collections and Upcoming Releases instead. Your choice remains saved locally so you can leave them the way you prefer. Also if you press on any favorites section title (e.g. Movies, Actors etc) it will open the favorites page.</p>
+<p><strong>Note:</strong> If you press on the Stats or Activity History titles they will swap to show Collections and Upcoming Releases instead. Your choice remains saved locally so you can leave them the way you prefer. Also if you press on any favorites section title (e.g. Movies, People etc) it will open the favorites page with that section at the top.</p>
 </blockquote>
 <h4 id="211-stats-section">2.1.1 Stats Section<a class="headerlink" href="#211-stats-section" title="Permanent link">#</a></h4>
 <p>This section shows the amount of media items you have and meaningful stats about them like days watched and days played. To make the page load faster I simplified how days watched is calculated the same way other sites do it. Rather than getting the exact length of each individual movie, TV show or anime I multiply them by an average value. I use 90 minutes per movie, 40 minutes per TV show episode and 24 minutes per anime episode. When your lists have hundreds or thousands of media items these average values are accurate enough so it's good enough.</p>
@@ -1738,7 +1895,7 @@
 <p><strong>Note:</strong> When you swap from activity history to upcoming releases the data for the calendar refreshes automatically and the tiles are populated so you don't have to go to the calendar page every time to get updates.</p>
 </blockquote>
 <h4 id="215-favorites-section">2.1.5 Favorites Section<a class="headerlink" href="#215-favorites-section" title="Permanent link">#</a></h4>
-<p>The favorites section will show the top 25 of your media items, actors and characters. You can reorder them on the favorites page if you want to see different ones show up in these sections.</p>
+<p>Each favorites section shows up to 25 of your media items, people or characters. You can reorder items on the favorites page if you want different ones to show up here. Settings &gt; Preferences &gt; Favorite Sections lets you hide or reorder entire sections on both Home and Favorites.</p>
 <h4 id="216-notifications">2.1.6 Notifications<a class="headerlink" href="#216-notifications" title="Permanent link">#</a></h4>
 <p>There are 3 types of notifications that can appear on the home page:<br />
 1. TV shows, anime or manga that got a new season or sequel found from background checks.<br />
@@ -1749,10 +1906,42 @@
 <h3 id="23-calendar-page">2.3 Calendar Page<a class="headerlink" href="#23-calendar-page" title="Permanent link">#</a></h3>
 <p>Here you can see all the past and upcoming releases displayed as pills inside a calendar. Pills older than 3 months are deleted automatically to not clutter the calendar or database for nothing. There is no limit for upcoming releases. The calendar automatically refreshes every time you access the page.</p>
 <h3 id="24-favorites-page">2.4 Favorites Page<a class="headerlink" href="#24-favorites-page" title="Permanent link">#</a></h3>
-<p>Here you can see all your favorited items and reorder them. You can also create custom characters and actors using the + button if you can't find specific ones when searching the APIs.</p>
+<p>Here you can see all your favorited items and reorder them. Choose small or big cards; in small mode, click to open an item or hold before dragging to reorder it. Your view choice is remembered in the browser.</p>
+<p>The search bar matches media titles and creators, as well as person and character names. Empty sections are hidden while searching and reordering is disabled until you clear the search. Opening Favorites from a Home section puts that section first; otherwise your configured section order is used.</p>
+<p>You can create custom people and characters using the + button if you can't find them through the APIs. Once a person or character is in your favorites, their page lets you assign media items from your library. Those links also appear on the assigned items' details pages.</p>
 <h3 id="25-community-page">2.5 Community Page<a class="headerlink" href="#25-community-page" title="Permanent link">#</a></h3>
 <p>The community page uses a Realtime Database from Firebase to store data. It uses the free plan which from my calculations can support about 100 to 1000 users actively using the page every day. I didn't add user accounts so that the page is more likely to be used. This also means it can be easily abused and I am the only moderator. I just base my hopes that moderation won't be needed with a small number of users. If it ever gets out of control I can either add Firebase authentication or just nuke it :).</p>
 <p>On the community page posts you can insert YouTube videos, Imgur images, links and media items (excluding custom items).</p>
+<h3 id="26-collections-page">2.6 Collections Page<a class="headerlink" href="#26-collections-page" title="Permanent link">#</a></h3>
+<p>Collections let you group items from different media types in one place. You can search the collections page by collection title, then search titles and creators inside a collection. Searching turns off reordering so filtered results don't accidentally change your saved order.</p>
+<h3 id="27-settings">2.7 Settings<a class="headerlink" href="#27-settings" title="Permanent link">#</a></h3>
+<p>Preferences contains the theme, font and scoring options, along with a few ways to adjust what you see:</p>
+<ul>
+<li><strong>Navigation Buttons:</strong> Click to hide/show buttons and drag to reorder them. Favorites, Collections, History, Calendar, Discover and Community are available as extra buttons and start hidden. If seven or more buttons are enabled, the first five stay visible and the rest go into More.</li>
+<li><strong>Favorite Sections:</strong> Hide/show and reorder the media, People and Characters sections on Home and Favorites.</li>
+<li><strong>Live Search:</strong> Choose separately for each media type whether searching starts while you type.</li>
+<li><strong>List Card Overlays:</strong> Choose Full, Progress &amp; Score or Hidden per media type. This affects card views; list views stay the same.</li>
+<li><strong>Banner Notes:</strong> Show or hide your item notes over the banner rotators on Home and list pages.</li>
+<li><strong>18+ Content:</strong> Include or filter out provider-marked adult titles in search and Discover. This does not hide or remove items already saved in your library. It relies on the provider's classification, so it isn't a general filter for violence or mature themes.</li>
+</ul>
+<h4 id="271-backups">2.7.1 Backups<a class="headerlink" href="#271-backups" title="Permanent link">#</a></h4>
+<p>Settings &gt; Backup creates a ZIP archive containing your library database records and local media files. This includes settings, API keys, optional login accounts, collections, logs, people, screenshot records and music links. Use this when moving your installation or keeping a full backup, rather than CSV export.</p>
+<p>Loading a backup checks the archive before restoring it. Uploading, validation and restoration have progress reporting, so a large library may spend some time validating before the item counter starts moving.</p>
+<p>Browser-only choices, like player positions and view modes, stay in that browser rather than in the backup.</p>
+<h4 id="272-csv-import-and-export">2.7.2 CSV Import and Export<a class="headerlink" href="#272-csv-import-and-export" title="Permanent link">#</a></h4>
+<p>Settings &gt; Transfer lets you move media items and their personal fields between apps without needing a separate importer for each service. It is a one-time transfer, not continuous syncing. Use one row per item; JSON or XML exports need to be converted to a flat CSV first.</p>
+<p>For importing, upload your file and choose what each column means. You can ignore columns you don't need, choose a media type for the whole file or map a type column, and match status values to the app's choices. Select the file's score scale and activity date format too. Decimal scores such as <code>2.5</code> and <code>2,5</code> are accepted; a decimal comma needs quotes if the CSV also uses commas between columns. Blank or zero scores mean unrated.</p>
+<p>Provider IDs are the most reliable way to identify an item. AniList imports support both AniList and MyAnimeList IDs, and TV seasons can use Media Journal's <code>show_id_sN</code> TMDB ID format. Without IDs, the app searches by title and any mapped matching details such as year or creator. Review suggestions before pressing Import Matched Items. Search Again uses the title you enter and returns candidates for you to pick with Use This; it does not import them automatically.</p>
+<p>Existing items are skipped without changing their notes, scores or dates. Rows that could not be imported can be downloaded with their original fields so you can correct them or add those items manually. Cancel on Match Columns clears the remembered import session and closes its panels.</p>
+<p>Imports are limited to 50 MB and 50,000 rows per file. Matching and importing show progress and can be paused and resumed, including after a server restart. Temporary transfer data is cleaned up after seven days when a new transfer starts.</p>
+<p>CSV exports contain personal fields, provider IDs, collection memberships and basic metadata. Scores use the internal 1–100 scale, with blank cells for unrated items. They do not include image files, people, logs or screenshot records. Formula-like text is protected for spreadsheets, and Media Journal restores its original text when re-importing its own export. The completed export message clears when you leave Settings.</p>
+<h4 id="273-share-favorites">2.7.3 Share Favorites<a class="headerlink" href="#273-share-favorites" title="Permanent link">#</a></h4>
+<p>In Settings &gt; Extras &gt; Share Favorites, choose the sections you want to share, PNG or PDF, whether titles should appear and a maximum of 5, 10, 15, 20 or 25 items per section. The export follows your current theme and favorite item order, with a separate image or PDF page for each section.</p>
+<p>For PNG, up to three sections download as separate images. Four or more are grouped into a ZIP. PDF puts the selected sections into one document. This is useful when you want to share your favorites without sharing a link to your private server.</p>
+<h3 id="28-add-to-your-home-screen">2.8 Add to Your Home Screen<a class="headerlink" href="#28-add-to-your-home-screen" title="Permanent link">#</a></h3>
+<p>Open Media Journal through your own HTTPS address and choose Install app or Add to Home screen in your browser's menu. On iPhone, use Safari's Share &gt; Add to Home Screen, with Open as Web App enabled if shown. The icon opens the app without the usual browser address bar.</p>
+<p>No domain needs to be added to the app's code. It uses the address you installed from. Your server still needs to be running and reachable; offline use is not included. Regular HTTP access continues to work in the browser, but installation generally requires HTTPS, except for localhost on the same device.</p>
+<p>If you use Tailscale, see <a href="../../configuration/remote-access/#https-with-tailscale-serve">Remote Access</a> for a private HTTPS setup.</p>
 
 
 
@@ -1819,6 +2008,8 @@
     
     
       <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="../../javascripts/screenshot-viewer.js"></script>
       
     
   </body>

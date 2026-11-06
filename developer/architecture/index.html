@@ -985,6 +985,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#music-player-and-home-screen-installation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Music Player and Home Screen Installation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#csv-transfer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CSV Transfer
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#file-naming-conventions" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1138,6 +1160,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#music-player-and-home-screen-installation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Music Player and Home Screen Installation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#csv-transfer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CSV Transfer
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#file-naming-conventions" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1181,7 +1225,7 @@
 <h2 id="minimal-dependencies">Minimal Dependencies<a class="headerlink" href="#minimal-dependencies" title="Permanent link">#</a></h2>
 <p>I intentionally keep the requirements as small as possible. I don't want to use external libraries unless they are truly needed. This is to future-proof the app so it doesn't depend on separate third-party packages that might break or get abandoned over time. </p>
 <p>The main <code>requirements.txt</code> is extremely lightweight:
-<div class="highlight"><pre><span></span><code>Django==5.1.6
+<div class="highlight"><pre><span></span><code>Django==5.2.18
 requests==2.32.3
 whitenoise==6.11.0
 waitress==3.0.2
@@ -1206,6 +1250,12 @@ I use MkDocs for building this documentation and Ruff for general code checking 
 <li><strong>OpenLibrary:</strong> Books</li>
 <li><strong>MusicBrainz &amp; YouTube Search:</strong> Music</li>
 </ul>
+<p>TMDB also supplies people, while AniList supplies characters and staff. Person URLs include the provider, such as <code>/person/tmdb/123/</code> or <code>/person/anilist/456/</code>. Custom people use <code>/person/custom/custom_.../</code>, and characters use <code>/character/123/</code>. Old <code>/person/actor/.../</code> and <code>/person/character/.../</code> links still redirect to the current routes.</p>
+<h2 id="music-player-and-home-screen-installation">Music Player and Home Screen Installation<a class="headerlink" href="#music-player-and-home-screen-installation" title="Permanent link">#</a></h2>
+<p>The main app still uses normal Django page navigation. The in-page YouTube player reloads between pages, while <code>/music/player/</code> runs it in a separate pop-out window so playback can continue. Player mode, position and pop-out size are saved in browser storage.</p>
+<p>The web app manifest is generated at <code>/manifest.webmanifest</code> with relative app URLs, so each installation can use its own address. Home screen installation does not add offline caching or a service worker; the server must remain reachable.</p>
+<h2 id="csv-transfer">CSV Transfer<a class="headerlink" href="#csv-transfer" title="Permanent link">#</a></h2>
+<p>The transfer views and services handle CSV upload, field and value mapping, provider matching, review and import/export progress. Jobs run in background threads, with staging data in <code>data/transfer/</code> rather than new library models. Imports reuse the normal provider loaders with database writes deferred until an item is ready to save. No additional runtime dependency is needed.</p>
 <h2 id="file-naming-conventions">File Naming Conventions<a class="headerlink" href="#file-naming-conventions" title="Permanent link">#</a></h2>
 <p>To keep the codebase manageable without creating deeply nested folder structures I use a specific prefix naming convention. Files that belong to the same logical cluster share the same prefix across views, services, templates and static files.</p>
 <ul>
@@ -1280,6 +1330,8 @@ I use MkDocs for building this documentation and Ruff for general code checking 
     
     
       <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="../../javascripts/screenshot-viewer.js"></script>
       
     
   </body>

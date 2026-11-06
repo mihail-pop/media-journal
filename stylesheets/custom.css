@@ -84,3 +84,66 @@ h4:target .headerlink {
 .md-nav--secondary .md-nav__link {
   font-size: 0.75rem; /* Default is around 0.6rem */
 }
+
+/* =========================================
+   7. Screenshot Viewer
+   ========================================= */
+img.docs-screenshot { cursor: zoom-in; }
+img.docs-screenshot:focus-visible { outline: 2px solid var(--md-accent-fg-color); outline-offset: 4px; }
+
+html.docs-screenshot-open {
+  overflow-y: hidden !important;
+  scrollbar-gutter: stable;
+}
+
+#docs-screenshot-viewer {
+  position: fixed;
+  inset: 0;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: clamp(.5rem, 2vw, 1rem);
+  border: 0;
+  background: transparent;
+  color: #fff;
+  overflow: hidden;
+}
+#docs-screenshot-viewer::backdrop { background: rgba(8, 11, 16, .94); }
+.docs-screenshot-viewer__content {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: .5rem;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+.docs-screenshot-viewer__content:fullscreen {
+  box-sizing: border-box;
+  padding: clamp(.5rem, 2vw, 1rem);
+  background: #080b10;
+}
+.docs-screenshot-viewer__toolbar { display: flex; align-items: center; gap: .5rem; }
+#docs-screenshot-caption { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .8rem; }
+.docs-screenshot-viewer__toolbar button {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 2.2rem;
+  height: 2.2rem;
+  padding: .45rem;
+  border: 0;
+  border-radius: .4rem;
+  background: rgba(255, 255, 255, .08);
+  color: #fff;
+  cursor: pointer;
+}
+.docs-screenshot-viewer__toolbar button:hover { background: rgba(255, 255, 255, .18); }
+.docs-screenshot-viewer__toolbar button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.docs-screenshot-viewer__toolbar button[hidden] { display: none; }
+.docs-screenshot-viewer__toolbar svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.docs-screenshot-viewer__stage { display: flex; align-items: center; justify-content: center; min-width: 0; min-height: 0; height: 100%; }
+.docs-screenshot-viewer__image { display: block; width: auto; height: auto; max-width: 100%; max-height: 100%; object-fit: contain; }

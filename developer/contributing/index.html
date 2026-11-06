@@ -1016,67 +1016,6 @@
   
 </li>
       
-        <li class="md-nav__item">
-  <a href="#how-to-adding-a-new-theme" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        How-to: Adding a New Theme
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="How-to: Adding a New Theme">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#1-update-the-database-model" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        1. Update the Database Model
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#2-update-the-css-files" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        2. Update the CSS Files
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#3-update-the-settings-html" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        3. Update the Settings HTML
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#4-update-the-settings-view" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        4. Update the Settings View
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
     </ul>
   
 </nav>
@@ -1138,67 +1077,6 @@
       
     </span>
   </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#how-to-adding-a-new-theme" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        How-to: Adding a New Theme
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="How-to: Adding a New Theme">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#1-update-the-database-model" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        1. Update the Database Model
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#2-update-the-css-files" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        2. Update the CSS Files
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#3-update-the-settings-html" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        3. Update the Settings HTML
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#4-update-the-settings-view" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        4. Update the Settings View
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -1268,89 +1146,6 @@ This is done so that running the app normally on your machine defaults to <code>
 </div>
 </div>
 <p>After saving the file any new terminal you open inside VS Code will automatically run with <code>MJ_DEV=True</code>.</p>
-<h2 id="how-to-adding-a-new-theme">How-to: Adding a New Theme<a class="headerlink" href="#how-to-adding-a-new-theme" title="Permanent link">#</a></h2>
-<p>If you would like to make your own theme and share with others (and you have some knowledge in coding/css/designing) here is how you can do it:</p>
-<h3 id="1-update-the-database-model">1. Update the Database Model<a class="headerlink" href="#1-update-the-database-model" title="Permanent link">#</a></h3>
-<p>Open <code>models.py</code> and find the <code>AppSettings</code> model. Add your new theme name to the <code>theme_mode</code> choices tuple.</p>
-<div class="highlight"><pre><span></span><code>    <span class="n">theme_mode</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span>
-        <span class="n">max_length</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
-        <span class="n">choices</span><span class="o">=</span><span class="p">[</span>
-            <span class="p">(</span><span class="s1">&#39;light&#39;</span><span class="p">,</span> <span class="s1">&#39;Light&#39;</span><span class="p">),</span>
-            <span class="p">(</span><span class="s1">&#39;dark&#39;</span><span class="p">,</span> <span class="s1">&#39;Dark&#39;</span><span class="p">),</span>
-            <span class="p">(</span><span class="s1">&#39;brown&#39;</span><span class="p">,</span> <span class="s1">&#39;Brown&#39;</span><span class="p">),</span>
-            <span class="p">(</span><span class="s1">&#39;green&#39;</span><span class="p">,</span> <span class="s1">&#39;Green&#39;</span><span class="p">),</span>
-            <span class="p">(</span><span class="s1">&#39;my_new_theme&#39;</span><span class="p">,</span> <span class="s1">&#39;My New Theme&#39;</span><span class="p">),</span> <span class="c1"># Add it here</span>
-        <span class="p">],</span>
-        <span class="n">default</span><span class="o">=</span><span class="s1">&#39;dark&#39;</span>
-    <span class="p">)</span>
-</code></pre></div>
-<blockquote>
-<p><strong>Note:</strong> Do not run <code>makemigrations</code> and <code>migrate</code> yourself. The app will still work without it (it will just throw a small warning in the CMD). I will handle the migrations myself after the pull request is merged so we avoid pointless migration conflicts.</p>
-</blockquote>
-<h3 id="2-update-the-css-files">2. Update the CSS Files<a class="headerlink" href="#2-update-the-css-files" title="Permanent link">#</a></h3>
-<p>The app doesn't use one single CSS file for themes. Instead different pages define their own CSS variables. You will need to open the relevant CSS files (like <code>g_create_modal.css</code>) and add a new <code>[data-theme="my_new_theme"]</code> block underneath the existing themes.</p>
-<div class="highlight"><pre><span></span><code><span class="p">:</span><span class="nd">root</span><span class="w"> </span><span class="p">{</span>
-<span class="w">  </span><span class="nv">--bg-primary</span><span class="p">:</span><span class="w"> </span><span class="mh">#0b1622</span><span class="p">;</span>
-<span class="w">  </span><span class="nv">--button-primary</span><span class="p">:</span><span class="w"> </span><span class="mh">#3db4f2</span><span class="p">;</span>
-<span class="p">}</span>
-
-<span class="c">/* Existing themes */</span>
-<span class="o">[</span><span class="nt">data-theme</span><span class="o">=</span><span class="s2">&quot;light&quot;</span><span class="o">]</span><span class="w"> </span><span class="p">{</span>
-<span class="w">  </span><span class="nv">--bg-primary</span><span class="p">:</span><span class="w"> </span><span class="mh">#FFFFFF</span><span class="p">;</span>
-<span class="w">  </span><span class="nv">--button-primary</span><span class="p">:</span><span class="w"> </span><span class="mh">#3db4f2</span><span class="p">;</span>
-<span class="p">}</span>
-
-<span class="o">[</span><span class="nt">data-theme</span><span class="o">=</span><span class="s2">&quot;brown&quot;</span><span class="o">]</span><span class="w"> </span><span class="p">{</span>
-<span class="w">  </span><span class="nv">--bg-primary</span><span class="p">:</span><span class="w"> </span><span class="mh">#271c19</span><span class="p">;</span>
-<span class="w">  </span><span class="nv">--button-primary</span><span class="p">:</span><span class="w"> </span><span class="mh">#8f5b4d</span><span class="p">;</span>
-<span class="p">}</span>
-
-<span class="c">/* Add your new theme variables here */</span>
-<span class="o">[</span><span class="nt">data-theme</span><span class="o">=</span><span class="s2">&quot;my_new_theme&quot;</span><span class="o">]</span><span class="w"> </span><span class="p">{</span>
-<span class="w">  </span><span class="nv">--bg-primary</span><span class="p">:</span><span class="w"> </span><span class="mh">#YOURCO</span><span class="n">LOR</span><span class="p">;</span>
-<span class="w">  </span><span class="nv">--button-primary</span><span class="p">:</span><span class="w"> </span><span class="mh">#YOURCO</span><span class="n">LOR</span><span class="p">;</span>
-<span class="p">}</span>
-</code></pre></div>
-<p>Because variables can change from page to page you will need to click around most pages in the app to make sure your new colors fit well everywhere.</p>
-<h3 id="3-update-the-settings-html">3. Update the Settings HTML<a class="headerlink" href="#3-update-the-settings-html" title="Permanent link">#</a></h3>
-<p>Go to <code>p_settings.html</code> and add the button for your new theme inside the theme selector section. You can also style how this specific button looks in the UI by editing <code>p_settings.css</code>.</p>
-<div class="highlight"><pre><span></span><code>      <span class="p">&lt;</span><span class="nt">div</span> <span class="na">class</span><span class="o">=</span><span class="s">&quot;preferences-section&quot;</span><span class="p">&gt;</span>
-        <span class="p">&lt;</span><span class="nt">h3</span><span class="p">&gt;</span>Theme<span class="p">&lt;/</span><span class="nt">h3</span><span class="p">&gt;</span>
-        <span class="p">&lt;</span><span class="nt">div</span> <span class="na">class</span><span class="o">=</span><span class="s">&quot;theme-selector&quot;</span><span class="p">&gt;</span>
-          <span class="p">&lt;</span><span class="nt">div</span> <span class="na">class</span><span class="o">=</span><span class="s">&quot;theme-option {% if theme_mode == &#39;dark&#39; %}active{% endif %}&quot;</span> <span class="na">data-theme</span><span class="o">=</span><span class="s">&quot;dark&quot;</span><span class="p">&gt;</span>
-            <span class="p">&lt;</span><span class="nt">div</span> <span class="na">class</span><span class="o">=</span><span class="s">&quot;theme-cube theme-dark&quot;</span><span class="p">&gt;</span>D<span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
-            <span class="p">&lt;</span><span class="nt">span</span><span class="p">&gt;</span>Dark<span class="p">&lt;/</span><span class="nt">span</span><span class="p">&gt;</span>
-          <span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
-          <span class="cm">&lt;!-- Add your new option here --&gt;</span>
-          <span class="p">&lt;</span><span class="nt">div</span> <span class="na">class</span><span class="o">=</span><span class="s">&quot;theme-option {% if theme_mode == &#39;my_new_theme&#39; %}active{% endif %}&quot;</span> <span class="na">data-theme</span><span class="o">=</span><span class="s">&quot;my_new_theme&quot;</span><span class="p">&gt;</span>
-            <span class="p">&lt;</span><span class="nt">div</span> <span class="na">class</span><span class="o">=</span><span class="s">&quot;theme-cube theme-my-new-theme&quot;</span><span class="p">&gt;</span>M<span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
-            <span class="p">&lt;</span><span class="nt">span</span><span class="p">&gt;</span>My Theme<span class="p">&lt;/</span><span class="nt">span</span><span class="p">&gt;</span>
-          <span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
-        <span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
-      <span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
-</code></pre></div>
-<h3 id="4-update-the-settings-view">4. Update the Settings View<a class="headerlink" href="#4-update-the-settings-view" title="Permanent link">#</a></h3>
-<p>Finally open <code>views/settings.py</code>, locate the <code>update_theme</code> function and add your new theme name to the allowed list so the backend accepts it.</p>
-<div class="highlight"><pre><span></span><code><span class="nd">@require_POST</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">update_theme</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
-    <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">))</span>
-    <span class="n">theme_mode</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;theme_mode&quot;</span><span class="p">)</span>
-
-    <span class="c1"># Add your theme to this list</span>
-    <span class="k">if</span> <span class="n">theme_mode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;light&quot;</span><span class="p">,</span> <span class="s2">&quot;dark&quot;</span><span class="p">,</span> <span class="s2">&quot;brown&quot;</span><span class="p">,</span> <span class="s2">&quot;green&quot;</span><span class="p">,</span> <span class="s2">&quot;my_new_theme&quot;</span><span class="p">]:</span>
-        <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="s2">&quot;Invalid theme mode&quot;</span><span class="p">},</span> <span class="n">status</span><span class="o">=</span><span class="mi">400</span><span class="p">)</span>
-
-    <span class="n">AppSettings</span> <span class="o">=</span> <span class="n">apps</span><span class="o">.</span><span class="n">get_model</span><span class="p">(</span><span class="s2">&quot;core&quot;</span><span class="p">,</span> <span class="s2">&quot;AppSettings&quot;</span><span class="p">)</span>
-    <span class="n">settings</span> <span class="o">=</span> <span class="n">AppSettings</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">settings</span><span class="p">:</span>
-        <span class="n">settings</span> <span class="o">=</span> <span class="n">AppSettings</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">()</span>
-
-    <span class="n">settings</span><span class="o">.</span><span class="n">theme_mode</span> <span class="o">=</span> <span class="n">theme_mode</span>
-    <span class="n">settings</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
-
-    <span class="k">return</span> <span class="n">JsonResponse</span><span class="p">({</span><span class="s2">&quot;success&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">})</span>
-</code></pre></div>
-<p>Once you are done test the app locally to make sure the theme applies smoothly and submit your Pull Request to the <code>development</code> branch!</p>
 
 
 
@@ -1417,6 +1212,8 @@ This is done so that running the app normally on your machine defaults to <code>
     
     
       <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="../../javascripts/screenshot-viewer.js"></script>
       
     
   </body>

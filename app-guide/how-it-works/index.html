@@ -1127,10 +1127,10 @@
 <h1 id="how-it-works">How it works<a class="headerlink" href="#how-it-works" title="Permanent link">#</a></h1>
 <p>On this page I will explain the high-level flow of the app and some details about how it operates behind the scenes.</p>
 <h2 id="1-where-the-data-comes-from">1. Where the data comes from<a class="headerlink" href="#1-where-the-data-comes-from" title="Permanent link">#</a></h2>
-<p>The app gets data for media items (like titles, descriptions, covers and banners) as well as actors and characters from separate external APIs:</p>
+<p>The app gets data for media items (like titles, descriptions, covers and banners) as well as people and characters from separate external APIs:</p>
 <ul>
-<li><a href="https://www.themoviedb.org/">TMDB</a> for Movies and TV shows</li>
-<li><a href="https://anilist.co/">AniList</a> for Anime and Manga</li>
+<li><a href="https://www.themoviedb.org/">TMDB</a> for Movies, TV shows and people</li>
+<li><a href="https://anilist.co/">AniList</a> for Anime, Manga, characters and staff, including voice actors and original creators</li>
 <li><a href="https://www.igdb.com/">IGDB</a> for Games</li>
 <li><a href="https://openlibrary.org/">OpenLibrary</a> for Books</li>
 <li><a href="https://musicbrainz.org/">MusicBrainz</a> for Music</li>
@@ -1141,7 +1141,9 @@
 </blockquote>
 <h2 id="2-local-storage">2. Local Storage<a class="headerlink" href="#2-local-storage" title="Permanent link">#</a></h2>
 <p>After the data is fetched it is saved locally on your machine. You can then edit the items to add your own tracking data like notes and scores or even edit the metadata (the information received from the API).</p>
+<p>Library records and app settings are stored in <code>data/db.sqlite3</code>, while downloaded and uploaded images live in <code>media/</code>. Some interface choices, such as view modes, the last search type and music player positions, are saved in the browser instead. Those choices can differ between browsers and devices.</p>
 <p>The rest of the features in the app are built entirely around this concept of fetching and saving locally. The notable exception is the Community page which adds another layer of integration. It uses a Realtime Database from Firebase to store the data for posts and comments rather than saving it on your local machine.</p>
+<p>CSV transfer is another way to add items to this same local library. It resolves IDs or searches for titles, lets you review the matches, then fetches the normal provider metadata and applies the fields you mapped from the file. It does not keep the library synced with the app you exported from.</p>
 <h2 id="3-longevity-and-api-reliability">3. Longevity and API Reliability<a class="headerlink" href="#3-longevity-and-api-reliability" title="Permanent link">#</a></h2>
 <p>As the app stands right now it should work well for years to come. The only real issue that could break functionality is if the current APIs close down or become paid.</p>
 <p>I chose the current selection of APIs because they have all lasted a long time and are widely used. There are really low chances of any of them disappearing anytime soon.</p>
@@ -1212,6 +1214,8 @@
     
     
       <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="../../javascripts/screenshot-viewer.js"></script>
       
     
   </body>

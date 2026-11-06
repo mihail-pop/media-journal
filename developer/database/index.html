@@ -990,6 +990,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#backups-and-csv-transfer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Backups and CSV Transfer
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1082,6 +1093,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#backups-and-csv-transfer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Backups and CSV Transfer
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1114,11 +1136,16 @@
 <li><strong><code>MediaItem</code></strong>: The core table. It stores all basic fields (title, cover, status, score) and uses a <code>provider_ids</code> JSON field to keep track of the item's ID from its respective API.</li>
 <li><strong><code>MediaItemLog</code></strong>: Handles the journal logs system. It links via a Foreign Key to a <code>MediaItem</code> and stores timestamped entries, progress updates and text logs.</li>
 <li><strong><code>Screenshot</code> &amp; <code>MusicVideo</code></strong>: Separate tables linked to a <code>MediaItem</code> via Foreign Keys. They store individual game screenshots and YouTube music URLs so we don't overload the main item's JSON fields.</li>
-<li><strong><code>FavoritePerson</code></strong>: Stores actors and characters. It handles API IDs, biographies and related media appearances.</li>
+<li><strong><code>FavoritePerson</code></strong>: Stores people and characters from TMDB, AniList or custom entries. The <code>source</code> and <code>person_id</code> fields identify the provider and its ID together, so matching numbers from different APIs do not refer to the same person. The stored <code>type='actor'</code> value and <code>media/favorites/actors/</code> folder are kept for compatibility, while the interface calls them People.</li>
+<li><strong><code>MediaPersonLink</code></strong>: Links a saved person or character to a media item, with an optional role for that specific item.</li>
 <li><strong><code>CalendarEvent</code></strong>: Links to a <code>MediaItem</code> to track release dates through calendar events. It handles both recurring rules and notification triggers.</li>
 <li><strong><code>Collection</code> &amp; <code>CollectionItem</code></strong>: A Many-to-Many relationship structure that allows users to group various media items into custom lists.</li>
-<li><strong><code>AppSettings</code></strong>: A single-row table that stores user preferences like themes, scoring modes and details page section ordering.</li>
+<li><strong><code>AppSettings</code></strong>: A single-row table that stores user preferences like themes, scoring modes, details and favorite section ordering, per-type live search and card overlays, banner notes and adult content filtering.</li>
 </ul>
+<h2 id="backups-and-csv-transfer">Backups and CSV Transfer<a class="headerlink" href="#backups-and-csv-transfer" title="Permanent link">#</a></h2>
+<p>Full backups include the core models and their relationship tables, optional Django login accounts and groups, and files under <code>media/</code>. Restoring validates the archive before applying its database changes in a transaction. Scores and timestamps are preserved rather than going through the normal edit-item behavior.</p>
+<p>CSV transfer has separate staging storage at <code>data/transfer/state.sqlite3</code>. Uploaded rows, mappings, match candidates and progress live there until they are imported or cleaned up. This keeps matching separate from the library database and allows a paused job to resume after a server restart. The directory is excluded from Git and Docker builds.</p>
+<p>The importer prepares provider data before opening a short transaction for each new item, its related screenshot or music records and collection memberships. Existing items are kept unchanged. CSV export covers media items and their personal fields; use full backups for the rest of the library.</p>
 
 
 
@@ -1185,6 +1212,8 @@
     
     
       <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="../../javascripts/screenshot-viewer.js"></script>
       
     
   </body>

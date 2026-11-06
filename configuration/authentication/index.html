@@ -1136,6 +1136,9 @@
 <p>By default Media Journal does not require a login to access. If you are hosting the app on a local network for personal use this is usually fine. </p>
 <p>However, if you plan to expose the app to the internet (using a reverse proxy or Cloudflare Tunnels) it is highly recommended to enable authentication. This will lock down the entire app including your uploaded images and screenshots so only you can access them.</p>
 <p>Setting up authentication is a two-step process: you must create an administrator account and then tell the app to require a login.</p>
+<blockquote>
+<p><strong>Note:</strong> This protects the same shared library. It does not create a separate media collection for each account.</p>
+</blockquote>
 <hr />
 <h3 id="step-1-create-an-account">Step 1: Create an Account<a class="headerlink" href="#step-1-create-an-account" title="Permanent link">#</a></h3>
 <p>Before you lock the app you need to create a "Superuser" account so you can actually log in.</p>
@@ -1201,13 +1204,16 @@ python manage.py runserver 0.0.0.0:8000 --noreload
 </div>
 <div class="tabbed-block">
 <p><strong>If using the Launchd Background Service (Recommended):</strong><br />
-Open your <code>com.mediajournal.plist</code> file in a text editor and add the <code>EnvironmentVariables</code> dictionary right above your <code>ProgramArguments</code>:
+Open your <code>com.mediajournal.plist</code> file in a text editor and add <code>REQUIRE_LOGIN</code> to the existing <code>EnvironmentVariables</code> dictionary. Keep <code>TZ</code> and any other keys already there; do not add a second dictionary. For example:
 <div class="highlight"><pre><span></span><code><span class="nt">&lt;key&gt;</span>EnvironmentVariables<span class="nt">&lt;/key&gt;</span>
 <span class="nt">&lt;dict&gt;</span>
+<span class="w">    </span><span class="nt">&lt;key&gt;</span>TZ<span class="nt">&lt;/key&gt;</span>
+<span class="w">    </span><span class="nt">&lt;string&gt;</span>Europe/London<span class="nt">&lt;/string&gt;</span>
 <span class="w">    </span><span class="nt">&lt;key&gt;</span>REQUIRE_LOGIN<span class="nt">&lt;/key&gt;</span>
 <span class="w">    </span><span class="nt">&lt;string&gt;</span>True<span class="nt">&lt;/string&gt;</span>
 <span class="nt">&lt;/dict&gt;</span>
 </code></pre></div>
+<em>(Replace <code>Europe/London</code> with your local timezone.)</em>
 Then restart the service in the terminal:
 <div class="highlight"><pre><span></span><code>launchctl<span class="w"> </span>unload<span class="w"> </span>~/Library/LaunchAgents/com.mediajournal.plist
 launchctl<span class="w"> </span>load<span class="w"> </span>~/Library/LaunchAgents/com.mediajournal.plist
@@ -1301,6 +1307,8 @@ python<span class="w"> </span>manage.py<span class="w"> </span>runserver<span cl
     
     
       <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="../../javascripts/screenshot-viewer.js"></script>
       
     
   </body>
