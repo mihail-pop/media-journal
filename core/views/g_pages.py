@@ -7,12 +7,13 @@ from django.urls import reverse
 from django.utils import timezone
 from django.db.models import Case, Count, IntegerField, Prefetch, Q, Sum, When
 from django.shortcuts import render, get_object_or_404, redirect
-from django.http import Http404, HttpResponse
+from django.http import Http404, HttpResponse, JsonResponse
+from django.templatetags.static import static
 from django.template.loader import render_to_string
 from django.utils.text import slugify
 from django.utils.timesince import timesince
 from django.views.decorators.csrf import ensure_csrf_cookie
-from django.views.decorators.http import require_GET
+from django.views.decorators.http import require_GET, require_safe
 
 from core.models import APIKey, NavItem, MediaItem, Collection, CollectionItem, FavoritePerson, CalendarEvent, AppSettings, default_favorite_sections_order
 from core.services.p_home import (
@@ -34,6 +35,28 @@ SYSTEM_NOTIFICATIONS = [
     #     "html": "Relevant only if you are updating from a release before 1.26.0: I improved how images are stored to keep the app fast and stable in the long run. Please <a href='#' id='trigger-sharding-btn' style='font-weight:bold; color:#F59E0B;'>click here to update your existing images</a>. (Do not close the page until it finishes)"
     # }
 ]
+
+@require_safe
+def web_manifest(request):
+    # Paths stay on the user's own server; installation needs no fixed domain.
+    home_url = reverse("home")
+    return JsonResponse({
+        "id": home_url,
+        "name": "Media Journal",
+        "short_name": "Media Journal",
+        "description": "Track your movies, TV shows, anime, manga, games, books and music.",
+        "start_url": home_url,
+        "scope": home_url,
+        "display": "standalone",
+        "background_color": "#0b1622",
+        "theme_color": "#0b1622",
+        "icons": [
+            {"src": static("core/icons/pwa-192.png"), "sizes": "192x192", "type": "image/png", "purpose": "any"},
+            {"src": static("core/icons/pwa-512.png"), "sizes": "512x512", "type": "image/png", "purpose": "any"},
+            {"src": static("core/icons/pwa-maskable-512.png"), "sizes": "512x512", "type": "image/png", "purpose": "maskable"},
+        ],
+    }, content_type="application/manifest+json")
+
 
 @require_GET
 def home_upcoming(request):

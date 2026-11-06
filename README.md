@@ -13,6 +13,7 @@ This is the self-hosted media tracker app I always wanted to have. From now on I
 - Share thoughts and updates through the community page.
 - Discover trending or popular media.
 - Play saved songs through a YouTube music player while browsing the site.
+- Install Media Journal on your home screen when accessing it over HTTPS.
 
 ## Demo - [Youtube Demo](https://youtu.be/JXOvpvdVZpY?si=LIvj2CKixBAZ0Pp)
 | <img src="https://github.com/user-attachments/assets/59ff70c5-46ce-4b69-a5ad-70e811b33f0b" width="500" /> | <img src="https://github.com/user-attachments/assets/48fdb9d3-aa17-4b2f-a8a2-173e5b2a3cb6" width="500" /> |
@@ -37,3 +38,11 @@ You can run Media Journal either with Docker or natively on your personal PC or 
   <a href="https://mihail-pop.github.io/media-journal/setup/mac/"><strong>Mac Setup</strong></a> &nbsp;&nbsp;|&nbsp;&nbsp; 
   <a href="https://mihail-pop.github.io/media-journal/setup/linux/"><strong>Linux Setup</strong></a>
 </p>
+
+## Add to your home screen
+
+Open your own Media Journal HTTPS address on your phone, then use **Install app** or **Add to Home screen** in your browser's menu. On iPhone, use Safari's **Share → Add to Home Screen**, with **Open as Web App** enabled if shown.
+
+The icon opens Media Journal without the usual browser address bar. It uses the address you installed from, so there is no domain to configure in the app. Your server must remain running and reachable; offline use is not included.
+
+Regular HTTP access continues to work in the browser. Installation generally requires HTTPS, with an exception for `localhost` on the same device.

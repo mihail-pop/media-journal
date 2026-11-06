@@ -1268,7 +1268,7 @@ html[data-home-activity-view="upcoming"] .upcoming-tiles-container:not(.is-cente
   object-fit: cover;
   object-position: center center;
   
-  transform: translateX(-22.3%);
+  transform: translateX(-22%);
   transform-origin: center;
   border-radius: 0.5rem;
 }
