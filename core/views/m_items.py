@@ -15,7 +15,7 @@ from django.db import transaction
 from django.db.models import Max, F
 from django.views.decorators.http import require_GET, require_POST
 
-from core.models import MediaItem, Collection, MediaItemLog, AppSettings
+from core.models import MediaItem, Collection, CollectionItem, MediaItemLog, AppSettings
 from core.services.g_utils import display_to_rating, rating_to_display, get_sharded_path
 from core.services.m_books import save_openlib_item
 from core.services.m_games import save_igdb_item
@@ -94,6 +94,12 @@ def add_season_to_list(request):
 @require_POST
 def create_custom_item(request):
     try:
+        collection_ids = {int(value) for value in request.POST.getlist("collections")}
+        if collection_ids:
+            existing_ids = set(Collection.objects.filter(id__in=collection_ids).values_list('id', flat=True))
+            if existing_ids != collection_ids:
+                raise ValueError("A selected collection no longer exists. Reopen the modal and select collections again.")
+
         # 1. Base Variables & Normalization
         media_type_raw = request.POST.get("media_type", "movie").lower()
         
@@ -219,30 +225,47 @@ def create_custom_item(request):
             date_added = timezone.now()
 
         # 5. Create Item
-        new_item = MediaItem.objects.create(
-            title=title,
-            media_type=media_type, # Now guaranteed to be "movie", "tv", "game", etc.
-            source=source,
-            provider_ids=provider_ids,
-            cover_url=cover_url,
-            banner_url=banner_url,
-            release_date=request.POST.get("release_date", ""),
-            overview=request.POST.get("overview", ""),
-            status=request.POST.get("status", "planned"),
-            genres=genres_list,
-            creators=creators_list,
-            
-            progress_main=progress_main,
-            total_main=total_main,
-            progress_secondary=progress_secondary,
-            total_secondary=total_secondary,
-            
-            personal_rating=rating_val,
-            favorite=is_favorite,
-            favorite_position=fav_position,
-            notes=request.POST.get("c-notes", ""),
-            date_added=date_added
-        )
+        with transaction.atomic():
+            new_item = MediaItem.objects.create(
+                title=title,
+                media_type=media_type, # Now guaranteed to be "movie", "tv", "game", etc.
+                source=source,
+                provider_ids=provider_ids,
+                cover_url=cover_url,
+                banner_url=banner_url,
+                release_date=request.POST.get("release_date", ""),
+                overview=request.POST.get("overview", ""),
+                status=request.POST.get("status", "planned"),
+                genres=genres_list,
+                creators=creators_list,
+
+                progress_main=progress_main,
+                total_main=total_main,
+                progress_secondary=progress_secondary,
+                total_secondary=total_secondary,
+
+                personal_rating=rating_val,
+                favorite=is_favorite,
+                favorite_position=fav_position,
+                notes=request.POST.get("c-notes", ""),
+                date_added=date_added
+            )
+
+            if collection_ids:
+                last_positions = dict(
+                    CollectionItem.objects.filter(collection_id__in=collection_ids)
+                    .order_by().values('collection_id')
+                    .annotate(last_position=Max('position'))
+                    .values_list('collection_id', 'last_position')
+                )
+                CollectionItem.objects.bulk_create([
+                    CollectionItem(
+                        collection_id=collection_id,
+                        item=new_item,
+                        position=(last_positions.get(collection_id) or 0) + 1,
+                    )
+                    for collection_id in collection_ids
+                ])
 
         # 6. Format Display Rating for frontend
         try:

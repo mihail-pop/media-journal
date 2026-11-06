@@ -820,6 +820,12 @@ input[name="release_date"] {
   margin-right: 0 !important;
 }
 
+/* Keep incomplete rows aligned with the first column of the full rows. */
+.c-form-row-three {
+  display: grid;
+  grid-template-columns: repeat(3, 150px);
+}
+
 
 .c-creator-input-container {
   display: flex;
@@ -891,13 +897,18 @@ input[name="release_date"] {
 .c-progress-inputs {
   display: flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: 0.25rem;
   width: 100%;
 }
 
 .c-progress-inputs .c-progress-box {
-  flex: 1;
+  box-sizing: border-box;
+  flex: 1 1 0;
+  width: 0;
   min-width: 0;
+  max-width: none;
+  /* Match the dropdowns' 1.8rem content height plus their vertical padding. */
+  height: 2.5rem;
   text-align: center;
   padding: 0.35rem 0.2rem !important;
 }
@@ -909,9 +920,11 @@ input[name="release_date"] {
 .c-progress-separator {
   color: var(--text-muted);
   font-weight: bold;
+  flex-shrink: 0;
 }
 
-#create-genre-wrapper .genre-select {
+#create-genre-wrapper .genre-select,
+#create-collection-wrapper .genre-select {
   background-color: var(--bg-primary);
   border: none;
   box-shadow: 0;
@@ -923,17 +936,20 @@ input[name="release_date"] {
   padding: 0.35rem 2.5rem 0.35rem 0.5rem;
 }
 
-#create-genre-wrapper .custom-options {
+#create-genre-wrapper .custom-options,
+#create-collection-wrapper .custom-options {
   background-color: var(--bg-primary);
 }
 
-#create-genre-search {
+#create-genre-search,
+#create-collection-search {
   max-width: unset !important;
   padding: 0 !important;
   min-width: 60px;
 }
 
-#create-genre-search::placeholder {
+#create-genre-search::placeholder,
+#create-collection-search::placeholder {
   color: var(--text-tertiary)
 }
 
@@ -1306,6 +1322,7 @@ input[type="number"] {
   .c-form-group textarea,
   .c-creator-input-container,
   #create-genre-wrapper .genre-select,
+  #create-collection-wrapper .genre-select,
   .c-status-select {
     font-size: 2rem !important;
     width: 20rem !important;
@@ -1322,7 +1339,8 @@ input[type="number"] {
   }
 
   .c-creator-input-container,
-  #create-genre-wrapper .genre-select {
+  #create-genre-wrapper .genre-select,
+  #create-collection-wrapper .genre-select {
     height: auto !important;
     max-height: 12rem !important;
     overflow-y: auto !important;
@@ -1336,7 +1354,8 @@ input[type="number"] {
   }
 
   #create-creator-input, 
-  #create-genre-search {
+  #create-genre-search,
+  #create-collection-search {
     font-size: 2rem !important;
     min-width: 80px !important;
     width: 100% !important;
@@ -1410,6 +1429,7 @@ input[type="number"] {
     width: 100% !important;
     max-width: none !important;
     min-width: 0 !important;
+    height: 4.8rem;
     padding: 1rem 0.5rem !important;
     font-size: 2rem !important;
     text-align: center;

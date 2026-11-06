@@ -1587,6 +1587,9 @@ def collection_items_api(request, collection_id):
 
 @require_GET
 def collections_api(request):
+    if request.GET.get('options') == 'true':
+        return JsonResponse({"items": list(Collection.objects.values('id', 'title'))})
+
     page = int(request.GET.get("page", 1))
     page_size = 30
     start = (page - 1) * page_size
