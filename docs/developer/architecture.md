@@ -48,6 +48,18 @@ I use well-known free APIs that are more likely to last for years to come. The b
 * **OpenLibrary:** Books
 * **MusicBrainz & YouTube Search:** Music
 
+TMDB also supplies people, while AniList supplies characters and staff. Person URLs include the provider, such as `/person/tmdb/123/` or `/person/anilist/456/`. Custom people use `/person/custom/custom_.../`, and characters use `/character/123/`. Old `/person/actor/.../` and `/person/character/.../` links still redirect to the current routes.
+
+## Music Player and Home Screen Installation
+
+The main app still uses normal Django page navigation. The in-page YouTube player reloads between pages, while `/music/player/` runs it in a separate pop-out window so playback can continue. Player mode, position and pop-out size are saved in browser storage.
+
+The web app manifest is generated at `/manifest.webmanifest` with relative app URLs, so each installation can use its own address. Home screen installation does not add offline caching or a service worker; the server must remain reachable.
+
+## CSV Transfer
+
+The transfer views and services handle CSV upload, field and value mapping, provider matching, review and import/export progress. Jobs run in background threads, with staging data in `data/transfer/` rather than new library models. Imports reuse the normal provider loaders with database writes deferred until an item is ready to save. No additional runtime dependency is needed.
+
 ## File Naming Conventions
 
 To keep the codebase manageable without creating deeply nested folder structures I use a specific prefix naming convention. Files that belong to the same logical cluster share the same prefix across views, services, templates and static files.

@@ -12,7 +12,11 @@ This is the self-hosted media tracker app I always wanted to have. From now on I
 - View stats, recent activity, collections and favorites on the home page.
 - Share thoughts and updates through the community page.
 - Discover trending or popular media.
-- Play saved songs through a YouTube music player while browsing the site.
+- Favorite people and characters from TMDB and AniList, or create custom ones.
+- Play saved songs through a YouTube music player, with a pop-out window for uninterrupted playback while browsing.
+- Import and export media items and their personal fields through CSV.
+- Share favorites as themed PNG images or a PDF.
+- Customize themes, navigation, favorite sections and card overlays.
 - Install Media Journal on your home screen when accessing it over HTTPS.
 
 ## Demo - [Youtube Demo](https://youtu.be/JXOvpvdVZpY?si=LIvj2CKixBAZ0Pp)
@@ -57,4 +61,6 @@ New entries use provider metadata and images. Mapped personal fields, genres, cr
 
 Existing items are skipped without changing their scores, notes or dates. Transfers report progress and can be paused and resumed, including after a server restart. Temporary transfer data is retained for seven days. Imports are limited to 50 MB and 50,000 rows per file and require the same API keys as ordinary searches and item saves.
 
-Exports include personal fields, provider IDs, collection memberships and basic metadata. Scores use the internal 0–100 scale. Formula-like cells are escaped for spreadsheet safety, with information to restore their exact text when re-imported into Media Journal. Image files, people, logs and screenshot records remain part of full backups rather than CSV transfer.
+Exports include personal fields, provider IDs, collection memberships and basic metadata. Scores use the internal 1–100 scale, with blank cells for unrated items. AniList imports also accept MyAnimeList IDs. Formula-like cells are escaped for spreadsheet safety, with information to restore their exact text when re-imported into Media Journal. Image files, people, logs and screenshot records remain part of full backups rather than CSV transfer.
+
+For a walkthrough, see [CSV Import and Export](https://mihail-pop.github.io/media-journal/app-guide/how-to-use/#272-csv-import-and-export) in the app guide.
