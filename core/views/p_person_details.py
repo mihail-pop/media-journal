@@ -4,6 +4,7 @@ import time
 import logging
 
 from django.conf import settings
+from django.db import transaction
 from django.http import JsonResponse
 from django.utils.text import slugify
 from django.views.decorators.csrf import ensure_csrf_cookie
@@ -12,6 +13,8 @@ from core.models import FavoritePerson, MediaItem, MediaPersonLink
 from core.services.g_utils import normalize_search_text
 
 from core.services.m_people import (
+    favorite_person_queryset,
+    resolve_person_identity,
     fetch_actor_data,
     fetch_character_data,
     delete_favorite_person_and_reorder,
@@ -41,7 +44,7 @@ def refresh_favorite_person_view(request):
 
     # Find the database record using API ID and type
     try:
-        person = FavoritePerson.objects.get(person_id=api_person_id, type=person_type)
+        person = favorite_person_queryset(person_type, api_person_id, data.get('source')).get()
         success = refresh_favorite_person(person.id, refresh_mode)  # Pass database ID and mode
         return JsonResponse({"success": success})
     except FavoritePerson.DoesNotExist:
@@ -63,7 +66,7 @@ def upload_person_image(request):
         return JsonResponse({"error": "Unsupported file type."}, status=400)
 
     try:
-        person = FavoritePerson.objects.get(person_id=person_id, type=person_type)
+        person = favorite_person_queryset(person_type, person_id, request.POST.get('source')).get()
 
         # Generate cache-busting filename
         timestamp = int(time.time() * 1000)
@@ -158,7 +161,7 @@ def search_local_media(request):
         # Exclude items that are already assigned to this person
         if person_id and person_type:
             try:
-                person = FavoritePerson.objects.get(person_id=person_id, type=person_type)
+                person = favorite_person_queryset(person_type, person_id, request.GET.get('source')).get()
                 assigned_item_ids = MediaPersonLink.objects.filter(person=person).values_list('item_id', flat=True)
                 queryset = queryset.exclude(id__in=assigned_item_ids)
             except FavoritePerson.DoesNotExist:
@@ -203,19 +206,26 @@ def assign_media_to_person(request):
         person_type = data.get('person_type')
         media_ids = data.get('media_ids', [])
         
-        person = FavoritePerson.objects.get(person_id=person_id, type=person_type)
-        for m_id in media_ids:
-            item = MediaItem.objects.get(id=m_id)
-            MediaPersonLink.objects.get_or_create(item=item, person=person)
-            
-            # Automatically append the person's name to the media item's creators list
-            if not isinstance(item.creators, list):
-                item.creators = []
-                
-            if person.name not in item.creators:
-                item.creators.append(person.name)
-                item.save(update_fields=['creators'])
-                
+        person_type, source = resolve_person_identity(person_type, person_id, data.get('source'))
+        if not person_id or not isinstance(media_ids, list) or not media_ids:
+            return JsonResponse({'error': 'Select at least one library item.'}, status=400)
+        items = list(MediaItem.objects.filter(pk__in=media_ids))
+        if len(items) != len(set(media_ids)):
+            return JsonResponse({'error': 'One or more library items no longer exist.'}, status=400)
+
+        person = favorite_person_queryset(person_type, person_id, source).first()
+        if person is None:
+            return JsonResponse({'error': 'Favorite this person or character before assigning media.'}, status=400)
+
+        with transaction.atomic():
+            for item in items:
+                MediaPersonLink.objects.get_or_create(item=item, person=person)
+                if not isinstance(item.creators, list):
+                    item.creators = []
+                if person.name not in item.creators:
+                    item.creators.append(person.name)
+                    item.save(update_fields=['creators'])
+
         return JsonResponse({'success': True})
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=400)

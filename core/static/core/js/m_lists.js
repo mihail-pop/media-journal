@@ -37,8 +37,21 @@ document.addEventListener("DOMContentLoaded", function () {
 
   const bannerImg = document.getElementById("rotating-banner");
   let bannerPool = [];
+  let stopBannerRotator = null;
 
   const mediaType = document.body.dataset.mediaType || "default";
+  if (cardView) {
+    const overlayMediaType = {
+      movies: 'movie', tvshows: 'tv', anime: 'anime', manga: 'manga',
+      games: 'game', books: 'book', music: 'music',
+    }[mediaType];
+    let overlayMode = 'full';
+    try {
+      const preferences = JSON.parse(document.getElementById('list-card-overlay-preferences')?.textContent || '{}');
+      if (['full', 'compact', 'hidden'].includes(preferences[overlayMediaType])) overlayMode = preferences[overlayMediaType];
+    } catch (error) { /* Keep the existing full overlay if preferences are unavailable. */ }
+    cardView.dataset.overlayMode = overlayMode;
+  }
   const filterKey = `listFilterStatus_${mediaType}`;
   const viewKey = `listViewType_${mediaType}`;
   const typeKey = `listTypeFilter_${mediaType}`;
@@ -48,6 +61,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // === PAGINATION STATE ===
   let currentPage = 1;
   let isLoading = false;
+  let listRequestController = null;
   let hasMore = true;
   let allItems = [];
   let ratingMode = 'faces';
@@ -154,75 +168,99 @@ const statusLabelsMap = {
   }
 
   // === API FUNCTIONS ===
-  async function loadItems(page = 1, reset = false) {
-    if (isLoading || (!hasMore && !reset)) return;
-    
+  async function loadItems(page = 1, reset = false, { refreshLoaded = false, updatedId = null } = {}) {
+    if (!reset && (isLoading || !hasMore)) return;
+
+    // Filter changes and edits replace any older request, including an in-flight
+    // scroll request whose offsets may have changed after the edit.
+    listRequestController?.abort();
+    const controller = new AbortController();
+    listRequestController = controller;
     isLoading = true;
-    
-    // Only show loading indicator after 200ms delay
+
     const loadingTimeout = setTimeout(() => {
-      loadingIndicator.style.display = 'block';
+      if (listRequestController === controller) loadingIndicator.style.display = 'block';
     }, 200);
-    
+
     try {
       const params = new URLSearchParams({
-        page: page,
         status: currentStatus,
         search: currentSearch,
         sort_by: currentSort,
         sort_order: currentSortOrder
       });
+      if (currentGenres.length > 0) params.set('genres', currentGenres.join(','));
+      if (currentCollections.length > 0) params.set('collections', currentCollections.map(c => c.id).join(','));
+      params.set('filter_mode', currentFilterMode);
+      if (mediaType === 'tvshows') params.set('type', currentType);
+      if (listCacheVersion) params.set('_v', listCacheVersion);
 
-      if (currentGenres.length > 0) {
-        params.append('genres', currentGenres.join(','));
+      const fetchedItems = [];
+      let data;
+      // An edit can move entries across page boundaries. Re-read the loaded
+      // range and commit it together so ordering and the next offset agree.
+      for (let nextPage = refreshLoaded ? 1 : page; nextPage <= page; nextPage++) {
+        params.set('page', nextPage);
+        const response = await fetch(`/api/${mediaType}/?${params}`, { signal: controller.signal });
+        if (!response.ok) throw new Error('Unable to load list items.');
+        data = await response.json();
+        if (listRequestController !== controller) return;
+        if (!Array.isArray(data.items)) throw new Error('Invalid list response.');
+        fetchedItems.push(...data.items);
+        if (!data.has_more) break;
       }
 
-      if (currentCollections.length > 0) {
-        params.append('collections', currentCollections.map(c => c.id).join(','));
-      }
-      params.append('filter_mode', currentFilterMode);
-      
-      // Add type filter for TV shows
-      if (mediaType === 'tvshows') {
-        params.append('type', currentType);
-      }
-      
-      if (listCacheVersion) {
-        params.append('_v', listCacheVersion);
-      }
+      const container = currentView === 'card' ? cardView : currentView === 'list' ? listView : detailedListView;
+      const anchorElement = refreshLoaded ? Array.from(container.querySelectorAll('.card, .list-row')).find(element =>
+        String(element.dataset.id) !== String(updatedId) && element.getBoundingClientRect().bottom > 0
+      ) : null;
+      const anchor = anchorElement ? { id: anchorElement.dataset.id, top: anchorElement.getBoundingClientRect().top } : null;
+      const expandedEntry = refreshLoaded ? container.querySelector('.expandable-entry.expanded') : null;
+      const expandedRow = expandedEntry?.closest('.list-row');
+      const expanded = expandedRow ? {
+        id: expandedRow.dataset.id,
+        index: Array.from(expandedRow.querySelectorAll('.expandable-entry')).indexOf(expandedEntry),
+        blurred: expandedEntry.classList.contains('log-spoiler-blur'),
+      } : null;
 
-      const response = await fetch(`/api/${mediaType}/?${params}`);
-      const data = await response.json();
-      
       if (reset) {
-        allItems = data.items || [];
-        currentPage = 1;
+        allItems = fetchedItems;
       } else {
-        // Merge new page items into allItems without duplicating entries
-        const existingMap = new Map(allItems.map((it, idx) => [String(it.id), idx]));
-        for (const ni of (data.items || [])) {
-          const nid = String(ni.id);
-          if (existingMap.has(nid)) {
-            // replace existing entry with fresh data
-            allItems[existingMap.get(nid)] = ni;
+        const existingMap = new Map(allItems.map((item, index) => [String(item.id), index]));
+        for (const item of fetchedItems) {
+          const id = String(item.id);
+          if (existingMap.has(id)) {
+            allItems[existingMap.get(id)] = item;
           } else {
-            existingMap.set(nid, allItems.length);
-            allItems.push(ni);
+            existingMap.set(id, allItems.length);
+            allItems.push(item);
           }
         }
       }
-      
       hasMore = data.has_more;
       currentPage = data.page;
-      
       renderItems();
-      
+
+      if (expanded) {
+        const entry = container.querySelector(`.list-row[data-id="${expanded.id}"]`)?.querySelectorAll('.expandable-entry')[expanded.index];
+        entry?.classList.add('expanded');
+        if (!expanded.blurred) entry?.classList.remove('log-spoiler-blur');
+      }
+      if (anchor) {
+        const element = container.querySelector(`.card[data-id="${anchor.id}"], .list-row[data-id="${anchor.id}"]`);
+        if (element) window.scrollBy({ top: element.getBoundingClientRect().top - anchor.top, behavior: 'instant' });
+      }
     } catch (error) {
-      console.error('Error loading items:', error);
+      if (error.name !== 'AbortError' && listRequestController === controller) {
+        console.error('Error loading items:', error);
+      }
     } finally {
       clearTimeout(loadingTimeout);
-      isLoading = false;
-      loadingIndicator.style.display = 'none';
+      if (listRequestController === controller) {
+        listRequestController = null;
+        isLoading = false;
+        loadingIndicator.style.display = 'none';
+      }
     }
   }
 
@@ -524,7 +562,7 @@ function createListRowElement(item, isDetailed = false) {
               <img src="${coverSrc}" alt="${imgAlt}" loading="lazy">
             </div>
             <div class="detailed-text-content">
-              <span class="detailed-title">${item.title}</span>
+              ${getTitleHtml(item, 'detailed-title')}
               ${getDetailedJournalHtml(item)}
             </div>
             <div class="list-row-actions">
@@ -539,7 +577,7 @@ function createListRowElement(item, isDetailed = false) {
       firstCellHtml = `
         <td class="simple-title-cell">
           <a href="${linkUrl}">
-            <span class="simple-title">${item.title}</span>
+            ${getTitleHtml(item, 'simple-title')}
             <div class="list-row-actions">
               ${repeatHtml}
               ${playBtnHtml}
@@ -596,18 +634,9 @@ function createListRowElement(item, isDetailed = false) {
     const rnum = Number(rating);
     if (isNaN(rnum)) return '';
 
-    // Normalize rating depending on detected ratingMode and possible formats
-    // Some updates may send 1-5 (stars) or 1-10 (scale_10) while UI expects 0-100
-    let normalized = rnum;
-    if (ratingMode === 'stars_5') {
-      // If value is 1-5, convert to 0-100 scale
-      normalized = (rnum > 0 && rnum <= 5) ? (rnum * 20) : rnum;
-    } else if (ratingMode === 'scale_10') {
-      // If value is 1-10, keep as-is for display; if it's 0-100, convert to 1-10 later
-      normalized = rnum;
-    }
-
-    const rounded = Math.round(normalized);
+    const displayRating = window.ratingToDisplay(rnum, ratingMode);
+    if (displayRating === null) return '';
+    const rounded = Math.round(rnum);
 
     if (ratingMode === 'faces') {
       if (rounded <= 33) {
@@ -618,13 +647,7 @@ function createListRowElement(item, isDetailed = false) {
         return '<span class="card-rating"><svg aria-hidden="true" focusable="false" data-prefix="far" data-icon="smile" class="svg-inline--fa fa-smile fa-w-16 fa-lg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><path fill="currentColor" d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zm0 448c-110.3 0-200-89.7-200-200S137.7 56 248 56s200 89.7 200 200-89.7 200-200 200zm-80-216c17.7 0 32-14.3 32-32s-14.3-32-32-32-32 14.3-32 32 14.3 32 32 32zm160 0c17.7 0 32-14.3 32-32s-14.3-32-32-32-32 14.3-32 32 14.3 32 32 32zm4 72.6c-20.8 25-51.5 39.4-84 39.4s-63.2-14.3-84-39.4c-8.5-10.2-23.7-11.5-33.8-3.1-10.2 8.5-11.5 23.6-3.1 33.8 30 36 74.1 56.6 120.9 56.6s90.9-20.6 120.9-56.6c8.5-10.2 7.1-25.3-3.1-33.8-10.1-8.4-25.3-7.1-33.8 3.1z"></path></svg></span>';
       }
     } else if (ratingMode === 'stars_5') {
-      // Determine star count from normalized 0-100 scale or raw 1-5
-      let starsCount = 0;
-      if (rnum > 0 && rnum <= 5) {
-        starsCount = Math.round(rnum);
-      } else {
-        starsCount = Math.round(normalized / 20);
-      }
+      const starsCount = displayRating;
       let starsHtml = '<span class="card-rating"><span class="star-rating">';
       for (let i = 1; i <= 5; i++) {
         if (i <= starsCount) {
@@ -636,10 +659,7 @@ function createListRowElement(item, isDetailed = false) {
       starsHtml += '</span></span>';
       return starsHtml;
     } else if (ratingMode === 'scale_10') {
-      // If rating is above 10, divide and round. If it's under 10, to not round to 0 when its 5 or under, display 1.
-      let displayVal = rnum;
-      if (rnum > 10) displayVal = Math.round(rnum / 10)
-        else displayVal = 1;
+      const displayVal = displayRating;
       return `<span class="card-rating"><span class="rating-number">${displayVal}</span></span>`;
     } else if (ratingMode === 'scale_100') {
       return `<span class="card-rating"><span class="rating-number">${Math.round(rnum)}</span></span>`;
@@ -648,7 +668,34 @@ function createListRowElement(item, isDetailed = false) {
     return '';
   }
 
+  function hasEpisodeProgress(item) {
+    return ['tv', 'anime', 'manga'].includes(item.media_type);
+  }
+
+  function getQuickProgressHtml(item, action, text) {
+    const label = action === 'complete' ? 'Mark completed' :
+      action === 'secondary' ? 'Add one season' :
+      item.media_type === 'manga' ? 'Add one chapter' : 'Add one episode';
+    return `<span class="quick-progress">${text ? `<span class="quick-progress-value">${text}</span>` : ''}<button type="button" class="progress-increment-btn" data-progress-action="${action}" aria-label="${label}"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></span>`;
+  }
+
+  function getTitleHtml(item, titleClass) {
+    const title = `<span class="${titleClass}">${item.title}</span>`;
+    if (item.status !== 'ongoing' || hasEpisodeProgress(item)) return title;
+    return `<span class="quick-progress-title">${title}${getQuickProgressHtml(item, 'complete', '')}</span>`;
+  }
+
+  function activeProgressText(current, total) {
+    const count = Number(current) || 0;
+    return `${count}/${Number(total) > 0 ? Number(total) : '?'}`;
+  }
+
   function getProgressHtml(item) {
+    if (item.status === 'ongoing') {
+      if (!hasEpisodeProgress(item)) return `<div class="card-progress">${getQuickProgressHtml(item, 'complete', '0/1')}</div>`;
+      return `<div class="card-progress">${getQuickProgressHtml(item, 'main', activeProgressText(item.progress_main, item.total_main))}</div>`;
+    }
+    if (['movie', 'music'].includes(item.media_type)) return '';
     if (!item.progress_main) return '';
     
     if (item.progress_main === item.total_main || item.progress_main > item.total_main) {
@@ -672,6 +719,9 @@ function createListRowElement(item, isDetailed = false) {
   }
 
   function getListMainProgressHtml(item) {
+    if (item.status === 'ongoing' && hasEpisodeProgress(item)) {
+      return getQuickProgressHtml(item, 'main', activeProgressText(item.progress_main, item.total_main));
+    }
     if (mediaType === 'games') {
       return formatListProgress(item.progress_main);
     }
@@ -682,6 +732,9 @@ function createListRowElement(item, isDetailed = false) {
   }
 
   function getSeasonsHtml(item) {
+    if (item.status === 'ongoing' && item.media_type === 'tv') {
+      return getQuickProgressHtml(item, 'secondary', activeProgressText(item.progress_secondary, item.total_secondary));
+    }
     return formatListProgress(item.progress_secondary, item.total_secondary);
   }
 
@@ -718,290 +771,27 @@ function createListRowElement(item, isDetailed = false) {
     }
   }
 
-  // Replace or move a single updated item in the DOM without reloading the whole page
+  // Use the list API's canonical data/order after edits. Edit responses contain
+  // display ratings and cannot identify an item's position among unloaded pages.
   function replaceItemElement(item) {
-    try {
-      if (ratingMode === 'scale_10' && item.personal_rating > 0 && item.personal_rating <= 10) {
-          item.personal_rating = item.personal_rating * 10;
-      }
+    const id = String(item.id);
+    const oldItem = allItems.find(entry => String(entry.id) === id);
+    const oldElement = document.querySelector(`.card[data-id="${id}"], .list-row[data-id="${id}"]`);
+    const oldStatus = oldItem?.status || oldElement?.dataset.status;
 
-      listCacheVersion = Date.now().toString();
-      sessionStorage.setItem(`cacheVersion_${mediaType}`, listCacheVersion);
-
-      const id = String(item.id);
-
-      // Get old status BEFORE updating allItems
-      const idx = allItems.findIndex(i => String(i.id) === id);
-      const oldItem = idx !== -1 ? {...allItems[idx]} : null;
-      const oldStatus = oldItem ? oldItem.status : null;
-      
-      // Update in-memory list (best-effort)
-      if (idx !== -1) {
-        item = Object.assign({}, allItems[idx], item);
-        allItems[idx] = item;
-      } else {
-        // If not present, add to in-memory list (we don't know exact position without full load)
-        allItems.unshift(item);
-      }
-
-      // If a status filter is active, do not insert items of other statuses
-      if (currentStatus && currentStatus !== 'all' && item.status !== currentStatus) {
-        // Remove element if currently visible but being filtered out
-        document.querySelectorAll(`.card[data-id="${id}"], .list-row[data-id="${id}"]`).forEach(n => n.remove());
-        // Remove from memory
-        allItems = allItems.filter(i => String(i.id) !== id);
-        // Update counts BEFORE returning (if status changed)
-        if (oldStatus && oldStatus !== item.status) {
-          statusCounts[oldStatus] = Math.max(0, statusCounts[oldStatus] - 1);
-          statusCounts[item.status] = statusCounts[item.status] + 1;
-        }
-        
-        updateFilterButtons();
-        return;
-      }
-
-      // Create a fresh element using existing render helpers
-      const newEl = (currentView === 'card') 
-          ? createCardElement(item) 
-          : createListRowElement(item, currentView === 'detailed_list');
-      // Attach date data for comparisons
-      if (item.date_added) newEl.dataset.dateAdded = item.date_added;
-
-      // Try to find existing element in DOM BEFORE removing it
-      const selector = currentView === 'card' ? `.card[data-id="${id}"]` : `.list-row[data-id="${id}"]`;
-      let activeContainer = cardView;
-      if (currentView === 'list') activeContainer = listView;
-      if (currentView === 'detailed_list') activeContainer = detailedListView;
-      const oldEl = activeContainer?.querySelector(selector) || document.querySelector(selector);
-      if (oldEl) {
-        // Check if we need to re-sort based on current sort criteria
-        let needsResort = false;
-        if (oldStatus !== item.status) needsResort = true;
-        else if (currentSort === 'rating' && oldItem && oldItem.personal_rating != item.personal_rating) needsResort = true;
-        else if ((currentSort === 'date' || currentSort === 'activity_date') && oldItem && oldItem.date_added != item.date_added) needsResort = true;
-        else if (currentSort === 'release_date' && oldItem && oldItem.release_date != item.release_date) needsResort = true;
-        else if ((currentSort === 'hours' || currentSort === 'pages') && oldItem && oldItem.progress_main != item.progress_main) needsResort = true;
-        else if (currentSort === 'length' && oldItem && oldItem.total_main != item.total_main) needsResort = true;
-        else if ((currentSort === 'episodes' || currentSort === 'chapters') && oldItem && (oldItem.total_main != item.total_main || oldItem.progress_main != item.progress_main)) needsResort = true;
-        else if ((currentSort === 'seasons' || currentSort === 'volumes') && oldItem && (oldItem.total_secondary != item.total_secondary || oldItem.progress_secondary != item.progress_secondary)) needsResort = true;
-        else if (currentSort === 'title' && oldItem && oldItem.title != item.title) needsResort = true;
-
-        // If status didn't change and no re-sort needed, replace in-place (PRESERVE DOM position)
-        if (!needsResort && oldEl.dataset.status === item.status) {
-          oldEl.replaceWith(newEl);
-          return;
-        }
-        // Status changed (or other grouping), remove old and fallthrough to insert in new group
-        const oldGroup = oldEl.closest('.status-group');
-        oldEl.remove();
-
-        // Check if oldGroup is empty
-        if (oldGroup) {
-             const grid = oldGroup.querySelector('.card-grid');
-             const tbody = oldGroup.querySelector('tbody');
-             const hasChildren = (grid && grid.children.length > 0) || (tbody && tbody.children.length > 0);
-             if (!hasChildren) oldGroup.remove();
-        }
-      }
-
-      // Comparison helpers using server-side fields in allItems
-      function normalizeRating(r) {
-          const val = Number(r) || 0;
-          if (ratingMode === 'stars_5' && val <= 5 && val > 0) return val * 20;
-          if (ratingMode === 'scale_10' && val <= 10 && val > 0) return val * 10;
-          return val;
-      }
-
-      function effectiveProgress(total, progress) {
-          const totalValue = Number(total) || 0;
-          if (totalValue > 0) return totalValue;
-          return Number(progress) || 0;
-      }
-
-function compareItems(a, b) {
-        if (!a || !b) return 0;
-
-        // Helper for case-insensitive, natural string comparison
-        const compareTitles = (t1, t2) => {
-          return String(t1 || '').localeCompare(String(t2 || ''), undefined, {
-            sensitivity: 'base',
-            numeric: true
-          });
-        };
-
-        // rating
-        if (currentSort === 'rating') {
-          const ra = normalizeRating(a.personal_rating);
-          const rb = normalizeRating(b.personal_rating);
-          if (ra !== rb) return ra - rb;
-          return compareTitles(a.title, b.title);
-        }
-        // activity date
-        if (currentSort === 'date' || currentSort === 'activity_date') {
-          const da = a.date_added ? new Date(a.date_added).getTime() : 0;
-          const db = b.date_added ? new Date(b.date_added).getTime() : 0;
-          if (da !== db) return da - db;
-          return compareTitles(a.title, b.title);
-        }
-        // release date
-        if (currentSort === 'release_date') {
-          const da = a.release_date ? new Date(a.release_date).getTime() : 0;
-          const db = b.release_date ? new Date(b.release_date).getTime() : 0;
-          if (da !== db) return da - db;
-          return compareTitles(a.title, b.title);
-        }
-        // hours
-        if (currentSort === 'hours') {
-            const pa = Number(a.progress_main) || 0;
-            const pb = Number(b.progress_main) || 0;
-            if (pa !== pb) return pa - pb;
-            return compareTitles(a.title, b.title);
-        }
-        // length
-        if (currentSort === 'length') {
-            const la = Number(a.total_main) || 0;
-            const lb = Number(b.total_main) || 0;
-            if (la !== lb) return la - lb;
-            return compareTitles(a.title, b.title);
-        }
-        // episodes / chapters / pages
-        if (currentSort === 'episodes' || currentSort === 'chapters' || currentSort === 'pages') {
-            const ea = effectiveProgress(a.total_main, a.progress_main);
-            const eb = effectiveProgress(b.total_main, b.progress_main);
-            if (ea !== eb) return ea - eb;
-            return compareTitles(a.title, b.title);
-        }
-        if (currentSort === 'seasons' || currentSort === 'volumes') {
-            const sa = effectiveProgress(a.total_secondary, a.progress_secondary);
-            const sb = effectiveProgress(b.total_secondary, b.progress_secondary);
-            if (sa !== sb) return sa - sb;
-            return compareTitles(a.title, b.title);
-        }
-        // fallback to title
-        return compareTitles(a.title, b.title);
-      }
-
-      // Insert into correct container/group (card or list)
-      if (currentView === 'card') {
-        // Find or create status group
-        let destGroup = cardView.querySelector(`.status-group[data-status="${item.status}"]`);
-        if (!destGroup) {
-          destGroup = document.createElement('div');
-          destGroup.className = 'status-group';
-          destGroup.dataset.status = item.status;
-          const header = document.createElement('h2');
-          header.className = 'status-header';
-          const labels = statusLabelsMap[mediaType] || {};
-          header.textContent = labels[item.status] || item.status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
-          destGroup.appendChild(header);
-
-          // create card grid wrapper
-          const cardGrid = document.createElement('div');
-          cardGrid.className = 'card-grid';
-          destGroup.appendChild(cardGrid);
-
-          // Insert destGroup in canonical status order
-          const existingGroups = Array.from(cardView.querySelectorAll('.status-group'));
-          const myIndex = statusesOrder.indexOf(item.status);
-          let placed = false;
-          for (const g of existingGroups) {
-            const gIndex = statusesOrder.indexOf(g.dataset.status);
-            if (gIndex === -1) continue;
-            if (gIndex > myIndex) {
-              cardView.insertBefore(destGroup, g);
-              placed = true;
-              break;
-            }
-          }
-          if (!placed) cardView.appendChild(destGroup);
-        }
-
-        const cardGrid = destGroup.querySelector('.card-grid');
-        // Determine insertion point among currently loaded children using in-memory allItems for comparison
-        const children = Array.from(cardGrid.children);
-        let inserted = false;
-        for (const child of children) {
-          const cid = String(child.dataset.id);
-          const childItem = allItems.find(i => String(i.id) === cid);
-          if (!childItem) continue;
-          const cmp = compareItems(item, childItem);
-          const shouldInsertBefore = (currentSortOrder === 'desc' ? cmp > 0 : cmp < 0);
-          if (shouldInsertBefore) {
-            cardGrid.insertBefore(newEl, child);
-            inserted = true;
-            break;
-          }
-        }
-        if (!inserted) {
-          cardGrid.appendChild(newEl);
-        }
-      } else {
-        // List view: find or create status group table/tbody
-        let destGroup = activeContainer.querySelector(`.status-group[data-status="${item.status}"]`);
-        if (!destGroup) {
-          destGroup = document.createElement('div');
-          destGroup.className = 'status-group';
-          destGroup.dataset.status = item.status;
-          const header = document.createElement('h2');
-          header.className = 'status-header';
-          const labels = statusLabelsMap[mediaType] || {};
-          header.textContent = labels[item.status] || item.status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
-          destGroup.appendChild(header);
-
-          const table = document.createElement('table');
-          table.innerHTML = `<thead></thead><tbody></tbody>`;
-          destGroup.appendChild(table);
-
-          // Insert destGroup into activeContainer according to statusesOrder
-          const existingGroups = Array.from(activeContainer.querySelectorAll('.status-group'));
-          const myIndex = statusesOrder.indexOf(item.status);
-          let placed = false;
-          for (const g of existingGroups) {
-            const gIndex = statusesOrder.indexOf(g.dataset.status);
-            if (gIndex === -1) continue;
-            if (gIndex > myIndex) {
-              activeContainer.insertBefore(destGroup, g);
-              placed = true;
-              break;
-            }
-          }
-          if (!placed) activeContainer.appendChild(destGroup);
-          console.log('Created new destGroup for status:', item.status);
-        }
-
-        const tbody = destGroup.querySelector('tbody') || destGroup.querySelector('table tbody') || destGroup;
-        // Insert row by comparing to loaded rows
-        const rows = Array.from(tbody.children);
-        let insertedRow = false;
-        for (const row of rows) {
-          const rid = String(row.dataset.id);
-          const rowItem = allItems.find(i => String(i.id) === rid);
-          if (!rowItem) continue;
-          const cmp = compareItems(item, rowItem);
-          const shouldInsertBefore = (currentSortOrder === 'desc' ? cmp > 0 : cmp < 0);
-          if (shouldInsertBefore) {
-            tbody.insertBefore(newEl, row);
-            insertedRow = true;
-            break;
-          }
-        }
-        if (!insertedRow) {
-          tbody.appendChild(newEl);
-        }
-      }
-      
-      // Update counts if status changed
-      if (oldStatus && oldStatus !== item.status) {
-        // Item changed status: decrement old status, increment new status
-        statusCounts[oldStatus] = Math.max(0, statusCounts[oldStatus] - 1);
-        statusCounts[item.status] = statusCounts[item.status] + 1;
-      }
-      
-      // Update filter buttons after replacement
-      updateFilterButtons();
-    } catch (e) {
-      console.error('replaceItemElement error', e);
+    if (oldStatus && oldStatus !== item.status) {
+      statusCounts[oldStatus] = Math.max(0, (statusCounts[oldStatus] || 0) - 1);
+      statusCounts[item.status] = (statusCounts[item.status] || 0) + 1;
     }
+    // Track the new status while requests are pending so another edit cannot
+    // count the same status change twice. Rendering waits for canonical data.
+    if (oldItem) oldItem.status = item.status;
+    if (oldElement) oldElement.dataset.status = item.status;
+
+    listCacheVersion = Date.now().toString();
+    sessionStorage.setItem(`cacheVersion_${mediaType}`, listCacheVersion);
+    const filterChanged = updateFilterButtons(false);
+    return loadItems(filterChanged ? 1 : currentPage, true, { refreshLoaded: true, updatedId: id });
   }
 
   // Expose for edit_modal to call
@@ -1070,7 +860,7 @@ function compareItems(a, b) {
   });
 
   // Update filter button visibility and counts - only called on edit/delete
-  function updateFilterButtons() {
+  function updateFilterButtons(reloadIfEmpty = true) {
     // Ensure buttons exist only for statuses that currently have items
     Object.keys(statusCounts).forEach(filter => {
       if (filter === 'all') return;
@@ -1112,8 +902,11 @@ function compareItems(a, b) {
       const allBtn = document.querySelector(`.filter-btn[data-filter="all"]`);
       if (allBtn) allBtn.classList.add("active");
       // Reload items to show the unfiltered list
-      resetAndLoad();
+      if (reloadIfEmpty) resetAndLoad();
+      updateStatusContainer();
+      return true;
     }
+    return false;
   }
 
   // Helper: Ensure a filter button exists, create if needed (but do NOT auto-run on load)
@@ -1755,7 +1548,7 @@ updateSortButtons();
     allItems = [];
     currentPage = 1;
     hasMore = true;
-    loadItems(1, true);
+    return loadItems(1, true);
   }
 
   // === SCROLL PAGINATION ===
@@ -1842,6 +1635,36 @@ updateSortButtons();
     sessionStorage.setItem(pageKey, currentPage);
   });
   
+  const progressUpdates = new Set();
+  document.addEventListener('click', async event => {
+    const button = event.target.closest('.progress-increment-btn');
+    if (!button) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const itemElement = button.closest('.card, .list-row');
+    const id = itemElement?.dataset.id;
+    if (!id || progressUpdates.has(id)) return;
+    progressUpdates.add(id);
+    const buttons = itemElement.querySelectorAll('.progress-increment-btn');
+    buttons.forEach(control => { control.disabled = true; });
+    try {
+      const csrf = document.cookie.split('; ').find(value => value.startsWith('csrftoken='))?.split('=').slice(1).join('=') || '';
+      const response = await fetch(`/edit-item/${id}/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': decodeURIComponent(csrf) },
+        body: JSON.stringify({ increment_progress: button.dataset.progressAction }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.error || 'Unable to update progress.');
+      await replaceItemElement(data.item);
+    } catch (error) {
+      alert(error.message || 'Unable to update progress. Please try again.');
+    } finally {
+      progressUpdates.delete(id);
+      buttons.forEach(control => { control.disabled = false; });
+    }
+  }, true);
+
   // === EVENT DELEGATION FOR EDIT BUTTONS ===
   document.addEventListener('click', function(e) {
     const entryBody = e.target.closest('.expandable-entry');
@@ -1879,7 +1702,7 @@ updateSortButtons();
         return;
     }
 
-    if (e.target.classList.contains('play-card-btn')) {
+    if (e.target.closest('.play-card-btn')) {
       e.preventDefault();
       e.stopPropagation();
       
@@ -1959,6 +1782,8 @@ updateSortButtons();
 
   // Called when clicking the specific '▶' button on an item card
   window.playContextPlaylist = async function(startItemId) {
+      // Open a remembered pop-out during the click, before the asynchronous fetch.
+      if (window.prepareMusicPlayerWindow) window.prepareMusicPlayerWindow();
       const btnList = document.querySelectorAll(`.card[data-id="${startItemId}"] .play-card-btn, .list-row[data-id="${startItemId}"] .play-card-btn`);
       const playSvg = `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`;
       const loadingSvg = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/></path></svg>`;
@@ -2122,72 +1947,11 @@ updateSortButtons();
   }
 
   // === BANNER ROTATOR ===
-  let firstLoad = true;
-  let bannerInterval;
-  let lastBannerIndex = -1;
-
- function initBannerRotator() {
-    if (bannerPool.length === 0) return;
-    
-    // If the HTML already loaded an image, skip replacing it on the very first tick
-    const currentSrc = bannerImg.getAttribute("src");
-    if (firstLoad && !currentSrc.includes("placeholder.png")) {
-        firstLoad = false;
-        // Just start the 30-second timer for the NEXT image
-        bannerInterval = setInterval(updateBanner, 30000);
-        return;
-    }
-
-    // Otherwise, run normally
-    updateBanner();
-    if (bannerInterval) clearInterval(bannerInterval);
-    bannerInterval = setInterval(updateBanner, 30000);
+  function initBannerRotator() {
+    stopBannerRotator?.();
+    stopBannerRotator = window.createBannerRotator({
+      image: bannerImg, quote: document.querySelector('.banner-quote'), banners: bannerPool,
+    });
   }
-  
-  function updateBanner() {
-    if (bannerPool.length === 0) return;
-    
-    let random;
-    if (bannerPool.length > 1) {
-      do {
-        random = Math.floor(Math.random() * bannerPool.length);
-      } while (random === lastBannerIndex);
-    } else {
-      random = 0;
-    }
-    lastBannerIndex = random;
-
-    const { bannerUrl, notes } = bannerPool[random];
-
-    const quoteBox = document.querySelector(".banner-quote");
-
-    if (firstLoad) {
-      bannerImg.src = bannerUrl;
-      bannerImg.style.opacity = 1;
-
-      if (quoteBox) {
-        quoteBox.innerText = notes ? `“${notes}”\n\n~You` : "";
-        quoteBox.style.display = notes ? "block" : "none";
-        quoteBox.style.opacity = notes ? 1 : 0;
-      }
-
-      firstLoad = false;
-      return;
-    }
-
-    bannerImg.style.opacity = 0;
-    if (quoteBox) quoteBox.style.opacity = 0;
-
-    setTimeout(() => {
-      bannerImg.src = bannerUrl;
-      if (quoteBox) {
-        quoteBox.innerText = notes ? `“${notes}”\n\n~You` : "";
-        quoteBox.style.display = notes ? "block" : "none";
-        quoteBox.style.opacity = notes ? 1 : 0;
-      }
-      bannerImg.style.opacity = 1;
-    }, 1000);
-  }
-
 
 });

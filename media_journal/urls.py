@@ -2,11 +2,13 @@ from django.conf import settings
 from django.urls import path, re_path
 from django.contrib import admin
 from django.views.static import serve
+from django.views.generic import TemplateView
 from django.contrib.auth import views as auth_views
 
 from core import views
 
 urlpatterns = [
+    path('manifest.webmanifest', views.web_manifest, name='web_manifest'),
     path('login/', auth_views.LoginView.as_view(template_name='core/p_login.html', redirect_authenticated_user=True), name='login'),
     path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
     path('admin/', admin.site.urls),
@@ -28,6 +30,7 @@ urlpatterns = [
     path('openlib/book/<str:work_id>/', views.openlib_detail, name='openlib_detail'),
     path('musicbrainz/music/<str:recording_id>/', views.musicbrainz_detail, name='musicbrainz_detail'),
     path('', views.home, name='home'),
+    path('api/home/upcoming/', views.home_upcoming, name='home_upcoming'),
     path('notifications/dismiss-sys/<str:sys_id>/', views.dismiss_sys_notification, name='dismiss_sys_notification'),
     path('movies/', views.movies, name='movies'),
     path('api/movies/', views.movies_api, name='movies_api'),
@@ -48,6 +51,7 @@ urlpatterns = [
     path('api/manga/', views.manga_api, name='manga_api'),
     path('api/manga/banners/', views.manga_banners_api, name='manga_banners_api'),
     path('music/', views.music, name='music'),
+    path('music/player/', TemplateView.as_view(template_name='core/p_music_player.html'), name='music_player'),
     path('api/music/', views.music_api, name='music_api'),
     path('api/music/banners/', views.music_banners_api, name='music_banners_api'),
     path("discover/", views.discover_view, name="discover"),
@@ -63,7 +67,21 @@ urlpatterns = [
     path('api/history/', views.history_api, name='history_api'),
     path('get-item/<int:item_id>/', views.get_item, name='get_item'),
     path('settings/', views.settings_page, name='settings'),
+    path('settings/transfer/upload/', views.transfer_upload, name='transfer_upload'),
+    path('settings/transfer/export/', views.transfer_export, name='transfer_export'),
+    path('settings/transfer/<str:job_id>/status/', views.transfer_status, name='transfer_status'),
+    path('settings/transfer/<str:job_id>/action/', views.transfer_action, name='transfer_action'),
+    path('settings/transfer/<str:job_id>/rows/', views.transfer_rows, name='transfer_rows'),
+    path('settings/transfer/<str:job_id>/download/', views.transfer_download, name='transfer_download'),
+    path("settings/update_adult_content/", views.update_adult_content, name="update_adult_content"),
+    path("settings/update_banner_notes/", views.update_banner_notes, name="update_banner_notes"),
+    path('settings/favorites/export-data/', views.export_favorites_data, name='export_favorites_data'),
+    path('settings/favorites/export-png-archive/', views.export_favorites_png_archive, name='export_favorites_png_archive'),
+    path('settings/favorites/export-image/<str:kind>/<int:item_id>/', views.export_favorites_image, name='favorite_export_image'),
     path("settings/update_preferences/", views.update_preferences, name="update_preferences"),
+    path('settings/update_favorite_sections/', views.update_favorite_sections, name='update_favorite_sections'),
+    path('settings/update_list_card_overlays/', views.update_list_card_overlays, name='update_list_card_overlays'),
+    path('settings/update_live_search/', views.update_live_search_settings, name='update_live_search_settings'),
     path("settings/update_theme/", views.update_theme, name="update_theme"),
     path("settings/save_username/", views.save_username, name="save_username"),
     path('api/version_info/', views.version_info_api, name='version_info_api'),
@@ -90,6 +108,8 @@ urlpatterns = [
     path('api/favorite-media/reorder/', views.update_favorite_media_order, name='favorite_media_reorder'),
     path("upload-game-screenshots/", views.upload_game_screenshots, name="upload_game_screenshots"),
     path('api/game_screenshots/', views.game_screenshots_api, name='game_screenshots_api'),
+    path('api/game_screenshot_image/', views.game_screenshot_image, name='game_screenshot_image'),
+    path('api/favorite-game-screenshot/', views.favorite_game_screenshot, name='favorite_game_screenshot'),
     path("upload-banner/", views.upload_banner, name="upload_banner"),
     path("upload-cover/", views.upload_cover, name="upload_cover"),
     path("refresh-item/", views.refresh_item, name="refresh_item"),
@@ -101,6 +121,7 @@ urlpatterns = [
     path("api/check_planned_tvseries_statuses/", views.check_planned_tvseries_statuses, name="check_planned_tvseries_statuses"),
     path("api/check_planned_anime_manga_statuses/", views.check_planned_anime_manga_statuses, name="check_planned_anime_manga_statuses"),
     path("api/check_planned_game_statuses/", views.check_planned_game_statuses, name="check_planned_game_statuses"),
+    path('character/<str:person_id>/', views.person_detail, {'person_type': 'character'}, name='character_detail'),
     path('person/<str:person_type>/<str:person_id>/', views.person_detail, name='person_detail'),
     path('api/actor/<str:actor_id>/', views.actor_detail_api, name='actor_detail_api'),
     path('api/character/<str:character_id>/', views.character_detail_api, name='character_detail_api'),

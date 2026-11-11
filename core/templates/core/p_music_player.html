@@ -1,0 +1,19 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Media Journal - Music Player</title>
+  {% include 'core/g_pwa_meta.html' %}
+  <style>
+    html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #000; color: white; font-family: sans-serif; }
+    #music-player-container { display: none; }
+  </style>
+</head>
+<body data-music-popout="true">
+  {% csrf_token %}
+  <div id="music-player-container" class="music-player-container"></div>
+  <script src="{% static 'core/js/g_music.js' %}"></script>
+</body>
+</html>

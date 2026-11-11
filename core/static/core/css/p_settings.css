@@ -47,6 +47,108 @@
   --special-color-hover: #dd866e;
 }
 
+/* Muted forest green, with warm sage text and moss accents. */
+[data-theme="green"] {
+  --bg-primary: #1e2923;
+  --bg-secondary: #2e4033;
+  --bg-tertiary: #384c3d;
+  --bg-quaternary: #25362b;
+
+  --text-primary: #e5e8d9;
+  --text-secondary: #d2dcc6;
+
+  --border-color: #435a46;
+  --hover-bg: #3c5341;
+
+  --special-color: #b4c990;
+  --special-color-hover: #cfdeb1;
+}
+
+/* Warm plum, with parchment text and muted brass accents. */
+[data-theme="plum"] {
+  --bg-primary: #29232d;
+  --bg-secondary: #413546;
+  --bg-tertiary: #4d3f51;
+  --bg-quaternary: #352c3b;
+
+  --text-primary: #eee3da;
+  --text-secondary: #dac9cc;
+
+  --border-color: #58495e;
+  --hover-bg: #4e3e53;
+
+  --special-color: #d4b78e;
+  --special-color-hover: #e2caa3;
+}
+
+/* Warm charcoal, with ivory text and restrained amber accents. */
+[data-theme="charcoal"] {
+  --bg-primary: #252422;
+  --bg-secondary: #393631;
+  --bg-tertiary: #47423b;
+  --bg-quaternary: #302d29;
+
+  --text-primary: #ece6db;
+  --text-secondary: #d2c9bb;
+
+  --border-color: #514b42;
+  --hover-bg: #49433b;
+
+  --special-color: #d4b17b;
+  --special-color-hover: #e5c996;
+}
+
+/* Muted ocean teal, with warm linen text and sea-glass accents. */
+[data-theme="teal"] {
+  --bg-primary: #203033;
+  --bg-secondary: #30464a;
+  --bg-tertiary: #3b5355;
+  --bg-quaternary: #273b3f;
+
+  --text-primary: #e6e8dc;
+  --text-secondary: #c8d8ce;
+
+  --border-color: #486368;
+  --hover-bg: #3b575a;
+
+  --special-color: #a5c9b8;
+  --special-color-hover: #c6dfcb;
+}
+
+/* Light rose, with warm ivory backgrounds, cocoa text and berry accents. */
+[data-theme="pink"] {
+  --bg-primary: #fff8f6;
+  --bg-secondary: #f8e9e9;
+  --bg-tertiary: #f2dce1;
+  --bg-quaternary: #efd0d8;
+
+  --text-primary: #54363e;
+  --text-secondary: #684851;
+
+  --border-color: #cca4b0;
+  --hover-bg: #eac6d1;
+
+  --special-color: #b13661;
+  --special-color-hover: #8f204c;
+}
+
+/* Cake: creamy ivory, peach layers and red accents. */
+[data-theme="cake"] {
+  --bg-primary: #fff6e9;
+  --bg-secondary: #f9e7d4;
+  --bg-tertiary: #f1d3b9;
+  --bg-quaternary: #ebc29f;
+
+  --text-primary: #573326;
+  --text-secondary: #6b4433;
+
+  --border-color: #d4a482;
+  --hover-bg: #e9ba93;
+
+  --special-color: #b52f20;
+  --special-color-hover: #a04a1b;
+}
+
 a {
   color: var(--special-color);
   text-decoration: none;
@@ -68,17 +170,41 @@ p {
   gap: 1.2rem;
 }
 
-#rating-mode-select {
+.rating-mode-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
   width: 100%;
-  max-width: 220px;
-  font-size: 1rem;
-  text-align: center;
-  background-color: var(--bg-tertiary);
-  color: var(--text-primary);
-  border: 1px solid var(--border-color);
+  max-width: 260px;
+}
+
+.rating-mode-button {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.6rem;
+  border: 2px solid var(--border-color);
   border-radius: 6px;
-  padding: 0.6rem;
-  margin-bottom: 4.7rem;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  font: inherit;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.rating-mode-button:hover,
+.rating-mode-button:focus-visible {
+  background: var(--hover-bg);
+}
+
+.rating-mode-button.active {
+  border-color: var(--special-color);
+  color: var(--text-secondary);
+}
+
+.rating-mode-button:disabled {
+  cursor: wait;
 }
 
 
@@ -319,12 +445,22 @@ table select {
   background: var(--bg-quaternary);
 }
 
-table td:last-child .save-btn {
-  float: left;
+#api-keys th:last-child {
+  text-align: center;
 }
 
-table td:last-child .delete-btn {
-  float: right;
+.api-key-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(4.5rem, 1fr));
+  gap: 0.5rem;
+}
+
+.api-key-actions button {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 2rem;
+  padding: 0.4rem 0.6rem;
+  white-space: nowrap;
 }
 
 .backup-actions {
@@ -577,6 +713,17 @@ table td:last-child .delete-btn {
   gap: 0.8rem;
 }
 
+#preferences-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+#preferences-form .preference-toggle-label {
+  width: 100%;
+}
+
 .preference-toggle-label {
   display: block;
   cursor: pointer;
@@ -641,6 +788,61 @@ table td:last-child .delete-btn {
   color: var(--special-color);
 }
 
+.favorite-sections-settings { grid-column: 1 / -1; min-width: 0; }
+#favorite-sections-form {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+#favorite-sections-form .details-section-box { font-family: inherit; transition: background 0.2s, border-color 0.2s; }
+
+.live-search-section {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+.live-search-types {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 110px));
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.live-search-type {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.8rem 0.25rem;
+  min-width: 0;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 2px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.live-search-type:hover { background: var(--hover-bg); }
+.live-search-type[aria-pressed="true"] { border-color: var(--special-color); }
+.live-search-type[aria-pressed="true"] .live-search-icon { color: var(--special-color); }
+.live-search-icon { display: flex; align-items: center; justify-content: center; height: 1.5rem; }
+.live-search-icon svg { width: 1.5rem; height: 1.5rem; }
+.live-search-provider {
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 0.15rem 0.4rem;
+  border-radius: 999px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 0.65rem;
+  white-space: nowrap;
+}
+.live-search-help { margin: 1.25rem 0 0; text-align: center; font-size: 0.9rem; color: var(--text-primary); line-height: 1.6; }
+
 .preferences-container {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -650,7 +852,7 @@ table td:last-child .delete-btn {
 
 .preferences-section {
   background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
+  border: none;
   border-radius: 8px;
   padding: 1.5rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
@@ -897,10 +1099,16 @@ table td:last-child .delete-btn {
 
 
 .theme-selector {
-  display: flex;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.5rem;
   margin-top: 0.5rem;
+  max-height: 10.5rem;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-primary) var(--bg-secondary);
+  padding: 0.25rem;
 }
 
 .theme-option {
@@ -914,40 +1122,58 @@ table td:last-child .delete-btn {
   transition: all 0.2s ease;
 }
 
-.theme-option:hover:not(.disabled) {
-  background: var(--hover-bg);
+.theme-option:hover:not(.disabled),
+.theme-option:focus-visible {
+  box-shadow: inset 0 0 0 2px currentColor;
 }
 
-.theme-option[data-theme="dark"]:hover {
+.theme-option[data-theme="dark"] {
   background: #2a3441;
-}
-
-.theme-option[data-theme="light"]:hover {
-  background: #E5E5E5;
-}
-
-.theme-option[data-theme="brown"]:hover {
-  background: #3f2d28;
-}
-
-.theme-option[data-theme="dark"] span {
   color: #8596a5;
 }
 
-.theme-option[data-theme="light"] span {
+.theme-option[data-theme="light"] {
+  background: #E5E5E5;
   color: #606060;
 }
 
-.theme-option[data-theme="brown"] span {
+.theme-option[data-theme="brown"] {
+  background: #3f2d28;
   color: #faeee7;
 }
 
-.theme-option[data-theme="green"] span {
-  color: white;
+.theme-option[data-theme="green"] {
+  background: #25362b;
+  color: #e5e8d9;
+}
+
+.theme-option[data-theme="plum"] {
+  background: #352c3b;
+  color: #eee3da;
+}
+
+.theme-option[data-theme="charcoal"] {
+  background: #302d29;
+  color: #ece6db;
+}
+
+.theme-option[data-theme="teal"] {
+  background: #273b3f;
+  color: #e6e8dc;
+}
+
+.theme-option[data-theme="pink"] {
+  background: #efd0d8;
+  color: #54363e;
+}
+
+.theme-option[data-theme="cake"] {
+  background: #ebc29f;
+  color: #573326;
 }
 
 .theme-option.active {
-  background: var(--bg-quaternary);
+  box-shadow: inset 0 0 0 2px currentColor;
 }
 
 .theme-option.disabled {
@@ -983,17 +1209,38 @@ table td:last-child .delete-btn {
 }
 
 .theme-green {
-  background: #0d4f3c;
-  color: #ffffff;
+  background: #1e2923;
+  color: #e5e8d9;
+}
+
+.theme-plum {
+  background: #29232d;
+  color: #eee3da;
+}
+
+.theme-charcoal {
+  background: #252422;
+  color: #ece6db;
+}
+
+.theme-teal {
+  background: #203033;
+  color: #e6e8dc;
+}
+
+.theme-pink {
+  background: #fff8f6;
+  color: #b13661;
+}
+
+.theme-cake {
+  background: #fff6e9;
+  color: #b52f20;
 }
 
 .theme-option span {
   font-size: 0.9rem;
   font-weight: 500;
-}
-
-.theme-option.active span {
-  color: var(--text-secondary);
 }
 
 
@@ -1011,6 +1258,7 @@ table td:last-child .delete-btn {
 }
 
 @media (orientation: portrait) {
+  .live-search-help { font-size: 1.2rem; }
 
   #backup-modal-title,
   #backup-status-text,
@@ -1103,6 +1351,16 @@ table td:last-child .delete-btn {
   table select {
     font-size: 0.7rem;
     padding: 2px 4px;
+  }
+
+  .api-key-actions {
+    grid-template-columns: minmax(4.5rem, 1fr);
+    gap: 0.4rem;
+  }
+
+  .api-key-actions button {
+    min-height: 2.5rem;
+    font-size: 0.85rem;
   }
 
   .info-bottom-row {
@@ -1214,4 +1472,195 @@ table td:last-child .delete-btn {
   border: solid #fff;
   border-width: 0 2px 2px 0;
   transform: rotate(45deg);
+}
+
+.banner-notes-controls {
+  justify-content: center;
+}
+
+.card-overlay-section { grid-column: 1 / -1; min-width: 0; }
+.card-overlay-types {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+.card-overlay-type { display: flex; flex-direction: column; gap: 0.5rem; min-width: 0; }
+.card-overlay-heading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 2rem;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.card-overlay-icon { display: flex; flex-shrink: 0; }
+.card-overlay-icon svg { width: 1.3rem; height: 1.3rem; }
+.card-overlay-type button {
+  padding: 0.5rem 0.25rem;
+  border: 2px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+.card-overlay-type button:hover { background: var(--hover-bg); }
+.card-overlay-type button[aria-pressed="true"] { border-color: var(--special-color); color: var(--text-secondary); }
+
+.share-favorites-section { grid-column: 1 / -1; min-width: 0; }
+.share-favorite-sections { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 0.75rem; }
+.share-section-option, .share-format-option { cursor: pointer; }
+.share-section-option input, .share-format-option input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+.share-option-body, .share-format-option > span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  padding: 0.6rem 0.8rem;
+  border: 2px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+.share-option-body, .share-format-option > span { transition: background-color 0.2s, color 0.2s; }
+.share-section-option:hover input:not(:disabled) + span,
+.share-format-option:hover input:not(:disabled) + span {
+  background-color: var(--hover-bg);
+  color: var(--text-secondary);
+}
+.share-section-option input:checked + span, .share-format-option input:checked + span { border-color: var(--special-color); color: var(--text-secondary); }
+.share-section-option input:focus-visible + span, .share-format-option input:focus-visible + span { outline: 2px solid var(--special-color); outline-offset: 3px; }
+.share-section-option input:disabled + span { opacity: 0.4; cursor: default; }
+.share-section-count { border-radius: 999px; padding: 0.1rem 0.4rem; background: var(--bg-secondary); font-size: 0.8em; }
+.share-export-layout { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 2rem; }
+.share-export-options { display: flex; flex-direction: column; align-items: flex-start; gap: 1.5rem; min-width: 0; }
+.share-sections-fieldset { border: none; padding: 0; margin: 0; min-width: 0; }
+.share-format-options { display: flex; flex-wrap: wrap; gap: 0.5rem; border: none; padding: 0; margin: 0; }
+.share-sections-fieldset legend, .share-format-options legend { color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 0.4rem; }
+.favorites-export-status { text-align: left; margin: 1rem 0 0; line-height: 1.5; }
+#export-favorites-btn:disabled { opacity: 0.6; cursor: default; }
+@media (orientation: portrait) {
+  /* Settings already scales up in portrait; keep these controls within that layout. */
+  .live-search-types {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.65rem;
+  }
+
+  .live-search-type {
+    min-height: 7rem;
+    padding: 0.75rem 0.5rem;
+    gap: 0.4rem;
+    font-size: 1.05rem;
+    line-height: 1.3;
+  }
+
+  .live-search-icon,
+  .live-search-icon svg {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+
+  .live-search-provider {
+    font-size: 0.8rem;
+    text-align: center;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .live-search-section .live-search-help,
+  .card-overlay-section .live-search-help {
+    margin-top: 1rem;
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
+  .card-overlay-types {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.25rem;
+  }
+
+  .card-overlay-type {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
+  }
+
+  .card-overlay-heading {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+    min-height: 1.75rem;
+    font-size: 1.05rem;
+  }
+
+  .card-overlay-icon svg { width: 1.5rem; height: 1.5rem; }
+
+  .card-overlay-type button {
+    min-width: 0;
+    min-height: 3rem;
+    padding: 0.6rem 0.35rem;
+    font-size: 0.95rem;
+    line-height: 1.35;
+  }
+
+  .share-export-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.25rem;
+  }
+
+  .share-export-options {
+    align-items: stretch;
+    gap: 1.25rem;
+  }
+
+  .share-favorite-sections {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.65rem;
+  }
+
+  .share-section-option { display: block; min-width: 0; }
+  .share-format-option { flex: 1 1 0; min-width: 0; }
+
+  .share-option-body,
+  .share-format-option > span {
+    box-sizing: border-box;
+    min-height: 3rem;
+    height: 100%;
+    padding: 0.65rem 0.5rem;
+    font-size: 1rem;
+    line-height: 1.3;
+  }
+
+  .share-option-body { justify-content: space-between; gap: 0.4rem; }
+  .share-option-body > span:first-child { min-width: 0; overflow-wrap: anywhere; }
+  .share-section-count { flex-shrink: 0; }
+
+  .share-sections-fieldset legend,
+  .share-format-options legend {
+    margin-bottom: 0.65rem;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  .share-favorites-section .preference-toggle-label { width: 100%; max-width: none; }
+  .share-favorites-section .preference-toggle-content { box-sizing: border-box; min-height: 3rem; }
+
+  #export-favorites-btn {
+    justify-self: stretch;
+    width: 100%;
+    min-width: 0;
+    min-height: 3rem;
+    font-size: 1.05rem;
+  }
+
+  .favorites-export-status { font-size: 0.9rem; overflow-wrap: anywhere; }
 }

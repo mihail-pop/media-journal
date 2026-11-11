@@ -1,6 +1,18 @@
 document.addEventListener('DOMContentLoaded', () => {
 
   const containers = document.querySelectorAll('.draggable-container');
+  const sections = [...document.querySelectorAll('.favorite-section')];
+  const searchInput = document.getElementById('favorites-search');
+  const searchStatus = document.getElementById('favorites-search-status');
+  let currentSearch = '';
+  let searchPending = false;
+  let searchRevision = 0;
+  let searchTimer;
+  let searchRequests = new AbortController();
+  let suppressCardClick = false;
+
+  // A fresh press is a new interaction, so the next deliberate click works immediately.
+  document.addEventListener('pointerdown', () => { suppressCardClick = false; }, true);
   
   // Infinite Scroll Observer
   const observerOptions = {
@@ -16,7 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const container = sentinel.closest('.draggable-container');
         const section = container.closest('.favorite-section');
         
-        if (section.dataset.loading === 'true' || section.dataset.hasMore === 'false') return;
+        if (searchPending || section.hidden || section.dataset.loading === 'true' || section.dataset.hasMore === 'false') return;
         
         loadMoreItems(section, container, sentinel);
       }
@@ -38,6 +50,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Use event delegation on the container
     container.addEventListener('dragstart', e => {
+      if (currentSearch || searchPending) {
+        e.preventDefault();
+        return;
+      }
       // Disable native drag on all touch screens
       if (window.matchMedia('(pointer: coarse)').matches) {
         e.preventDefault();
@@ -49,6 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const draggable = e.target.closest('.draggable');
       if (draggable) {
         draggedItem = draggable;
+        suppressCardClick = true;
         
         if (e.dataTransfer) {
             // Use the WHOLE card for the snapshot
@@ -124,6 +141,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function saveOrder(container) {
+    if (currentSearch || searchPending) return;
     const section = container.closest('.favorite-section');
     if (!section) return;
 
@@ -152,17 +170,23 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function loadMoreItems(section, container, sentinel) {
+    const revision = searchRevision;
     section.dataset.loading = 'true';
     const category = section.dataset.category;
     const currentCount = container.querySelectorAll('.card').length;
     
-    // Show loading state
-    sentinel.textContent = 'Loading...';
+    // Keep the scroll trigger empty while loading.
+    sentinel.textContent = '';
     sentinel.style.display = 'block';
 
-    fetch(`/api/favorites/?category=${category}&offset=${currentCount}`)
-      .then(response => response.json())
+    const params = new URLSearchParams({ category, offset: currentCount, search: currentSearch });
+    fetch(`/api/favorites/?${params}`, { signal: searchRequests.signal })
+      .then(response => {
+        if (!response.ok) throw new Error('Unable to load favorites');
+        return response.json();
+      })
       .then(data => {
+        if (revision !== searchRevision) return;
         data.items.forEach(item => {
           const card = document.createElement('div');
           card.className = 'card draggable';
@@ -173,7 +197,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const slug = section.dataset.category;
           
           card.innerHTML = `
-            <a href="${item.url}" class="card-link">
+            <a href="${item.url}" class="card-link" draggable="false">
               <div class="card-image"><img src="${item.cover_url}" alt="${item.title}" draggable="false"></div>
             </a>
             <div class="card-title">${item.title}</div>
@@ -195,8 +219,94 @@ document.addEventListener('DOMContentLoaded', () => {
           observer.unobserve(sentinel);
         }
       })
-      .catch(error => console.error('Error loading more items:', error));
+      .catch(error => {
+        if (revision !== searchRevision || error.name === 'AbortError') return;
+        section.dataset.loading = 'false';
+        sentinel.textContent = 'Unable to load more favorites.';
+        console.error('Error loading more items:', error);
+      });
   }
+
+  async function searchFavorites(revision) {
+    searchInput.setAttribute('aria-busy', 'true');
+    try {
+      // Keep the existing sections in place: the URL's preferred section stays first.
+      const results = await Promise.all(sections.map(async section => {
+        const params = new URLSearchParams({ category: section.dataset.category, offset: 0, search: currentSearch });
+        const response = await fetch(`/api/favorites/?${params}`, { signal: searchRequests.signal });
+        if (!response.ok) throw new Error('Unable to search favorites');
+        return response.json();
+      }));
+      if (revision !== searchRevision) return;
+      let foundItems = false;
+      sections.forEach((section, index) => {
+        const data = results[index];
+        const grid = section.querySelector('.card-grid');
+        const sentinel = grid.querySelector('.loading-sentinel');
+        observer.unobserve(sentinel);
+        const existingCards = new Map([...grid.querySelectorAll('.card')].map(card => [card.dataset.id, card]));
+        const resultIds = new Set(data.items.map(item => String(item.id)));
+        let insertionPoint = grid.firstElementChild;
+        data.items.forEach(item => {
+          let card = existingCards.get(String(item.id));
+          if (card) {
+            card.draggable = !currentSearch;
+            if (card !== insertionPoint) grid.insertBefore(card, insertionPoint);
+            insertionPoint = card.nextElementSibling;
+            return;
+          }
+          card = document.createElement('div');
+          card.className = 'card draggable';
+          card.draggable = !currentSearch;
+          card.dataset.id = item.id;
+          card.dataset.mediaType = item.media_type;
+          card.innerHTML = '<a class="card-link" draggable="false"><div class="card-image"><img draggable="false"></div></a><div class="card-title"></div><label class="card-favorite"><input type="checkbox" checked><span class="heart"></span></label>';
+          card.querySelector('a').href = item.url;
+          const image = card.querySelector('img');
+          image.src = item.cover_url;
+          image.alt = item.title;
+          card.querySelector('.card-title').textContent = item.title;
+          Object.assign(card.querySelector('.card-favorite').dataset, {
+            id: item.id, type: item.type, slug: section.dataset.category, title: item.title, img: item.cover_url,
+          });
+          grid.insertBefore(card, insertionPoint);
+        });
+        existingCards.forEach((card, id) => {
+          if (!resultIds.has(id)) card.remove();
+        });
+        section.hidden = data.items.length === 0;
+        foundItems ||= data.items.length > 0;
+        section.dataset.hasMore = data.has_more;
+        section.dataset.loading = 'false';
+        sentinel.textContent = '';
+        sentinel.style.display = data.has_more ? 'block' : 'none';
+        if (data.has_more) observer.observe(sentinel);
+      });
+      searchPending = false;
+      searchInput.removeAttribute('aria-busy');
+      searchStatus.textContent = 'No favorites found.';
+      searchStatus.hidden = foundItems;
+    } catch (error) {
+      if (revision !== searchRevision || error.name === 'AbortError') return;
+      searchInput.removeAttribute('aria-busy');
+      searchStatus.textContent = 'Unable to search favorites. Please try again.';
+      searchStatus.hidden = false;
+      console.error(error);
+    }
+  }
+
+  searchInput.addEventListener('input', () => {
+    const nextSearch = searchInput.value.trim();
+    if (nextSearch === currentSearch && !searchPending) return;
+    clearTimeout(searchTimer);
+    searchRequests.abort();
+    searchRequests = new AbortController();
+    const revision = ++searchRevision;
+    currentSearch = nextSearch;
+    searchPending = true;
+    document.querySelector('.favorites-container').classList.toggle('is-searching', Boolean(currentSearch));
+    searchTimer = setTimeout(() => searchFavorites(revision), 300);
+  });
 
   // Queue for sequential execution of favorite toggles to prevent race conditions
   let favoriteQueue = Promise.resolve();
@@ -220,7 +330,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     card.style.opacity = '0';
                     card.style.transform = 'scale(0.8)';
                     setTimeout(() => {
+                        const section = card.closest('.favorite-section');
                         card.remove();
+                        if (currentSearch && section && !section.querySelector('.card') && section.dataset.hasMore === 'false') {
+                            section.hidden = true;
+                            if (sections.every(item => item.hidden)) {
+                                searchStatus.textContent = 'No favorites found.';
+                                searchStatus.hidden = false;
+                            }
+                        }
                     }, 300);
                 }, 300); // Delay to show the unchecked heart state
             }
@@ -238,19 +356,9 @@ document.addEventListener('DOMContentLoaded', () => {
                             body: JSON.stringify({ favorite: false }),
                         });
                     } else if (type === 'person') {
-                        const name = label.dataset.title;
-                        const img = label.dataset.img;
-                        const slug = label.dataset.slug;
-                        const personType = slug === 'characters' ? 'character' : 'actor';
-                        const requestData = { name: name, image_url: img, type: personType };
-                        
-                        await fetch("/api/toggle_favorite_person/", {
-                            method: "POST",
-                            headers: {
-                              "Content-Type": "application/json",
-                              "X-CSRFToken": getCookie("csrftoken"),
-                            },
-                            body: JSON.stringify(requestData),
+                        await fetch(`/api/delete_favorite_person/${id}/`, {
+                            method: 'POST',
+                            headers: { 'X-CSRFToken': getCookie('csrftoken') },
                         });
                     }
                 } catch (error) {
@@ -266,7 +374,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const viewBigBtn = document.getElementById('view-big');
   const viewSmallBtn = document.getElementById('view-small');
 
-  function setMode(mode) {
+  function setMode(mode, persist = true) {
+    document.documentElement.dataset.favoritesView = mode;
     if (mode === 'small') {
         container.classList.add('small-mode');
         viewSmallBtn.classList.add('active');
@@ -276,7 +385,11 @@ document.addEventListener('DOMContentLoaded', () => {
         viewBigBtn.classList.add('active');
         viewSmallBtn.classList.remove('active');
     }
-    localStorage.setItem('favoritesViewMode', mode);
+    if (persist) {
+      try { localStorage.setItem('favoritesViewMode', mode); } catch (error) {
+        // Keep the selected layout even if browser storage is unavailable.
+      }
+    }
   }
 
   if (viewBigBtn && viewSmallBtn) {
@@ -284,21 +397,17 @@ document.addEventListener('DOMContentLoaded', () => {
       viewSmallBtn.addEventListener('click', () => setMode('small'));
   }
 
-  // Prevent link navigation in small mode
+  // Allow normal link clicks in both views, but never navigate after dropping a card.
   document.addEventListener('click', function(e) {
-    if (container.classList.contains('small-mode')) {
-        const link = e.target.closest('.card-link');
-        if (link) {
-            e.preventDefault();
-        }
+    if (suppressCardClick && e.detail > 0 && e.target.closest('.favorites-container .card-link')) {
+      suppressCardClick = false;
+      e.preventDefault();
+      e.stopPropagation();
     }
-  }, true); // Use capture to ensure we catch it before other listeners if needed
+  }, true);
 
   // Restore saved mode
-  const savedMode = localStorage.getItem('favoritesViewMode');
-  if (savedMode) {
-      setMode(savedMode);
-  }
+  setMode(document.documentElement.dataset.favoritesView || 'big', false);
 
   // --- Custom Person Modal ---
   const cpModal = document.getElementById('custom-person-modal');
@@ -309,7 +418,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('custom-person-close-icon'),
     cpOverlay
   ];
-  let currentCpScrollY = 0;
 
   function openCpModal(personType) {
     cpForm.reset();
@@ -328,20 +436,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     cpModal.classList.remove('pc-modal-hidden');
     cpOverlay.classList.remove('pc-modal-hidden');
-    
-    currentCpScrollY = window.scrollY;
-    document.body.style.top = `-${currentCpScrollY}px`;
-    document.body.classList.add('c-modal-open');
-    document.documentElement.classList.add('c-modal-open');
+    window.modalScrollLock.lock('create-person');
   }
 
   function closeCpModal() {
     cpModal.classList.add('pc-modal-hidden');
     cpOverlay.classList.add('pc-modal-hidden');
-    document.body.classList.remove('c-modal-open');
-    document.documentElement.classList.remove('c-modal-open');
-    document.body.style.top = '';
-    window.scrollTo(0, currentCpScrollY);
+    window.modalScrollLock.unlock('create-person');
   }
 
   document.querySelectorAll('.add-custom-person-btn').forEach(btn => {

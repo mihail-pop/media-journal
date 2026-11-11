@@ -1,4 +1,5 @@
 import time
+import json
 from datetime import datetime
 
 import requests
@@ -11,8 +12,8 @@ IGDB_ACCESS_TOKEN = None
 IGDB_TOKEN_EXPIRY = 0
 
 
-def save_igdb_item(igdb_id):
-    token = get_igdb_token()
+def save_igdb_item(igdb_id, *, http=None, prepare_only=False):
+    token = get_igdb_token(http=http)
     if not token:
         raise Exception("Failed to get IGDB access token.")
 
@@ -35,7 +36,7 @@ def save_igdb_item(igdb_id):
     where id = {igdb_id};
     """
 
-    response = requests.post(
+    response = (http or requests).post(
         "https://api.igdb.com/v4/games", headers=headers, data=query
     )
     if response.status_code != 200:
@@ -133,7 +134,7 @@ def save_igdb_item(igdb_id):
     ]
 
     # Save to DB
-    item = MediaItem.objects.create(
+    item_data = dict(
         title=title,
         media_type="game",
         source="igdb",
@@ -148,6 +149,9 @@ def save_igdb_item(igdb_id):
         genres=genres,
         creators=creators,
     )
+    if prepare_only:
+        return {"item": item_data, "screenshots": local_screenshots}
+    item = MediaItem.objects.create(**item_data)
 
     from core.models import Screenshot
     Screenshot.objects.bulk_create([
@@ -163,7 +167,7 @@ def save_igdb_item(igdb_id):
     return JsonResponse({"success": True, "message": "Game added to list"})
 
 
-def get_igdb_token():
+def get_igdb_token(*, http=None):
     global IGDB_ACCESS_TOKEN, IGDB_TOKEN_EXPIRY
 
     if IGDB_ACCESS_TOKEN and IGDB_TOKEN_EXPIRY > time.time():
@@ -181,7 +185,7 @@ def get_igdb_token():
         "grant_type": "client_credentials",
     }
 
-    resp = requests.post(url, params=params)
+    resp = (http or requests).post(url, params=params)
     if resp.status_code != 200:
         return None
 
@@ -402,7 +406,7 @@ def get_game_extra_info(game_id):
 
 
 def get_igdb_discover(
-    page, query="", sort="rating", genre="", platform="", year=""
+    page, query="", sort="rating", genre="", platform="", year="", free_to_play=False, allow_adult=True
 ):
     token = get_igdb_token()
     if not token:
@@ -422,8 +426,13 @@ def get_igdb_discover(
 
     fields_to_request = "id, name, cover.url, summary, rating, genres.name, first_release_date, artworks.url, screenshots.url, hypes"
 
+    adult_conditions = [] if allow_adult else ['(themes = null | themes != (42))']
     if query:
-        data = f'search "{query}"; fields {fields_to_request}; limit 20; offset {offset};'
+        conditions = list(adult_conditions)
+        if free_to_play:
+            conditions.append('keywords.slug = "free-to-play"')
+        where_clause = f"where {' & '.join(conditions)};" if conditions else ""
+        data = f'search {json.dumps(query)}; fields {fields_to_request}; {where_clause} limit 20; offset {offset};'
     else:
         if sort == 'hypes':
             current_time = int(time.time())
@@ -453,10 +462,13 @@ def get_igdb_discover(
                     
             sort_clause = f"sort {sort} desc" if sort else "sort total_rating desc"
 
+        conditions.extend(adult_conditions)
         if genre:
             conditions.append(f"genres = ({genre})")
         if platform:
             conditions.append(f"platforms = ({platform})")
+        if free_to_play:
+            conditions.append('keywords.slug = "free-to-play"')
 
         where_clause = " & ".join(conditions)
         

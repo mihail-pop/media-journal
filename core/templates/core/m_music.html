@@ -22,9 +22,11 @@
        
   <div class="banner-overlay">
     <!-- Load the initial quote immediately too -->
+    {% if show_banner_notes %}
     <div class="banner-quote" {% if initial_banner.notes %}style="display: block; opacity: 1;"{% else %}style="display: none;"{% endif %}>
       {% if initial_banner.notes %}“{{ initial_banner.notes }}”<br><br>~You{% endif %}
     </div>
+    {% endif %}
   </div>
 </div>
 
@@ -52,7 +54,7 @@
 <div class="list-page-container">
   <!-- Sidebar -->
   <aside class="sidebar">
-    <input type="text" id="search-input" placeholder="Search by title or artist" autocomplete="off">
+    <input type="text" id="search-input" placeholder="Search" autocomplete="off">
 <div class="filter-buttons-wrapper">
   <div style="display: flex; align-items: center; justify-content: space-between;">
     <h3>Lists</h3>

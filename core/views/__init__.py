@@ -19,6 +19,7 @@ from .p_discover import *  # noqa: F403
 from .p_favorites import *  # noqa: F403
 from .p_home import *  # noqa: F403
 from .p_settings import *  # noqa: F403
+from .p_transfer import *  # noqa: F403
 from .p_person_details import *  # noqa: F403
 from .p_calendar import *  # noqa: F403
 from .p_collections import *  # noqa: F403

@@ -5,6 +5,17 @@
 {% block head %}
 {{ block.super }}
 <title>Media Journal</title>
+<script>
+  (() => {
+    const root = document.documentElement;
+    root.dataset.homeDashboardView = 'stats';
+    root.dataset.homeActivityView = 'activity';
+    try {
+      if (localStorage.getItem('homeDashboardView') === 'collections') root.dataset.homeDashboardView = 'collections';
+      if (localStorage.getItem('homeDashboardActivityView') === 'upcoming') root.dataset.homeActivityView = 'upcoming';
+    } catch (error) { /* Keep the defaults if browser storage is unavailable. */ }
+  })();
+</script>
 <link rel="stylesheet" href="{% static 'core/css/p_home.css' %}">
 {% endblock %}
 
@@ -22,9 +33,11 @@
        fetchpriority="high">
        
   <div class="banner-overlay">
+    {% if show_banner_notes %}
     <div class="banner-quote" {% if initial_banner.notes %}style="display: block; opacity: 1;"{% else %}style="display: none;"{% endif %}>
       {% if initial_banner.notes %}“{{ initial_banner.notes }}”<br><br>~You{% endif %}
     </div>
+    {% endif %}
   </div>
 </div>
 
@@ -147,7 +160,7 @@
   </div>
 
 <!-- COLLECTIONS VIEW -->
-  <div id="collections-view-container" style="display: none;">
+  <div id="collections-view-container">
     <div class="panel-header">
       <div class="section-title-wrapper swap-to-stats">
         <h3>Collections</h3>
@@ -264,7 +277,7 @@
   </div>
 
   <!-- UPCOMING RELEASES VIEW -->
-  <div id="upcoming-view-container" class="activity-graph" style="display: none;">
+  <div id="upcoming-view-container" class="activity-graph" data-refresh-url="{% url 'home_upcoming' %}">
     <div class="panel-header" style="max-width: 530px;">
       <div class="section-title-wrapper swap-to-activity">
         <h3>Upcoming Releases</h3>
@@ -277,56 +290,7 @@
       </div>
     </div>
 
-    <div class="upcoming-tiles-wrapper">
-        <div class="upcoming-tiles-container">
-            {% for tile in upcoming_tiles %}
-        <a href="/calendar/?date={{ tile.date_str }}" class="upcoming-tile {% if tile.is_today %}today-tile{% endif %}" id="tile-{{ tile.date_str }}">
-            <div class="upcoming-tile-header">
-                <span class="upcoming-day-label">{{ tile.day_label }}</span>
-                <span class="upcoming-day-date">{{ tile.display_date }}</span>
-            </div>
-            <div class="upcoming-tile-events">
-                {% for ev in tile.events %}
-                <div class="home-event-pill bg-{{ ev.media_type }}" data-media-type="{{ ev.media_type }}">
-                    {{ ev.title }}
-                    <div class="pill-tooltip-content" style="display: none;">
-                        <img src="{{ ev.cover_url }}" alt="">
-                        <div class="tooltip-info">
-                            <strong>{{ ev.title }}</strong>
-                            <span>{{ ev.event_title }}</span>
-                            {% if ev.time_str %}<span>at {{ ev.time_str }}</span>{% endif %}
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-        </a>
-        {% endfor %}
-        </div>
-    </div>
-
-    <div class="recent-activity">
-      <ul id="upcoming-activity-list">
-        {% for entry in upcoming_list %}
-          <li class="{% if forloop.counter > 2 %}upcoming-activity-hidden{% endif %}">
-            <a href="{{ entry.url }}" class="activity-entry">
-              <span class="activity-left">{{ entry.message_main }}</span>
-              <span class="activity-right">{{ entry.message_time }}</span>
-              <div class="activity-thumbnail" data-media-type="{{ entry.media_type }}">
-                <img src="{{ entry.cover_url }}" alt="">
-              </div>
-            </a>
-          </li>
-        {% endfor %}
-      </ul>
-
-      {% if upcoming_list|length > 2 %}
-        <div class="show-more-activity-wrapper">
-          <a href="/calendar/" id="advanced-upcoming-btn" class="advanced-btn">Calendar</a>
-          <button id="toggle-upcoming-btn" class="toggle-btn" data-state="more">Show More</button>
-        </div>
-      {% endif %}
-    </div>
+    {% include "core/p_home_upcoming.html" %}
   </div>
 </div>
 </section>
@@ -335,13 +299,12 @@
 
 <!-- Favorites Section -->
 <section class="favorites-section">
-  {% for row in favorite_sections|slice:":10"|chunk:2 %}
+  {% for row in favorite_home_sections|chunk:2 %}
     <div class="favorites-row">
-      {% for category, items in row %}
-        {% if items %}
+      {% for section in row %}
         <div class="favorites-column">
-          <a href="{% url 'favorites' %}?section={{ category }}" class="section-title-wrapper favorites-link-wrapper">
-            <h2 class="favorites-header">{{ category }}</h2>
+          <a href="{% url 'favorites' %}?section={{ section.name }}" class="section-title-wrapper favorites-link-wrapper">
+            <h2 class="favorites-header">{{ section.name }}</h2>
             <span class="swap-hint">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M5 12h14M12 5l7 7-7 7"/>
@@ -350,7 +313,26 @@
             </span>
           </a>
           <div class="card-grid">
-            {% for item in items|slice:":25" %}
+            {% if section.is_person %}
+              {% for person in section.items|slice:":25" %}
+              {% if person.person_id %}
+                <a href="{{ person.get_absolute_url }}" class="card">
+                  <div class="card-image"><img src="{{ person.image_url|default:'/static/core/img/placeholder.png' }}" alt="{{ person.name }}"></div>
+                  <div class="hover-title-overlay">
+                    <span class="hover-title-text">{{ person.name }}</span>
+                  </div>
+                </a>
+              {% else %}
+                <div class="card">
+                  <div class="card-image"><img src="{{ person.image_url|default:'/static/core/img/placeholder.png' }}" alt="{{ person.name }}"></div>
+                  <div class="hover-title-overlay">
+                    <span class="hover-title-text">{{ person.name }}</span>
+                  </div>
+                </div>
+              {% endif %}
+              {% endfor %}
+            {% else %}
+            {% for item in section.items|slice:":25" %}
             <div class="card"
                  data-banner-url="{{ item.banner_url|default:'/static/core/img/placeholder.png' }}"
                  data-notes="{{ item.notes|escape }}"
@@ -377,86 +359,12 @@
 
             </div>
             {% endfor %}
+            {% endif %}
           </div>
         </div>
-        {% endif %}
       {% endfor %}
     </div>
   {% endfor %}
-</section>
-
-<section class="favorites-section">
-{% if favorite_characters or favorite_actors %}
-<section class="favorite-people-section">
-  <div class="favorites-row">
-    {% if favorite_characters %}
-    <div class="favorites-column">
-      <a href="{% url 'favorites' %}?section=Characters" class="section-title-wrapper favorites-link-wrapper">
-        <h2 class="favorites-header">Characters</h2>
-        <span class="swap-hint">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M5 12h14M12 5l7 7-7 7"/>
-          </svg>
-          Favorites
-        </span>
-      </a>
-      <div class="card-grid">
-        {% for person in favorite_characters|slice:":25" %}
-        {% if person.person_id %}
-          <a href="/person/character/{{ person.person_id }}/" class="card">
-            <div class="card-image"><img src="{{ person.image_url|default:'/static/core/img/placeholder.png' }}" alt="{{ person.name }}"></div>
-            <div class="hover-title-overlay">
-              <span class="hover-title-text">{{ person.name }}</span>
-            </div>
-          </a>
-        {% else %}
-          <div class="card">
-            <div class="card-image"><img src="{{ person.image_url|default:'/static/core/img/placeholder.png' }}" alt="{{ person.name }}"></div>
-            <div class="hover-title-overlay">
-              <span class="hover-title-text">{{ person.name }}</span>
-            </div>
-          </div>
-        {% endif %}
-        {% endfor %}
-      </div>
-    </div>
-    {% endif %}
-
-    {% if favorite_actors %}
-    <div class="favorites-column">
-      <a href="{% url 'favorites' %}?section=Actors" class="section-title-wrapper favorites-link-wrapper">
-        <h2 class="favorites-header">Actors</h2>
-        <span class="swap-hint">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M5 12h14M12 5l7 7-7 7"/>
-          </svg>
-          Favorites
-        </span>
-      </a>
-      <div class="card-grid">
-        {% for person in favorite_actors|slice:":25" %}
-        {% if person.person_id %}
-          <a href="/person/actor/{{ person.person_id }}/" class="card">
-            <div class="card-image"><img src="{{ person.image_url|default:'/static/core/img/placeholder.png' }}" alt="{{ person.name }}"></div>
-            <div class="hover-title-overlay">
-              <span class="hover-title-text">{{ person.name }}</span>
-            </div>
-          </a>
-        {% else %}
-          <div class="card">
-            <div class="card-image"><img src="{{ person.image_url|default:'/static/core/img/placeholder.png' }}" alt="{{ person.name }}"></div>
-            <div class="hover-title-overlay">
-              <span class="hover-title-text">{{ person.name }}</span>
-            </div>
-          </div>
-        {% endif %}
-        {% endfor %}
-      </div>
-    </div>
-    {% endif %}
-  </div>
-</section>
-{% endif %}
 </section>
 
 {% endblock %}

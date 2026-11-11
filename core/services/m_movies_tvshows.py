@@ -52,7 +52,7 @@ TMDB_TV_GENRES = {
 }
 
 
-def save_tmdb_item(media_type, tmdb_id):
+def save_tmdb_item(media_type, tmdb_id, *, http=None, prepare_only=False):
     try:
         api_key = APIKey.objects.get(name="tmdb").key_1
         url = f"https://api.themoviedb.org/3/{media_type}/{tmdb_id}"
@@ -60,7 +60,7 @@ def save_tmdb_item(media_type, tmdb_id):
             params = {"api_key": api_key, "append_to_response": "aggregate_credits"}
         else:
             params = {"api_key": api_key, "append_to_response": "credits"}
-        response = requests.get(url, params=params)
+        response = (http or requests).get(url, params=params)
 
         if response.status_code != 200:
             return JsonResponse({"error": "Failed to fetch TMDB details."})
@@ -188,7 +188,7 @@ def save_tmdb_item(media_type, tmdb_id):
             crew = data.get("credits", {}).get("crew", [])
             creators =[c.get("name") for c in crew if c.get("job") == "Director" and c.get("name")]
 
-        MediaItem.objects.create(
+        item_data = dict(
             title=data.get("title") or data.get("name"),
             media_type=media_type,
             source="tmdb",
@@ -204,6 +204,9 @@ def save_tmdb_item(media_type, tmdb_id):
             genres=genres,
             creators=creators,
         )
+        if prepare_only:
+            return {"item": item_data}
+        MediaItem.objects.create(**item_data)
 
         return JsonResponse({"message": "Added to your list."})
 
@@ -211,14 +214,14 @@ def save_tmdb_item(media_type, tmdb_id):
         return JsonResponse({"error": f"Failed to save: {str(e)}"})
 
 
-def save_tmdb_season(tmdb_id, season_number):
+def save_tmdb_season(tmdb_id, season_number, *, http=None, prepare_only=False):
     try:
         api_key = APIKey.objects.get(name="tmdb").key_1
 
         # Get season details
         season_url = f"https://api.themoviedb.org/3/tv/{tmdb_id}/season/{season_number}"
         season_params = {"api_key": api_key, "append_to_response": "aggregate_credits"}
-        season_response = requests.get(season_url, params=season_params)
+        season_response = (http or requests).get(season_url, params=season_params)
 
         if season_response.status_code == 429:
             raise Exception("HTTP 429 Too Many Requests: Rate Limit Exceeded")
@@ -229,7 +232,7 @@ def save_tmdb_season(tmdb_id, season_number):
         # Get main show details
         show_url = f"https://api.themoviedb.org/3/tv/{tmdb_id}"
         show_params = {"api_key": api_key}
-        show_response = requests.get(show_url, params=show_params)
+        show_response = (http or requests).get(show_url, params=show_params)
         show_data = show_response.json() if show_response.status_code == 200 else {}
 
         # Download images
@@ -322,7 +325,7 @@ def save_tmdb_season(tmdb_id, season_number):
         genres =[g.get("name") for g in show_data.get("genres", []) if g.get("name")]
         creators =[c.get("name") for c in show_data.get("created_by", []) if c.get("name")]
 
-        MediaItem.objects.create(
+        item_data = dict(
             title=season_title,
             media_type="tv",
             source="tmdb",
@@ -338,6 +341,10 @@ def save_tmdb_season(tmdb_id, season_number):
             genres=genres,
             creators=creators,
         )
+
+        if prepare_only:
+            return {"item": item_data}
+        MediaItem.objects.create(**item_data)
 
         return JsonResponse({"message": "Season added to your list."})
 
@@ -591,7 +598,7 @@ def get_tv_extra_info(tmdb_id):
         return {}
 
 
-def get_tmdb_discover(media_type, page, query="", sort="popularity.desc", year="", genre=""):
+def get_tmdb_discover(media_type, page, query="", sort="popularity.desc", year="", genre="", allow_adult=True):
     try:
         api_key = APIKey.objects.get(name="tmdb").key_1
     except APIKey.DoesNotExist:
@@ -609,7 +616,7 @@ def get_tmdb_discover(media_type, page, query="", sort="popularity.desc", year="
                 "api_key": api_key,
                 "sort_by": "popularity.desc",
                 "page": page,
-                "include_adult": "false",
+                "include_adult": str(allow_adult).lower(),
                 "vote_count.gte": 100,
                 "with_genres": genre,
             }
@@ -622,7 +629,7 @@ def get_tmdb_discover(media_type, page, query="", sort="popularity.desc", year="
             "api_key": api_key,
             "sort_by": sort,
             "page": page,
-            "include_adult": "false",
+            "include_adult": str(allow_adult).lower(),
             "vote_count.gte": 100,
         }
 
@@ -637,6 +644,9 @@ def get_tmdb_discover(media_type, page, query="", sort="popularity.desc", year="
         if genre:
             params["with_genres"] = genre
 
+    if '/trending/' not in url:
+        params['include_adult'] = str(allow_adult).lower()
+
     try:
         response = requests.get(url, params=params)
         if response.status_code != 200:
@@ -645,10 +655,13 @@ def get_tmdb_discover(media_type, page, query="", sort="popularity.desc", year="
         data = response.json()
         raw_results = data.get("results", [])
         
-        # Return early if no results
+        # Pagination follows the raw page, not the number left after filtering.
+        has_more = bool(raw_results)
+        if not allow_adult:
+            raw_results = [item for item in raw_results if not item.get('adult', False)]
         if not raw_results:
-            return []
-        
+            return {'results': [], 'hasMore': has_more}
+
         results =[]
 
         # --- Fetch Next Episode Data for TV Shows Concurrently ---
@@ -738,7 +751,7 @@ def get_tmdb_discover(media_type, page, query="", sort="popularity.desc", year="
 
             results.append(result_dict)
 
-        return results
+        return {'results': results, 'hasMore': has_more}
     except Exception as e:
         print(f"Discover Error: {e}")
         return []

@@ -1,4 +1,5 @@
 import uuid
+from typing import ClassVar
 
 from django.db import models
 from django.utils import timezone
@@ -6,7 +7,7 @@ from django.db.models import Max
 
 
 class APIKey(models.Model):
-    NAME_CHOICES = [
+    NAME_CHOICES: ClassVar[list[tuple[str, str]]] = [
         ("tmdb", "TMDB"),
         ("igdb", "IGDB"),
         ("mal", "MyAnimeList"),
@@ -21,7 +22,7 @@ class APIKey(models.Model):
         return self.name
     
 class MediaItem(models.Model):
-    MEDIA_TYPES = [
+    MEDIA_TYPES: ClassVar[list[tuple[str, str]]] = [
         ("movie", "Movie"),
         ("tv", "TV Series"),
         ("anime", "Anime"),
@@ -31,7 +32,7 @@ class MediaItem(models.Model):
         ("music", "Music"),
     ]
 
-    STATUS_CHOICES = [
+    STATUS_CHOICES: ClassVar[list[tuple[str, str]]] = [
         ("ongoing", "Ongoing"),
         ("completed", "Completed"),
         ("planned", "Planned"),
@@ -114,22 +115,38 @@ class MediaItemLog(models.Model):
     progress_end = models.PositiveIntegerField(null=True, blank=True)
 
     class Meta:
-        ordering = ['-activity_date', '-date_added']
+        ordering: ClassVar[list[str]] = ['-activity_date', '-date_added']
 
     def __str__(self):
         return f"Log for {self.item.title} on {self.activity_date.strftime('%Y-%m-%d')}"
 
 class FavoritePerson(models.Model):
-    PERSON_TYPE_CHOICES = [
+    PERSON_TYPE_CHOICES: ClassVar[list[tuple[str, str]]] = [
         ('character', 'Character'),
-        ('actor', 'Actor'),
+        ('actor', 'Person'),  # Keep the stored value and actors image folder for existing libraries.
     ]
 
     name = models.CharField(max_length=200)
     image_url = models.URLField(blank=True, null=True)
     type = models.CharField(max_length=10, choices=PERSON_TYPE_CHOICES)
     position = models.PositiveIntegerField()
-    person_id = models.CharField(max_length=50, blank=True, null=True)  # ID from TMDB/AniList
+    person_id = models.CharField(max_length=50, blank=True, null=True)  # ID within source
+    source = models.CharField(max_length=32, blank=True, default='')
+
+    @property
+    def resolved_source(self):
+        # Also supports old backups that predate the source field.
+        if str(self.person_id or '').startswith('custom_'):
+            return 'custom'
+        return self.source or ('anilist' if self.type == 'character' else 'tmdb')
+
+    def get_absolute_url(self):
+        if not self.person_id:
+            return '#'
+        if self.type == 'character':
+            return f'/character/{self.person_id}/'
+        return f'/person/{self.resolved_source}/{self.person_id}/'
+
     
     # General Role field (e.g., "Director", "Actor", "Character")
     role = models.CharField(max_length=100, blank=True, null=True)
@@ -166,7 +183,7 @@ class MediaPersonLink(models.Model):
     date_added = models.DateTimeField(default=timezone.now)
     
     class Meta:
-        ordering = ['-date_added']
+        ordering: ClassVar[list[str]] = ['-date_added']
         # This prevents assigning the exact same person to the exact same item with the exact same role multiple times
         unique_together = ('item', 'person', 'media_role') 
         
@@ -209,7 +226,7 @@ class Collection(models.Model):
     last_updated = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ['position', '-date_created']
+        ordering: ClassVar[list[str]] = ['position', '-date_created']
 
     def __str__(self):
         return self.title
@@ -222,14 +239,14 @@ class CollectionItem(models.Model):
     date_added = models.DateTimeField(default=timezone.now)
 
     class Meta:
-        ordering = ['position', '-date_added']
+        ordering: ClassVar[list[str]] = ['position', '-date_added']
         unique_together = ('collection', 'item') 
 
     def __str__(self):
         return f"{self.collection.title} - {self.item.title} (Pos: {self.position})"
 
 class NavItem(models.Model):
-    CATEGORY_CHOICES = [
+    CATEGORY_CHOICES: ClassVar[list[tuple[str, str]]] = [
         ("home", "Home"),
         ("movies", "Movies"),
         ("tvshows", "TV Shows"),
@@ -238,6 +255,12 @@ class NavItem(models.Model):
         ("manga", "Manga"),
         ("books", "Books"),
         ("music", "Music"),
+        ("favorites", "Favorites"),
+        ("collections", "Collections"),
+        ("history", "History"),
+        ("calendar", "Calendar"),
+        ("discover", "Discover"),
+        ("community", "Community"),
     ]
 
     name = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
@@ -247,7 +270,67 @@ class NavItem(models.Model):
     def __str__(self):
         return f"{self.get_name_display()} (pos: {self.position}, visible: {self.visible})"
     
+def default_live_search_settings():
+    return {
+        'movie': True, 'tv': True, 'anime': False, 'manga': False,
+        'game': True, 'book': False, 'music': False,
+    }
+
+
+def default_list_card_overlay_settings():
+    return {media_type: 'full' for media_type in ('movie', 'tv', 'anime', 'manga', 'game', 'book', 'music')}
+
+
+def default_favorite_sections_order():
+    return [
+        {'id': key, 'name': name, 'visible': True}
+        for key, name in (
+            ('movie', 'Movies'), ('tv', 'TV Shows'), ('anime', 'Anime'),
+            ('game', 'Games'), ('manga', 'Manga'), ('book', 'Books'),
+            ('music', 'Music'), ('characters', 'Characters'), ('actors', 'People'),
+        )
+    ]
+
+
 class AppSettings(models.Model):
+    list_card_overlay_settings = models.JSONField(default=default_list_card_overlay_settings, blank=True)
+
+    def get_list_card_overlay_settings(self):
+        preferences = default_list_card_overlay_settings()
+        if isinstance(self.list_card_overlay_settings, dict):
+            for media_type, mode in self.list_card_overlay_settings.items():
+                if media_type in preferences and mode in ('full', 'compact', 'hidden'):
+                    preferences[media_type] = mode
+        return preferences
+
+    favorite_sections_order = models.JSONField(default=default_favorite_sections_order, blank=True)
+
+    def get_favorite_sections_order(self):
+        defaults = {section['id']: section for section in default_favorite_sections_order()}
+        sections = []
+        if isinstance(self.favorite_sections_order, list):
+            for saved in self.favorite_sections_order:
+                if not isinstance(saved, dict):
+                    continue
+                key = saved.get('id')
+                if not isinstance(key, str) or key not in defaults:
+                    continue
+                section = defaults.pop(key)
+                if isinstance(saved.get('visible'), bool):
+                    section['visible'] = saved['visible']
+                sections.append(section)
+        return sections + list(defaults.values())
+
+    live_search_settings = models.JSONField(default=default_live_search_settings, blank=True)
+
+    def get_live_search_settings(self):
+        preferences = default_live_search_settings()
+        if isinstance(self.live_search_settings, dict):
+            for media_type, enabled in self.live_search_settings.items():
+                if media_type in preferences and isinstance(enabled, bool):
+                    preferences[media_type] = enabled
+        return preferences
+
     rating_mode = models.CharField(
         max_length=20,
         choices=[
@@ -258,6 +341,8 @@ class AppSettings(models.Model):
         ],
         default='faces'
     )
+    allow_adult_content = models.BooleanField(default=True)
+    show_banner_notes = models.BooleanField(default=True)
     show_date_field = models.BooleanField(default=False)
     show_repeats_field = models.BooleanField(default=False)
     show_collections_field = models.BooleanField(default=False)
@@ -268,6 +353,11 @@ class AppSettings(models.Model):
             ('dark', 'Dark'),
             ('brown', 'Brown'),
             ('green', 'Green'),
+            ('plum', 'Plum'),
+            ('charcoal', 'Charcoal'),
+            ('teal', 'Teal'),
+            ('pink', 'Pink'),
+            ('cake', 'Cake'),
         ],
         default='dark'
     )
@@ -308,7 +398,7 @@ class Screenshot(models.Model):
     activity_date = models.DateTimeField(null=True, blank=True)
 
     class Meta:
-        ordering = ['-is_favorite', 'position', 'date_added']
+        ordering: ClassVar[list[str]] = ['-is_favorite', 'position', 'date_added']
 
     def save(self, *args, **kwargs):
         # If this is a new screenshot and position isn't set, auto-increment it
@@ -330,7 +420,7 @@ class MusicVideo(models.Model):
     activity_date = models.DateTimeField(null=True, blank=True)
 
     class Meta:
-        ordering = ['-is_favorite', 'position', 'date_added']
+        ordering: ClassVar[list[str]] = ['-is_favorite', 'position', 'date_added']
 
     def save(self, *args, **kwargs):
         # If this is a new video and position isn't set, auto-increment it

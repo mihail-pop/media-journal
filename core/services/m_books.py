@@ -9,10 +9,10 @@ from core.models import MediaItem
 from core.services.g_utils import download_image
 
 
-def save_openlib_item(work_id):
+def save_openlib_item(work_id, *, http=None, prepare_only=False):
     # Fetch main Work details (Title, Description, Covers)
     detail_url = f"https://openlibrary.org/works/{work_id}.json"
-    detail_response = requests.get(detail_url, timeout=60)
+    detail_response = (http or requests).get(detail_url, timeout=60)
 
     if detail_response.status_code == 429:
         raise Exception("HTTP 429 Too Many Requests: Rate Limit Exceeded")
@@ -27,7 +27,7 @@ def save_openlib_item(work_id):
     search_url = f"https://openlibrary.org/search.json?q=key:/works/{work_id}&fields=author_name,number_of_pages_median"
     
     try:
-        search_response = requests.get(search_url, timeout=60)
+        search_response = (http or requests).get(search_url, timeout=60)
         
         # Catch the 429 Rate Limit here
         if search_response.status_code == 429:
@@ -42,6 +42,8 @@ def save_openlib_item(work_id):
                 total_pages = doc.get("number_of_pages_median")
                 
     except Exception as e:
+        if http is not None:
+            raise
         # Make sure the 429 exception bubbles up and isn't swallowed
         if "429" in str(e):
             raise e
@@ -98,7 +100,7 @@ def save_openlib_item(work_id):
         release_date = None
 
     # Save to DB
-    MediaItem.objects.create(
+    item_data = dict(
         title=title,
         media_type="book",
         source="openlib",
@@ -114,6 +116,9 @@ def save_openlib_item(work_id):
         genres=genres,
         creators=author_names,
     )
+    if prepare_only:
+        return {"item": item_data}
+    MediaItem.objects.create(**item_data)
 
     return JsonResponse({"success": True, "message": "Book added to list"})
 
@@ -139,6 +144,9 @@ def get_openlib_discover(page=1, query="", sort="trending", genre="", year=""):
     if genre:
         clean_genre = genre.replace("_", " ")
         q_parts.append(f'subject:"{clean_genre}"')
+
+    if year and year.isdigit() and len(year) == 4:
+        q_parts.append(f"first_publish_year:{int(year)}")
         
     # 4. Apply the Solr Sorting & Index optimization
     ol_sort = "readinglog"

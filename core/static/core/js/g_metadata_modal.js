@@ -3,7 +3,6 @@ document.addEventListener("DOMContentLoaded", function () {
   const overlay = document.getElementById("metadata-overlay");
   const closeBtn = document.getElementById("metadata-close-btn");
   const form = document.getElementById("metadata-form");
-  let scrollY = 0;
   let currentItemId = null;
 
   if (!modal) return;
@@ -352,10 +351,7 @@ document.addEventListener("DOMContentLoaded", function () {
         // Show Modal
         modal.classList.remove("md-modal-hidden");
         overlay.classList.remove("md-modal-hidden");
-        scrollY = window.scrollY;
-        document.body.style.top = `-${scrollY}px`;
-        document.body.classList.add("md-modal-open");
-        document.documentElement.classList.add("md-modal-open");
+        window.modalScrollLock.lock('edit-metadata');
       })
       .catch(err => {
         console.error(err);
@@ -367,10 +363,8 @@ document.addEventListener("DOMContentLoaded", function () {
   function closeModal() {
     modal.classList.add("md-modal-hidden");
     overlay.classList.add("md-modal-hidden");
-    document.body.classList.remove("md-modal-open");
-    document.documentElement.classList.remove("md-modal-open");
-    document.body.style.top = "";
-    window.scrollTo(0, scrollY);
+    window.modalScrollLock.unlock('edit-metadata');
+
     currentItemId = null;
   }
   closeBtn.addEventListener("click", closeModal);

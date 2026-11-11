@@ -90,7 +90,7 @@
   <div class="text-info">
     <h1>{{ title }}</h1>
     <div class="overview-container">
-      <p class="overview">{{ overview|safe_html }}</p>
+      <p class="overview">{% if media_type == 'anime' or media_type == 'manga' %}{{ overview|safe_html:True }}{% else %}{{ overview|safe_html }}{% endif %}</p>
       <button class="read-more-btn">Read More</button>
     </div>
     <p class="release-date">{{ release_date }}</p>
@@ -307,52 +307,97 @@
           </div>
           {% if screenshots %}
             <div class="screenshots-background" data-igdb-id="{{ source_id }}" data-total-screenshots="{{ total_screenshots|default:0 }}">
-            <div class="screenshot-rotator" onmouseenter="showArrows(this)" onmouseleave="hideArrows(this)">
+            <div class="screenshot-rotator">
+              <p class="screenshots-empty-message" hidden>No favorite screenshots yet.</p>
               <img id="screenshot-image" src="{{ screenshots.0.url }}" alt="Screenshot" />
-              <button class="rotator-btn left" onclick="changeScreenshot(-1)" style="display: none;">‹</button>
-              <button class="rotator-btn right" onclick="changeScreenshot(1)" style="display: none;">›</button>
-              {% if not recommendations %}
-              <button class="autoplay-screenshot-btn" id="autoplay-screenshot-btn" title="Autoplay screenshots">
-                <svg viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+              <button class="rotator-btn left" onclick="changeScreenshot(-1)">‹</button>
+              <button class="rotator-btn right" onclick="changeScreenshot(1)">›</button>
+              <button class="autoplay-screenshot-btn{% if recommendations %} no-delete{% endif %}" id="autoplay-screenshot-btn" title="Autoplay screenshots">
+                <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                   <path d="M8 5v14l11-7z"/>
                 </svg>
               </button>
+              <button type="button" class="download-screenshot-btn{% if recommendations %} no-delete{% endif %}" title="Download screenshot" aria-label="Download screenshot">
+                <svg viewBox="-1.5 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M11 3h2v9l3.5-3.5 1.4 1.4-5.9 5.9-5.9-5.9 1.4-1.4L11 12V3zM5 17h2v2h10v-2h2v4H5v-4z"/>
+                </svg>
+              </button>
+              {% if in_my_list %}
+              <button type="button" class="favorite-screenshot-btn" title="Favorite screenshot" aria-label="Favorite screenshot" aria-pressed="false">
+                <svg viewBox="-1.5 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="m12 3 2.78 5.63L21 9.54l-4.5 4.39 1.06 6.2L12 17.2l-5.56 2.93 1.06-6.2L3 9.54l6.22-.91L12 3Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+              </button>
+              <div class="screenshot-favorite-options">
+                <button type="button" class="screenshot-favorites-filter" aria-pressed="false" title="Show favorite screenshots only">Favorites Only</button>
+              </div>
+              {% endif %}
+              <button type="button" class="screenshot-date-control" aria-label="Show screenshot date" aria-expanded="false" title="Show screenshot date" hidden><time class="screenshot-date-pill" hidden></time></button>
               <button class="fullscreen-screenshot-btn" id="fullscreen-screenshot-btn" title="Fullscreen">
-                <svg viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+                <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                   <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
                 </svg>
               </button>
+              {% if not recommendations %}
               <button class="delete-screenshot-btn" title="Delete Screenshot">×</button>
               {% endif %}
             </div>
 
-            <div class="screenshots-list">
+            <div class="screenshots-preview">
+            <div class="screenshots-list" id="screenshot-previews">
               {% for shot in screenshots %}
                 <img 
                   src="{{ shot.url }}" 
                   alt="Screenshot {{ forloop.counter }}" 
-                  class="thumbnail {% if forloop.first %}active-thumbnail{% endif %}" 
+                  class="thumbnail {% if forloop.first %}active-thumbnail{% endif %} {% if shot.is_favorite %}is-favorite{% endif %}"
                   onclick="setScreenshot({{ forloop.counter0 }})" 
                 />
               {% endfor %}
             </div>
+            <button type="button" class="screenshots-resize-handle" aria-label="Resize screenshot previews" aria-controls="screenshot-previews" title="Drag down to expand previews. Use arrow keys to adjust the height."></button>
+            </div>
             </div>
             
-            <div class="screenshot-overlay" id="screenshot-overlay">
-              <img id="overlay-screenshot-image" src="{{ screenshots.0.url }}" alt="Screenshot" />
+            <div class="screenshot-overlay{% if in_my_list %} has-screenshot-favorites{% endif %}" id="screenshot-overlay">
+              <div class="screenshot-zoom-stage" id="screenshot-zoom-stage">
+                <img id="overlay-screenshot-image" src="{{ screenshots.0.url }}" alt="Screenshot" draggable="false" />
+                <div class="screenshot-crop-mask" id="screenshot-crop-mask" aria-hidden="true" hidden></div>
+              </div>
+              <p class="screenshots-empty-message" hidden>No favorite screenshots yet.</p>
+              <button type="button" class="screenshot-zoom-reset" id="screenshot-zoom-reset" title="Reset zoom" aria-label="Reset screenshot zoom" hidden>100%</button>
               <button class="rotator-btn left" onclick="changeScreenshot(-1)">‹</button>
               <button class="rotator-btn right" onclick="changeScreenshot(1)">›</button>
-              {% if not recommendations %}
-              <button class="autoplay-screenshot-btn" id="overlay-autoplay-btn" title="Autoplay screenshots">
-                <svg viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+              <button class="autoplay-screenshot-btn{% if recommendations %} no-delete{% endif %}" id="overlay-autoplay-btn" title="Autoplay screenshots">
+                <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                   <path d="M8 5v14l11-7z"/>
                 </svg>
               </button>
+              <button type="button" class="download-screenshot-btn{% if recommendations %} no-delete{% endif %}" title="Download screenshot" aria-label="Download screenshot">
+                <svg viewBox="-1.5 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M11 3h2v9l3.5-3.5 1.4 1.4-5.9 5.9-5.9-5.9 1.4-1.4L11 12V3zM5 17h2v2h10v-2h2v4H5v-4z"/>
+                </svg>
+              </button>
+              <div class="screenshot-crop-options" id="screenshot-crop-options" role="group" aria-label="Screenshot crop shape">
+                <button type="button" class="screenshot-crop-btn" data-shape="circle" title="Circle crop" aria-label="Circle crop" aria-pressed="false">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="8"/></svg>
+                </button>
+                <button type="button" class="screenshot-crop-btn" data-shape="square" title="Square crop" aria-label="Square crop" aria-pressed="false">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="4" width="16" height="16"/></svg>
+                </button>
+              </div>
+              {% if in_my_list %}
+              <button type="button" class="favorite-screenshot-btn" title="Favorite screenshot" aria-label="Favorite screenshot" aria-pressed="false">
+                <svg viewBox="-1.5 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="m12 3 2.78 5.63L21 9.54l-4.5 4.39 1.06 6.2L12 17.2l-5.56 2.93 1.06-6.2L3 9.54l6.22-.91L12 3Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+              </button>
+              <div class="screenshot-favorite-options">
+                <button type="button" class="screenshot-favorites-filter" aria-pressed="false" title="Show favorite screenshots only">Favorites Only</button>
+              </div>
+              {% endif %}
+              <button type="button" class="screenshot-date-control" aria-label="Show screenshot date" aria-expanded="false" title="Show screenshot date" hidden><time class="screenshot-date-pill" hidden></time></button>
               <button class="fullscreen-screenshot-btn" id="overlay-fullscreen-btn" title="Exit fullscreen">
-                <svg viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+                <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                   <path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/>
                 </svg>
               </button>
+              {% if not recommendations %}
               <button class="delete-screenshot-btn" title="Delete Screenshot">×</button>
               {% endif %}
             </div>
@@ -408,9 +453,9 @@
               {% for member in cast %}
               {% if member.id %}
                 {% if media_type == "tv" or media_type == "movie" %}
-                  <a href="/person/actor/{{ member.id }}/" class="cast-member">
+                  <a href="/person/tmdb/{{ member.id }}/" class="cast-member">
                 {% elif media_type == "manga" or media_type == "anime" %}
-                  <a href="/person/character/{{ member.id }}/" class="cast-member">
+                  <a href="/character/{{ member.id }}/" class="cast-member">
                 {% else %}
                   <div class="cast-member">
                 {% endif %}
@@ -472,7 +517,7 @@
             </div>
             <div class="cast-list">
               {% for link in item.mediapersonlink_set.all %}
-                <a href="/person/{{ link.person.type }}/{{ link.person.person_id }}/" class="cast-member">
+                <a href="{{ link.person.get_absolute_url }}" class="cast-member">
                   <img src="{{ link.person.image_url|default:'/static/core/img/placeholder.png' }}"
                        alt="{{ link.person.name }}"
                        data-placeholder="{% static 'core/img/placeholder.png' %}"

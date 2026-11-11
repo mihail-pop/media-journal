@@ -32,6 +32,78 @@
   --border-color: #8d6f5d;
 }
 
+/* Muted forest green, with warm sage text and moss accents. */
+[data-theme="green"] {
+  --bg-primary: #1e2923;
+  --bg-tertiary: #34473a;
+
+  --text-primary: #c1ceb6;
+  --text-secondary: #d2dcc6;
+  --text-light: #e9eddf;
+
+  --border-color: #51694f;
+}
+
+/* Warm plum, with parchment text and muted brass accents. */
+[data-theme="plum"] {
+  --bg-primary: #29232d;
+  --bg-tertiary: #493c4d;
+
+  --text-primary: #d2b9be;
+  --text-secondary: #dac9cc;
+  --text-light: #f0e6df;
+
+  --border-color: #725d74;
+}
+
+/* Warm charcoal, with ivory text and restrained amber accents. */
+[data-theme="charcoal"] {
+  --bg-primary: #252422;
+  --bg-tertiary: #413e39;
+
+  --text-primary: #c7bcab;
+  --text-secondary: #d2c9bb;
+  --text-light: #f0eadd;
+
+  --border-color: #6b6153;
+}
+
+/* Muted ocean teal, with warm linen text and sea-glass accents. */
+[data-theme="teal"] {
+  --bg-primary: #203033;
+  --bg-tertiary: #354e52;
+
+  --text-primary: #bfd0c4;
+  --text-secondary: #c8d8ce;
+  --text-light: #eaf0e1;
+
+  --border-color: #547174;
+}
+
+/* Light rose, with warm ivory backgrounds, cocoa text and berry accents. */
+[data-theme="pink"] {
+  --bg-primary: #fff8f6;
+  --bg-tertiary: #f7e3e6;
+
+  --text-primary: #704d59;
+  --text-secondary: #684851;
+  --text-light: #54363e;
+
+  --border-color: #cca4b0;
+}
+
+/* Cake: creamy ivory, peach layers and red accents. */
+[data-theme="cake"] {
+  --bg-primary: #fff6e9;
+  --bg-tertiary: #f6dfca;
+
+  --text-primary: #74503b;
+  --text-secondary: #6b4433;
+  --text-light: #573326;
+
+  --border-color: #d4a482;
+}
+
 html {
   overflow-y: scroll;
 }
@@ -82,9 +154,35 @@ body {
   margin-left: auto;
 }
 
+.favorites-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+
+#favorites-search {
+  width: 260px;
+  min-width: 0;
+  padding: 0.6rem 0.8rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  background: var(--bg-tertiary);
+  color: var(--text-tertiary);
+}
+
+#favorites-search::placeholder { color: var(--text-tertiary); }
+#favorites-search:focus { outline: none; box-shadow: none; }
+.favorite-section[hidden], #favorites-search-status[hidden] { display: none; }
+#favorites-search-status { color: var(--text-secondary); }
+.favorites-container.is-searching .card,
+.favorites-container.is-searching .card .card-link { cursor: default; }
+
 .add-custom-person-btn {
   background-color: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
+  border: 0px solid var(--border-color);
   color: var(--text-secondary);
   width: 40px;
   height: 40px;
@@ -289,7 +387,7 @@ body {
   outline: none;
 }
 
-body:not([data-theme="light"]) .pc-actor-dates input {
+body:not([data-theme="light"]):not([data-theme="pink"]):not([data-theme="cake"]) .pc-actor-dates input {
   color-scheme: dark;
 }
 
@@ -341,7 +439,7 @@ body:not([data-theme="light"]) .pc-actor-dates input {
   flex-direction: column;
   position: relative;
   transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-  cursor: grab;
+  cursor: default;
 }
 
 .card.dragging {
@@ -355,6 +453,7 @@ body:not([data-theme="light"]) .pc-actor-dates input {
 
 .card a {
   text-decoration: none;
+  cursor: inherit;
 }
 
 .card-image {
@@ -414,13 +513,13 @@ body.drag-active .card-title {
   overflow: hidden;
 }
 
-.favorites-container.small-mode .card-link {
+html[data-favorites-view="small"] .favorites-container .card-link {
   height: 126px;
   overflow: hidden;
   border-radius: 4px;
 }
 
-.favorites-container.small-mode .card[data-media-type="music"] .card-link {
+html[data-favorites-view="small"] .favorites-container .card[data-media-type="music"] .card-link {
   height: 90px;
 }
 
@@ -450,6 +549,10 @@ body.drag-active .card-title {
   color: var(--text-secondary);
   font-style: italic;
   min-height: 20px;
+}
+
+.favorite-section[data-has-more="false"] .loading-sentinel {
+  display: none;
 }
 
 .card-favorite {
@@ -516,7 +619,7 @@ body.drag-active .card-favorite {
 
 .view-btn {
   background-color: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
+  border: 0px solid var(--border-color);
   color: var(--text-secondary);
   width: 40px;
   height: 40px;
@@ -533,51 +636,48 @@ body.drag-active .card-favorite {
   color: var(--text-light);
 }
 
-.view-btn.active {
+html[data-favorites-view="big"] #view-big,
+html[data-favorites-view="small"] #view-small {
   background-color: var(--text-primary);
   color: var(--bg-primary);
   border-color: var(--text-primary);
 }
 
 
-.favorites-container.small-mode .card-grid {
+html[data-favorites-view="small"] .favorites-container .card-grid {
   grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
   gap: 0.8rem;
 }
 
-.favorites-container.small-mode .card {
+html[data-favorites-view="small"] .favorites-container .card {
   border-radius: 4px;
   overflow: hidden;
   contain: paint;
 }
 
-.favorites-container.small-mode .card-image {
+html[data-favorites-view="small"] .favorites-container .card-image {
   padding-top: 150%;
 
   border-radius: 4px;
 }
 
-.favorites-container.small-mode .card-title {
+html[data-favorites-view="small"] .favorites-container .card[data-media-type="music"] .card-image {
+  padding-top: 0;
+}
+
+html[data-favorites-view="small"] .favorites-container .card-title {
   display: none;
 }
 
-.favorites-container.small-mode .card-favorite {
+html[data-favorites-view="small"] .favorites-container .card-favorite {
   display: none;
 }
 
 
-.favorites-container.small-mode .card-link {
-  cursor: grab;
+html[data-favorites-view="small"] .favorites-container .card-link {
+  cursor: inherit;
 }
 
-body.c-modal-open,
-html.c-modal-open {
-  overflow: hidden !important;
-  position: fixed !important;
-  width: 100% !important;
-  left: 0 !important;
-  right: 0 !important;
-}
 
 @keyframes modalFade {
   0% {
@@ -624,6 +724,8 @@ html.c-modal-open {
 }
 
 @media (orientation: portrait) {
+    .favorites-toolbar { gap: 1.5rem; }
+    #favorites-search { flex: 1; width: auto; font-size: 2rem; padding: 1.5rem; }
     .separator-bar {
         height: 0.5rem;
     }
@@ -685,7 +787,7 @@ html.c-modal-open {
         gap: 1.5rem;
     }
 
-    .favorites-container.small-mode .card-grid {
+    html[data-favorites-view="small"] .favorites-container .card-grid {
         grid-template-columns: repeat(5, 1fr);
         gap: 0.8rem;
     }
@@ -736,11 +838,11 @@ html.c-modal-open {
         object-fit: cover;
     }
 
-    .favorites-container.small-mode .card-image {
+    html[data-favorites-view="small"] .favorites-container .card-image {
         border-radius: 8px;
     }
 
-    .favorites-container.small-mode .card-link {
+    html[data-favorites-view="small"] .favorites-container .card-link {
         height: auto !important;
     }
 

@@ -656,6 +656,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function replaceHistoryItem(item) {
     try {
+      // Edit responses also include a form display score; sorting/rendering use the stored score.
+      if (Object.hasOwn(item, 'personal_rating_raw')) item = { ...item, personal_rating: item.personal_rating_raw };
       sessionStorage.setItem('cacheVersion_history', Date.now().toString());
       const id = String(item.id);
 
@@ -801,14 +803,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const rnum = Number(rating);
     if (isNaN(rnum)) return 'Unrated';
 
-    let normalized = rnum;
-    if (ratingMode === 'stars_5') {
-      normalized = (rnum > 0 && rnum <= 5) ? (rnum * 20) : rnum;
-    } else if (ratingMode === 'scale_10') {
-      normalized = rnum;
-    }
-
-    const rounded = Math.round(normalized);
+    const displayRating = window.ratingToDisplay(rnum, ratingMode);
+    if (displayRating === null) return 'Unrated';
+    const rounded = Math.round(rnum);
 
     if (ratingMode === 'faces') {
       if (rounded <= 33) {
@@ -819,7 +816,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return '<span class="card-rating"><svg aria-hidden="true" focusable="false" data-prefix="far" data-icon="smile" class="svg-inline--fa fa-smile fa-w-16 fa-lg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><path fill="currentColor" d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zm0 448c-110.3 0-200-89.7-200-200S137.7 56 248 56s200 89.7 200 200-89.7 200-200 200zm-80-216c17.7 0 32-14.3 32-32s-14.3-32-32-32-32 14.3-32 32 14.3 32 32 32zm160 0c17.7 0 32-14.3 32-32s-14.3-32-32-32-32 14.3-32 32 14.3 32 32 32zm4 72.6c-20.8 25-51.5 39.4-84 39.4s-63.2-14.3-84-39.4c-8.5-10.2-23.7-11.5-33.8-3.1-10.2 8.5-11.5 23.6-3.1 33.8 30 36 74.1 56.6 120.9 56.6s90.9-20.6 120.9-56.6c8.5-10.2 7.1-25.3-3.1-33.8-10.1-8.4-25.3-7.1-33.8 3.1z"></path></svg></span>';
       }
     } else if (ratingMode === 'stars_5') {
-      let starsCount = (rnum > 0 && rnum <= 5) ? Math.round(rnum) : Math.round(normalized / 20);
+      const starsCount = displayRating;
       let starsHtml = '<span class="card-rating"><span class="star-rating">';
       for (let i = 1; i <= 5; i++) {
         if (i <= starsCount) {
@@ -831,8 +828,7 @@ document.addEventListener("DOMContentLoaded", () => {
       starsHtml += '</span></span>';
       return starsHtml;
     } else if (ratingMode === 'scale_10') {
-      let displayVal = rnum > 10 ? Math.round(rnum / 10) : rnum;
-      if (displayVal === 0 && rnum > 0) displayVal = 1;
+      const displayVal = displayRating;
       return `<span class="card-rating"><span class="rating-number">${displayVal}</span></span>`;
     } else if (ratingMode === 'scale_100') {
       return `<span class="card-rating"><span class="rating-number">${Math.round(rnum)}</span></span>`;

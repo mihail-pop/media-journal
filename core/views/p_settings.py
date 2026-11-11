@@ -7,8 +7,10 @@ import concurrent.futures
 
 import requests
 from django.apps import apps
+from django.db import transaction
 from django.http import FileResponse, JsonResponse, HttpResponseBadRequest
 from django.views.decorators.csrf import ensure_csrf_cookie
+from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_GET, require_POST
 
 from core.models import APIKey, NavItem
@@ -18,6 +20,68 @@ from core.services.p_settings import (
     RefreshTask,
     cleanup_old_tasks,
 )
+
+
+@never_cache
+@require_GET
+def export_favorites_data(request):
+    from core.models import default_favorite_sections_order
+    from core.services.g_favorites_export import favorite_export_data
+
+    selected = request.GET.getlist('sections')
+    valid = {section['id'] for section in default_favorite_sections_order()}
+    if not selected or any(section not in valid for section in selected):
+        return JsonResponse({'error': 'Choose at least one favorite section.'}, status=400)
+    try:
+        limit = int(request.GET.get('limit', '25'))
+    except (TypeError, ValueError):
+        limit = 0
+    if limit not in (5, 10, 15, 20, 25):
+        return JsonResponse({'error': 'Choose a maximum of 5, 10, 15, 20 or 25 items.'}, status=400)
+    return JsonResponse({'sections': favorite_export_data(set(selected), limit=limit)})
+
+
+@never_cache
+@require_GET
+def export_favorites_image(request, kind, item_id):
+    from core.services.g_favorites_export import favorite_export_image_response
+    return favorite_export_image_response(kind, item_id)
+
+
+@require_POST
+def export_favorites_png_archive(request):
+    import re
+    import zipfile
+    from pathlib import PurePosixPath
+
+    images = request.FILES.getlist('images')
+    if not 1 <= len(images) <= 9 or sum(image.size for image in images) > 200 * 1024 * 1024:
+        return JsonResponse({'error': 'The PNG export is too large.'}, status=400)
+    for image in images:
+        if image.read(8) != b'\x89PNG\r\n\x1a\n':
+            return JsonResponse({'error': 'Only PNG images can be archived.'}, status=400)
+        image.seek(0)
+
+    archive = tempfile.TemporaryFile()
+    try:
+        # PNGs are already compressed; store them without recompressing.
+        with zipfile.ZipFile(archive, 'w', compression=zipfile.ZIP_STORED) as output:
+            for index, image in enumerate(images, 1):
+                name = PurePosixPath(image.name.replace('\\', '/')).name
+                name = re.sub(r'[^A-Za-z0-9 ._-]', '', name).strip(' .') or 'Favorites.png'
+                if not name.lower().endswith('.png'):
+                    name += '.png'
+                with output.open(f'{index:02d} - {name}', 'w') as destination:
+                    for chunk in image.chunks():
+                        destination.write(chunk)
+        archive.seek(0)
+        return FileResponse(
+            archive, as_attachment=True, filename='Media Journal - Favorites.zip',
+            content_type='application/zip',
+        )
+    except Exception:
+        archive.close()
+        raise
 
 
 @ensure_csrf_cookie
@@ -60,11 +124,135 @@ def update_preferences(request):
 
 
 @require_POST
+def update_adult_content(request):
+    try:
+        data = json.loads(request.body)
+        enabled = data.get('enabled') if isinstance(data, dict) else None
+        if not isinstance(enabled, bool):
+            raise ValueError
+    except (ValueError, TypeError):
+        return JsonResponse({'success': False, 'error': 'Invalid adult content preference.'}, status=400)
+
+    AppSettings = apps.get_model('core', 'AppSettings')
+    with transaction.atomic():
+        settings = AppSettings.objects.select_for_update().first()
+        if not settings:
+            settings = AppSettings.objects.create()
+        settings.allow_adult_content = enabled
+        settings.save(update_fields=['allow_adult_content'])
+    return JsonResponse({'success': True})
+
+
+@require_POST
+def update_banner_notes(request):
+    try:
+        data = json.loads(request.body)
+        enabled = data.get('enabled') if isinstance(data, dict) else None
+        if not isinstance(enabled, bool):
+            raise ValueError
+    except (ValueError, TypeError):
+        return JsonResponse({'success': False, 'error': 'Invalid banner notes preference.'}, status=400)
+
+    AppSettings = apps.get_model('core', 'AppSettings')
+    with transaction.atomic():
+        settings = AppSettings.objects.select_for_update().first()
+        if not settings:
+            settings = AppSettings.objects.create()
+        settings.show_banner_notes = enabled
+        settings.save(update_fields=['show_banner_notes'])
+    return JsonResponse({'success': True})
+
+
+@require_POST
+def update_favorite_sections(request):
+    from core.models import AppSettings, default_favorite_sections_order
+
+    try:
+        data = json.loads(request.body)
+        sections = data.get('sections') if isinstance(data, dict) else None
+        valid_ids = {section['id'] for section in default_favorite_sections_order()}
+        if not isinstance(sections, list) or len(sections) != len(valid_ids):
+            raise ValueError
+        seen = set()
+        cleaned = []
+        for section in sections:
+            if not isinstance(section, dict):
+                raise ValueError
+            key = section.get('id')
+            visible = section.get('visible')
+            if not isinstance(key, str) or key not in valid_ids or key in seen or not isinstance(visible, bool):
+                raise ValueError
+            seen.add(key)
+            cleaned.append({'id': key, 'visible': visible})
+    except (ValueError, TypeError):
+        return JsonResponse({'success': False, 'error': 'Invalid favorite sections.'}, status=400)
+
+    with transaction.atomic():
+        settings = AppSettings.objects.select_for_update().first()
+        if not settings:
+            settings = AppSettings.objects.create()
+        settings.favorite_sections_order = cleaned
+        settings.save(update_fields=['favorite_sections_order'])
+    return JsonResponse({'success': True})
+
+
+@require_POST
+def update_list_card_overlays(request):
+    from core.models import AppSettings, default_list_card_overlay_settings
+
+    try:
+        data = json.loads(request.body)
+        if not isinstance(data, dict):
+            raise ValueError
+        media_type, mode = data.get('media_type'), data.get('mode')
+        if not isinstance(media_type, str) or media_type not in default_list_card_overlay_settings() or mode not in ('full', 'compact', 'hidden'):
+            raise ValueError
+    except (ValueError, TypeError):
+        return JsonResponse({'success': False, 'error': 'Invalid card overlay preference.'}, status=400)
+
+    with transaction.atomic():
+        settings = AppSettings.objects.select_for_update().first()
+        if not settings:
+            settings = AppSettings.objects.create()
+        preferences = settings.get_list_card_overlay_settings()
+        preferences[media_type] = mode
+        settings.list_card_overlay_settings = preferences
+        settings.save(update_fields=['list_card_overlay_settings'])
+    return JsonResponse({'success': True})
+
+
+@require_POST
+def update_live_search_settings(request):
+    from core.models import AppSettings, default_live_search_settings
+
+    try:
+        data = json.loads(request.body)
+        if not isinstance(data, dict):
+            raise ValueError
+        media_type = data.get('media_type')
+        enabled = data.get('enabled')
+        if not isinstance(media_type, str) or media_type not in default_live_search_settings() or not isinstance(enabled, bool):
+            raise ValueError
+    except (ValueError, TypeError):
+        return JsonResponse({'success': False, 'error': 'Invalid live search preference.'}, status=400)
+
+    with transaction.atomic():
+        settings = AppSettings.objects.select_for_update().first()
+        if not settings:
+            settings = AppSettings.objects.create()
+        preferences = settings.get_live_search_settings()
+        preferences[media_type] = enabled
+        settings.live_search_settings = preferences
+        settings.save(update_fields=['live_search_settings'])
+    return JsonResponse({'success': True, 'live_search_settings': preferences})
+
+
+@require_POST
 def update_theme(request):
     data = json.loads(request.body.decode("utf-8"))
     theme_mode = data.get("theme_mode")
 
-    if theme_mode not in ["light", "dark", "brown", "green"]:
+    if theme_mode not in ["light", "dark", "brown", "green", "plum", "charcoal", "teal", "pink", "cake"]:
         return JsonResponse({"error": "Invalid theme mode"}, status=400)
 
     AppSettings = apps.get_model("core", "AppSettings")

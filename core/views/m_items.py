@@ -11,11 +11,12 @@ from django.http import JsonResponse
 from django.utils import timezone
 from django.core.files.storage import FileSystemStorage
 from django.views.decorators.csrf import ensure_csrf_cookie
+from django.db import transaction
 from django.db.models import Max, F
 from django.views.decorators.http import require_GET, require_POST
 
-from core.models import MediaItem, Collection, MediaItemLog, AppSettings
-from core.services.g_utils import display_to_rating, rating_to_display, get_sharded_path
+from core.models import MediaItem, Collection, CollectionItem, MediaItemLog, AppSettings
+from core.services.g_utils import display_to_rating, rating_to_display, rating_from_edit, get_sharded_path
 from core.services.m_books import save_openlib_item
 from core.services.m_games import save_igdb_item
 from core.services.m_music import save_musicbrainz_item
@@ -93,6 +94,12 @@ def add_season_to_list(request):
 @require_POST
 def create_custom_item(request):
     try:
+        collection_ids = {int(value) for value in request.POST.getlist("collections")}
+        if collection_ids:
+            existing_ids = set(Collection.objects.filter(id__in=collection_ids).values_list('id', flat=True))
+            if existing_ids != collection_ids:
+                raise ValueError("A selected collection no longer exists. Reopen the modal and select collections again.")
+
         # 1. Base Variables & Normalization
         media_type_raw = request.POST.get("media_type", "movie").lower()
         
@@ -218,30 +225,47 @@ def create_custom_item(request):
             date_added = timezone.now()
 
         # 5. Create Item
-        new_item = MediaItem.objects.create(
-            title=title,
-            media_type=media_type, # Now guaranteed to be "movie", "tv", "game", etc.
-            source=source,
-            provider_ids=provider_ids,
-            cover_url=cover_url,
-            banner_url=banner_url,
-            release_date=request.POST.get("release_date", ""),
-            overview=request.POST.get("overview", ""),
-            status=request.POST.get("status", "planned"),
-            genres=genres_list,
-            creators=creators_list,
-            
-            progress_main=progress_main,
-            total_main=total_main,
-            progress_secondary=progress_secondary,
-            total_secondary=total_secondary,
-            
-            personal_rating=rating_val,
-            favorite=is_favorite,
-            favorite_position=fav_position,
-            notes=request.POST.get("c-notes", ""),
-            date_added=date_added
-        )
+        with transaction.atomic():
+            new_item = MediaItem.objects.create(
+                title=title,
+                media_type=media_type, # Now guaranteed to be "movie", "tv", "game", etc.
+                source=source,
+                provider_ids=provider_ids,
+                cover_url=cover_url,
+                banner_url=banner_url,
+                release_date=request.POST.get("release_date", ""),
+                overview=request.POST.get("overview", ""),
+                status=request.POST.get("status", "planned"),
+                genres=genres_list,
+                creators=creators_list,
+
+                progress_main=progress_main,
+                total_main=total_main,
+                progress_secondary=progress_secondary,
+                total_secondary=total_secondary,
+
+                personal_rating=rating_val,
+                favorite=is_favorite,
+                favorite_position=fav_position,
+                notes=request.POST.get("c-notes", ""),
+                date_added=date_added
+            )
+
+            if collection_ids:
+                last_positions = dict(
+                    CollectionItem.objects.filter(collection_id__in=collection_ids)
+                    .order_by().values('collection_id')
+                    .annotate(last_position=Max('position'))
+                    .values_list('collection_id', 'last_position')
+                )
+                CollectionItem.objects.bulk_create([
+                    CollectionItem(
+                        collection_id=collection_id,
+                        item=new_item,
+                        position=(last_positions.get(collection_id) or 0) + 1,
+                    )
+                    for collection_id in collection_ids
+                ])
 
         # 6. Format Display Rating for frontend
         try:
@@ -263,6 +287,7 @@ def create_custom_item(request):
                 "source_id": custom_id,
                 "status": new_item.status,
                 "personal_rating": display_rating,
+                "personal_rating_raw": new_item.personal_rating,
                 "notes": new_item.notes,
                 "progress_main": new_item.progress_main,
                 "total_main": new_item.total_main,
@@ -371,13 +396,35 @@ def edit_metadata(request, item_id):
     return JsonResponse({"success": False, "error": "Invalid request"})
 
 @ensure_csrf_cookie
+@transaction.atomic
 def edit_item(request, item_id):
     if request.method == "POST":
         try:
             data = json.loads(request.body)
-            item = MediaItem.objects.get(id=item_id)
+            item = MediaItem.objects.select_for_update().get(id=item_id)
 
             old_status = item.status
+            quick_complete = False
+            if 'increment_progress' in data:
+                action = data['increment_progress']
+                if old_status != 'ongoing':
+                    return JsonResponse({'success': False, 'error': 'Progress shortcuts are only available for active items.'}, status=409)
+                episodic = item.media_type in ('tv', 'anime', 'manga')
+                if not episodic and action == 'complete':
+                    # 0/1 is a status shortcut, not minutes, hours or pages.
+                    quick_complete = True
+                    data = {'status': 'completed'}
+                elif episodic and (action == 'main' or (action == 'secondary' and item.media_type == 'tv')):
+                    progress_field = 'progress_main' if action == 'main' else 'progress_secondary'
+                    total = item.total_main if action == 'main' else item.total_secondary
+                    progress = (getattr(item, progress_field) or 0) + 1
+                    if total is not None and total > 0:
+                        progress = min(progress, total)
+                    data = {progress_field: progress}
+                    if total is not None and total > 0 and progress >= total:
+                        data['status'] = 'completed'
+                else:
+                    return JsonResponse({'success': False, 'error': 'Invalid progress shortcut.'}, status=400)
 
             # Update totals if present
             if "total_main" in data and data["total_main"] not in [None, ""]:
@@ -403,15 +450,10 @@ def edit_item(request, item_id):
                 except Exception:
                     rating_mode = "faces"
 
-                display_value = data["personal_rating"]
-                new_rating = None
-                
-                if display_value not in [None, "", "null"]:
-                    try:
-                        display_value_int = int(display_value)
-                        new_rating = display_to_rating(display_value_int, rating_mode)
-                    except ValueError:
-                        pass
+                try:
+                    new_rating = rating_from_edit(data["personal_rating"], rating_mode, item.personal_rating)
+                except (ValueError, TypeError):
+                    new_rating = None
                 
                 if item.personal_rating != new_rating:
                     rating_changed = True
@@ -420,8 +462,11 @@ def edit_item(request, item_id):
             # --- Handle date_added ---
             status_changed = new_status != old_status
             
-            # The rule: Only auto-update if BOTH status and score changed.
-            auto_update_date = status_changed and rating_changed
+            # Keep the status + score rule, and also date active items when
+            # they are finished or dropped, even without a rating change.
+            auto_update_date = status_changed and (
+                rating_changed or (old_status == 'ongoing' and new_status in ('completed', 'dropped'))
+            )
 
             user_date = data.get("date_added")
 
@@ -444,12 +489,16 @@ def edit_item(request, item_id):
                 item.date_added = dt.datetime.now()
 
             # Update progress fields if present (manual input)
-            if "progress_main" in data:
+            if item.media_type in ('movie', 'music'):
+                # Their totals are runtimes, not user progress. Also clear values
+                # previously copied from runtime when marking an item completed.
+                item.progress_main = 0
+            elif "progress_main" in data:
                 if data["progress_main"] in [None, ""]:
                     item.progress_main = 0
                 else:
                     progress_main = int(data["progress_main"])
-                    if item.media_type != "book" and item.total_main is not None and progress_main > item.total_main:
+                    if item.media_type != "book" and item.total_main is not None and item.total_main > 0 and progress_main > item.total_main:
                         progress_main = item.total_main
                     item.progress_main = progress_main
 
@@ -460,13 +509,17 @@ def edit_item(request, item_id):
                     progress_secondary = int(data["progress_secondary"])
                     if (
                         item.total_secondary is not None
+                        and item.total_secondary > 0
                         and progress_secondary > item.total_secondary
                     ):
                         progress_secondary = item.total_secondary
                     item.progress_secondary = progress_secondary
 
             # If status changed TO "completed", override progress with totals
-            if old_status != "completed" and new_status == "completed":
+            if (
+                old_status != "completed" and new_status == "completed"
+                and not quick_complete and item.media_type not in ('movie', 'music')
+            ):
                 if item.total_main is not None and item.progress_main < item.total_main:
                     item.progress_main = item.total_main
                 if item.total_secondary is not None:
@@ -548,6 +601,7 @@ def edit_item(request, item_id):
                         "source_id": item.source_id,
                         "status": item.status,
                         "personal_rating": display_rating,
+                        "personal_rating_raw": item.personal_rating,
                         "notes": item.notes,
                         "progress_main": item.progress_main
                         if item.progress_main
@@ -971,17 +1025,13 @@ def manage_journal_log(request):
                     pass
                     
             # Handle empty strings converting to None securely
-            score_str = data.get("score")
-            if score_str:
+            if "score" in data:
                 try:
                     app_settings = AppSettings.objects.first()
                     r_mode = app_settings.rating_mode if app_settings else "faces"
-                    display_val = int(score_str)
-                    log.score = display_to_rating(display_val, r_mode)
-                except ValueError:
+                    log.score = rating_from_edit(data["score"], r_mode, log.score)
+                except (ValueError, TypeError):
                     log.score = None
-            else:
-                log.score = None
             
             log.is_spoiler = data.get("is_spoiler", False)
             log.progress_unit = data.get("progress_unit")

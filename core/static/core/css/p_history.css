@@ -47,6 +47,118 @@
   --table-bg: #55423d;
 }
 
+/* Muted forest green, with warm sage text and moss accents. */
+[data-theme="green"] {
+  --bg-primary: #1e2923;
+  --bg-tertiary: #34473a;
+  --bg-quaternary: #4a604c;
+  --bg-filter: #26382c;
+
+  --text-primary: #e5e8d9;
+  --text-secondary: #d2dcc6;
+  --text-tertiary: #aab99c;
+  --text-light: #e9eddf;
+
+  --border-color: #51694f;
+  --hover-bg: #415a46;
+  --table-bg: #3b5140;
+}
+
+/* Warm plum, with parchment text and muted brass accents. */
+[data-theme="plum"] {
+  --bg-primary: #29232d;
+  --bg-tertiary: #493c4d;
+  --bg-quaternary: #655068;
+  --bg-filter: #382f3e;
+
+  --text-primary: #eee3da;
+  --text-secondary: #dac9cc;
+  --text-tertiary: #c0a9bb;
+  --text-light: #f0e6df;
+
+  --border-color: #725d74;
+  --hover-bg: #5a485d;
+  --table-bg: #514254;
+}
+
+/* Warm charcoal, with ivory text and restrained amber accents. */
+[data-theme="charcoal"] {
+  --bg-primary: #252422;
+  --bg-tertiary: #413e39;
+  --bg-quaternary: #5d574d;
+  --bg-filter: #302d29;
+
+  --text-primary: #ece6db;
+  --text-secondary: #d2c9bb;
+  --text-tertiary: #b4aa9b;
+  --text-light: #f0eadd;
+
+  --border-color: #6b6153;
+  --hover-bg: #514b41;
+  --table-bg: #48433b;
+}
+
+/* Muted ocean teal, with warm linen text and sea-glass accents. */
+[data-theme="teal"] {
+  --bg-primary: #203033;
+  --bg-tertiary: #354e52;
+  --bg-quaternary: #4b686b;
+  --bg-filter: #293e42;
+
+  --text-primary: #e6e8dc;
+  --text-secondary: #c8d8ce;
+  --text-tertiary: #aec3b9;
+  --text-light: #eaf0e1;
+
+  --border-color: #547174;
+  --hover-bg: #456568;
+  --table-bg: #3c575a;
+}
+
+/* Light rose, with warm ivory backgrounds, cocoa text and berry accents. */
+[data-theme="pink"] {
+  --bg-primary: #fff8f6;
+  --bg-tertiary: #f7e3e6;
+  --bg-quaternary: #efd0d8;
+  --bg-filter: #f4e3e5;
+
+  --text-primary: #54363e;
+  --text-secondary: #684851;
+  --text-tertiary: #78535e;
+  --text-light: #54363e;
+
+  --border-color: #cca4b0;
+  --hover-bg: #eed0d8;
+  --table-bg: #f8eaec;
+}
+
+/* Cake: creamy ivory, peach layers and red accents. */
+[data-theme="cake"] {
+  --bg-primary: #fff6e9;
+  --bg-tertiary: #f6dfca;
+  --bg-quaternary: #ebc29f;
+  --bg-filter: #f6e4d0;
+
+  --text-primary: #573326;
+  --text-secondary: #6b4433;
+  --text-tertiary: #7e5140;
+  --text-light: #573326;
+
+  --border-color: #d4a482;
+  --hover-bg: #edc7a7;
+  --table-bg: #f7e5d1;
+}
+
+/* Keep text over dark image overlays light in this light theme. */
+[data-theme="cake"] .card-title-overlay {
+  --text-light: #fff7e8;
+}
+
+/* Keep text over dark image overlays light in this light theme. */
+[data-theme="pink"] .card-title-overlay {
+  --text-light: #fff8fb;
+}
+
 
 .star-rating {
   display: flex;

@@ -135,14 +135,13 @@ def musicbrainz_search(request):
     for r in filtered:
         display_title = r["title"]
         if r["artists"]:
-            display_title += f" by {', '.join(r['artists'])}"
-        if r["year"]:
-            display_title += f" | {r['year']}"
+            display_title += f" - {', '.join(r['artists'])}"
 
         results.append(
             {
                 "id": r["id"],
                 "title": display_title,
+                "year": r["year"],
                 "poster_path": None,
             }
         )

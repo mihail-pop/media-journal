@@ -7,6 +7,173 @@ let playedSongs = [];
 let isSequentialMode = false;
 let isRestoringFromBfcache = false;
 const tabId = Date.now() + Math.random();
+const isMusicPopout = document.body.dataset.musicPopout === 'true';
+const musicPopoutOwnerKey = 'music_player_popout_owner';
+const musicPopoutCommandKey = 'music_player_popout_command';
+const musicPopoutModeKey = 'music_player_popout';
+const musicDockStateKey = 'music_player_dock_state';
+const musicPopoutPositionKey = 'music_player_popout_position';
+let pendingMusicPopoutState = null;
+
+function musicPopoutWindowFeatures() {
+    let width = 640;
+    let height = 400;
+    const availableLeft = Number.isFinite(screen.availLeft) ? screen.availLeft : 0;
+    const availableTop = Number.isFinite(screen.availTop) ? screen.availTop : 0;
+    let left = availableLeft + 20;
+    let top = availableTop + Math.max(0, screen.availHeight - 400 - 20);
+    try {
+        const saved = JSON.parse(localStorage.getItem(musicPopoutPositionKey));
+        if (saved && Number.isFinite(saved.width) && saved.width > 0 && Number.isFinite(saved.height) && saved.height > 0) {
+            width = saved.width;
+            height = saved.height;
+            top = availableTop + Math.max(0, screen.availHeight - height - 20);
+        }
+        if (saved && Number.isFinite(saved.left) && Number.isFinite(saved.top)) {
+            left = saved.left;
+            top = saved.top;
+        }
+    } catch (error) { /* Use the bottom-left default if no valid position is saved. */ }
+    return `popup,width=${Math.round(width)},height=${Math.round(height)},resizable=yes,left=${Math.round(left)},top=${Math.round(top)}`;
+}
+
+function saveMusicPopoutPosition() {
+    const left = window.screenX;
+    const top = window.screenY;
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    // Some window managers place minimized windows far off-screen.
+    if (!Number.isFinite(left) || !Number.isFinite(top) || left <= -30000 || top <= -30000) return;
+    if (width <= 0 || height <= 0) return;
+    try {
+        const position = JSON.stringify({ left, top, width, height });
+        if (localStorage.getItem(musicPopoutPositionKey) !== position) {
+            localStorage.setItem(musicPopoutPositionKey, position);
+        }
+    } catch (error) { /* Position saving is optional if browser storage is unavailable. */ }
+}
+
+// Call during the initiating click, before fetching a playlist, to allow popups.
+window.prepareMusicPlayerWindow = function(force = false) {
+    if (isMusicPopout || (!force && localStorage.getItem(musicPopoutModeKey) !== 'true') || isMusicPopoutOpen()) return;
+    localStorage.removeItem(musicPopoutCommandKey);
+    const popup = window.open('/music/player/', 'media-journal-music-player', musicPopoutWindowFeatures());
+    if (!popup) {
+        if (!force) localStorage.setItem(musicPopoutModeKey, 'false');
+        alert('Allow pop-ups for Media Journal to open the music player. The player will stay in this page.');
+        return;
+    }
+    localStorage.setItem(musicPopoutModeKey, 'true');
+    localStorage.setItem(musicPopoutOwnerKey, JSON.stringify({ id: 'opening', updated: Date.now() }));
+    popup.focus();
+    return popup;
+};
+
+function isMusicPopoutOpen() {
+    try {
+        const owner = JSON.parse(localStorage.getItem(musicPopoutOwnerKey));
+        return owner && Date.now() - owner.updated < 90000;
+    } catch (e) {
+        return false;
+    }
+}
+
+function claimMusicPlayer() {
+    if (isMusicPopout || !isMusicPopoutOpen()) {
+        localStorage.setItem('music_player_active_tab', tabId);
+    }
+}
+
+function musicPlayerSnapshot(videoId, time = 0, paused = false) {
+    return {
+        playlist: musicPlaylist, index: musicCurrentIndex,
+        history: sessionHistory, historyIndex,
+        played: playedSongs, sequential: isSequentialMode,
+        videoId, time, paused, mode: localStorage.getItem('musicPlayerEnabled'),
+    };
+}
+
+function sendMusicPopoutCommand(action, state = null) {
+    localStorage.setItem(musicPopoutCommandKey, JSON.stringify({ action, state, id: Date.now() + Math.random() }));
+}
+
+function hideEmbeddedMusicPlayer() {
+    if (musicPlayer && musicPlayer.destroy) musicPlayer.destroy();
+    musicPlayer = null;
+    isMusicPlayerReady = false;
+    const container = document.getElementById('music-player-container');
+    if (container) container.style.display = 'none';
+    setMusicPlayerScrollLock(false);
+}
+
+function openMusicPopout() {
+    if (!musicPlayer || !isMusicPlayerReady) return;
+    const state = musicPlayerSnapshot(
+        musicPlayer.getVideoData().video_id,
+        musicPlayer.getCurrentTime(),
+        musicPlayer.getPlayerState() !== YT.PlayerState.PLAYING
+    );
+    const popup = window.prepareMusicPlayerWindow(true);
+    if (!popup) return;
+    sendMusicPopoutCommand('play', state);
+    hideEmbeddedMusicPlayer();
+    popup.focus();
+}
+
+function returnMusicPlayerToPage() {
+    if (!musicPlayer || !isMusicPlayerReady) return;
+    const state = musicPlayerSnapshot(musicPlayer.getVideoData().video_id, musicPlayer.getCurrentTime(),
+        musicPlayer.getPlayerState() !== YT.PlayerState.PLAYING);
+    localStorage.setItem(musicPopoutModeKey, 'false');
+    localStorage.setItem(musicDockStateKey, JSON.stringify(state));
+    localStorage.removeItem(musicPopoutOwnerKey);
+    // Stop this iframe before the other page starts its copy.
+    hideEmbeddedMusicPlayer();
+    if (window.opener && !window.opener.closed) {
+        window.opener.postMessage({ type: 'media-journal-music-dock' }, window.location.origin);
+        window.opener.focus();
+    } else {
+        window.open('/', '_blank');
+    }
+    window.close();
+}
+
+function receiveDockedMusicPlayer() {
+    const saved = localStorage.getItem(musicDockStateKey);
+    if (!saved || isMusicPopout) return false;
+    localStorage.removeItem(musicDockStateKey);
+    receiveMusicPopoutState(JSON.parse(saved));
+    return true;
+}
+
+window.addEventListener('message', event => {
+    if (event.origin === window.location.origin && event.data?.type === 'media-journal-music-dock' && !isMusicPopout) {
+        receiveDockedMusicPlayer();
+    }
+});
+
+function receiveMusicPopoutState(state) {
+    if (!state || !Array.isArray(state.playlist) || !state.playlist.length || !state.videoId) return;
+    pendingMusicPopoutState = state;
+    loadYouTubeAPI();
+    if (window.YT && window.YT.Player) restoreMusicPopoutState();
+}
+
+function restoreMusicPopoutState() {
+    const state = pendingMusicPopoutState;
+    if (!state) return;
+    pendingMusicPopoutState = null;
+    musicPlaylist = state.playlist;
+    musicCurrentIndex = state.index;
+    sessionHistory = state.history || [];
+    historyIndex = state.historyIndex;
+    playedSongs = state.played || [];
+    isSequentialMode = state.sequential;
+    localStorage.setItem('musicPlayerEnabled', state.mode || 'list');
+    saveHistory();
+    claimMusicPlayer();
+    createPlayer(state.videoId, state.time, state.paused);
+}
 
 // New Session History
 let sessionHistory = [];
@@ -35,6 +202,7 @@ const iconHeart = (isFav) => {
 };
 
 window.startCustomPlaylist = function(playlist, startIndex) {
+    window.prepareMusicPlayerWindow();
     sessionHistory = [];
     historyIndex = -1;
     localStorage.removeItem('music_player_history');
@@ -48,10 +216,15 @@ window.startCustomPlaylist = function(playlist, startIndex) {
     localStorage.setItem('musicPlayerEnabled', 'list');
     localStorage.setItem('music_player_playlist', JSON.stringify(playlist));
     localStorage.setItem('music_player_index', startIndex);
-    localStorage.setItem('music_player_active_tab', tabId);
+    claimMusicPlayer();
     
     const toggle = document.getElementById('music-player-toggle');
     if (toggle) toggle.checked = true;
+
+    if (!isMusicPopout && isMusicPopoutOpen()) {
+        createPlayer(musicPlaylist[musicCurrentIndex].video_id, 0);
+        return;
+    }
     
     loadYouTubeAPI();
     if (window.YT && window.YT.Player) {
@@ -95,6 +268,11 @@ window.onYouTubeIframeAPIReady = function() {
 };
 
 function initMusicPlayer() {
+  if (pendingMusicPopoutState) {
+    restoreMusicPopoutState();
+    return;
+  }
+  if (isMusicPopout) return;
   const savedMode = localStorage.getItem('musicPlayerEnabled');
   const toggle = document.getElementById('music-player-toggle');
   
@@ -105,7 +283,11 @@ function initMusicPlayer() {
   }
   
   if (savedMode) {
-    localStorage.setItem('music_player_active_tab', tabId);
+    if (!isMusicPopout && (isMusicPopoutOpen() || localStorage.getItem(musicPopoutModeKey) === 'true')) {
+      hideEmbeddedMusicPlayer();
+      return;
+    }
+    claimMusicPlayer();
     loadYouTubeAPI();
     if (window.YT && window.YT.Player) {
       loadPlaylist();
@@ -197,7 +379,12 @@ function loadPlaylist() {
     });
 }
 
-function createPlayer(videoId, startTime = 0) {
+function createPlayer(videoId, startTime = 0, startPaused = false) {
+  if (!isMusicPopout && isMusicPopoutOpen()) {
+    sendMusicPopoutCommand('play', musicPlayerSnapshot(videoId, startTime, startPaused));
+    hideEmbeddedMusicPlayer();
+    return;
+  }
   const container = document.getElementById('music-player-container');
   if (!container) return;
   
@@ -252,6 +439,28 @@ function createPlayer(videoId, startTime = 0) {
       .mp-ctrl-right { justify-content: flex-end; }
       
       #mp-video-wrap { flex: 1; position: relative; background: #000; }
+      /* Adjust these percentages to move/resize the invisible video drag areas.
+         Width applies to each side; the gap between them leaves the center clickable. */
+      #mp-video-wrap {
+        --mp-drag-top: 25%;
+        --mp-drag-height: 45%;
+        --mp-drag-width: 38%;
+        --mp-drag-edge: 0%;
+      }
+      .mp-drag-zone {
+        position: absolute;
+        top: var(--mp-drag-top);
+        height: var(--mp-drag-height);
+        width: var(--mp-drag-width);
+        z-index: 2;
+        cursor: grab;
+        touch-action: none;
+        user-select: none;
+      }
+      .mp-drag-zone-left { left: var(--mp-drag-edge); }
+      .mp-drag-zone-right { right: var(--mp-drag-edge); }
+      .mp-drag-zone.is-dragging { cursor: grabbing; }
+      .mp-fullscreen .mp-drag-zone { display: none; }
       #mp-history { background: #111; overflow-y: auto; color: white; flex-direction: column; flex-shrink: 0; display: flex; }
       #mp-history::-webkit-scrollbar { width: 6px; }
       #mp-history::-webkit-scrollbar-track { background: #111; }
@@ -261,6 +470,19 @@ function createPlayer(videoId, startTime = 0) {
       .mp-btn { background: transparent; color: white; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 5px; border-radius: 4px; transition: background 0.2s; }
       .mp-btn:hover { background: rgba(255,255,255,0.2); }
       .mp-btn svg { width: 24px; height: 24px; fill: currentColor; }
+      .mp-size-menu { position: relative; }
+      .mp-size-popover { display: none; position: absolute; top: 100%; right: 0; padding-top: 4px; z-index: 20; }
+      .mp-size-popover .mp-btn { background: #222; white-space: nowrap; gap: 6px; padding: 8px; font: 13px sans-serif; }
+      .mp-size-menu:hover .mp-size-popover, .mp-size-menu:has(:focus-visible) .mp-size-popover { display: block; }
+      .mp-size-popover .mp-btn:hover { background: #444; }
+      .mp-fullscreen .mp-size-popover { top: auto; bottom: 100%; padding-top: 0; padding-bottom: 4px; }
+      .mp-popout .mp-size-menu, .mp-popout #mp-fullscreen, .mp-popout .mp-drag-zone { display: none; }
+      #mp-dock { display: none; }
+      .mp-popout #mp-dock { display: flex; }
+      .mp-popout #mp-left { min-width: 0; }
+      .mp-popout #mp-controls { height: 40px; }
+      .mp-popout .mp-ctrl-group { gap: 4px; }
+      .mp-popout #mp-history { position: absolute; top: 40px; right: 0; bottom: 0; width: min(240px, 70vw); z-index: 15; line-height: 1.4; }
       
       .history-item { padding: 10px; cursor: pointer; border-bottom: 1px solid #222; display: flex; align-items: center; gap: 8px; transition: background 0.2s; }
       .history-item:hover { background: #222; }
@@ -269,8 +491,8 @@ function createPlayer(videoId, startTime = 0) {
       /* FULLSCREEN OVERRIDES */
       .mp-fullscreen #mp-wrapper { flex-direction: row; width: 100%; height: 100%; }
       .mp-fullscreen #mp-controls {
-         position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
-         background: rgba(0,0,0,0.8); border-radius: 12px; height: 60px; padding: 0 20px; width: 600px; max-width: 90vw;
+         position: absolute; bottom: 0.5rem; left: 50%; transform: translateX(-50%);
+         background: rgba(0,0,0,0.8); border-radius: 12px; height: 60px; padding: 0 20px; width: 600px; max-width: 90vw; box-sizing: border-box;
       }
       .mp-fullscreen #mp-history {
          position: absolute; bottom: 100px; right: 20px; width: 300px; max-height: 50vh;
@@ -281,94 +503,83 @@ function createPlayer(videoId, startTime = 0) {
       .mp-fullscreen #mp-controls { z-index: 10; }
       .mp-fullscreen #mp-history { z-index: 10; pointer-events: auto; }
       .mp-fullscreen .mp-btn svg { width: 32px; height: 32px; }
-      .mp-fullscreen #mp-hover-zone { position: absolute; bottom: 0; left: 0; width: 100%; height: 100px; z-index: 5; }
       
-      /* Mobile Portrait Fullscreen (holding phone straight): 2-row layout with big buttons */
-      .mp-fullscreen.mp-portrait #mp-controls {
-          width: 92vw !important;
-          max-width: 420px !important;
+      /* Scale for both the app's wide mobile viewport and the pop-out's device viewport. */
+      .mp-portrait {
+          --mp-button-size: clamp(44px, 11.5vw, 112px);
+          --mp-control-gap: clamp(4px, 1vw, 10px);
+          --mp-control-padding: clamp(6px, 1.5vw, 14px);
+          --mp-history-font-size: calc(var(--mp-button-size) * 0.34);
+          position: relative;
+      }
+      .mp-portrait #mp-left { min-width: 0; }
+      .mp-portrait #mp-controls {
+          display: grid;
+          grid-template-columns: repeat(5, minmax(0, 1fr));
+          grid-template-areas: "favorite details history popout close" "size previous play next fullscreen";
+          gap: var(--mp-control-gap);
+          justify-items: center;
+          align-items: center;
+          box-sizing: border-box;
+          min-width: calc(5 * var(--mp-button-size) + 4 * var(--mp-control-gap) + 2 * var(--mp-control-padding));
           height: auto !important;
-          min-height: 110px !important;
-          padding: 12px 16px !important;
-          border-radius: 20px !important;
-          bottom: 30px !important;
-          display: flex !important;
-          flex-wrap: wrap !important;
-          justify-content: space-between !important;
-          align-items: center !important;
-          row-gap: 12px !important;
+          padding: var(--mp-control-padding);
       }
-      .mp-fullscreen.mp-portrait .mp-ctrl-group:not(.mp-ctrl-center) {
-          order: 1 !important;
-          flex: 0 0 auto !important;
-          display: flex !important;
-          gap: 14px !important;
+      .mp-portrait .mp-ctrl-group,
+      .mp-portrait:not(.mp-popout) .mp-size-menu,
+      .mp-portrait:not(.mp-popout) .mp-size-popover { display: contents; }
+      .mp-portrait .mp-btn {
+          box-sizing: border-box;
+          width: var(--mp-button-size);
+          height: var(--mp-button-size);
+          padding: 0;
+          line-height: 1;
+          touch-action: manipulation;
       }
-      .mp-fullscreen.mp-portrait .mp-ctrl-group:not(.mp-ctrl-center) .mp-btn svg {
-          width: 28px !important;
-          height: 28px !important;
+      .mp-portrait .mp-btn svg { width: 60%; height: 60%; }
+      .mp-portrait #mp-playpause svg { width: 72%; height: 72%; }
+      .mp-portrait #mp-heart { grid-area: favorite; }
+      .mp-portrait #mp-info { grid-area: details; }
+      .mp-portrait #mp-toggle-hist { grid-area: history; }
+      .mp-portrait #mp-expand { grid-area: size; }
+      .mp-portrait #mp-prev { grid-area: previous; }
+      .mp-portrait #mp-playpause { grid-area: play; }
+      .mp-portrait #mp-next { grid-area: next; }
+      .mp-portrait #mp-fullscreen { grid-area: fullscreen; }
+      .mp-portrait #mp-close { grid-area: close; }
+      .mp-portrait #mp-dock { grid-area: dock; }
+      .mp-portrait #mp-popout { grid-area: popout; background: transparent; padding: 0; }
+      .mp-portrait #mp-popout:hover { background: rgba(255,255,255,0.2); }
+      .mp-portrait #mp-popout span { display: none; }
+      .mp-portrait.mp-popout #mp-controls {
+          grid-template-areas: "favorite details history dock close" ". previous play next .";
       }
-      .mp-fullscreen.mp-portrait .mp-ctrl-group.mp-ctrl-center {
-          order: 2 !important;
-          flex: 0 0 100% !important;
-          width: 100% !important;
-          display: flex !important;
-          justify-content: center !important;
-          gap: 40px !important;
-          padding-top: 4px !important;
+      .mp-portrait #mp-history {
+          position: absolute;
+          top: var(--mp-controls-height);
+          right: 0;
+          bottom: 0;
+          width: min(85%, calc(6 * var(--mp-button-size)));
+          max-height: none;
+          z-index: 15;
+          line-height: 1.4;
       }
-      .mp-fullscreen.mp-portrait .mp-ctrl-group.mp-ctrl-center .mp-btn svg {
-          width: 46px !important;
-          height: 46px !important;
+      .mp-portrait .history-item {
+          box-sizing: border-box;
+          min-height: var(--mp-button-size);
+          padding: calc(var(--mp-button-size) * 0.18);
+          font-size: var(--mp-history-font-size);
       }
-      .mp-fullscreen.mp-portrait #mp-playpause svg {
-          width: 56px !important;
-          height: 56px !important;
+      .mp-fullscreen.mp-portrait #mp-controls {
+          width: 94vw;
+          max-width: calc(7 * var(--mp-button-size) + 6 * var(--mp-control-gap) + 2 * var(--mp-control-padding));
+          bottom: max(var(--mp-control-padding), env(safe-area-inset-bottom, 0px));
       }
-
-      /* Fallback native media query */
-      @media (orientation: portrait) {
-          .mp-fullscreen #mp-controls {
-              width: 92vw !important;
-              max-width: 420px !important;
-              height: auto !important;
-              min-height: 110px !important;
-              padding: 12px 16px !important;
-              border-radius: 20px !important;
-              bottom: 30px !important;
-              display: flex !important;
-              flex-wrap: wrap !important;
-              justify-content: space-between !important;
-              align-items: center !important;
-              row-gap: 12px !important;
-          }
-          .mp-fullscreen .mp-ctrl-group:not(.mp-ctrl-center) {
-              order: 1 !important;
-              flex: 0 0 auto !important;
-              display: flex !important;
-              gap: 14px !important;
-          }
-          .mp-fullscreen .mp-ctrl-group:not(.mp-ctrl-center) .mp-btn svg {
-              width: 28px !important;
-              height: 28px !important;
-          }
-          .mp-fullscreen .mp-ctrl-group.mp-ctrl-center {
-              order: 2 !important;
-              flex: 0 0 100% !important;
-              width: 100% !important;
-              display: flex !important;
-              justify-content: center !important;
-              gap: 40px !important;
-              padding-top: 4px !important;
-          }
-          .mp-fullscreen .mp-ctrl-group.mp-ctrl-center .mp-btn svg {
-              width: 46px !important;
-              height: 46px !important;
-          }
-          .mp-fullscreen #mp-playpause svg {
-              width: 56px !important;
-              height: 56px !important;
-          }
+      .mp-fullscreen.mp-portrait #mp-history {
+          top: auto;
+          right: var(--mp-control-padding);
+          bottom: calc(var(--mp-controls-height) + 2 * var(--mp-control-padding) + env(safe-area-inset-bottom, 0px));
+          max-height: 50vh;
       }
     </style>
     <div id="mp-wrapper">
@@ -385,14 +596,19 @@ function createPlayer(videoId, startTime = 0) {
                 <button id="mp-next" class="mp-btn" title="Next">${iconNext}</button>
              </div>
              <div class="mp-ctrl-group mp-ctrl-right">
-                <button id="mp-expand" class="mp-btn" title=""></button>
+                <div class="mp-size-menu">
+                  <button id="mp-expand" class="mp-btn" title=""></button>
+                  <div class="mp-size-popover"><button id="mp-popout" class="mp-btn" title="Open player in a separate window">${iconInfo}<span>Pop out player</span></button></div>
+                </div>
                 <button id="mp-fullscreen" class="mp-btn" title=""></button>
+                <button id="mp-dock" class="mp-btn" title="Return player to page" aria-label="Return player to page">${iconTheater}</button>
                 <button id="mp-close" class="mp-btn" title="Close">${iconClose}</button>
              </div>
           </div>
           <div id="mp-video-wrap">
              <div id="music-player"></div>
-             <div id="mp-hover-zone"></div>
+             <div class="mp-drag-zone mp-drag-zone-left" title="Drag to move player"></div>
+             <div class="mp-drag-zone mp-drag-zone-right" title="Drag to move player"></div>
           </div>
        </div>
        <div id="mp-history"></div>
@@ -402,24 +618,103 @@ function createPlayer(videoId, startTime = 0) {
   updateContainerSize();
   renderHistoryList();
   bindPlayerEvents();
+  bindMusicPlayerDragging(container);
   
   musicPlayer = new YT.Player('music-player', {
     height: '100%',
     width: '100%',
     videoId: actualVideoToPlay,
     playerVars: {
-      autoplay: 1,
+      autoplay: startPaused ? 0 : 1,
       controls: 1,
       start: Math.floor(startTime)
     },
     events: {
       onReady: (e) => {
         isMusicPlayerReady = true;
-        e.target.playVideo();
+        if (!startPaused) e.target.playVideo();
       },
       onStateChange: onPlayerStateChange
     }
   });
+}
+
+function positionMusicPlayer(container, x, y) {
+    // Keep the player within reach when changing size or using a smaller window.
+    const left = Math.max(0, Math.min(x, Math.max(0, window.innerWidth - container.offsetWidth)));
+    const top = Math.max(0, Math.min(y, Math.max(0, window.innerHeight - container.offsetHeight)));
+    container.style.setProperty('left', left + 'px', 'important');
+    container.style.setProperty('top', top + 'px', 'important');
+    container.style.setProperty('right', 'auto', 'important');
+    container.style.setProperty('bottom', 'auto', 'important');
+    return { x: left, y: top };
+}
+
+function restoreMusicPlayerPosition(container) {
+    try {
+        const position = JSON.parse(localStorage.getItem('music_player_position'));
+        if (position && Number.isFinite(position.x) && Number.isFinite(position.y)) {
+            positionMusicPlayer(container, position.x, position.y);
+        }
+    } catch (e) {
+        // An invalid saved position should leave the default placement intact.
+    }
+}
+
+function bindMusicPlayerDragging(container) {
+    container.querySelectorAll('.mp-drag-zone').forEach(zone => {
+        let drag = null;
+        zone.addEventListener('pointerdown', event => {
+            if (!event.isPrimary || event.button !== 0 || localStorage.getItem('music_player_fullscreen') === 'true') return;
+            event.preventDefault();
+            const rect = container.getBoundingClientRect();
+            drag = { pointerId: event.pointerId, x: event.clientX, y: event.clientY, left: rect.left, top: rect.top, moved: false };
+            zone.setPointerCapture(event.pointerId);
+            zone.classList.add('is-dragging');
+        });
+        zone.addEventListener('pointermove', event => {
+            if (!drag || drag.pointerId !== event.pointerId) return;
+            const dx = event.clientX - drag.x;
+            const dy = event.clientY - drag.y;
+            if (!drag.moved && Math.hypot(dx, dy) < 3) return;
+            drag.moved = true;
+            positionMusicPlayer(container, drag.left + dx, drag.top + dy);
+        });
+        const finishDrag = event => {
+            if (!drag || drag.pointerId !== event.pointerId) return;
+            const moved = drag.moved;
+            drag = null;
+            zone.classList.remove('is-dragging');
+            if (zone.hasPointerCapture(event.pointerId)) zone.releasePointerCapture(event.pointerId);
+            if (moved) {
+                const rect = container.getBoundingClientRect();
+                localStorage.setItem('music_player_position', JSON.stringify({ x: rect.left, y: rect.top }));
+            }
+        };
+        zone.addEventListener('pointerup', finishDrag);
+        zone.addEventListener('pointercancel', finishDrag);
+        zone.addEventListener('lostpointercapture', finishDrag);
+    });
+}
+
+let musicPlayerScrollPosition = null;
+
+function setMusicPlayerScrollLock(locked) {
+    if (locked && !musicPlayerScrollPosition) {
+        musicPlayerScrollPosition = { x: window.scrollX, y: window.scrollY };
+        document.body.style.setProperty('--music-player-scroll-top', -musicPlayerScrollPosition.y + 'px');
+        document.body.style.setProperty('--music-player-scroll-left', -musicPlayerScrollPosition.x + 'px');
+        document.documentElement.classList.add('music-player-scroll-locked');
+        document.body.classList.add('music-player-scroll-locked');
+    } else if (!locked && musicPlayerScrollPosition) {
+        const position = musicPlayerScrollPosition;
+        document.documentElement.classList.remove('music-player-scroll-locked');
+        document.body.classList.remove('music-player-scroll-locked');
+        document.body.style.removeProperty('--music-player-scroll-top');
+        document.body.style.removeProperty('--music-player-scroll-left');
+        musicPlayerScrollPosition = null;
+        window.scrollTo({ left: position.x, top: position.y, behavior: 'instant' });
+    }
 }
 
 function updateContainerSize() {
@@ -429,9 +724,10 @@ function updateContainerSize() {
     const historyEl = document.getElementById('mp-history');
     const controlsEl = document.getElementById('mp-controls');
     
-    const isFullscreen = localStorage.getItem('music_player_fullscreen') === 'true';
+    const isFullscreen = !isMusicPopout && localStorage.getItem('music_player_fullscreen') === 'true';
+    setMusicPlayerScrollLock(isFullscreen);
     const isExpanded = localStorage.getItem('music_player_expanded') === 'true';
-    const showHist = localStorage.getItem('music_player_history_visible') !== 'false';
+    const showHist = localStorage.getItem('music_player_history_visible') === 'true';
     // Check both orientation matchMedia and physical screen dimensions for 100% detection
     const isMobilePortrait = window.matchMedia('(orientation: portrait)').matches || (window.innerHeight > window.innerWidth);
     const scale = isMobilePortrait ? 1.5 : 1;
@@ -440,6 +736,9 @@ function updateContainerSize() {
     if (wrapper) {
         wrapper.classList.toggle('mp-portrait', isMobilePortrait);
     }
+
+    const portraitControlsStyle = isMobilePortrait && controlsEl ? getComputedStyle(controlsEl) : null;
+    const portraitControlsHeight = portraitControlsStyle ? Math.ceil(controlsEl.getBoundingClientRect().height) : 0;
     
     if (historyEl) {
         historyEl.style.display = showHist ? 'flex' : 'none';
@@ -447,7 +746,14 @@ function updateContainerSize() {
     
     container.style.setProperty('position', 'fixed', 'important');
     
-    if (isFullscreen) {
+    if (isMusicPopout) {
+        if (wrapper) wrapper.classList.add('mp-popout');
+        for (const [property, value] of Object.entries({ top: '0', left: '0', right: 'auto', bottom: 'auto', width: '100%', height: '100%', 'border-radius': '0' })) {
+            container.style.setProperty(property, value, 'important');
+        }
+        if (historyEl) { historyEl.style.width = ''; historyEl.style.height = ''; }
+        if (controlsEl) controlsEl.style.height = '40px';
+    } else if (isFullscreen) {
         if (wrapper) wrapper.classList.add('mp-fullscreen');
         container.style.setProperty('top', '0', 'important');
         container.style.setProperty('left', '0', 'important');
@@ -464,15 +770,22 @@ function updateContainerSize() {
         if (wrapper) wrapper.classList.remove('mp-fullscreen');
         let w = (isExpanded ? 480 : 384) * scale;
         let h = (isExpanded ? 270 : 216) * scale;
-        let hw = showHist ? (200 * scale) : 0;
-        let ch = 40 * scale;
+        const hw = showHist && !isMobilePortrait ? 200 * scale : 0;
+        const ch = portraitControlsHeight || 40 * scale;
+
+        if (portraitControlsStyle) {
+            const minimumWidth = parseFloat(portraitControlsStyle.minWidth) || 0;
+            const padding = parseFloat(portraitControlsStyle.paddingLeft) || 0;
+            w = Math.min(Math.max(w, minimumWidth), Math.max(1, window.innerWidth - 2 * padding));
+            h = w * 9 / 16;
+        }
         
         container.style.setProperty('width', (w + hw) + 'px', 'important');
         container.style.setProperty('height', (h + ch) + 'px', 'important');
         container.style.setProperty('border-radius', '8px', 'important');
         container.style.setProperty('z-index', '9999', 'important');
         
-        if (historyEl) historyEl.style.width = showHist ? (hw + 'px') : '0';
+        if (historyEl) historyEl.style.width = isMobilePortrait ? '' : showHist ? (hw + 'px') : '0';
         if (controlsEl) controlsEl.style.height = ch + 'px';
         
         if (isMobilePortrait) {
@@ -486,6 +799,11 @@ function updateContainerSize() {
             container.style.setProperty('top', 'auto', 'important');
             container.style.setProperty('right', 'auto', 'important');
         }
+        restoreMusicPlayerPosition(container);
+    }
+
+    if (isMobilePortrait && wrapper && controlsEl) {
+        wrapper.style.setProperty('--mp-controls-height', Math.ceil(controlsEl.getBoundingClientRect().height) + 'px');
     }
     
     // Dynamic Tooltips and Icons injection
@@ -508,12 +826,14 @@ function saveHistory() {
 }
 
 function bindPlayerEvents() {
+    document.getElementById('mp-dock').addEventListener('click', returnMusicPlayerToPage);
+    document.getElementById('mp-popout').addEventListener('click', openMusicPopout);
     document.getElementById('mp-close').addEventListener('click', closePlayer);
     document.getElementById('mp-prev').addEventListener('click', playPrev);
     document.getElementById('mp-next').addEventListener('click', playNext);
     
     document.getElementById('mp-toggle-hist').addEventListener('click', () => {
-        const current = localStorage.getItem('music_player_history_visible') !== 'false';
+        const current = localStorage.getItem('music_player_history_visible') === 'true';
         localStorage.setItem('music_player_history_visible', !current);
         updateContainerSize();
     });
@@ -531,6 +851,23 @@ function bindPlayerEvents() {
         const isFullscreen = localStorage.getItem('music_player_fullscreen') === 'true';
         localStorage.setItem('music_player_fullscreen', !isFullscreen);
         updateContainerSize();
+    });
+
+    document.getElementById('mp-info').addEventListener('click', event => {
+        if (isMusicPopout) {
+            event.preventDefault();
+            if (window.opener && !window.opener.closed) {
+                window.opener.location.href = event.currentTarget.href;
+                window.opener.focus();
+            } else {
+                window.open(event.currentTarget.href, '_blank', 'noopener');
+            }
+            return;
+        }
+        if (localStorage.getItem('music_player_fullscreen') === 'true') {
+            localStorage.setItem('music_player_fullscreen', 'false');
+            updateContainerSize();
+        }
     });
     
     document.getElementById('mp-playpause').addEventListener('click', () => {
@@ -577,26 +914,30 @@ function bindPlayerEvents() {
     });
 }
 
+function clearMusicPlaybackState() {
+    for (const key of [
+        'musicPlayerEnabled', 'music_player_playlist', 'music_player_index',
+        'music_player_video', 'music_player_time', 'music_player_active_tab',
+        'music_player_history', 'music_player_history_index', musicPopoutCommandKey,
+    ]) {
+        localStorage.removeItem(key);
+    }
+    sessionHistory = [];
+    historyIndex = -1;
+}
+
 function closePlayer() {
-    localStorage.removeItem('music_player_playlist');
-    localStorage.removeItem('music_player_index');
+    setMusicPlayerScrollLock(false);
     if (musicPlayer && musicPlayer.destroy) {
       musicPlayer.destroy();
     }
     const container = document.getElementById('music-player-container');
     if (container) container.style.display = 'none';
-    localStorage.removeItem('musicPlayerEnabled');
-    localStorage.removeItem('music_player_video');
-    localStorage.removeItem('music_player_time');
-    localStorage.removeItem('music_player_active_tab');
-    
-    localStorage.removeItem('music_player_history');
-    localStorage.removeItem('music_player_history_index');
-    sessionHistory = [];
-    historyIndex = -1;
+    clearMusicPlaybackState();
     
     const toggle = document.getElementById('music-player-toggle');
     if (toggle) toggle.checked = false;
+    if (isMusicPopout) window.close();
 }
 
 function renderHistoryList() {
@@ -610,7 +951,7 @@ function renderHistoryList() {
         const titleText = item.title || ('Track ' + item.video_id); 
         
         div.innerHTML = `
-            <div style="width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; line-height: 1.5; color: inherit;" title="${titleText}">
+            <div style="width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--mp-history-font-size, 13px); line-height: 1.5; color: inherit;" title="${titleText}">
                 ${titleText}
             </div>
         `;
@@ -736,6 +1077,16 @@ function shuffleArray(array) {
 
 // Save state before page unload
 window.addEventListener('pagehide', () => { 
+  if (isMusicPopout) {
+    saveMusicPopoutPosition();
+    const owner = JSON.parse(localStorage.getItem(musicPopoutOwnerKey) || 'null');
+    // Returning to the page releases ownership before closing this window.
+    if (owner && owner.id === tabId) {
+      localStorage.removeItem(musicPopoutOwnerKey);
+      clearMusicPlaybackState();
+    }
+    return;
+  }
   if (musicPlayer && isMusicPlayerReady && typeof musicPlayer.getCurrentTime === 'function' && localStorage.getItem('musicPlayerEnabled')) {
     try {
       const time = musicPlayer.getCurrentTime();
@@ -762,8 +1113,24 @@ window.addEventListener('pageshow', (e) => {
 
 // Toggle player
 document.addEventListener('DOMContentLoaded', () => {
+  if (isMusicPopout) {
+    localStorage.setItem(musicPopoutModeKey, 'true');
+    const heartbeat = () => localStorage.setItem(musicPopoutOwnerKey, JSON.stringify({ id: tabId, updated: Date.now() }));
+    heartbeat();
+    const heartbeatTimer = setInterval(heartbeat, 10000);
+    window.addEventListener('pagehide', () => clearInterval(heartbeatTimer), { once: true });
+    // Browsers have no standard window-move event, so only write when position changes.
+    const positionTimer = setInterval(saveMusicPopoutPosition, 1000);
+    window.addEventListener('pagehide', () => clearInterval(positionTimer), { once: true });
+    try {
+      const command = JSON.parse(localStorage.getItem(musicPopoutCommandKey));
+      if (command && command.action === 'play') receiveMusicPopoutState(command.state);
+    } catch (e) { console.error('Unable to restore pop-out player', e); }
+  }
   const toggle = document.getElementById('music-player-toggle');
   if (toggle) {
+    const savedMode = localStorage.getItem('musicPlayerEnabled');
+    toggle.checked = savedMode === toggle.dataset.mode || (savedMode === 'list' && toggle.dataset.mode === 'filtered');
     toggle.addEventListener('change', function() {
       localStorage.removeItem('music_player_playlist');
       localStorage.removeItem('music_player_index');
@@ -771,6 +1138,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const mode = this.dataset.mode;
       
       if (enabled) {
+        window.prepareMusicPlayerWindow();
         const oldMode = localStorage.getItem('musicPlayerEnabled');
         if (oldMode && oldMode !== mode) {
           localStorage.removeItem('music_player_video');
@@ -784,9 +1152,10 @@ document.addEventListener('DOMContentLoaded', () => {
         historyIndex = -1;
         
         localStorage.setItem('musicPlayerEnabled', mode);
-        localStorage.setItem('music_player_active_tab', tabId);
+        claimMusicPlayer();
         loadYouTubeAPI();
       } else {
+        if (!isMusicPopout && isMusicPopoutOpen()) sendMusicPopoutCommand('stop');
         localStorage.removeItem('musicPlayerEnabled');
         localStorage.removeItem('music_player_video');
         localStorage.removeItem('music_player_time');
@@ -795,7 +1164,7 @@ document.addEventListener('DOMContentLoaded', () => {
       
       const container = document.getElementById('music-player-container');
       if (enabled) {
-        if (window.YT && window.YT.Player) {
+        if ((!isMusicPopout && isMusicPopoutOpen()) || (window.YT && window.YT.Player)) {
           loadPlaylist();
         }
       } else {
@@ -805,6 +1174,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (container) {
           container.style.display = 'none';
         }
+        setMusicPlayerScrollLock(false);
         localStorage.removeItem('music_player_video');
         localStorage.removeItem('music_player_time');
         localStorage.removeItem('music_player_active_tab');
@@ -816,7 +1186,8 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Initialize on page load if enabled
   const savedMode = localStorage.getItem('musicPlayerEnabled');
-  if (savedMode) {
+  const receivedDockedPlayer = !isMusicPopout && receiveDockedMusicPlayer();
+  if (!receivedDockedPlayer && savedMode && !isMusicPopout && !isMusicPopoutOpen() && localStorage.getItem(musicPopoutModeKey) !== 'true') {
     loadYouTubeAPI();
     if (window.YT && window.YT.Player && !isMusicInitialized) {
       isMusicInitialized = true;
@@ -826,6 +1197,7 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Adjust sizing dynamically when phone rotates
   window.addEventListener('resize', () => {
+    if (isMusicPopout) saveMusicPopoutPosition();
     const container = document.getElementById('music-player-container');
     if (container && container.style.display !== 'none') {
         updateContainerSize();
@@ -834,6 +1206,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Listen for storage changes from other tabs
   window.addEventListener('storage', (e) => {
+    if (e.key === musicPopoutCommandKey && isMusicPopout && e.newValue) {
+      try {
+        const command = JSON.parse(e.newValue);
+        if (command.action === 'play') receiveMusicPopoutState(command.state);
+        if (command.action === 'stop') {
+          pendingMusicPopoutState = null;
+          closePlayer();
+        }
+      } catch (error) { console.error('Unable to update pop-out player', error); }
+      return;
+    }
+    if (e.key === musicPopoutOwnerKey && !isMusicPopout && e.newValue && isMusicPopoutOpen()) {
+      hideEmbeddedMusicPlayer();
+    }
+    if (isMusicPopout) return;
+    if (e.key === 'musicPlayerEnabled' && toggle) {
+      toggle.checked = e.newValue === toggle.dataset.mode || (e.newValue === 'list' && toggle.dataset.mode === 'filtered');
+    }
     if (isRestoringFromBfcache) return; // Skip stale queued storage events
     if (e.key === 'music_player_active_tab' && e.newValue && e.newValue !== String(tabId)) {
       const container = document.getElementById('music-player-container');
@@ -853,6 +1243,7 @@ document.addEventListener('DOMContentLoaded', () => {
           musicPlayer.destroy();
         }
         container.style.display = 'none';
+        setMusicPlayerScrollLock(false);
       }
     }
   });

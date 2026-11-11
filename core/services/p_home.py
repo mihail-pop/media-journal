@@ -1,14 +1,117 @@
 import os
 import time
 import threading
+from collections import defaultdict
 from datetime import timedelta, datetime
 
 from django.conf import settings
+from django.urls import reverse
 from django.utils import timezone
+from django.utils.timesince import timeuntil
 
-from core.models import MediaItem
+from core.models import CalendarEvent, MediaItem
 from core.services.m_anime_manga import update_anilist_anime_manga
 from core.services.m_movies_tvshows import update_tmdb_seasons
+
+
+def get_home_upcoming():
+    """Build the same Upcoming content for the initial page and later refreshes."""
+    now = timezone.now()
+    today_date = now.date()
+    cal_start_date = today_date - timedelta(days=7)
+    cal_end_date = today_date + timedelta(days=7)
+
+    calendar_events = CalendarEvent.objects.filter(
+        date__date__gte=cal_start_date,
+        date__date__lte=cal_end_date
+    ).select_related('item').only(
+        'date', 'title', 'item__title', 'item__media_type', 'item__cover_url',
+        'item__source', 'item__provider_ids',
+    ).order_by('date')
+
+    events_by_date = defaultdict(list)
+    for e in calendar_events:
+        if e.title == "__API_SYNC__":
+            continue
+        events_by_date[e.date.date()].append(e)
+
+    upcoming_tiles = []
+    for i in range(15):
+        d = cal_start_date + timedelta(days=i)
+        if d == today_date:
+            day_label = "Today"
+        else:
+            day_label = d.strftime("%A")
+
+        day_events = []
+        for e in events_by_date.get(d, []):
+            time_str = ""
+            if e.date.strftime("%H:%M") != "00:00":
+                time_str = e.date.strftime("%H:%M")
+
+            day_events.append({
+                "title": e.item.title,
+                "event_title": e.title,
+                "time_str": time_str,
+                "media_type": e.item.media_type,
+                "cover_url": e.item.cover_url or "/static/core/img/placeholder.png",
+            })
+
+        upcoming_tiles.append({
+            "date_str": d.strftime("%Y-%m-%d"),
+            "display_date": d.strftime("%d %b"),
+            "day_label": day_label,
+            "is_today": d == today_date,
+            "events": day_events
+        })
+
+    future_events = CalendarEvent.objects.filter(
+        date__gte=now
+    ).exclude(title="__API_SYNC__").select_related('item').only(
+        'date', 'title', 'item__title', 'item__media_type', 'item__cover_url',
+        'item__source', 'item__provider_ids',
+    ).order_by('date')[:12]
+
+    upcoming_list = []
+    for e in future_events:
+        url = "#"
+        if e.item.source == "tmdb" and e.item.media_type in ["movie", "tv"]:
+            if "_s" in str(e.item.source_id):
+                show_id = str(e.item.source_id).split("_s")[0]
+                season_number = str(e.item.source_id).split("_s")[1]
+                url = reverse("tmdb_season_detail", args=[show_id, season_number])
+            else:
+                url = reverse("tmdb_detail", args=[e.item.media_type, e.item.source_id])
+        elif e.item.media_type in ["anime", "manga"]:
+            url = reverse("anilist_detail", args=[e.item.source, e.item.media_type, e.item.source_id])
+        elif e.item.source == "igdb" and e.item.media_type == "game":
+            url = reverse("igdb_detail", args=[e.item.source_id])
+        elif e.item.source == "openlib" and e.item.media_type == "book":
+            url = reverse("openlib_detail", args=[e.item.source_id])
+        elif e.item.source == "musicbrainz" and e.item.media_type == "music":
+            url = reverse("musicbrainz_detail", args=[e.item.source_id])
+
+        time_until = timeuntil(e.date, now).split(',')[0]
+
+        if e.title and e.title not in ["Global Release", "Release Date", "Game Release"]:
+            action = f"{e.item.title} {e.title}"
+        else:
+            action = f"{e.item.title}"
+
+        time_str_list = ""
+        if e.date.strftime("%H:%M") != "00:00":
+            time_str_list = f" ({e.date.strftime('%H:%M')})"
+
+        upcoming_list.append({
+            "message_main": action,
+            "message_time": f"in {time_until}{time_str_list}",
+            "media_type": e.item.media_type,
+            "cover_url": e.item.cover_url or "/static/core/img/placeholder.png",
+            "url": url,
+        })
+
+    return {"upcoming_tiles": upcoming_tiles, "upcoming_list": upcoming_list}
+
 
 _started_tmdb = False
 _started_anilist = False

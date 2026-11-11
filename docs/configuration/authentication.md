@@ -6,6 +6,8 @@ However, if you plan to expose the app to the internet (using a reverse proxy or
 
 Setting up authentication is a two-step process: you must create an administrator account and then tell the app to require a login.
 
+> **Note:** This protects the same shared library. It does not create a separate media collection for each account.
+
 ---
 
 ### Step 1: Create an Account
@@ -87,14 +89,17 @@ Now that you have an account you need to start the app with the `REQUIRE_LOGIN=T
 === "Mac"
 
     **If using the Launchd Background Service (Recommended):**  
-    Open your `com.mediajournal.plist` file in a text editor and add the `EnvironmentVariables` dictionary right above your `ProgramArguments`:
+    Open your `com.mediajournal.plist` file in a text editor and add `REQUIRE_LOGIN` to the existing `EnvironmentVariables` dictionary. Keep `TZ` and any other keys already there; do not add a second dictionary. For example:
     ```xml
     <key>EnvironmentVariables</key>
     <dict>
+        <key>TZ</key>
+        <string>Europe/London</string>
         <key>REQUIRE_LOGIN</key>
         <string>True</string>
     </dict>
     ```
+    *(Replace `Europe/London` with your local timezone.)*
     Then restart the service in the terminal:
     ```sh
     launchctl unload ~/Library/LaunchAgents/com.mediajournal.plist

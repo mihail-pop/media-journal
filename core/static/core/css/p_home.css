@@ -47,6 +47,108 @@
   --activity-low: #74544d;
 }
 
+/* Muted forest green, with warm sage text and moss accents. */
+[data-theme="green"] {
+  --bg-primary: #1e2923;
+  --bg-tertiary: #34473a;
+  --bg-quaternary: #4a604c;
+
+  --text-primary: #e5e8d9;
+  --text-secondary: #d2dcc6;
+
+  --overlay-bg: #1e2923;
+  --overview-border: #4a604c;
+  --button-bg: #425b46;
+
+  --activity-high: #9cb589;
+  --activity-low: #455c47;
+}
+
+/* Warm plum, with parchment text and muted brass accents. */
+[data-theme="plum"] {
+  --bg-primary: #29232d;
+  --bg-tertiary: #493c4d;
+  --bg-quaternary: #655068;
+
+  --text-primary: #eee3da;
+  --text-secondary: #dac9cc;
+
+  --overlay-bg: #29232d;
+  --overview-border: #604c63;
+  --button-bg: #5b485c;
+
+  --activity-high: #c4a3bb;
+  --activity-low: #614b63;
+}
+
+/* Warm charcoal, with ivory text and restrained amber accents. */
+[data-theme="charcoal"] {
+  --bg-primary: #252422;
+  --bg-tertiary: #413e39;
+  --bg-quaternary: #5d574d;
+
+  --text-primary: #ece6db;
+  --text-secondary: #d2c9bb;
+
+  --overlay-bg: #252422;
+  --overview-border: #5d574d;
+  --button-bg: #504a41;
+
+  --activity-high: #c2a77e;
+  --activity-low: #5a5144;
+}
+
+/* Muted ocean teal, with warm linen text and sea-glass accents. */
+[data-theme="teal"] {
+  --bg-primary: #203033;
+  --bg-tertiary: #354e52;
+  --bg-quaternary: #4b686b;
+
+  --text-primary: #e6e8dc;
+  --text-secondary: #c8d8ce;
+
+  --overlay-bg: #203033;
+  --overview-border: #49696b;
+  --button-bg: #476361;
+
+  --activity-high: #9fc6b4;
+  --activity-low: #476762;
+}
+
+/* Light rose, with warm ivory backgrounds, cocoa text and berry accents. */
+[data-theme="pink"] {
+  --bg-primary: #fff8f6;
+  --bg-tertiary: #f7e3e6;
+  --bg-quaternary: #efd0d8;
+
+  --text-primary: #54363e;
+  --text-secondary: #684851;
+
+  --overlay-bg: #f5e1e6;
+  --overview-border: #e4b9c8;
+  --button-bg: #f0d5dc;
+
+  --activity-high: #b74c74;
+  --activity-low: #ebcbd6;
+}
+
+/* Cake: creamy ivory, peach layers and red accents. */
+[data-theme="cake"] {
+  --bg-primary: #fff6e9;
+  --bg-tertiary: #f6dfca;
+  --bg-quaternary: #ebc29f;
+
+  --text-primary: #573326;
+  --text-secondary: #6b4433;
+
+  --overlay-bg: #f5dfc6;
+  --overview-border: #e3b286;
+  --button-bg: #f0cfaa;
+
+  --activity-high: #c14d2b;
+  --activity-low: #f1c8a1;
+}
+
 
 
 html {
@@ -66,6 +168,7 @@ body {
   width: 100%;
   height: 330px;
   overflow: hidden;
+  background-color: #181818;
 }
 
 .banner-rotator img[alt=""],
@@ -366,6 +469,16 @@ body {
   margin-bottom: 0rem;
 }
 
+.favorites-row::after {
+  content: '';
+  flex: 1;
+  max-width: 40%;
+}
+
+.favorites-row:has(> .favorites-column:nth-child(2))::after {
+  display: none;
+}
+
 .favorites-column {
   flex: 1;
   display: flex;
@@ -414,6 +527,25 @@ h2 {
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
+}
+
+#collections-view-container,
+#upcoming-view-container {
+  display: none;
+}
+
+html[data-home-dashboard-view="collections"] #stats-view-container,
+html[data-home-activity-view="upcoming"] #activity-view-container {
+  display: none;
+}
+
+html[data-home-dashboard-view="collections"] #collections-view-container,
+html[data-home-activity-view="upcoming"] #upcoming-view-container {
+  display: block;
+}
+
+html[data-home-activity-view="upcoming"] .upcoming-tiles-container:not(.is-centered) {
+  visibility: hidden;
 }
 
 .upcoming-tiles-container {
@@ -875,8 +1007,8 @@ h2 {
   max-height: 400px;
   overflow-y: auto;
   border-radius: 8px;
-  border: 2px solid var(--bg-quaternary);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  border: none;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
   
   z-index: 1000;
   padding: 0;
@@ -898,8 +1030,6 @@ h2 {
   width: 10px;
   height: 10px;
   background: var(--bg-tertiary);
-  border-top: 1px solid var(--overview-border);
-  border-left: 1px solid var(--overview-border);
   transform: rotate(45deg);
   z-index: -1;
 }
@@ -1025,11 +1155,16 @@ h2 {
 
 .no-notifications {
   margin: 0;
-  padding: 30px 20px;
+  padding: 1rem 1.25rem;
   text-align: center;
-  font-style: italic;
-  color: var(--text-secondary);
+  line-height: 1.4;
+  color: var(--text-primary);
   font-size: 1em;
+}
+
+.notifications-dropdown:has(.no-notifications) {
+  width: max-content;
+  min-width: 220px;
 }
 
 .favorites-section {
@@ -1083,7 +1218,7 @@ h2 {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 25rem;
+  max-width: 23.8rem;
 }
 
 .activity-right {
@@ -1133,7 +1268,7 @@ h2 {
   object-fit: cover;
   object-position: center center;
   
-  transform: translateX(-22.3%);
+  transform: translateX(-22%);
   transform-origin: center;
   border-radius: 0.5rem;
 }
@@ -1509,6 +1644,8 @@ a.all-collections-btn:hover {
     display: none !important;
   }
 
+  .favorites-row::after { max-width: 43.2%; }
+
   .favorites-column {
     max-width: 43.2%;
   }
@@ -1586,11 +1723,27 @@ a.all-collections-btn:hover {
   }
 
   .separator-bar {
+    position: relative;
     height: 6rem;
     justify-content: center;
     
     align-items: center;
     
+  }
+
+  .separator-bar .music-player-btn {
+    position: absolute;
+    right: 1.5rem;
+    bottom: calc(100% + 1.5rem);
+    z-index: 2;
+    background: var(--bg-tertiary) !important;
+    border-radius: 20%;
+  }
+
+  .separator-bar .music-player-btn .music-icon {
+    width: 3rem;
+    height: 3rem;
+    border: none;
   }
 
   .notifications-button,
@@ -1643,6 +1796,8 @@ a.all-collections-btn:hover {
   }
 
   
+  .favorites-row::after { display: none; }
+
   .favorites-row {
     display: flex;
     flex-direction: column;
@@ -1694,8 +1849,8 @@ a.all-collections-btn:hover {
   }
 
   .card[data-media-type="music"] .card-image img {
+    transform: translateX(-22.1%);
     height: unset;
-    width: 210%;
   }
 
   .card[data-media-type="music"] a {

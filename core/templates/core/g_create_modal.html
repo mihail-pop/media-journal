@@ -110,8 +110,8 @@
 
         </div>
 
-        <!-- Row 3: Progress Main & Secondary -->
-        <div class="c-form-row-three" id="create-progress-row" style="display: none;">
+        <!-- Row 3: Progress, Length & Collections -->
+        <div class="c-form-row-three" id="create-progress-row">
           <div class="c-form-group c-vertical-label" id="create_progress_main_group" style="display: none;">
             <label id="create_progress_main_label">Main Progress</label>
             <div class="c-progress-inputs">
@@ -138,6 +138,18 @@
               <span class="c-progress-separator" style="font-weight: normal;">h</span>
               <input type="number" name="length_minutes" min="0" max="59" placeholder="Mins" class="c-progress-box">
               <span class="c-progress-separator" style="font-weight: normal;">m</span>
+            </div>
+          </div>
+
+          <div class="c-form-group c-vertical-label">
+            <label>Collections</label>
+            <div class="genre-select-wrapper custom-select-wrapper" id="create-collection-wrapper">
+              <div class="genre-select custom-select-trigger" id="create-collection-select" role="button" tabindex="0" aria-expanded="false" aria-controls="create-collection-options">
+                <div class="genre-tags" id="create-collection-tags"></div>
+                <input type="text" id="create-collection-search" placeholder="Collections" autocomplete="off" aria-label="Search collections">
+                <div class="genre-indicator" id="create-collection-indicator"></div>
+              </div>
+              <div class="custom-options genre-options" id="create-collection-options" role="listbox" aria-multiselectable="true" aria-label="Collections"></div>
             </div>
           </div>
 

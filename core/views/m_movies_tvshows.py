@@ -8,6 +8,7 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET
 
 from core.models import APIKey, MediaItem
+from core.services.g_utils import adult_content_allowed
 
 
 @ensure_csrf_cookie
@@ -37,7 +38,7 @@ def tmdb_search(request):
     else:
         url = "https://api.themoviedb.org/3/search/tv"
 
-    params = {"api_key": api_key, "query": query}
+    params = {"api_key": api_key, "query": query, "include_adult": str(adult_content_allowed()).lower()}
     response = requests.get(url, params=params)
 
     if response.status_code != 200:

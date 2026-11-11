@@ -1,3 +1,5 @@
+from urllib.parse import urlsplit
+
 from django.conf import settings
 from django.shortcuts import redirect
 from django.urls import reverse
@@ -5,6 +7,7 @@ from django.urls import reverse
 class GlobalLoginRequiredMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
+        self.public_icon_prefix = urlsplit(settings.STATIC_URL).path.rstrip('/') + '/core/icons/'
 
     def __call__(self, request):
         # 1. If the toggle is OFF, let everyone in.
@@ -16,6 +19,11 @@ class GlobalLoginRequiredMiddleware:
 
         # 2. Prevent infinite loops: Always let people see the login page itself!
         if request.path_info == reverse('login'):
+            return self.get_response(request)
+
+        # Browsers fetch installation metadata and packaged branding icons
+        # before login. Library pages and uploaded media still require login.
+        if request.path_info == reverse('web_manifest') or request.path_info.startswith(self.public_icon_prefix):
             return self.get_response(request)
 
         # 3. If the user is logged in, let them access the requested file/page.

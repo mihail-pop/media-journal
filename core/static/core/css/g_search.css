@@ -69,6 +69,166 @@
   --scrollbar-thumb: #74544d;
 }
 
+/* Muted forest green, with warm sage text and moss accents. */
+[data-theme="green"] {
+  --bg-primary: #1e2923;
+  --bg-tertiary: #34473a;
+  --bg-quaternary: #4a604c;
+
+  --text-primary: #e5e8d9;
+  --text-secondary: #d2dcc6;
+  --text-overview: #bfccb5;
+  --text-search: #e5e8d9;
+  --text-search-link: #adbf9b;
+  --text-search-hover: #e9eddf;
+  --text-light: #e9eddf;
+  --header-light: #cedbb9;
+
+
+  --border-color: #51694f;
+  --hover-bg: #415a46;
+  --search-bg: #1e2923;
+  --search-hover-bg: #2d4133;
+  --search-border-active: #879e75;
+
+  --scrollbar-thumb: #687f5f;
+}
+
+/* Warm plum, with parchment text and muted brass accents. */
+[data-theme="plum"] {
+  --bg-primary: #29232d;
+  --bg-tertiary: #493c4d;
+  --bg-quaternary: #655068;
+
+  --text-primary: #eee3da;
+  --text-secondary: #dac9cc;
+  --text-overview: #cbb8c2;
+  --text-search: #eee3da;
+  --text-search-link: #cbb0bf;
+  --text-search-hover: #f0e6df;
+  --text-light: #f0e6df;
+  --header-light: #e5cdb8;
+
+
+  --border-color: #725d74;
+  --hover-bg: #5a485d;
+  --search-bg: #29232d;
+  --search-hover-bg: #403346;
+  --search-border-active: #ad8fa7;
+
+  --scrollbar-thumb: #93778e;
+}
+
+/* Warm charcoal, with ivory text and restrained amber accents. */
+[data-theme="charcoal"] {
+  --bg-primary: #252422;
+  --bg-tertiary: #413e39;
+  --bg-quaternary: #5d574d;
+
+  --text-primary: #ece6db;
+  --text-secondary: #d2c9bb;
+  --text-overview: #c4b8a5;
+  --text-search: #ece6db;
+  --text-search-link: #c5af8d;
+  --text-search-hover: #f0eadd;
+  --text-light: #f0eadd;
+  --header-light: #edd1a2;
+
+
+  --border-color: #6b6153;
+  --hover-bg: #514b41;
+  --search-bg: #252422;
+  --search-hover-bg: #38342f;
+  --search-border-active: #9b8668;
+
+  --scrollbar-thumb: #847867;
+}
+
+/* Muted ocean teal, with warm linen text and sea-glass accents. */
+[data-theme="teal"] {
+  --bg-primary: #203033;
+  --bg-tertiary: #354e52;
+  --bg-quaternary: #4b686b;
+
+  --text-primary: #e6e8dc;
+  --text-secondary: #c8d8ce;
+  --text-overview: #bdcfc4;
+  --text-search: #e6e8dc;
+  --text-search-link: #b1cfc0;
+  --text-search-hover: #eaf0e1;
+  --text-light: #eaf0e1;
+  --header-light: #d8e4cb;
+
+
+  --border-color: #547174;
+  --hover-bg: #456568;
+  --search-bg: #203033;
+  --search-hover-bg: #2c4346;
+  --search-border-active: #88aaa4;
+
+  --scrollbar-thumb: #6d918c;
+}
+
+/* Light rose, with warm ivory backgrounds, cocoa text and berry accents. */
+[data-theme="pink"] {
+  --bg-primary: #fff8f6;
+  --bg-tertiary: #f7e3e6;
+  --bg-quaternary: #efd0d8;
+
+  --text-primary: #54363e;
+  --text-secondary: #684851;
+  --text-overview: #78535e;
+  --text-search: #54363e;
+  --text-search-link: #8c5266;
+  --text-search-hover: #4b2d36;
+  --text-light: #54363e;
+  --header-light: #b13661;
+
+
+  --border-color: #cca4b0;
+  --hover-bg: #eed0d8;
+  --search-bg: #fff8f6;
+  --search-hover-bg: #f2dce3;
+  --search-border-active: #b13661;
+
+  --scrollbar-thumb: #bc8c9e;
+}
+
+/* Cake: creamy ivory, peach layers and red accents. */
+[data-theme="cake"] {
+  --bg-primary: #fff6e9;
+  --bg-tertiary: #f6dfca;
+  --bg-quaternary: #ebc29f;
+
+  --text-primary: #573326;
+  --text-secondary: #6b4433;
+  --text-overview: #7e5140;
+  --text-search: #573326;
+  --text-search-link: #8e5439;
+  --text-search-hover: #4b291e;
+  --text-light: #573326;
+  --header-light: #b52f20;
+
+
+  --border-color: #d4a482;
+  --hover-bg: #edc7a7;
+  --search-bg: #fff6e9;
+  --search-hover-bg: #f4dbc0;
+  --search-border-active: #bd4527;
+
+  --scrollbar-thumb: #b87a51;
+}
+
+/* Search messages sit directly on the dimmed backdrop. */
+[data-theme="cake"] .search-message {
+  color: #fff7e8;
+}
+
+/* Search messages sit directly on the dimmed backdrop. */
+[data-theme="pink"] .search-message {
+  color: #fff8fb;
+}
+
 
 #search-overlay {
   position: fixed;
@@ -110,24 +270,56 @@
 }
 
 
-.search-card-grid {
+#search-results-panel {
+  width: 960px;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.search-results-frame {
   width: 100%;
-  max-width: 800px;
-  max-height: 70vh;
+  max-width: 960px;
+  margin: 0 auto;
+  overflow: hidden;
+  border-radius: 8px;
+  background: var(--bg-tertiary);
+  box-shadow: 0 10px 30px rgb(0 0 0 / 25%);
+}
+
+#search-overlay:not([data-search-type="music"]) .search-results-frame {
+  width: var(--search-natural-width, 960px);
+  min-width: min(100%, var(--search-controls-width, 0px));
+}
+
+.search-card-grid {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 960px;
+  max-height: max(0px, calc(100dvh - 10rem));
   margin: 0 auto;
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(var(--search-result-columns, 6), minmax(0, var(--search-card-width, 144px)));
+  justify-content: start;
   gap: 12px;
   overflow-y: auto;
   background: var(--bg-tertiary);
-  padding: 12px;
-  border-radius: 4px;
+  padding: 16px;
+  border-radius: 0;
   scrollbar-color: var(--text-overview) var(--bg-tertiary);
   -ms-overflow-style: none;
 }
 
-body[data-media-type="music"] .search-card-grid {
-  grid-template-columns: repeat(2, 1fr);
+#search-overlay[data-search-type="music"] .search-results-frame {
+  max-width: 800px;
+}
+
+#search-overlay:not([data-search-type="music"]) .search-card-grid {
+  scrollbar-gutter: stable;
+}
+
+#search-overlay[data-search-type="music"] .search-card-grid {
+  max-width: 800px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .search-card-grid::-webkit-scrollbar {
@@ -138,8 +330,12 @@ body[data-media-type="music"] .search-card-grid {
 
 
 .search-card {
-  background: none;
+  min-width: 0;
+  position: relative;
+  background: color-mix(in srgb, var(--bg-primary) 35%, var(--bg-tertiary));
   padding: 0.5rem;
+  border-radius: 6px;
+  transition: background-color 0.15s ease;
 }
 
 .search-card img[src*="placeholder"] {
@@ -151,20 +347,15 @@ body[data-media-type="music"] .search-card-grid {
 }
 
 .search-card:hover {
-  transform: scale(1.05);
   background-color: var(--search-hover-bg);
-  border-radius: 4px;
-}
-
-body[data-media-type="music"] .search-card:hover {
-  transform: none;
-  background-color: inherit;
 }
 
 .search-card img {
   display: block;
-  width: 120px;
-  height: 180px;
+  width: 100%;
+  max-width: 120px;
+  height: auto;
+  aspect-ratio: 2 / 3;
   border-radius: 4px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
   margin-bottom: 0.6rem;
@@ -173,36 +364,42 @@ body[data-media-type="music"] .search-card:hover {
   margin-right: auto;
 }
 
-body[data-media-type="music"] .search-card img {
+#search-overlay[data-search-type="music"] .search-card img {
   display: none;
 }
 
 .search-card-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
   color: var(--text-search);
   font-weight: 600;
   font-size: 0.9rem;
   text-align: center;
-  min-height: 2.6em;
+  line-height: 1.4;
+  min-height: 1.4em;
   user-select: none;
   padding: 0 0.4rem;
 }
 
-body[data-media-type="music"] .search-card-title {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
+#search-overlay[data-search-type="music"] .search-card-title {
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
   min-height: auto;
   padding: 0.2rem;
   text-align: center;
   font-size: 1rem;
-  border: 1px solid var(--border-color);
   border-radius: 4px;
 }
 
-body[data-media-type="music"] .search-card:hover .search-card-title {
-  transform: scale(1.05);
-  background-color: var(--search-hover-bg);
+.search-card-year {
+  margin-top: 0.15rem;
+  color: var(--text-search);
+  font-size: 0.9rem;
+  line-height: 1.4;
+  text-align: center;
 }
 
 .search-card .card-link {
@@ -219,13 +416,15 @@ body[data-media-type="music"] .search-card:hover .search-card-title {
 
 
 .overlay-search-bar {
+  position: relative;
+  z-index: 2;
   margin-bottom: 1rem;
   text-align: center;
 }
 
 .search-input-container {
   position: relative;
-  display: inline-block;
+  display: flex;
 }
 
 #overlay-search-input {
@@ -263,46 +462,119 @@ body[data-media-type="music"] .search-card:hover .search-card-title {
   gap: 1rem;
 }
 
-.live-search-label {
-  font-size: 0.85rem;
-  font-weight: bold;
-  color: var(--text-search-hover);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  user-select: none;
-  padding: 0.25rem 0.5rem;
-  background-color: var(--search-bg);
-  border: 3px solid transparent;
-  border-radius: 6px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
-  transition: background-color 0.2s ease;
-  text-align: center;
-}
-
-.live-search-label:hover {
-  color: var(--text-search);
-}
-
-.live-search-label.active {
-  border: 3px solid var(--search-border-active);
-}
-
-.live-search-label input[type="checkbox"] {
-  display: none;
-}
-
 .overlay-search-input-wrapper {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   justify-content: center;
-  gap: 1rem;
-  margin-top: 2rem;
+  gap: 0;
+  margin: 2rem auto 0;
+  width: fit-content;
+  max-width: 100%;
+  border-radius: 6px;
+  background: var(--search-bg);
+  box-shadow: 0 2px 6px rgb(0 0 0 / 50%);
   transform: translateY(-20px);
   opacity: 0;
   animation: slideDown 0.3s ease forwards;
 }
+
+#search-overlay #overlay-search-input {
+  border-radius: 6px 0 0 6px;
+  box-shadow: none;
+}
+
+.search-media-select {
+  position: relative;
+  display: flex;
+  flex: 0 0 150px;
+  text-align: left;
+  z-index: 2;
+}
+
+.search-media-select::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 20%;
+  bottom: 20%;
+  width: 2px;
+  border-radius: 999px;
+  background: var(--text-search);
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+#search-media-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: 0 6px 6px 0;
+  background: var(--search-bg);
+  color: var(--text-search);
+  font-size: 1rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.search-media-arrow {
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 6px solid currentColor;
+  transition: transform 0.2s ease;
+}
+
+.search-media-select.is-open .search-media-arrow { transform: rotate(180deg); }
+
+.search-media-options {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  width: 100%;
+  max-height: 50vh;
+  overflow-y: auto;
+  padding: 0.35rem;
+  box-sizing: border-box;
+  background: var(--search-bg);
+  border-radius: 6px;
+  box-shadow: 0 6px 20px rgb(0 0 0 / 25%);
+}
+
+.search-media-select.is-open::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  height: 4px;
+}
+
+.search-media-option {
+  display: block;
+  width: 100%;
+  padding: 0.65rem 0.7rem;
+  border: none;
+  border-radius: 4px;
+  background: none;
+  color: var(--text-search);
+  font-size: 1rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.search-media-option:hover,
+.search-media-option:focus-visible,
+.search-media-option[aria-pressed="true"] {
+  background: var(--search-hover-bg);
+  color: var(--text-light);
+}
+
+.search-message { color: var(--text-light); text-align: center; }
 
 @keyframes slideDown {
   to {
@@ -313,6 +585,12 @@ body[data-media-type="music"] .search-card:hover .search-card-title {
 
 
 @media (orientation: portrait) {
+  .search-results-frame,
+  #search-overlay[data-search-type="music"] .search-results-frame { max-width: 32rem; }
+  .search-media-select { flex-basis: 170px; }
+  #search-media-toggle, .search-media-option { font-size: 1.5rem; }
+  #search-media-toggle, .overlay-search-input-wrapper { background: var(--search-hover-bg); }
+  #search-media-toggle { color: var(--text-light); }
 
   #search-overlay {
     padding-top: 8rem;
@@ -320,10 +598,15 @@ body[data-media-type="music"] .search-card:hover .search-card-title {
     transform-origin: top;
   }
 
-  .search-card-grid {
+  .search-card-grid,
+  #search-overlay[data-search-type="music"] .search-card-grid {
     max-width: 32rem;
-    grid-template-columns: repeat(3, 1fr) !important;
+    grid-template-columns: repeat(var(--search-result-columns, 3), minmax(0, var(--search-card-width, 152px)));
     max-height: 40vh;
+  }
+
+  #search-overlay[data-search-type="music"] .search-card-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   #overlay-search-input {
@@ -348,14 +631,6 @@ body[data-media-type="music"] .search-card:hover .search-card-title {
     height: 20px;
   }
 
-  .live-search-label {
-    font-size: 1.1rem;
-  }
-
-
-  .search-card {
-    transform: scale(1.1);
-  }
 
 
 }

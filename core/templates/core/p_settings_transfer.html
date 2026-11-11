@@ -1,0 +1,87 @@
+<div class="tab-content" id="transfer">
+  <div class="transfer-grid">
+    <section class="preferences-section transfer-section">
+      <h3>Export CSV</h3>
+      <p class="transfer-help">Export your media items, scores, notes, progress, dates and collections. Image files are not included. Scores use the 0–100 scale.</p>
+      <p class="transfer-help">Formula-like text is protected for spreadsheets. Media Journal restores the original text when re-importing this CSV.</p>
+      <form id="transfer-export-form">
+        <fieldset class="transfer-types">
+          <legend>Media types</legend>
+          <label><input type="checkbox" name="media_type" value="movie" checked> Movies</label>
+          <label><input type="checkbox" name="media_type" value="tv" checked> TV Shows</label>
+          <label><input type="checkbox" name="media_type" value="anime" checked> Anime</label>
+          <label><input type="checkbox" name="media_type" value="manga" checked> Manga</label>
+          <label><input type="checkbox" name="media_type" value="game" checked> Games</label>
+          <label><input type="checkbox" name="media_type" value="book" checked> Books</label>
+          <label><input type="checkbox" name="media_type" value="music" checked> Music</label>
+        </fieldset>
+        <button type="submit" class="backup-btn" data-transfer-start>Export CSV</button>
+      </form>
+      <div class="transfer-progress" id="transfer-export-progress" hidden aria-live="polite"></div>
+      <div class="transfer-actions" id="transfer-export-actions"></div>
+    </section>
+
+    <section class="preferences-section transfer-section">
+      <h3>Import CSV</h3>
+      <p class="transfer-help">Upload one item per row, map the columns, then review matches before importing. Viewing history is not imported. Existing items are kept unchanged; for duplicate rows, the first imported entry is kept.</p>
+      <form id="transfer-upload-form">
+        <label class="transfer-field">CSV file
+          <input type="file" name="file" accept=".csv,text/csv" required>
+        </label>
+        <div class="transfer-options">
+          <label class="transfer-field">Encoding
+            <select name="encoding"><option value="utf-8-sig">UTF-8</option><option value="utf-16">UTF-16</option><option value="cp1252">Windows-1252</option></select>
+          </label>
+          <label class="transfer-field">Separator
+            <select name="delimiter"><option value="">Detect automatically</option><option value=",">Comma</option><option value=";">Semicolon</option><option value="&#9;">Tab</option><option value="|">Pipe</option></select>
+          </label>
+        </div>
+        <button type="submit" class="backup-btn" data-transfer-start>Read CSV</button>
+      </form>
+      <div class="transfer-progress" id="transfer-import-progress" hidden aria-live="polite"></div>
+      <div class="transfer-actions" id="transfer-import-actions"></div>
+      <p class="transfer-help">Up to 50 MB and 50,000 items per file. Paused transfer data is kept for 7 days.</p>
+    </section>
+
+    <p class="transfer-help transfer-wide transfer-note">Import and export may not work as expected in every situation. If you run into a problem, please <a href="https://github.com/mihail-pop/media-journal/issues" target="_blank" rel="noopener noreferrer">open an issue</a>.</p>
+
+    <section class="preferences-section transfer-section transfer-wide" id="transfer-mapping" hidden>
+      <h3>Match Columns</h3>
+      <form id="transfer-mapping-form">
+        <div class="transfer-options">
+          <label class="transfer-field">Media type for this file<select name="media_type" id="transfer-media-type"></select></label>
+          <label class="transfer-field">Default status<select name="status" id="transfer-default-status"></select></label>
+          <label class="transfer-field">Score scale<select name="score_scale"><option value="">Choose if importing scores</option><option value="5">0–5</option><option value="10">0–10</option><option value="100">0–100</option><option value="faces">Three faces / categories</option></select></label>
+          <label class="transfer-field">Activity date format<select name="date_format"><option value="iso">YYYY-MM-DD / ISO timestamp</option><option value="dmy">DD/MM/YYYY</option><option value="mdy">MM/DD/YYYY</option><option value="dots">DD.MM.YYYY</option></select></label>
+          <label class="transfer-field">Lists of creators / collections<select name="list_separator"><option value="|">Pipe: A | B</option><option value=";">Semicolon: A; B</option><option value=",">Comma: A, B</option><option value="&#10;">One name per line</option></select></label>
+        </div>
+        <p class="transfer-help">Ignore columns you do not want to import. JSON arrays also work for list fields. Blank or zero numeric scores mean unrated. Progress values are whole episodes, seasons, chapters, volumes, pages or hours; movie length is in minutes.</p>
+        <div class="transfer-table-wrap"><table class="transfer-table"><thead><tr><th>CSV column</th><th>Example</th><th>Import as</th></tr></thead><tbody id="transfer-column-rows"></tbody></table></div>
+        <div class="transfer-actions transfer-mapping-actions">
+          <button type="button" class="backup-btn" id="transfer-cancel-import">Cancel</button>
+          <button type="submit" class="backup-btn">Continue</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="preferences-section transfer-section transfer-wide" id="transfer-values" hidden>
+      <h3>Match Values</h3>
+      <p class="transfer-help">Choose what each value in your file means. Unrecognized values require your choice.</p>
+      <form id="transfer-values-form"><div class="transfer-options" id="transfer-value-fields"></div><div class="transfer-actions"><button type="button" class="backup-btn" id="transfer-back-columns">Back to Columns</button><button type="submit" class="backup-btn" data-transfer-start>Find Matches</button></div></form>
+    </section>
+
+    <section class="preferences-section transfer-section transfer-wide" id="transfer-review" hidden>
+      <h3>Review &amp; Import</h3>
+      <p id="transfer-summary" aria-live="polite"></p>
+      <p class="transfer-help">Provider IDs identify the requested entry. Title-based suggestions are estimates; check the suggested title and year. Only matched or approved rows are imported. Other rows remain available in the unimported CSV.</p>
+      <div class="transfer-actions">
+        <button type="button" class="backup-btn" id="transfer-import-matches" data-transfer-start hidden>Import Matched Items</button>
+        <a class="backup-btn" id="transfer-report" href="#">Download Unimported CSV</a>
+        <button type="button" class="backup-btn" id="transfer-remap">Change Column Mapping</button>
+      </div>
+      <label class="transfer-field transfer-filter">Show<select id="transfer-review-filter"><option value="review">Needs review / unmatched</option><option value="ready">Matched items</option><option value="all">All rows</option></select></label>
+      <div id="transfer-review-rows"></div>
+      <div class="transfer-actions transfer-pagination" id="transfer-pagination" hidden><button type="button" class="backup-btn" id="transfer-previous">Previous</button><span id="transfer-page"></span><button type="button" class="backup-btn" id="transfer-next">Next</button></div>
+    </section>
+  </div>
+</div>

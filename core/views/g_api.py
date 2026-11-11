@@ -9,7 +9,7 @@ from django.views.decorators.http import require_GET
 
 from core.models import MediaItem, FavoritePerson, Collection, CollectionItem
 from core.services.g_utils import normalize_search_text
-from core.services.g_api import get_game_screenshots_data
+from core.services.g_api import get_game_screenshots_data, serialize_game_screenshot
 from core.services.m_games import get_igdb_discover
 from core.services.m_anime_manga import get_anilist_discover
 from core.services.m_movies_tvshows import get_tmdb_discover
@@ -17,6 +17,13 @@ from core.services.m_books import get_openlib_discover
 from core.services.m_music import get_musicbrainz_discover
 
 logger = logging.getLogger(__name__)
+
+# Shared response fields; source_id also reads source and provider_ids.
+_LIST_ITEM_FIELDS = (
+    "id", "title", "media_type", "status", "personal_rating", "cover_url",
+    "banner_url", "notes", "source", "provider_ids", "repeats", "date_added",
+    "release_date",
+)
 
 @require_GET
 def movies_api(request):
@@ -44,7 +51,9 @@ def movies_api(request):
         output_field=IntegerField(),
     )
 
-    queryset = MediaItem.objects.filter(media_type="movie")
+    queryset = MediaItem.objects.filter(media_type="movie").only(
+        *_LIST_ITEM_FIELDS, "total_main",
+    )
 
     if status != "all":
         queryset = queryset.filter(status=status)
@@ -205,7 +214,9 @@ def tvshows_api(request):
         output_field=IntegerField(),
     )
 
-    queryset = MediaItem.objects.filter(media_type="tv")
+    queryset = MediaItem.objects.filter(media_type="tv").only(
+        *_LIST_ITEM_FIELDS, "progress_main", "total_main", "progress_secondary", "total_secondary",
+    )
 
     if status != "all":
         queryset = queryset.filter(status=status)
@@ -385,7 +396,9 @@ def anime_api(request):
         output_field=IntegerField(),
     )
 
-    queryset = MediaItem.objects.filter(media_type="anime")
+    queryset = MediaItem.objects.filter(media_type="anime").only(
+        *_LIST_ITEM_FIELDS, "progress_main", "total_main",
+    )
 
     if status != "all":
         queryset = queryset.filter(status=status)
@@ -549,7 +562,9 @@ def manga_api(request):
         output_field=IntegerField(),
     )
 
-    queryset = MediaItem.objects.filter(media_type="manga")
+    queryset = MediaItem.objects.filter(media_type="manga").only(
+        *_LIST_ITEM_FIELDS, "progress_main", "total_main", "progress_secondary", "total_secondary",
+    )
 
     if status != "all":
         queryset = queryset.filter(status=status)
@@ -724,7 +739,9 @@ def games_api(request):
         output_field=IntegerField(),
     )
 
-    queryset = MediaItem.objects.filter(media_type="game")
+    queryset = MediaItem.objects.filter(media_type="game").only(
+        *_LIST_ITEM_FIELDS, "progress_main", "total_main",
+    )
 
     if status != "all":
         queryset = queryset.filter(status=status)
@@ -766,7 +783,7 @@ def games_api(request):
 
     queryset = queryset.annotate(
         status_order=status_ordering, rating_order=rating_ordering
-    ).prefetch_related('logs', 'music_videos')
+    ).prefetch_related('logs')
 
     # Apply sorting
     order_fields = ["status_order"]
@@ -879,7 +896,9 @@ def music_api(request):
         output_field=IntegerField(),
     )
 
-    queryset = MediaItem.objects.filter(media_type="music")
+    queryset = MediaItem.objects.filter(media_type="music").only(
+        *_LIST_ITEM_FIELDS, "favorite",
+    )
 
     if status != "all":
         queryset = queryset.filter(status=status)
@@ -921,7 +940,7 @@ def music_api(request):
 
     queryset = queryset.annotate(
         status_order=status_ordering, rating_order=rating_ordering
-    ).prefetch_related('logs')
+    ).prefetch_related('logs', 'music_videos')
 
     # Apply sorting
     order_fields = ["status_order"]
@@ -1035,7 +1054,9 @@ def books_api(request):
         output_field=IntegerField(),
     )
 
-    queryset = MediaItem.objects.filter(media_type="book")
+    queryset = MediaItem.objects.filter(media_type="book").only(
+        *_LIST_ITEM_FIELDS, "progress_main", "total_main",
+    )
 
     if status != "all":
         queryset = queryset.filter(status=status)
@@ -1317,6 +1338,7 @@ def history_api(request):
 @require_GET
 def favorites_api(request):
     category_slug = request.GET.get("category")
+    search = normalize_search_text(request.GET.get("search", "").strip())
     page = int(request.GET.get("page", 1))
     offset = request.GET.get("offset")
     page_size = 50
@@ -1344,9 +1366,22 @@ def favorites_api(request):
 
     if category_slug in slug_map:
         media_type = slug_map[category_slug]
-        qs = MediaItem.objects.filter(favorite=True, media_type=media_type).order_by(
+        qs = MediaItem.objects.filter(favorite=True, media_type=media_type).only(
+            "id", "title", "media_type", "cover_url", "source", "provider_ids",
+        ).order_by(
             "favorite_position", "date_added"
         )
+        if search:
+            matching_ids = []
+            for item_id, title, creators in qs.values_list('id', 'title', 'creators'):
+                target = normalize_search_text(title)
+                if isinstance(creators, list):
+                    target += " " + normalize_search_text(" ".join(creators))
+                elif isinstance(creators, str):
+                    target += " " + normalize_search_text(creators)
+                if search in target:
+                    matching_ids.append(item_id)
+            qs = qs.filter(id__in=matching_ids)
         total = qs.count()
         items = qs[start:end]
         has_more = total > end
@@ -1382,7 +1417,13 @@ def favorites_api(request):
 
     elif category_slug in ["characters", "actors"]:
         p_type = "character" if category_slug == "characters" else "actor"
-        qs = FavoritePerson.objects.filter(type=p_type).order_by("position")
+        qs = FavoritePerson.objects.filter(type=p_type).only(
+            "id", "name", "image_url", "type", "person_id", "source",
+        ).order_by("position")
+        if search:
+            matching_ids = [person_id for person_id, name in qs.values_list('id', 'name')
+                            if search in normalize_search_text(name)]
+            qs = qs.filter(id__in=matching_ids)
         total = qs.count()
         items = qs[start:end]
         has_more = total > end
@@ -1390,7 +1431,7 @@ def favorites_api(request):
         for person in items:
             url = "#"
             if person.person_id:
-                url = f"/person/{person.type}/{person.person_id}/"
+                url = person.get_absolute_url()
 
             items_data.append(
                 {
@@ -1407,6 +1448,8 @@ def favorites_api(request):
 
 @require_GET
 def discover_api(request):
+    from core.services.g_utils import adult_content_allowed
+    allow_adult = adult_content_allowed()
     media_type = request.GET.get("type", "movie")
     page = int(request.GET.get("page", 1))
     query = request.GET.get("q", "").strip()
@@ -1419,21 +1462,23 @@ def discover_api(request):
     status = request.GET.get("status", "")
     genre = request.GET.get("genre", "")
     platform = request.GET.get("platform", "")
+    free_to_play = request.GET.get("free_to_play", "").lower() in ("true", "1")
 
     try:
         if media_type in ["anime", "manga"]:
             if status == "upcoming":
                 status = "NOT_YET_RELEASED"
             data = get_anilist_discover(
-                media_type, page, query, sort, season, year, format_filter, status, genre
+                media_type, page, query, sort, season, year, format_filter, status, genre, allow_adult=allow_adult
             )
             if isinstance(data, list):
                 data = {"results": data, "hasMore": False}
             return JsonResponse(data)
         elif media_type in ["movie", "tv"]:
-            results = get_tmdb_discover(media_type, page, query, sort, year, genre)
+            data = get_tmdb_discover(media_type, page, query, sort, year, genre, allow_adult=allow_adult)
+            return JsonResponse(data if isinstance(data, dict) else {'results': data, 'hasMore': bool(data)})
         elif media_type == "game":
-            results = get_igdb_discover(page, query, sort, genre, platform, year)
+            results = get_igdb_discover(page, query, sort, genre, platform, year, free_to_play=free_to_play, allow_adult=allow_adult)
         elif media_type == "book":
             results = get_openlib_discover(page, query, sort, genre, year)
         elif media_type == "music":
@@ -1454,6 +1499,18 @@ def collection_items_api(request, collection_id):
     
     # Get items in the collection
     qs = CollectionItem.objects.filter(collection_id=collection_id).select_related('item')
+    search = normalize_search_text(request.GET.get('search', '').strip())
+    if search:
+        matching_ids = []
+        for link_id, title, creators in qs.values_list('id', 'item__title', 'item__creators'):
+            target = normalize_search_text(title)
+            if isinstance(creators, list):
+                target += ' ' + normalize_search_text(' '.join(creators))
+            elif isinstance(creators, str):
+                target += ' ' + normalize_search_text(creators)
+            if search in target:
+                matching_ids.append(link_id)
+        qs = qs.filter(id__in=matching_ids)
     
     # Annotate sorting parameters from the underlying item
     qs = qs.annotate(
@@ -1530,6 +1587,9 @@ def collection_items_api(request, collection_id):
 
 @require_GET
 def collections_api(request):
+    if request.GET.get('options') == 'true':
+        return JsonResponse({"items": list(Collection.objects.values('id', 'title'))})
+
     page = int(request.GET.get("page", 1))
     page_size = 30
     start = (page - 1) * page_size
@@ -1541,6 +1601,11 @@ def collections_api(request):
         queryset=CollectionItem.objects.select_related('item').order_by('position')
     )
     qs = Collection.objects.all().prefetch_related(prefetch).order_by('position', '-date_created')
+    search = normalize_search_text(request.GET.get('search', '').strip())
+    if search:
+        matching_ids = [col_id for col_id, title in qs.values_list('id', 'title')
+                        if search in normalize_search_text(title)]
+        qs = qs.filter(id__in=matching_ids)
     
     total = qs.count()
     has_more = total > end
@@ -1570,18 +1635,25 @@ def collections_api(request):
 @require_GET
 def game_screenshots_api(request):
     igdb_id = request.GET.get("igdb_id")
-    page = int(request.GET.get("page", 1))
-    page_size = 40
-
+    try:
+        page = max(1, int(request.GET.get("page", 1)))
+        start = max(0, int(request.GET.get("offset", (page - 1) * 40)))
+    except ValueError:
+        return JsonResponse({"error": "Invalid screenshot page."}, status=400)
+    favorites_only = request.GET.get("favorites_only", "false") == "true"
     if not igdb_id:
         return JsonResponse({"error": "Missing igdb_id"}, status=400)
 
-    all_screenshots = get_game_screenshots_data(igdb_id)
-
-    start = (page - 1) * page_size
-    end = start + page_size
-    items = all_screenshots[start:end]
-
-    return JsonResponse(
-        {"screenshots": items, "has_more": end < len(all_screenshots), "page": page}
-    )
+    end = start + 40
+    item = MediaItem.objects.filter(media_type="game", provider_ids__igdb=str(igdb_id)).first()
+    if item:
+        queryset = item.game_screenshots.order_by('position', 'date_added', 'pk')
+        if favorites_only:
+            queryset = queryset.filter(is_favorite=True)
+        total = queryset.count()
+        items = [serialize_game_screenshot(shot) for shot in queryset[start:end]]
+    else:
+        screenshots = [] if favorites_only else get_game_screenshots_data(igdb_id)
+        total = len(screenshots)
+        items = screenshots[start:end]
+    return JsonResponse({"screenshots": items, "has_more": end < total, "page": page, "total": total})

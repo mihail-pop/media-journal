@@ -1,5 +1,4 @@
 import os
-import re
 import logging
 import datetime
 import time
@@ -12,6 +11,36 @@ from core.models import APIKey, FavoritePerson, MediaPersonLink
 from core.services.g_utils import download_image
 
 logger = logging.getLogger(__name__)
+
+
+def resolve_person_identity(person_type, person_id=None, source=None):
+    person_type = 'actor' if person_type == 'person' else person_type
+    if person_type not in ('actor', 'character'):
+        raise ValueError('Invalid person type.')
+    if str(person_id or '').startswith('custom_'):
+        source = 'custom'
+    source = source or ('anilist' if person_type == 'character' else 'tmdb')
+    valid_sources = ('anilist', 'custom') if person_type == 'character' else ('tmdb', 'anilist', 'custom')
+    if source not in valid_sources:
+        raise ValueError('Invalid person source.')
+    return person_type, source
+
+
+def favorite_person_queryset(person_type, person_id=None, source=None, name=None):
+    from django.db.models import Q
+    person_type, source = resolve_person_identity(person_type, person_id, source)
+    query = FavoritePerson.objects.filter(type=person_type)
+    # Blank sources can still occur when an older backup is imported.
+    legacy_source = 'anilist' if person_type == 'character' else 'tmdb'
+    if source == 'custom':
+        query = query.filter(Q(source='custom') | Q(source='', person_id__startswith='custom_'))
+    elif source == legacy_source:
+        query = query.filter(Q(source=source) | Q(source='')).exclude(person_id__startswith='custom_')
+    else:
+        query = query.filter(source=source)
+    if person_id:
+        return query.filter(person_id=str(person_id))
+    return query.filter(name=name) if name else query.none()
 
 
 def actor_search(query):
@@ -97,10 +126,13 @@ def calculate_age(birth_date, death_date=None):
     except ValueError:
         return ""
 
-def fetch_actor_data(actor_id):
+def fetch_actor_data(actor_id, source=None, force_refresh=False):
     """Fetch actor data from database or TMDB API"""
+    _, source = resolve_person_identity('actor', actor_id, source)
     try:
-        actor = FavoritePerson.objects.get(person_id=str(actor_id), type="actor")
+        actor = None if force_refresh else favorite_person_queryset('actor', actor_id, source).first()
+        if actor is None:
+            raise FavoritePerson.DoesNotExist
         
         # Helper to format saved JSON media
         def fix_media_list(media_list):
@@ -199,6 +231,11 @@ def fetch_actor_data(actor_id):
         }
     except FavoritePerson.DoesNotExist:
         pass
+
+    if source == 'custom':
+        return None
+    if source == 'anilist':
+        return fetch_anilist_staff_data(actor_id)
 
     # Fetch from TMDB API
     try:
@@ -342,7 +379,122 @@ def fetch_actor_data(actor_id):
         return None
 
 
-def fetch_character_data(character_id):
+def fetch_anilist_staff_data(staff_id):
+    """Use the same person-page shape for AniList creators and voice actors."""
+    query = """
+    query ($id: Int!) {
+      Staff(id: $id) {
+        id
+        name { full }
+        image { large }
+        description(asHtml: true)
+        primaryOccupations
+        age
+        dateOfBirth { year month day }
+        dateOfDeath { year month day }
+        staffMedia(sort: START_DATE_DESC, perPage: 25) {
+          edges {
+            staffRole
+            node { ...StaffCredit }
+          }
+        }
+        characterMedia(sort: START_DATE_DESC, perPage: 25) {
+          edges {
+            characters { name { full } }
+            node { ...StaffCredit }
+          }
+        }
+      }
+    }
+    fragment StaffCredit on Media {
+      id
+      title { english romaji }
+      type
+      format
+      startDate { year month day }
+      coverImage { large }
+    }
+    """
+    try:
+        response = requests.post(
+            'https://graphql.anilist.co',
+            json={'query': query, 'variables': {'id': int(staff_id)}},
+            timeout=30,
+        )
+        response.raise_for_status()
+        payload = response.json()
+        if payload.get('errors'):
+            logger.warning('AniList staff request failed for %s', staff_id)
+            return None
+        staff = (payload.get('data') or {}).get('Staff')
+        if not staff:
+            return None
+
+        def dates(value):
+            value = value or {}
+            year, month, day = value.get('year'), value.get('month'), value.get('day')
+            if not year:
+                return '', ''
+            if not month:
+                return str(year), str(year)
+            if not day:
+                date = datetime.date(year, month, 1)
+                return f'{year:04d}-{month:02d}', date.strftime('%B %Y')
+            date = datetime.date(year, month, day)
+            return date.isoformat(), date.strftime('%d %B %Y')
+
+        def credits(connection, voice=False):
+            result = {}
+            for edge in (connection or {}).get('edges') or []:
+                media = edge.get('node') or {}
+                media_id = media.get('id')
+                media_type = (media.get('type') or '').lower()
+                if not media_id or media_type not in ('anime', 'manga'):
+                    continue
+                names = [c.get('name', {}).get('full') for c in edge.get('characters') or [] if c]
+                role = ', '.join(name for name in names if name) if voice else edge.get('staffRole', '')
+                key = (media_type, media_id)
+                if key in result:
+                    previous = result[key]['character']
+                    if role and role not in previous.split(' / '):
+                        result[key]['character'] = ' / '.join(filter(None, (previous, role)))
+                    continue
+                raw_date, date = dates(media.get('startDate'))
+                title = media.get('title') or {}
+                result[key] = {
+                    'id': media_id,
+                    'title': title.get('english') or title.get('romaji') or '',
+                    'media_type': media_type,
+                    'type_display': media.get('format') or media_type.title(),
+                    'release_date': raw_date,
+                    'formatted_date': date,
+                    'poster_path': (media.get('coverImage') or {}).get('large'),
+                    'character': role or ('Voice Actor' if voice else ''),
+                    'url': f'/anilist/{media_type}/{media_id}/',
+                }
+            return list(result.values())
+
+        birthday_raw, birthday = dates(staff.get('dateOfBirth'))
+        deathday_raw, deathday = dates(staff.get('dateOfDeath'))
+        return {
+            'id': str(staff['id']),
+            'name': (staff.get('name') or {}).get('full') or '',
+            'image': (staff.get('image') or {}).get('large'),
+            'role': (', '.join(staff.get('primaryOccupations') or []) or 'Staff')[:100],
+            'age': str(staff['age']) if staff.get('age') is not None else calculate_age(birthday_raw, deathday_raw),
+            'birthday_raw': birthday_raw, 'birthday': birthday,
+            'deathday_raw': deathday_raw, 'deathday': deathday,
+            'biography': staff.get('description') or '',
+            # Match the character page's bounded, latest-credits request.
+            'related_media': credits(staff.get('characterMedia'), voice=True),
+            'crew_credits': credits(staff.get('staffMedia')),
+        }
+    except (requests.RequestException, ValueError, TypeError, KeyError) as error:
+        logger.warning('Unable to fetch AniList staff %s: %s', staff_id, error)
+        return None
+
+
+def fetch_character_data(character_id, force_refresh=False):
     logger.info(
         f"fetch_character_data called with character_id: {character_id} (type: {type(character_id)})"
     )
@@ -364,9 +516,9 @@ def fetch_character_data(character_id):
 
     try:
         # Check if character exists in database
-        character = FavoritePerson.objects.get(
-            person_id=character_id_str, type="character"
-        )
+        character = None if force_refresh else favorite_person_queryset('character', character_id_str).first()
+        if character is None:
+            raise FavoritePerson.DoesNotExist
         media_appearances = character.media_appearances or []
         for media in media_appearances:
             # Use dynamically fetched source if available, otherwise default to mal
@@ -468,7 +620,7 @@ def fetch_character_data(character_id):
             image {
               large
             }
-            description
+            description(asHtml: true)
             age
             media(sort: [START_DATE_DESC], perPage: 24) { # Fetch latest 24
               edges {
@@ -623,19 +775,6 @@ def fetch_character_data(character_id):
                     )
 
         description = character_data.get("description", "")
-        if description:
-            # Markdown processing (unchanged)
-            parts = description.split("__")
-            result = []
-            for i, part in enumerate(parts):
-                if i % 2 == 1:
-                    result.append(f"<strong>{part}</strong> ") if i == 1 else result.append(f"<br><strong>{part}</strong> ")
-                else:
-                    result.append(part)
-            description = "".join(result)
-            description = re.sub(r"~!([^!]+)!~", r'<span class="spoiler">\1</span>', description)
-            description = re.sub(r"\[([^\]]+)\]\(([^\)]+)\)", r'<a href="\2" target="_blank">\1</a>', description)
-
         age = character_data.get("age")
         if age and isinstance(age, str) and age.endswith("-") and "-" not in age[:-1]:
             age = age[:-1]
@@ -656,7 +795,8 @@ def fetch_character_data(character_id):
         return None
 
 
-def save_favorite_actor_character(name, image_url, type, person_id=None):
+def save_favorite_actor_character(name, image_url, type, person_id=None, source=None):
+    type, source = resolve_person_identity(type, person_id, source)
     existing_count = FavoritePerson.objects.filter(type=type).count()
     position = existing_count + 1
 
@@ -667,7 +807,7 @@ def save_favorite_actor_character(name, image_url, type, person_id=None):
     high_quality_image_url = image_url  
     
     if type == "actor" and person_id:
-        actor_data = fetch_actor_data(person_id)
+        actor_data = fetch_actor_data(person_id, source=source)
         if actor_data:
             high_quality_image_url = actor_data.get("image") or image_url
             additional_data = {
@@ -694,11 +834,13 @@ def save_favorite_actor_character(name, image_url, type, person_id=None):
                 "voice_actors": character_data.get("voice_actors"),
             }
 
-    ext = high_quality_image_url.split(".")[-1].split("?")[0]
-    relative_path = f"favorites/{type}s/{slug_name}_{timestamp}.{ext}"
-
-    local_url = download_image(high_quality_image_url, relative_path)
-    final_image_url = local_url if local_url else high_quality_image_url
+    final_image_url = high_quality_image_url
+    if high_quality_image_url:
+        ext = high_quality_image_url.split(".")[-1].split("?")[0]
+        # Historical folder names deliberately remain actors/characters.
+        relative_path = f"favorites/{type}s/{slug_name}_{timestamp}.{ext}"
+        local_url = download_image(high_quality_image_url, relative_path)
+        final_image_url = local_url or high_quality_image_url
 
     person = FavoritePerson.objects.create(
         name=name,
@@ -706,6 +848,7 @@ def save_favorite_actor_character(name, image_url, type, person_id=None):
         type=type,
         position=position,
         person_id=person_id,
+        source=source,
         **additional_data,
     )
     return person

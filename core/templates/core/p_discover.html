@@ -23,222 +23,236 @@
 
     <!-- Movie/TV Filters -->
     <div id="tmdb-filters" class="filter-section">
-      <h3>Sort</h3>
+      <h3>Sort By</h3>
       <div class="sort-filter filter-group">
         <button class="filter-btn sort-btn active" data-sort="trending">Trending</button>
         <button class="filter-btn sort-btn" data-sort="popularity.desc">Popular</button>
       </div>
       
-      <h3>Genre</h3>
+      <h3>Filter By</h3>
       <div class="custom-select-wrapper">
-        <div id="tmdb-genre-select" class="genre-select custom-select-trigger" data-value="">All Genres</div>
+        <button type="button" id="tmdb-genre-select" class="genre-select custom-select-trigger" data-param="genre" data-value="" data-default="Genres" aria-label="Genre" aria-expanded="false">Genres</button>
         <div class="custom-options">
-          <div class="custom-option" data-value="" data-for="all">All Genres</div>
-          <div class="custom-option" data-value="28" data-for="movie">Action</div>
-          <div class="custom-option" data-value="12" data-for="movie">Adventure</div>
-          <div class="custom-option" data-value="16" data-for="movie">Animation</div>
-          <div class="custom-option" data-value="35" data-for="movie">Comedy</div>
-          <div class="custom-option" data-value="80" data-for="movie">Crime</div>
-          <div class="custom-option" data-value="99" data-for="movie">Documentary</div>
-          <div class="custom-option" data-value="18" data-for="movie">Drama</div>
-          <div class="custom-option" data-value="10751" data-for="movie">Family</div>
-          <div class="custom-option" data-value="14" data-for="movie">Fantasy</div>
-          <div class="custom-option" data-value="36" data-for="movie">History</div>
-          <div class="custom-option" data-value="27" data-for="movie">Horror</div>
-          <div class="custom-option" data-value="10402" data-for="movie">Music</div>
-          <div class="custom-option" data-value="9648" data-for="movie">Mystery</div>
-          <div class="custom-option" data-value="10749" data-for="movie">Romance</div>
-          <div class="custom-option" data-value="878" data-for="movie">Science Fiction</div>
-          <div class="custom-option" data-value="53" data-for="movie">Thriller</div>
-          <div class="custom-option" data-value="10752" data-for="movie">War</div>
-          <div class="custom-option" data-value="37" data-for="movie">Western</div>
-          <div class="custom-option" data-value="10759" data-for="tv">Action & Adventure</div>
-          <div class="custom-option" data-value="16" data-for="tv">Animation</div>
-          <div class="custom-option" data-value="35" data-for="tv">Comedy</div>
-          <div class="custom-option" data-value="80" data-for="tv">Crime</div>
-          <div class="custom-option" data-value="99" data-for="tv">Documentary</div>
-          <div class="custom-option" data-value="18" data-for="tv">Drama</div>
-          <div class="custom-option" data-value="10751" data-for="tv">Family</div>
-          <div class="custom-option" data-value="10762" data-for="tv">Kids</div>
-          <div class="custom-option" data-value="9648" data-for="tv">Mystery</div>
-          <div class="custom-option" data-value="10763" data-for="tv">News</div>
-          <div class="custom-option" data-value="10764" data-for="tv">Reality</div>
-          <div class="custom-option" data-value="10765" data-for="tv">Sci-Fi & Fantasy</div>
-          <div class="custom-option" data-value="10766" data-for="tv">Soap</div>
-          <div class="custom-option" data-value="10767" data-for="tv">Talk</div>
-          <div class="custom-option" data-value="10768" data-for="tv">War & Politics</div>
-          <div class="custom-option" data-value="37" data-for="tv">Western</div>
+          <button type="button" class="custom-option" data-value="" data-for="all">Genres</button>
+          <button type="button" class="custom-option" data-value="28" data-for="movie">Action</button>
+          <button type="button" class="custom-option" data-value="12" data-for="movie">Adventure</button>
+          <button type="button" class="custom-option" data-value="16" data-for="movie">Animation</button>
+          <button type="button" class="custom-option" data-value="35" data-for="movie">Comedy</button>
+          <button type="button" class="custom-option" data-value="80" data-for="movie">Crime</button>
+          <button type="button" class="custom-option" data-value="99" data-for="movie">Documentary</button>
+          <button type="button" class="custom-option" data-value="18" data-for="movie">Drama</button>
+          <button type="button" class="custom-option" data-value="10751" data-for="movie">Family</button>
+          <button type="button" class="custom-option" data-value="14" data-for="movie">Fantasy</button>
+          <button type="button" class="custom-option" data-value="36" data-for="movie">History</button>
+          <button type="button" class="custom-option" data-value="27" data-for="movie">Horror</button>
+          <button type="button" class="custom-option" data-value="10402" data-for="movie">Music</button>
+          <button type="button" class="custom-option" data-value="9648" data-for="movie">Mystery</button>
+          <button type="button" class="custom-option" data-value="10749" data-for="movie">Romance</button>
+          <button type="button" class="custom-option" data-value="878" data-for="movie">Science Fiction</button>
+          <button type="button" class="custom-option" data-value="53" data-for="movie">Thriller</button>
+          <button type="button" class="custom-option" data-value="10752" data-for="movie">War</button>
+          <button type="button" class="custom-option" data-value="37" data-for="movie">Western</button>
+          <button type="button" class="custom-option" data-value="10759" data-for="tv">Action & Adventure</button>
+          <button type="button" class="custom-option" data-value="16" data-for="tv">Animation</button>
+          <button type="button" class="custom-option" data-value="35" data-for="tv">Comedy</button>
+          <button type="button" class="custom-option" data-value="80" data-for="tv">Crime</button>
+          <button type="button" class="custom-option" data-value="99" data-for="tv">Documentary</button>
+          <button type="button" class="custom-option" data-value="18" data-for="tv">Drama</button>
+          <button type="button" class="custom-option" data-value="10751" data-for="tv">Family</button>
+          <button type="button" class="custom-option" data-value="10762" data-for="tv">Kids</button>
+          <button type="button" class="custom-option" data-value="9648" data-for="tv">Mystery</button>
+          <button type="button" class="custom-option" data-value="10763" data-for="tv">News</button>
+          <button type="button" class="custom-option" data-value="10764" data-for="tv">Reality</button>
+          <button type="button" class="custom-option" data-value="10765" data-for="tv">Sci-Fi & Fantasy</button>
+          <button type="button" class="custom-option" data-value="10766" data-for="tv">Soap</button>
+          <button type="button" class="custom-option" data-value="10767" data-for="tv">Talk</button>
+          <button type="button" class="custom-option" data-value="10768" data-for="tv">War & Politics</button>
+          <button type="button" class="custom-option" data-value="37" data-for="tv">Western</button>
         </div>
       </div>
       
-      <div class="filter-group" style="display:none;">
-        <h3>Year</h3>
-        <input type="text" id="tmdb-year-input" placeholder="Year" inputmode="numeric" pattern="[0-9]*" maxlength="4">
+      <div class="filter-group year-filter" style="display:none;">
+        <h3>Release Year</h3>
+        <input type="text" id="tmdb-year-input" aria-label="Release Year" placeholder="Year" inputmode="numeric" pattern="[0-9]*" maxlength="4">
       </div>
     </div>
 
     <!-- Anime/Manga Filters -->
     <div id="anilist-filters" class="filter-section" style="display:none;">
-      <h3>Sort</h3>
+      <h3>Sort By</h3>
       <div class="sort-filter filter-group">
         <button class="filter-btn sort-btn active" data-sort="TRENDING_DESC">Trending</button>
         <button class="filter-btn sort-btn" data-sort="POPULARITY_DESC">Popular</button>
       </div>
       
-      <h3>Genre</h3>
+      <h3>Filter By</h3>
       <div class="custom-select-wrapper">
-        <div id="anilist-genre-select" class="genre-select custom-select-trigger" data-value="">All Genres</div>
+        <button type="button" id="anilist-genre-select" class="genre-select custom-select-trigger" data-param="genre" data-value="" data-default="Genres" aria-label="Genre" aria-expanded="false">Genres</button>
         <div class="custom-options">
-          <div class="custom-option" data-value="">All Genres</div>
-          <div class="custom-option" data-value="Action">Action</div>
-          <div class="custom-option" data-value="Adventure">Adventure</div>
-          <div class="custom-option" data-value="Comedy">Comedy</div>
-          <div class="custom-option" data-value="Drama">Drama</div>
-          <div class="custom-option" data-value="Fantasy">Fantasy</div>
-          <div class="custom-option" data-value="Horror">Horror</div>
-          <div class="custom-option" data-value="Mahou Shoujo">Mahou Shoujo</div>
-          <div class="custom-option" data-value="Mecha">Mecha</div>
-          <div class="custom-option" data-value="Music">Music</div>
-          <div class="custom-option" data-value="Mystery">Mystery</div>
-          <div class="custom-option" data-value="Psychological">Psychological</div>
-          <div class="custom-option" data-value="Romance">Romance</div>
-          <div class="custom-option" data-value="Sci-Fi">Sci-Fi</div>
-          <div class="custom-option" data-value="Slice of Life">Slice of Life</div>
-          <div class="custom-option" data-value="Sports">Sports</div>
-          <div class="custom-option" data-value="Supernatural">Supernatural</div>
-          <div class="custom-option" data-value="Thriller">Thriller</div>
+          <button type="button" class="custom-option" data-value="">Genres</button>
+          <button type="button" class="custom-option" data-value="Action">Action</button>
+          <button type="button" class="custom-option" data-value="Adventure">Adventure</button>
+          <button type="button" class="custom-option" data-value="Comedy">Comedy</button>
+          <button type="button" class="custom-option" data-value="Drama">Drama</button>
+          <button type="button" class="custom-option" data-value="Fantasy">Fantasy</button>
+          <button type="button" class="custom-option" data-value="Horror">Horror</button>
+          <button type="button" class="custom-option" data-value="Mahou Shoujo">Mahou Shoujo</button>
+          <button type="button" class="custom-option" data-value="Mecha">Mecha</button>
+          <button type="button" class="custom-option" data-value="Music">Music</button>
+          <button type="button" class="custom-option" data-value="Mystery">Mystery</button>
+          <button type="button" class="custom-option" data-value="Psychological">Psychological</button>
+          <button type="button" class="custom-option" data-value="Romance">Romance</button>
+          <button type="button" class="custom-option" data-value="Sci-Fi">Sci-Fi</button>
+          <button type="button" class="custom-option" data-value="Slice of Life">Slice of Life</button>
+          <button type="button" class="custom-option" data-value="Sports">Sports</button>
+          <button type="button" class="custom-option" data-value="Supernatural">Supernatural</button>
+          <button type="button" class="custom-option" data-value="Thriller">Thriller</button>
         </div>
       </div>
       
       <div id="anime-season-group">
-        <h3>Season</h3>
-        <div class="season-filter filter-group">
-          <button class="filter-btn season-btn" data-season="WINTER">Winter</button>
-          <button class="filter-btn season-btn" data-season="SPRING">Spring</button>
-          <button class="filter-btn season-btn" data-season="SUMMER">Summer</button>
-          <button class="filter-btn season-btn" data-season="FALL">Fall</button>
+        <div class="custom-select-wrapper">
+          <button type="button" id="anilist-season-select" class="custom-select-trigger" data-param="season" data-value="" data-default="Season" aria-label="Season" aria-expanded="false">Season</button>
+          <div class="custom-options">
+            <button type="button" class="custom-option" data-value="">Season</button>
+            <button type="button" class="custom-option" data-value="WINTER">Winter</button>
+            <button type="button" class="custom-option" data-value="SPRING">Spring</button>
+            <button type="button" class="custom-option" data-value="SUMMER">Summer</button>
+            <button type="button" class="custom-option" data-value="FALL">Fall</button>
+          </div>
         </div>
       </div>
       
-      <h3>Year</h3>
-      <input type="text" id="season-year-input" placeholder="Year" inputmode="numeric" pattern="[0-9]*" maxlength="4">
-      
-      <h3>Status</h3>
-      <div class="status-filter filter-group">
-        <button class="filter-btn status-btn" data-status="RELEASING">Releasing</button>
-        <button class="filter-btn status-btn" data-status="FINISHED">Finished</button>
-        <button class="filter-btn status-btn" data-status="NOT_YET_RELEASED">Upcoming</button>
+      <div class="custom-select-wrapper">
+        <button type="button" id="anilist-status-select" class="custom-select-trigger" data-param="status" data-value="" data-default="Status" aria-label="Status" aria-expanded="false">Status</button>
+        <div class="custom-options">
+          <button type="button" class="custom-option" data-value="">Status</button>
+          <button type="button" class="custom-option" data-value="RELEASING">Releasing</button>
+          <button type="button" class="custom-option" data-value="FINISHED">Finished</button>
+          <button type="button" class="custom-option" data-value="NOT_YET_RELEASED">Upcoming</button>
+        </div>
+      </div>
+
+      <div class="filter-group year-filter" id="anilist-year-group">
+        <h3>Release Year</h3>
+        <input type="text" id="season-year-input" aria-label="Release Year" placeholder="Year" inputmode="numeric" pattern="[0-9]*" maxlength="4">
       </div>
     </div>
 
     <!-- Game Filters -->
     <div id="igdb-filters" class="filter-section" style="display:none;">
-      <h3>Sort</h3>
+      <h3>Sort By</h3>
       <div class="sort-filter filter-group">
         <button class="filter-btn sort-btn active" data-sort="rating">Top Rated</button>
         <button class="filter-btn sort-btn" data-sort="hypes">Upcoming</button>
       </div>
       
-      <h3>Genre</h3>
+      <h3>Filter By</h3>
       <div class="custom-select-wrapper">
-        <div id="igdb-genre-select" class="genre-select custom-select-trigger" data-value="">All Genres</div>
+        <button type="button" id="igdb-genre-select" class="genre-select custom-select-trigger" data-param="genre" data-value="" data-default="Genres" aria-label="Genre" aria-expanded="false">Genres</button>
         <div class="custom-options">
-          <div class="custom-option" data-value="">All Genres</div>
-          <div class="custom-option" data-value="4">Fighting</div>
-          <div class="custom-option" data-value="5">Shooter</div>
-          <div class="custom-option" data-value="7">Music</div>
-          <div class="custom-option" data-value="8">Platform</div>
-          <div class="custom-option" data-value="9">Puzzle</div>
-          <div class="custom-option" data-value="10">Racing</div>
-          <div class="custom-option" data-value="11">Real Time Strategy (RTS)</div>
-          <div class="custom-option" data-value="12">Role-playing (RPG)</div>
-          <div class="custom-option" data-value="13">Simulator</div>
-          <div class="custom-option" data-value="14">Sport</div>
-          <div class="custom-option" data-value="15">Strategy</div>
-          <div class="custom-option" data-value="16">Turn-based strategy (TBS)</div>
-          <div class="custom-option" data-value="24">Tactical</div>
-          <div class="custom-option" data-value="25">Hack and slash/Beat 'em up</div>
-          <div class="custom-option" data-value="26">Quiz/Trivia</div>
-          <div class="custom-option" data-value="30">Pinball</div>
-          <div class="custom-option" data-value="31">Adventure</div>
-          <div class="custom-option" data-value="32">Indie</div>
-          <div class="custom-option" data-value="33">Arcade</div>
-          <div class="custom-option" data-value="34">Visual Novel</div>
+          <button type="button" class="custom-option" data-value="">Genres</button>
+          <button type="button" class="custom-option" data-value="4">Fighting</button>
+          <button type="button" class="custom-option" data-value="5">Shooter</button>
+          <button type="button" class="custom-option" data-value="7">Music</button>
+          <button type="button" class="custom-option" data-value="8">Platform</button>
+          <button type="button" class="custom-option" data-value="9">Puzzle</button>
+          <button type="button" class="custom-option" data-value="10">Racing</button>
+          <button type="button" class="custom-option" data-value="11">Real Time Strategy (RTS)</button>
+          <button type="button" class="custom-option" data-value="12">Role-playing (RPG)</button>
+          <button type="button" class="custom-option" data-value="13">Simulator</button>
+          <button type="button" class="custom-option" data-value="14">Sport</button>
+          <button type="button" class="custom-option" data-value="15">Strategy</button>
+          <button type="button" class="custom-option" data-value="16">Turn-based strategy (TBS)</button>
+          <button type="button" class="custom-option" data-value="24">Tactical</button>
+          <button type="button" class="custom-option" data-value="25">Hack and slash/Beat 'em up</button>
+          <button type="button" class="custom-option" data-value="26">Quiz/Trivia</button>
+          <button type="button" class="custom-option" data-value="30">Pinball</button>
+          <button type="button" class="custom-option" data-value="31">Adventure</button>
+          <button type="button" class="custom-option" data-value="32">Indie</button>
+          <button type="button" class="custom-option" data-value="33">Arcade</button>
+          <button type="button" class="custom-option" data-value="34">Visual Novel</button>
         </div>
       </div>
       
-      <div class="filter-group" id="igdb-year-group">
-        <h3>Year</h3>
-        <input type="text" id="igdb-year-input" placeholder="Year" inputmode="numeric" pattern="[0-9]*" maxlength="4">
+      <button type="button" id="igdb-free-to-play" class="filter-toggle" role="checkbox" aria-checked="false">Free to Play</button>
+
+      <div class="filter-group year-filter" id="igdb-year-group">
+        <h3>Release Year</h3>
+        <input type="text" id="igdb-year-input" aria-label="Release Year" placeholder="Year" inputmode="numeric" pattern="[0-9]*" maxlength="4">
       </div>
     </div>
 
     <!-- Book Filters -->
     <div id="openlib-filters" class="filter-section" style="display:none;">
-      <h3>Sort</h3>
+      <h3>Sort By</h3>
       <div class="sort-filter filter-group">
         <button class="filter-btn sort-btn active" data-sort="trending">Trending</button>
         <button class="filter-btn sort-btn" data-sort="popular">Popular</button>
       </div>
       
-      <h3>Genre</h3>
+      <h3>Filter By</h3>
       <div class="custom-select-wrapper">
-        <div id="openlib-genre-select" class="genre-select custom-select-trigger" data-value="">All Genres</div>
+        <button type="button" id="openlib-genre-select" class="genre-select custom-select-trigger" data-param="genre" data-value="" data-default="Genres" aria-label="Genre" aria-expanded="false">Genres</button>
         <div class="custom-options">
-          <div class="custom-option" data-value="">All Genres</div>
-          <div class="custom-option" data-value="action_and_adventure">Action & Adventure</div>
-          <div class="custom-option" data-value="biography">Biography</div>
-          <div class="custom-option" data-value="classic_literature">Classics</div>
-          <div class="custom-option" data-value="fantasy">Fantasy</div>
-          <div class="custom-option" data-value="historical_fiction">Historical Fiction</div>
-          <div class="custom-option" data-value="history">History</div>
-          <div class="custom-option" data-value="horror">Horror</div>
-          <div class="custom-option" data-value="mystery_and_detective_stories">Mystery</div>
-          <div class="custom-option" data-value="nonfiction">Non-fiction</div>
-          <div class="custom-option" data-value="poetry">Poetry</div>
-          <div class="custom-option" data-value="romance">Romance</div>
-          <div class="custom-option" data-value="science_fiction">Science Fiction</div>
-          <div class="custom-option" data-value="thriller">Thriller</div>
-          <div class="custom-option" data-value="young_adult_fiction">Young Adult</div>
+          <button type="button" class="custom-option" data-value="">Genres</button>
+          <button type="button" class="custom-option" data-value="action_and_adventure">Action & Adventure</button>
+          <button type="button" class="custom-option" data-value="biography">Biography</button>
+          <button type="button" class="custom-option" data-value="classic_literature">Classics</button>
+          <button type="button" class="custom-option" data-value="fantasy">Fantasy</button>
+          <button type="button" class="custom-option" data-value="historical_fiction">Historical Fiction</button>
+          <button type="button" class="custom-option" data-value="history">History</button>
+          <button type="button" class="custom-option" data-value="horror">Horror</button>
+          <button type="button" class="custom-option" data-value="mystery_and_detective_stories">Mystery</button>
+          <button type="button" class="custom-option" data-value="nonfiction">Non-fiction</button>
+          <button type="button" class="custom-option" data-value="poetry">Poetry</button>
+          <button type="button" class="custom-option" data-value="romance">Romance</button>
+          <button type="button" class="custom-option" data-value="science_fiction">Science Fiction</button>
+          <button type="button" class="custom-option" data-value="thriller">Thriller</button>
+          <button type="button" class="custom-option" data-value="young_adult_fiction">Young Adult</button>
         </div>
+      </div>
+      <div class="filter-group year-filter">
+        <h3>Release Year</h3>
+        <input type="text" id="openlib-year-input" aria-label="Release Year" placeholder="Year" inputmode="numeric" pattern="[0-9]*" maxlength="4">
       </div>
     </div>
 
     <!-- Music Filters -->
     <div id="musicbrainz-filters" class="filter-section" style="display:none;">
-      <h3>Sort</h3>
+      <h3>Sort By</h3>
       <div class="sort-filter filter-group">
         <button class="filter-btn sort-btn active" data-sort="trending">Trending</button>
         <button class="filter-btn sort-btn" data-sort="popular">Popular</button>
       </div>
       
-      <h3>Genre</h3>
+      <h3>Filter By</h3>
       <div class="custom-select-wrapper">
-        <div id="musicbrainz-genre-select" class="genre-select custom-select-trigger" data-value="">All Genres</div>
+        <button type="button" id="musicbrainz-genre-select" class="genre-select custom-select-trigger" data-param="genre" data-value="" data-default="Genres" aria-label="Genre" aria-expanded="false">Genres</button>
         <div class="custom-options">
-          <div class="custom-option" data-value="">All Genres</div>
-          <div class="custom-option" data-value="Alternative">Alternative</div>
-          <div class="custom-option" data-value="Blues">Blues</div>
-          <div class="custom-option" data-value="Classical">Classical</div>
-          <div class="custom-option" data-value="Country">Country</div>
-          <div class="custom-option" data-value="Electronic">Electronic</div>
-          <div class="custom-option" data-value="Folk">Folk</div>
-          <div class="custom-option" data-value="Hip Hop">Hip Hop</div>
-          <div class="custom-option" data-value="Indie">Indie</div>
-          <div class="custom-option" data-value="Jazz">Jazz</div>
-          <div class="custom-option" data-value="Metal">Metal</div>
-          <div class="custom-option" data-value="Pop">Pop</div>
-          <div class="custom-option" data-value="Punk">Punk</div>
-          <div class="custom-option" data-value="R&B">R&B</div>
-          <div class="custom-option" data-value="Reggae">Reggae</div>
-          <div class="custom-option" data-value="Rock">Rock</div>
-          <div class="custom-option" data-value="Soul">Soul</div>
+          <button type="button" class="custom-option" data-value="">Genres</button>
+          <button type="button" class="custom-option" data-value="Alternative">Alternative</button>
+          <button type="button" class="custom-option" data-value="Blues">Blues</button>
+          <button type="button" class="custom-option" data-value="Classical">Classical</button>
+          <button type="button" class="custom-option" data-value="Country">Country</button>
+          <button type="button" class="custom-option" data-value="Electronic">Electronic</button>
+          <button type="button" class="custom-option" data-value="Folk">Folk</button>
+          <button type="button" class="custom-option" data-value="Hip Hop">Hip Hop</button>
+          <button type="button" class="custom-option" data-value="Indie">Indie</button>
+          <button type="button" class="custom-option" data-value="Jazz">Jazz</button>
+          <button type="button" class="custom-option" data-value="Metal">Metal</button>
+          <button type="button" class="custom-option" data-value="Pop">Pop</button>
+          <button type="button" class="custom-option" data-value="Punk">Punk</button>
+          <button type="button" class="custom-option" data-value="R&B">R&B</button>
+          <button type="button" class="custom-option" data-value="Reggae">Reggae</button>
+          <button type="button" class="custom-option" data-value="Rock">Rock</button>
+          <button type="button" class="custom-option" data-value="Soul">Soul</button>
         </div>
       </div>
       
-      <div class="filter-group no-gap">
-        <h3>Year</h3>
-        <input type="text" id="musicbrainz-year-input" placeholder="Year" inputmode="numeric" pattern="[0-9]*" maxlength="4">
+      <div class="filter-group year-filter">
+        <h3>Release Year</h3>
+        <input type="text" id="musicbrainz-year-input" aria-label="Release Year" placeholder="Year" inputmode="numeric" pattern="[0-9]*" maxlength="4">
       </div>
     </div>
   </aside>

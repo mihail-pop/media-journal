@@ -4,7 +4,6 @@ document.addEventListener("DOMContentLoaded", function () {
   const openBtn = document.getElementById("open-create-modal-btn");
   const closeBtn = document.getElementById("create-close-btn");
   const form = document.getElementById("create-form");
-  let scrollY = 0;
 
   if (!openBtn || !modal) return;
 
@@ -18,7 +17,6 @@ document.addEventListener("DOMContentLoaded", function () {
     music:["Alternative", "Blues", "Classical", "Country", "Electronic", "Folk", "Hip Hop", "Indie", "Jazz", "Metal", "Pop", "Punk", "R&B", "Reggae", "Rock", "Soul"]
   };
 
-  let createCurrentGenres =[];
   let createCurrentCreators =[];
   let createCreatorPlaceholder = "Add creator...";
 
@@ -82,180 +80,197 @@ document.addEventListener("DOMContentLoaded", function () {
           });
       }
 
-  const genreWrapper = document.getElementById("create-genre-wrapper");
-  const genreSearch = document.getElementById("create-genre-search");
-  const genreOptions = document.getElementById("create-genre-options");
-  const genreTags = document.getElementById("create-genre-tags");
-  const genreIndicator = document.getElementById("create-genre-indicator");
+  function closeCreateDropdowns(except = null) {
+    modal.querySelectorAll('.custom-select-wrapper, .c-status-select-wrapper').forEach(wrapper => {
+      if (wrapper === except) return;
+      wrapper.classList.remove('open', 'c-open');
+      wrapper.querySelector('.custom-options, .c-status-options')?.classList.remove('open', 'c-open');
+      wrapper.querySelectorAll('[aria-expanded]').forEach(element => element.setAttribute('aria-expanded', 'false'));
+    });
+  }
+
+  // Genres and Collections share the same selection, filtering and clear behavior.
+  function setupCreateMultiSelect(name, placeholder) {
+    const wrapper = document.getElementById(`create-${name}-wrapper`);
+    const trigger = document.getElementById(`create-${name}-select`);
+    const search = document.getElementById(`create-${name}-search`);
+    const options = document.getElementById(`create-${name}-options`);
+    const tags = document.getElementById(`create-${name}-tags`);
+    const indicator = document.getElementById(`create-${name}-indicator`);
+    let choices = new Map();
+    let selected = [];
+    options.setAttribute('aria-multiselectable', 'true');
+
+    function setOpen(open) {
+      if (open) closeCreateDropdowns(wrapper);
+      wrapper.classList.toggle('open', open);
+      options.classList.toggle('open', open);
+      trigger.setAttribute('aria-expanded', String(open));
+      search.setAttribute('aria-expanded', String(open));
+    }
+
+    function filter(query) {
+      const normalized = query.toLowerCase();
+      options.querySelectorAll('.genre-option').forEach(option => {
+        option.classList.toggle('hidden', !choices.get(option.dataset.value).toLowerCase().includes(normalized));
+      });
+    }
+
+    function updateUI() {
+      tags.replaceChildren();
+      selected.forEach(value => {
+        const tag = document.createElement('div');
+        tag.className = 'genre-tag';
+        const label = document.createElement('span');
+        label.textContent = choices.get(value);
+        const remove = document.createElement('span');
+        remove.className = 'remove-tag';
+        remove.textContent = '✕';
+        remove.addEventListener('click', event => {
+          event.stopPropagation();
+          toggle(value);
+        });
+        tag.append(label, remove);
+        tags.appendChild(tag);
+      });
+      options.querySelectorAll('.genre-option').forEach(option => {
+        const active = selected.includes(option.dataset.value);
+        option.classList.toggle('selected', active);
+        option.setAttribute('aria-selected', String(active));
+      });
+      search.placeholder = selected.length ? '' : placeholder;
+      wrapper.classList.toggle('has-items', selected.length > 0);
+    }
+
+    function toggle(value) {
+      selected = selected.includes(value) ? selected.filter(item => item !== value) : [...selected, value];
+      updateUI();
+    }
+
+    wrapper.addEventListener('click', () => {
+      if (window.getSelection().toString().length > 0) return;
+      setOpen(true);
+      search.focus();
+    });
+    wrapper.addEventListener('keydown', event => {
+      if (event.key === 'Escape') {
+        event.stopPropagation();
+        setOpen(false);
+      } else if (event.target === trigger && ['Enter', ' '].includes(event.key)) {
+        event.preventDefault();
+        setOpen(true);
+        search.focus();
+      }
+    });
+    search.addEventListener('focus', () => setOpen(true));
+    search.addEventListener('input', () => filter(search.value));
+    search.addEventListener('keydown', event => {
+      if (event.key === 'Enter') event.preventDefault();
+      if (event.key === 'Backspace' && search.value === '' && selected.length) {
+        toggle(selected[selected.length - 1]);
+      }
+    });
+    indicator.addEventListener('click', event => {
+      event.stopPropagation();
+      if (selected.length) {
+        selected = [];
+        search.value = '';
+        filter('');
+        updateUI();
+        setOpen(false);
+      } else {
+        setOpen(!wrapper.classList.contains('open'));
+        if (wrapper.classList.contains('open')) search.focus();
+      }
+    });
+    document.addEventListener('click', event => {
+      if (!wrapper.contains(event.target)) setOpen(false);
+    });
+
+    return {
+      values: () => [...selected],
+      reset() {
+        selected = [];
+        search.value = '';
+        filter('');
+        updateUI();
+        setOpen(false);
+      },
+      setOptions(items) {
+        choices = new Map(items.map(item => [String(item.value), item.label]));
+        options.replaceChildren();
+        choices.forEach((label, value) => {
+          const option = document.createElement('div');
+          option.className = 'custom-option genre-option';
+          option.dataset.value = value;
+          option.setAttribute('role', 'option');
+          const title = document.createElement('span');
+          title.textContent = label;
+          const check = document.createElement('span');
+          check.className = 'genre-check';
+          check.textContent = '✕';
+          option.append(title, check);
+          option.addEventListener('click', event => {
+            event.stopPropagation();
+            toggle(value);
+            search.value = '';
+            filter('');
+          });
+          options.appendChild(option);
+        });
+        updateUI();
+        filter(search.value);
+      },
+      setMessage(message) {
+        const element = document.createElement('div');
+        element.className = 'custom-option';
+        element.textContent = message;
+        options.replaceChildren(element);
+      },
+    };
+  }
+
+  const createGenreSelect = setupCreateMultiSelect('genre', 'Genres');
+  const createCollectionSelect = setupCreateMultiSelect('collection', 'Collections');
+  let collectionLoadGeneration = 0;
 
   function initCreateGenres(mediaType) {
-    createCurrentGenres =[];
-    if (genreOptions) {
-      genreOptions.innerHTML = "";
-      updateCreateGenreUI();
+    createGenreSelect.reset();
+    createGenreSelect.setOptions((mediaGenres[mediaType] || []).map(genre => ({ value: genre, label: genre })));
+  }
 
-      const availableGenres = mediaGenres[mediaType] ||[];
-      availableGenres.forEach(genre => {
-        const option = document.createElement('div');
-        option.className = 'custom-option genre-option';
-        option.dataset.value = genre;
-        option.innerHTML = `<span>${genre}</span><span class="genre-check">✕</span>`;
-        
-        option.addEventListener('click', (e) => {
-          e.stopPropagation();
-          toggleCreateGenre(genre);
-          if (genreSearch) {
-            genreSearch.value = '';
-            filterCreateGenreOptions('');
-          }
-        });
-        genreOptions.appendChild(option);
-      });
+  async function initCreateCollections() {
+    const generation = ++collectionLoadGeneration;
+    createCollectionSelect.reset();
+    createCollectionSelect.setOptions([]);
+    try {
+      const response = await fetch('/api/collections/?options=true');
+      if (!response.ok) throw new Error('Unable to load collections');
+      const data = await response.json();
+      if (generation !== collectionLoadGeneration) return;
+      createCollectionSelect.setOptions(data.items.map(collection => ({ value: collection.id, label: collection.title })));
+      if (!data.items.length) createCollectionSelect.setMessage('No collections yet.');
+    } catch (error) {
+      if (generation !== collectionLoadGeneration) return;
+      console.error(error);
+      createCollectionSelect.setMessage('Unable to load collections. Reopen the modal to try again.');
     }
   }
 
-  function toggleCreateGenre(genre) {
-    if (createCurrentGenres.includes(genre)) {
-      createCurrentGenres = createCurrentGenres.filter(g => g !== genre);
-    } else {
-      createCurrentGenres.push(genre);
+  const statusWrapper = document.getElementById('create-status-wrapper');
+  statusWrapper.addEventListener('click', event => {
+    event.stopPropagation();
+    closeCreateDropdowns(statusWrapper);
+    const open = !statusWrapper.classList.contains('c-open');
+    statusWrapper.classList.toggle('c-open', open);
+    document.getElementById('create-status-options').classList.toggle('c-open', open);
+  });
+  document.addEventListener('click', event => {
+    if (!statusWrapper.contains(event.target)) {
+      statusWrapper.classList.remove('c-open');
+      document.getElementById('create-status-options').classList.remove('c-open');
     }
-    updateCreateGenreUI();
-  }
-
-  function updateCreateGenreUI() {
-    if (!genreTags) return;
-    genreTags.innerHTML = '';
-    createCurrentGenres.forEach(genre => {
-      const tag = document.createElement('div');
-      tag.className = 'genre-tag';
-      tag.innerHTML = `<span>${genre}</span><span class="remove-tag">✕</span>`;
-      tag.querySelector('.remove-tag').addEventListener('click', (e) => {
-        e.stopPropagation();
-        toggleCreateGenre(genre);
-      });
-      genreTags.appendChild(tag);
-    });
-
-    if (genreOptions) {
-      const options = genreOptions.querySelectorAll('.genre-option');
-      options.forEach(opt => {
-        if (createCurrentGenres.includes(opt.dataset.value)) {
-          opt.classList.add('selected');
-        } else {
-          opt.classList.remove('selected');
-        }
-      });
-    }
-
-    if (genreSearch && genreWrapper) {
-      if (createCurrentGenres.length > 0) {
-        genreSearch.placeholder = '';
-        genreWrapper.classList.add('has-items');
-      } else {
-        genreSearch.placeholder = 'Genres';
-        genreWrapper.classList.remove('has-items');
-      }
-    }
-  }
-
-  if (genreWrapper) {
-    genreWrapper.addEventListener('click', () => {
-      // If the user highlighted text, don't trigger the click behavior
-      if (window.getSelection().toString().length > 0) return;
-
-      // Close Status dropdown
-      const statusWrapper = document.getElementById("create-status-wrapper");
-      const statusOptions = document.getElementById("create-status-options");
-      if (statusWrapper) statusWrapper.classList.remove('c-open');
-      if (statusOptions) statusOptions.classList.remove('c-open');
-
-      if (genreOptions) genreOptions.classList.add('open');
-      genreWrapper.classList.add('open');
-      if (genreSearch) genreSearch.focus();
-    });
-
-    document.addEventListener('click', (e) => {
-      if (!genreWrapper.contains(e.target)) {
-        if (genreOptions) genreOptions.classList.remove('open');
-        genreWrapper.classList.remove('open');
-      }
-      const statusWrapper = document.getElementById("create-status-wrapper");
-      if (statusWrapper && !statusWrapper.contains(e.target)) {
-        const opts = document.getElementById('create-status-options');
-        if (opts) opts.classList.remove('c-open');
-        statusWrapper.classList.remove('c-open');
-      }
-    });
-
-    const statusWrapper = document.getElementById("create-status-wrapper");
-    if (statusWrapper) {
-      statusWrapper.addEventListener('click', (e) => {
-        e.stopPropagation();
-        
-        // Close Genre dropdown
-        const genreOptions = document.getElementById("create-genre-options");
-        const genreWrapper = document.getElementById("create-genre-wrapper");
-        if (genreOptions) genreOptions.classList.remove('open');
-        if (genreWrapper) genreWrapper.classList.remove('open');
-
-        const opts = document.getElementById('create-status-options');
-        if (opts) {
-          opts.classList.toggle('c-open');
-          statusWrapper.classList.toggle('c-open');
-        }
-      });
-    }
-
-    if (genreIndicator) {
-      genreIndicator.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (createCurrentGenres.length > 0) {
-          createCurrentGenres =[];
-          updateCreateGenreUI();
-          if (genreOptions) genreOptions.classList.remove('open');
-          genreWrapper.classList.remove('open');
-        } else {
-          if (genreOptions && genreOptions.classList.contains('open')) {
-            genreOptions.classList.remove('open');
-            genreWrapper.classList.remove('open');
-          } else {
-            if (genreOptions) genreOptions.classList.add('open');
-            genreWrapper.classList.add('open');
-            if (genreSearch) genreSearch.focus();
-          }
-        }
-      });
-    }
-
-    if (genreSearch) {
-      genreSearch.addEventListener('input', (e) => {
-        filterCreateGenreOptions(e.target.value);
-      });
-
-      genreSearch.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-        }
-        if (e.key === 'Backspace' && e.target.value === '' && createCurrentGenres.length > 0) {
-          toggleCreateGenre(createCurrentGenres[createCurrentGenres.length - 1]);
-        }
-      });
-    }
-  }
-
-  function filterCreateGenreOptions(query) {
-    if (!genreOptions) return;
-    const q = query.toLowerCase();
-    const options = genreOptions.querySelectorAll('.genre-option');
-    options.forEach(opt => {
-      if (opt.dataset.value.toLowerCase().includes(q)) {
-        opt.classList.remove('hidden');
-      } else {
-        opt.classList.add('hidden');
-      }
-    });
-  }
+  });
 
   const creatorTagsContainer = document.getElementById("create-creator-tags");
   const creatorInput = document.getElementById("create-creator-input");
@@ -318,12 +333,10 @@ document.addEventListener("DOMContentLoaded", function () {
     const mainGroup = document.getElementById("create_progress_main_group");
     const secondaryGroup = document.getElementById("create_progress_secondary_group");
     const lengthGroup = document.getElementById("create_length_group");
-    const progressRow = document.getElementById("create-progress-row");
     
     if (mainGroup) mainGroup.style.display = "none";
     if (secondaryGroup) secondaryGroup.style.display = "none";
     if (lengthGroup) lengthGroup.style.display = "none";
-    if (progressRow) progressRow.style.display = "none";
 
     const mainLabel = document.getElementById("create_progress_main_label");
     const secondaryLabel = document.getElementById("create_progress_secondary_label");
@@ -331,29 +344,23 @@ document.addEventListener("DOMContentLoaded", function () {
     if (mediaType === "tv") {
       if (mainGroup) mainGroup.style.display = "flex";
       if (secondaryGroup) secondaryGroup.style.display = "flex";
-      if (progressRow) progressRow.style.display = "flex";
       if (mainLabel) mainLabel.textContent = "Episode Progress";
       if (secondaryLabel) secondaryLabel.textContent = "Season Progress";
     } else if (mediaType === "movie") {
       if (lengthGroup) lengthGroup.style.display = "flex";
-      if (progressRow) progressRow.style.display = "flex";
     } else if (mediaType === "anime") {
       if (mainGroup) mainGroup.style.display = "flex";
-      if (progressRow) progressRow.style.display = "flex";
       if (mainLabel) mainLabel.textContent = "Episode Progress";
     } else if (mediaType === "game") {
       if (mainGroup) mainGroup.style.display = "flex";
-      if (progressRow) progressRow.style.display = "flex";
       if (mainLabel) mainLabel.textContent = "Hours Played";
     } else if (mediaType === "manga") {
       if (mainGroup) mainGroup.style.display = "flex";
       if (secondaryGroup) secondaryGroup.style.display = "flex";
-      if (progressRow) progressRow.style.display = "flex";
       if (mainLabel) mainLabel.textContent = "Chapter Progress";
       if (secondaryLabel) secondaryLabel.textContent = "Volume Progress";
     } else if (mediaType === "book") {
       if (mainGroup) mainGroup.style.display = "flex";
-      if (progressRow) progressRow.style.display = "flex";
       if (mainLabel) mainLabel.textContent = "Pages Read";
     }
   }
@@ -431,6 +438,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const coverContainer = document.getElementById("create-cover-container");
 
     initCreateGenres(mediaType);
+    initCreateCollections();
     createCurrentCreators =[];
     renderCreatorTags();
 
@@ -463,20 +471,16 @@ document.addEventListener("DOMContentLoaded", function () {
 
     modal.classList.remove("c-modal-hidden");
     overlay.classList.remove("c-modal-hidden");
-    scrollY = window.scrollY;
-    document.body.style.top = `-${scrollY}px`;
-    document.body.classList.add("c-modal-open");
-    document.documentElement.classList.add("c-modal-open");
+    window.modalScrollLock.lock('create-item');
   });
 
   // Close Modal
   function closeModal() {
+    collectionLoadGeneration++;
+    closeCreateDropdowns();
     modal.classList.add("c-modal-hidden");
     overlay.classList.add("c-modal-hidden");
-    document.body.classList.remove("c-modal-open");
-    document.documentElement.classList.remove("c-modal-open");
-    document.body.style.top = "";
-    window.scrollTo(0, scrollY);
+    window.modalScrollLock.unlock('create-item');
   }
   closeBtn.addEventListener("click", closeModal);
   overlay.addEventListener("click", closeModal);
@@ -514,7 +518,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const mediaType = document.body.dataset.mediaType || "movies";
     formData.append("media_type", mediaType);
 
-    formData.append("genres", createCurrentGenres.join(","));
+    formData.append("genres", createGenreSelect.values().join(","));
+    createCollectionSelect.values().forEach(id => formData.append("collections", id));
     formData.append("creators", createCurrentCreators.join(","));
 
     fetch("/create-custom-item/", {

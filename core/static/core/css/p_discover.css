@@ -5,6 +5,7 @@
   --bg-tertiary: #151f2e;
   --bg-quaternary: #32445b;
   --bg-filter: #102031;
+  --filter-selected-bg: #3a4a5d;
 
   --text-primary: #8596a5;
   --text-secondary: #a8b5c4;
@@ -26,6 +27,7 @@
   --bg-tertiary: #F2F2F2;
   --bg-quaternary: #FFFFFF;
   --bg-filter: #F2F2F2;
+  --filter-selected-bg: #d5d5d5;
 
   --text-primary: #0F0F0F;
   --text-secondary: #0F0F0F;
@@ -45,6 +47,7 @@
   --bg-tertiary: #55423d;
   --bg-quaternary: #af7f76;
   --bg-filter: #3b2b27;
+  --filter-selected-bg: #79635b;
 
   --text-primary: #faeee7;
   --text-secondary: #f1dbce;
@@ -56,6 +59,132 @@
   --table-bg: #55423d;
 
   --score-color: #ffd700;
+}
+
+/* Muted forest green, with warm sage text and moss accents. */
+[data-theme="green"] {
+  --bg-primary: #1e2923;
+  --bg-secondary-rgb: 52, 71, 58;
+  --bg-tertiary: #34473a;
+  --bg-quaternary: #4a604c;
+  --bg-filter: #26382c;
+  --filter-selected-bg: #526c4d;
+
+  --text-primary: #e5e8d9;
+  --text-secondary: #d2dcc6;
+  --text-tertiary: #aab99c;
+  --text-light: #e9eddf;
+
+  --border-color: #51694f;
+  --hover-bg: #415a46;
+  --table-bg: #3b5140;
+
+  --score-color: #ffd700;
+}
+
+/* Warm plum, with parchment text and muted brass accents. */
+[data-theme="plum"] {
+  --bg-primary: #29232d;
+  --bg-secondary-rgb: 73, 60, 77;
+  --bg-tertiary: #493c4d;
+  --bg-quaternary: #655068;
+  --bg-filter: #382f3e;
+  --filter-selected-bg: #70566f;
+
+  --text-primary: #eee3da;
+  --text-secondary: #dac9cc;
+  --text-tertiary: #c0a9bb;
+  --text-light: #f0e6df;
+
+  --border-color: #725d74;
+  --hover-bg: #5a485d;
+  --table-bg: #514254;
+
+  --score-color: #ffd700;
+}
+
+/* Warm charcoal, with ivory text and restrained amber accents. */
+[data-theme="charcoal"] {
+  --bg-primary: #252422;
+  --bg-secondary-rgb: 65, 62, 57;
+  --bg-tertiary: #413e39;
+  --bg-quaternary: #5d574d;
+  --bg-filter: #302d29;
+  --filter-selected-bg: #6c5c46;
+
+  --text-primary: #ece6db;
+  --text-secondary: #d2c9bb;
+  --text-tertiary: #b4aa9b;
+  --text-light: #f0eadd;
+
+  --border-color: #6b6153;
+  --hover-bg: #514b41;
+  --table-bg: #48433b;
+
+  --score-color: #ffd700;
+}
+
+/* Muted ocean teal, with warm linen text and sea-glass accents. */
+[data-theme="teal"] {
+  --bg-primary: #203033;
+  --bg-secondary-rgb: 53, 78, 82;
+  --bg-tertiary: #354e52;
+  --bg-quaternary: #4b686b;
+  --bg-filter: #293e42;
+  --filter-selected-bg: #506b65;
+
+  --text-primary: #e6e8dc;
+  --text-secondary: #c8d8ce;
+  --text-tertiary: #aec3b9;
+  --text-light: #eaf0e1;
+
+  --border-color: #547174;
+  --hover-bg: #456568;
+  --table-bg: #3c575a;
+
+  --score-color: #ffd700;
+}
+
+/* Light rose, with warm ivory backgrounds, cocoa text and berry accents. */
+[data-theme="pink"] {
+  --bg-primary: #fff8f6;
+  --bg-secondary-rgb: 247, 227, 230;
+  --bg-tertiary: #f7e3e6;
+  --bg-quaternary: #efd0d8;
+  --bg-filter: #f4e3e5;
+  --filter-selected-bg: #e8b5c7;
+
+  --text-primary: #54363e;
+  --text-secondary: #684851;
+  --text-tertiary: #78535e;
+  --text-light: #54363e;
+
+  --border-color: #cca4b0;
+  --hover-bg: #eed0d8;
+  --table-bg: #f8eaec;
+
+  --score-color: #993852;
+}
+
+/* Cake: creamy ivory, peach layers and red accents. */
+[data-theme="cake"] {
+  --bg-primary: #fff6e9;
+  --bg-secondary-rgb: 246, 223, 202;
+  --bg-tertiary: #f6dfca;
+  --bg-quaternary: #ebc29f;
+  --bg-filter: #f6e4d0;
+  --filter-selected-bg: #ebba90;
+
+  --text-primary: #573326;
+  --text-secondary: #6b4433;
+  --text-tertiary: #7e5140;
+  --text-light: #573326;
+
+  --border-color: #d4a482;
+  --hover-bg: #edc7a7;
+  --table-bg: #f7e5d1;
+
+  --score-color: #9e401c;
 }
 
 html {
@@ -128,6 +257,10 @@ body {
   gap: 0;
 }
 
+.filter-group.year-filter {
+  display: block;
+}
+
 .filter-btn {
   flex: 0 1 auto;
   min-width: 20px;
@@ -151,6 +284,15 @@ body {
   background-color: var(--table-bg);
 }
 
+@media (orientation: landscape) {
+  .type-filter .type-btn,
+  .sort-filter .sort-btn {
+    flex: 1 0 auto;
+    max-width: none;
+    text-align: center;
+  }
+}
+
 #year-input,
 #season-year-input,
 #igdb-year-input,
@@ -160,6 +302,9 @@ body {
   width: 100%;
   padding: 0.5rem;
   font-size: 0.95rem;
+  font-family: inherit;
+  line-height: 1.5;
+  min-height: 2.4rem;
   color: var(--text-primary);
   background-color: var(--table-bg);
   border: none;
@@ -177,7 +322,9 @@ body {
   color: var(--text-primary);
 }
 
-.genre-select {
+.custom-select-trigger,
+.filter-toggle {
+  display: block;
   width: 100%;
   padding: 0.5rem;
   font-size: 0.95rem;
@@ -189,25 +336,57 @@ body {
   outline: none;
   cursor: pointer;
   transition: background-color 0.3s ease;
-  margin-bottom: 0.3rem;
+  margin-bottom: 0;
   position: relative;
   padding-right: 2rem;
+  font-family: inherit;
+  text-align: left;
+  line-height: 1.5;
+  min-height: 2.4rem;
 }
 
-.genre-select::after {
-  content: '▼';
+.custom-select-trigger::after {
+  content: '';
   position: absolute;
-  right: 0.5rem;
+  right: 0.65rem;
   top: 50%;
-  transform: translateY(-50%);
-  font-size: 0.7rem;
-  color: var(--text-primary);
+  transform: translateY(-35%) rotate(0deg);
+  transition: transform 0.3s ease;
+  border-left: 0.3rem solid transparent;
+  border-right: 0.3rem solid transparent;
+  border-top: 0.35rem solid var(--text-primary);
   pointer-events: none;
+}
+
+.custom-select-trigger[aria-expanded="true"]::after {
+  transform: translateY(-35%) rotate(180deg);
+}
+
+.custom-select-trigger:hover,
+.filter-toggle:hover {
+  background-color: var(--bg-quaternary);
+}
+
+.custom-select-trigger:focus-visible,
+.filter-toggle:focus-visible,
+.custom-option:focus-visible {
+  outline: 2px solid var(--text-primary);
+  outline-offset: 2px;
+}
+
+.filter-toggle {
+  padding-right: 0.5rem;
+  margin-bottom: 0.4rem;
+}
+
+.filter-toggle[aria-checked="true"] {
+  background-color: var(--filter-selected-bg);
 }
 
 .custom-select-wrapper {
   position: relative;
   width: 100%;
+  margin-bottom: 0.4rem;
 }
 
 .custom-options {
@@ -222,7 +401,7 @@ body {
   z-index: 1000;
   max-height: 200px;
   overflow-y: auto;
-  margin-top: 0.3rem;
+  margin-top: 0.15rem;
   scrollbar-color: var(--text-primary) var(--bg-tertiary);
 }
 
@@ -232,17 +411,26 @@ body {
 
 .custom-select-wrapper.drop-up .custom-options {
   top: auto;
-  bottom: calc(100% + 4px);
+  bottom: calc(100% + 0.15rem);
+  margin-top: 0;
 }
 
 .custom-option {
+  display: block;
+  width: 100%;
+  border: none;
+  background: transparent;
+  font: inherit;
+  line-height: 1.5;
+  text-align: left;
   padding: 0.5rem;
   color: var(--text-primary);
   cursor: pointer;
   transition: background 0.2s;
 }
 
-.custom-option:hover {
+.custom-option:hover,
+.custom-option.selected {
   background-color: var(--bg-quaternary);
 }
 
@@ -262,6 +450,7 @@ body {
 #year-input::placeholder,
 #season-year-input::placeholder,
 #igdb-year-input::placeholder,
+#openlib-year-input::placeholder,
 #tmdb-year-input::placeholder {
   color: var(--text-primary);
   opacity: 1;
@@ -629,17 +818,21 @@ body {
   #tmdb-year-input,
   #season-year-input,
   #igdb-year-input,
+  #openlib-year-input,
   #musicbrainz-year-input,
   #year-input {
     font-size: 2.5rem;
   }
 
-  .genre-select {
+  .custom-select-trigger,
+  .filter-toggle {
     font-size: 2.5rem;
   }
 
-  .genre-select::after {
-    font-size: 2rem;
+  .custom-select-trigger::after {
+    border-left-width: 0.6rem;
+    border-right-width: 0.6rem;
+    border-top-width: 0.7rem;
   }
 
   .custom-option {

@@ -89,30 +89,38 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Check favorite status
     const favForm = document.getElementById('favorite-form');
+    let favoriteStatusReady = false;
+    let favoriteSaving = false;
     if (favForm) {
         const personName = favForm.dataset.personName;
         const personType = favForm.dataset.personType;
         const checkbox = favForm.querySelector('input[name="favorite"]');
         
-        fetch(`/api/check_favorite_person/?name=${encodeURIComponent(personName)}&type=${personType}`)
+        fetch(`/api/check_favorite_person/?name=${encodeURIComponent(personName)}&type=${personType}&person_id=${encodeURIComponent(favForm.dataset.personId || '')}&source=${encodeURIComponent(favForm.dataset.personSource)}`)
             .then(res => res.json())
             .then(result => {
                 checkbox.checked = result.is_favorited;
+                favoriteStatusReady = true;
+                updateAssignmentVisibility();
                 updateRefreshButton();
                 updateUploadButton();
                 favForm.parentElement.classList.add('loaded');
             })
             .catch(() => {
                 checkbox.checked = false;
+                favoriteStatusReady = false;
+                updateAssignmentVisibility();
                 favForm.parentElement.classList.add('loaded');
             });
         
         // Toggle favorite
         checkbox.addEventListener('change', function() {
+            favoriteSaving = true;
+            updateAssignmentVisibility();
             const personImage = favForm.dataset.personImage;
             const personId = favForm.dataset.personId;
             
-            const requestData = { name: personName, image_url: personImage, type: personType };
+            const requestData = { name: personName, image_url: personImage, type: personType, source: favForm.dataset.personSource };
             if (personId) {
                 requestData.person_id = personId;
             }
@@ -127,12 +135,19 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(res => res.json())
             .then(data => {
-                if (!data.status) {
+                if (data.status === 'added' || data.status === 'removed') {
+                    checkbox.checked = data.status === 'added';
+                    favoriteStatusReady = true;
+                } else {
                     checkbox.checked = !checkbox.checked;
                 }
             })
             .catch(() => {
                 checkbox.checked = !checkbox.checked;
+            })
+            .finally(() => {
+                favoriteSaving = false;
+                updateAssignmentVisibility();
             });
         });
     }
@@ -181,7 +196,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     'Content-Type': 'application/json',
                     'X-CSRFToken': getCookie('csrftoken'),
                 },
-                body: JSON.stringify({ person_id: personId, person_type: personType, refresh_mode: mode }),
+                body: JSON.stringify({ person_id: personId, person_type: personType, source: favForm.dataset.personSource, refresh_mode: mode }),
             })
             .then(res => res.json())
             .then(data => {
@@ -252,6 +267,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 formData.append('image', file);
                 formData.append('person_id', personId);
                 formData.append('person_type', personType);
+                formData.append('source', favForm.dataset.personSource);
                 
                 fetch('/api/upload_person_image/', {
                     method: 'POST',
@@ -352,15 +368,13 @@ document.addEventListener('DOMContentLoaded', function() {
         editBtn.addEventListener('click', () => {
             editModal.classList.remove('pc-modal-hidden');
             editOverlay.classList.remove('pc-modal-hidden');
-            document.body.classList.add('c-modal-open');
-            document.documentElement.classList.add('c-modal-open');
+            window.modalScrollLock.lock('edit-person');
         });
 
         const closeEditModal = () => {
             editModal.classList.add('pc-modal-hidden');
             editOverlay.classList.add('pc-modal-hidden');
-            document.body.classList.remove('c-modal-open');
-            document.documentElement.classList.remove('c-modal-open');
+            window.modalScrollLock.unlock('edit-person');
         };
 
         editCloseIcons.forEach(icon => {
@@ -443,6 +457,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // 2. Move the search bar to the main container (centered)
             if (mainDetailContainer) {
                 mainDetailContainer.prepend(assignWrapper);
+                assignWrapper.classList.add('assign-search-standalone');
                 assignWrapper.style.position = 'relative';
                 assignWrapper.style.justifyContent = 'center';
                 assignWrapper.style.marginTop = '2rem';
@@ -453,6 +468,35 @@ document.addEventListener('DOMContentLoaded', function() {
             // Hide the original container
             assignContainer.style.display = 'none';
         }
+    }
+
+    function updateAssignmentVisibility() {
+        if (!showAssignBtn || !assignWrapper) return;
+        const saved = favoriteStatusReady && !favoriteSaving &&
+            favForm?.querySelector('input[name="favorite"]')?.checked;
+        if (!saved) {
+            showAssignBtn.style.display = 'none';
+            assignWrapper.style.display = 'none';
+        } else if (assignWrapper.style.display !== 'flex') {
+            showAssignBtn.style.display = 'flex';
+        }
+    }
+    updateAssignmentVisibility();
+
+    if (assignWrapper?.classList.contains('assign-search-standalone')) {
+        const searchInner = assignWrapper.querySelector('.assign-search-inner');
+        const lastButton = assignWrapper.querySelector('#cancel-assign-btn');
+        const alignStandalonePanels = () => {
+            const wrapperRect = assignWrapper.getBoundingClientRect();
+            const inputRect = searchInner.getBoundingClientRect();
+            const endRect = lastButton.getBoundingClientRect();
+            assignWrapper.style.setProperty('--assign-panel-left', `${inputRect.left - wrapperRect.left}px`);
+            assignWrapper.style.setProperty('--assign-panel-width', `${endRect.right - inputRect.left}px`);
+        };
+        const standaloneObserver = new ResizeObserver(alignStandalonePanels);
+        standaloneObserver.observe(assignWrapper);
+        standaloneObserver.observe(searchInner);
+        standaloneObserver.observe(lastButton);
     }
 
     const assignInput = document.getElementById('assign-search-input');
@@ -466,6 +510,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (showAssignBtn) {
         showAssignBtn.addEventListener('click', () => {
+            if (!favoriteStatusReady || favoriteSaving || !favForm?.querySelector('input[name="favorite"]')?.checked) return;
             showAssignBtn.style.display = 'none';
             assignWrapper.style.display = 'flex';
             assignInput.focus();
@@ -494,7 +539,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const pType = favForm ? favForm.dataset.personType : '';
             
             searchTimeout = setTimeout(() => {
-                fetch(`/api/person/search_media/?q=${encodeURIComponent(query)}&person_id=${encodeURIComponent(pId)}&person_type=${encodeURIComponent(pType)}`)
+                fetch(`/api/person/search_media/?q=${encodeURIComponent(query)}&person_id=${encodeURIComponent(pId)}&person_type=${encodeURIComponent(pType)}&source=${encodeURIComponent(favForm.dataset.personSource)}`)
                 .then(res => res.json())
                 .then(data => {
                     assignDropdown.innerHTML = '';
@@ -574,8 +619,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Save Assignment
         confirmAssignBtn.addEventListener('click', () => {
-            if (selectedMediaIds.size === 0) return;
-            
+            if (selectedMediaIds.size === 0 || confirmAssignBtn.disabled) return;
+            confirmAssignBtn.disabled = true;
+
             const favForm = document.getElementById('favorite-form');
             const personId = favForm.dataset.personId;
             const personType = favForm.dataset.personType;
@@ -583,7 +629,7 @@ document.addEventListener('DOMContentLoaded', function() {
             fetch('/api/person/assign_media/', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
-                body: JSON.stringify({ person_id: personId, person_type: personType, media_ids: Array.from(selectedMediaIds.keys()) })
+                body: JSON.stringify({ person_id: personId, person_type: personType, source: favForm.dataset.personSource, media_ids: Array.from(selectedMediaIds.keys()) })
             })
             .then(res => res.json())
             .then(data => {
@@ -593,7 +639,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else {
                     showNotification(data.error, "warning");
                 }
-            });
+            })
+            .catch(() => showNotification('Unable to assign media. Please try again.', 'warning'))
+            .finally(() => { confirmAssignBtn.disabled = false; });
         });
     }
 
@@ -626,7 +674,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function closeRoleModal() {
         roleModal.classList.add('pc-modal-hidden');
         roleOverlay.classList.add('pc-modal-hidden');
-        document.body.classList.remove('c-modal-open');
+        window.modalScrollLock.unlock('edit-role');
     }
 
     document.querySelectorAll('.edit-role-btn').forEach(btn => {
@@ -637,7 +685,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             roleModal.classList.remove('pc-modal-hidden');
             roleOverlay.classList.remove('pc-modal-hidden');
-            document.body.classList.add('c-modal-open');
+            window.modalScrollLock.lock('edit-role');
             roleInput.focus();
         });
     });

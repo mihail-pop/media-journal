@@ -6,7 +6,13 @@ from pathlib import Path
 import requests
 from django.conf import settings
 
-from core.models import NavItem
+from core.models import AppSettings, NavItem
+
+
+def adult_content_allowed():
+    """Only external search/discovery callers use this preference, never ID lookups."""
+    enabled = AppSettings.objects.values_list('allow_adult_content', flat=True).first()
+    return enabled if enabled is not None else True
 
 
 def normalize_search_text(text):
@@ -124,6 +130,15 @@ def display_to_rating(display_value: int | None, rating_mode: str) -> int | None
 
     return None
 
+
+def rating_from_edit(display_value, rating_mode, current_rating):
+    """Preserve the stored score when an edit submits its unchanged display value."""
+    value = None if display_value in (None, '', 'null') else int(display_value)
+    if value == rating_to_display(current_rating, rating_mode):
+        return current_rating
+    return display_to_rating(value, rating_mode)
+
+
 def get_ordered_types():
     nav_items = NavItem.objects.all().order_by("position")
     
@@ -131,8 +146,8 @@ def get_ordered_types():
         'movies': {'data_type': 'movie', 'label': 'Movies'},
         'tvshows': {'data_type': 'tv', 'label': 'TV Shows'},
         'anime': {'data_type': 'anime', 'label': 'Anime'},
-        'manga': {'data_type': 'manga', 'label': 'Manga'},
         'games': {'data_type': 'game', 'label': 'Games'},
+        'manga': {'data_type': 'manga', 'label': 'Manga'},
         'books': {'data_type': 'book', 'label': 'Books'},
         'music': {'data_type': 'music', 'label': 'Music'},
     }

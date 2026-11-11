@@ -19,7 +19,7 @@
     ```
 
 4. Create and activate a Virtual Environment:
-    *(macOS requires apps to use their own isolated Python environments).*
+    *(This keeps the app's dependencies separate from your other Python projects).*
     ```sh
     python3 -m venv venv
     source venv/bin/activate

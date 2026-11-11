@@ -9,9 +9,9 @@ from core.models import MediaItem
 from core.services.g_utils import download_image
 
 
-def save_anilist_item(media_type, anilist_id=None, mal_id=None):
+def save_anilist_item(media_type, anilist_id=None, mal_id=None, *, http=None, prepare_only=False):
     try:
-        data = fetch_anilist_data(media_type, anilist_id=anilist_id, mal_id=mal_id)
+        data = fetch_anilist_data(media_type, anilist_id=anilist_id, mal_id=mal_id, http=http)
 
         canonical_id = data["anilist_id"]
         cache_bust = int(time.time() * 1000)
@@ -79,7 +79,7 @@ def save_anilist_item(media_type, anilist_id=None, mal_id=None):
             new_provider_ids["mal"] = str(data["mal_id"])
 
         # --- Save to DB
-        MediaItem.objects.create(
+        item_data = dict(
             title=data["title"],
             media_type=media_type,
             source="anilist",
@@ -96,6 +96,9 @@ def save_anilist_item(media_type, anilist_id=None, mal_id=None):
             genres=data["genres"],
             creators=data["creators"],
         )
+        if prepare_only:
+            return {"item": item_data}
+        MediaItem.objects.create(**item_data)
 
         return JsonResponse({"message": "Saved to your list."})
 
@@ -103,7 +106,7 @@ def save_anilist_item(media_type, anilist_id=None, mal_id=None):
         return JsonResponse({"error": f"Save failed: {str(e)}"})
 
 
-def fetch_anilist_data(media_type, anilist_id=None, mal_id=None):
+def fetch_anilist_data(media_type, anilist_id=None, mal_id=None, *, http=None):
     # Determine which ID to use for the query
     if anilist_id:
         id_field = "id"
@@ -123,7 +126,7 @@ def fetch_anilist_data(media_type, anilist_id=None, mal_id=None):
           romaji
           english
         }
-        description(asHtml: false)
+        description(asHtml: true)
         startDate {
           year
           month
@@ -146,6 +149,7 @@ def fetch_anilist_data(media_type, anilist_id=None, mal_id=None):
           edges {
             role
             node {
+              id
               name {
                 full
               }
@@ -209,7 +213,7 @@ def fetch_anilist_data(media_type, anilist_id=None, mal_id=None):
 
     headers = {"Content-Type": "application/json"}
 
-    response = requests.post(
+    response = (http or requests).post(
         "https://graphql.anilist.co",
         json={"query": query, "variables": variables},
         headers=headers,
@@ -424,6 +428,7 @@ def get_anime_extra_info(media_type, anilist_id=None, mal_id=None):
           edges {
             role
             node {
+              id
               name {
                 full
               }
@@ -529,7 +534,7 @@ def get_anime_extra_info(media_type, anilist_id=None, mal_id=None):
             and l["url"].startswith(('http://', 'https://', '/'))
         ]
         staff_list = [
-            f"{e['node']['name']['full']} ({e['role']})"
+            {'id': e['node'].get('id'), 'name': e['node']['name']['full'], 'role': e['role']}
             for e in data.get("staff", {}).get("edges", [])
             if e.get("node") and e["node"].get("name") and e.get("role")
         ]
@@ -640,6 +645,7 @@ def get_manga_extra_info(media_type, anilist_id=None, mal_id=None):
           edges {
             role
             node {
+              id
               name {
                 full
               }
@@ -723,7 +729,7 @@ def get_manga_extra_info(media_type, anilist_id=None, mal_id=None):
 
         # --- Staff ---
         staff_list = [
-            f"{e['node']['name']['full']} ({e['role']})"
+            {'id': e['node'].get('id'), 'name': e['node']['name']['full'], 'role': e['role']}
             for e in data.get("staff", {}).get("edges", [])
             if e.get("node") and e["node"].get("name") and e.get("role")
         ]
@@ -808,11 +814,12 @@ def get_anilist_discover(
     format_filter="",
     status="",
     genre="",
+    allow_adult=True,
 ):
     query_text = """
-    query ($page: Int, $search: String, $type: MediaType, $sort: [MediaSort], $season: MediaSeason, $seasonYear: Int, $startDate_like: String, $format: MediaFormat, $status: MediaStatus, $genre: String) {
+    query ($page: Int, $search: String, $type: MediaType, $sort: [MediaSort], $season: MediaSeason, $seasonYear: Int, $startDate_like: String, $format: MediaFormat, $status: MediaStatus, $genre: String, $isAdult: Boolean) {
       Page(page: $page, perPage: 20) {
-        media(search: $search, type: $type, sort: $sort, season: $season, seasonYear: $seasonYear, startDate_like: $startDate_like, format: $format, status: $status, genre: $genre) {
+        media(search: $search, type: $type, sort: $sort, season: $season, seasonYear: $seasonYear, startDate_like: $startDate_like, format: $format, status: $status, genre: $genre, isAdult: $isAdult) {
           id
           idMal
           title {
@@ -846,6 +853,10 @@ def get_anilist_discover(
         "type": media_type.upper(),
         "sort": [sort] if sort else ["TRENDING_DESC"],
     }
+
+    # Include everything by omitting the filter, not by sending null.
+    if not allow_adult:
+        variables['isAdult'] = False
 
     if query:
         variables["search"] = query
@@ -954,7 +965,7 @@ def get_anilist_discover(
                 }
             )
 
-        return {"results": results, "hasMore": len(raw_media) == 20}
+        return {"results": results, "hasMore": len(raw_media) > 0}
     except Exception:
         return {"results": [], "hasMore": False}
 

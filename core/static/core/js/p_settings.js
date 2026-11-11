@@ -32,7 +32,7 @@ function showNotification(message, type) {
 
 // ----- Rating Mode (Scoring System) -----
 function saveRatingMode(value) {
-  fetch("/update-rating-mode/", {
+  return fetch("/update-rating-mode/", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -44,83 +44,243 @@ function saveRatingMode(value) {
     .then(res => {
       if (res.success) {
         showNotification("Scoring system updated!");
+        return true;
       } else {
         alert(res.error || "Failed to update scoring system.");
+        return false;
       }
     })
     .catch(err => {
       alert("Request failed.");
+      return false;
     });
 }
 
 document.addEventListener("DOMContentLoaded", function () {
-  // ----- Custom Select for Rating Mode -----
-  function setupCustomSelect() {
-    const wrapper = document.querySelector('.custom-select-wrapper');
-    if (!wrapper) return;
+  const adultContentToggle = document.getElementById('allow-adult-content');
+  adultContentToggle?.addEventListener('change', async () => {
+    const enabled = adultContentToggle.checked;
+    const stateText = document.getElementById('adult-content-state');
+    adultContentToggle.disabled = true;
+    stateText.textContent = enabled ? 'Enabled' : 'Disabled';
+    try {
+      const response = await fetch('/settings/update_adult_content/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+        body: JSON.stringify({ enabled }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error('Unable to save adult content preference.');
+      try { localStorage.setItem('adult-content-preference-version', Date.now().toString()); } catch (error) { /* Storage is optional. */ }
+      showNotification('18+ content preference updated!');
+    } catch (error) {
+      adultContentToggle.checked = !enabled;
+      stateText.textContent = adultContentToggle.checked ? 'Enabled' : 'Disabled';
+      alert('Could not save adult content preference. Please try again.');
+    } finally {
+      adultContentToggle.disabled = false;
+    }
+  });
 
-    const select = wrapper.querySelector('.custom-select');
-    const trigger = select.querySelector('.custom-select-trigger');
-    const options = select.querySelectorAll('.custom-option');
-    const originalSelect = document.getElementById('rating-mode-select');
+  const cardOverlaySettings = document.getElementById('list-card-overlay-settings');
+  cardOverlaySettings?.addEventListener('click', async event => {
+    const button = event.target.closest('button[data-mode]');
+    const group = button?.closest('.card-overlay-type');
+    if (!group || button.disabled || button.getAttribute('aria-pressed') === 'true') return;
+    const buttons = [...group.querySelectorAll('button[data-mode]')];
+    const previousMode = buttons.find(control => control.getAttribute('aria-pressed') === 'true')?.dataset.mode || 'full';
+    const selectMode = mode => buttons.forEach(control => control.setAttribute('aria-pressed', String(control.dataset.mode === mode)));
+    buttons.forEach(control => { control.disabled = true; });
+    selectMode(button.dataset.mode);
+    try {
+      const response = await fetch('/settings/update_list_card_overlays/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+        body: JSON.stringify({ media_type: group.dataset.type, mode: button.dataset.mode }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error('Unable to save card overlay preference.');
+      showNotification('List card overlay updated!');
+    } catch (error) {
+      selectMode(previousMode);
+      alert('Could not save card overlay preference. Please try again.');
+    } finally {
+      buttons.forEach(control => { control.disabled = false; });
+    }
+  });
 
-    trigger.addEventListener('click', () => {
-      if (!select.classList.contains('open')) {
-        const rect = trigger.getBoundingClientRect();
-        const spaceBelow = window.innerHeight - rect.bottom;
-        
-        if (spaceBelow < 220 && rect.top > spaceBelow) {
-          select.classList.add('drop-up');
-        } else {
-          select.classList.remove('drop-up');
+  const bannerNotesToggle = document.getElementById('show-banner-notes');
+  if (bannerNotesToggle) {
+    const stateText = document.getElementById('banner-notes-state');
+    bannerNotesToggle.addEventListener('change', async () => {
+      const enabled = bannerNotesToggle.checked;
+      bannerNotesToggle.disabled = true;
+      stateText.textContent = enabled ? 'Enabled' : 'Disabled';
+      try {
+        const response = await fetch('/settings/update_banner_notes/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+          body: JSON.stringify({ enabled }),
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error('Unable to save banner notes preference.');
+        showNotification('Banner notes updated!');
+      } catch (error) {
+        bannerNotesToggle.checked = !enabled;
+        stateText.textContent = bannerNotesToggle.checked ? 'Enabled' : 'Disabled';
+        alert('Could not save banner notes preference. Please try again.');
+      } finally {
+        bannerNotesToggle.disabled = false;
+      }
+    });
+  }
+
+  const favoriteSectionsForm = document.getElementById('favorite-sections-form');
+  if (favoriteSectionsForm) {
+    let dragged = null;
+    let suppressClick = false;
+    let pendingSections = null;
+    let saving = false;
+
+    // Serialize saves so a slower earlier request cannot overwrite a later change.
+    async function saveFavoriteSections() {
+      pendingSections = [...favoriteSectionsForm.children].map(button => ({
+        id: button.dataset.id,
+        visible: button.getAttribute('aria-pressed') === 'true',
+      }));
+      if (saving) return;
+      saving = true;
+      let failed = false;
+      while (pendingSections) {
+        const sections = pendingSections;
+        pendingSections = null;
+        try {
+          const response = await fetch('/settings/update_favorite_sections/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+            body: JSON.stringify({ sections }),
+          });
+          const data = await response.json();
+          if (!response.ok || !data.success) throw new Error('Unable to save favorite sections');
+          failed = false;
+        } catch (error) {
+          failed = true;
         }
       }
-      select.classList.toggle('open');
-    });
+      saving = false;
+      if (failed) alert('Could not save favorite sections. Please try again.');
+      else showNotification('Favorite sections updated!');
+    }
 
-    // Handle option click
-    options.forEach(option => {
-      option.addEventListener('click', () => {
-        // Update original select
-        originalSelect.value = option.dataset.value;
-
-        // Update trigger
-        trigger.innerHTML = option.innerHTML;
-        const arrow = document.createElement('div');
-        arrow.className = 'arrow';
-        trigger.appendChild(arrow);
-
-        // Update selected class
-        options.forEach(opt => opt.classList.remove('selected'));
-        option.classList.add('selected');
-
-        // Close dropdown
-        select.classList.remove('open');
-
-        // Auto-save
-        saveRatingMode(option.dataset.value);
-      });
-    });
-
-    // Close when clicking outside
-    window.addEventListener('click', e => {
-      if (!select.contains(e.target)) {
-        select.classList.remove('open');
+    favoriteSectionsForm.addEventListener('pointerdown', () => { suppressClick = false; });
+    favoriteSectionsForm.addEventListener('keydown', event => {
+      const button = event.target.closest('.details-section-box[data-id]');
+      if (button && (event.key === 'Enter' || event.key === ' ')) {
+        event.preventDefault();
+        button.click();
       }
     });
-
-    // Set initial value from the original select
-    const selectedValue = originalSelect.value;
-    const initialOption = select.querySelector(`.custom-option[data-value="${selectedValue}"]`);
-    if (initialOption) {
-      trigger.innerHTML = initialOption.innerHTML;
-      const arrow = document.createElement('div');
-      arrow.className = 'arrow';
-      trigger.appendChild(arrow);
-      initialOption.classList.add('selected');
-    }
+    favoriteSectionsForm.addEventListener('click', event => {
+      const button = event.target.closest('.details-section-box[data-id]');
+      if (!button || (suppressClick && event.detail > 0)) return;
+      const visible = button.getAttribute('aria-pressed') !== 'true';
+      button.setAttribute('aria-pressed', String(visible));
+      button.classList.toggle('active', visible);
+      saveFavoriteSections();
+    });
+    favoriteSectionsForm.addEventListener('dragstart', event => {
+      dragged = event.target.closest('.details-section-box[data-id]');
+      if (!dragged) return;
+      suppressClick = true;
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', dragged.dataset.id);
+      // Let the browser capture the drag image before changing hit testing.
+      const item = dragged;
+      setTimeout(() => {
+        if (dragged === item) item.classList.add('dragging');
+      }, 0);
+    });
+    favoriteSectionsForm.addEventListener('dragover', event => {
+      if (!dragged) return;
+      event.preventDefault();
+      event.dataTransfer.dropEffect = 'move';
+      const others = [...favoriteSectionsForm.children].filter(button => button !== dragged);
+      const next = others.find(button => {
+        const rect = button.getBoundingClientRect();
+        return event.clientY < rect.top ||
+          (event.clientY <= rect.bottom && event.clientX < rect.left + rect.width / 2);
+      });
+      if (next) {
+        if (dragged.nextElementSibling !== next) favoriteSectionsForm.insertBefore(dragged, next);
+      } else if (favoriteSectionsForm.lastElementChild !== dragged) {
+        favoriteSectionsForm.appendChild(dragged);
+      }
+    });
+    favoriteSectionsForm.addEventListener('drop', event => { if (dragged) event.preventDefault(); });
+    favoriteSectionsForm.addEventListener('dragend', () => {
+      if (!dragged) return;
+      dragged.classList.remove('dragging');
+      dragged = null;
+      saveFavoriteSections();
+    });
   }
-  setupCustomSelect();
+
+  const liveSearchSettings = document.getElementById('live-search-settings');
+  if (liveSearchSettings) {
+    const buttons = [...liveSearchSettings.querySelectorAll('.live-search-type')];
+    let saving = false;
+    liveSearchSettings.addEventListener('click', async event => {
+      const button = event.target.closest('.live-search-type');
+      if (!button || saving) return;
+      const previous = button.getAttribute('aria-pressed') === 'true';
+      saving = true;
+      buttons.forEach(item => { item.disabled = true; });
+      button.setAttribute('aria-pressed', String(!previous));
+      try {
+        const response = await fetch('/settings/update_live_search/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+          body: JSON.stringify({ media_type: button.dataset.type, enabled: !previous }),
+        });
+        if (!response.ok) throw new Error('Unable to save live search settings');
+        const data = await response.json();
+        if (!data.success) throw new Error('Unable to save live search settings');
+        buttons.forEach(item => item.setAttribute('aria-pressed', String(data.live_search_settings[item.dataset.type] === true)));
+        window.dispatchEvent(new CustomEvent('live-search-settings-updated', { detail: data.live_search_settings }));
+        showNotification('Live search updated.');
+      } catch (error) {
+        button.setAttribute('aria-pressed', String(previous));
+        alert('Could not save live search settings. Please try again.');
+        console.error(error);
+      } finally {
+        saving = false;
+        buttons.forEach(item => { item.disabled = false; });
+      }
+    });
+  }
+  // ----- Scoring System Buttons -----
+  const ratingButtons = [...document.querySelectorAll('#rating-mode-form .rating-mode-button')];
+  let savingRatingMode = false;
+  function selectRatingMode(value) {
+    ratingButtons.forEach(button => {
+      const selected = button.dataset.value === value;
+      button.classList.toggle('active', selected);
+      button.setAttribute('aria-pressed', String(selected));
+    });
+  }
+  ratingButtons.forEach(button => button.addEventListener('click', async () => {
+    if (savingRatingMode || button.getAttribute('aria-pressed') === 'true') return;
+    const previous = ratingButtons.find(item => item.getAttribute('aria-pressed') === 'true')?.dataset.value;
+    savingRatingMode = true;
+    selectRatingMode(button.dataset.value);
+    ratingButtons.forEach(item => { item.disabled = true; });
+    try {
+      if (!await saveRatingMode(button.dataset.value)) selectRatingMode(previous);
+    } finally {
+      savingRatingMode = false;
+      ratingButtons.forEach(item => { item.disabled = false; });
+    }
+  }));
 
   // ----- Custom Select for Font Family -----
   function setupFontCustomSelect() {
@@ -576,8 +736,22 @@ function showProgressModal(title) {
   const statusText = document.getElementById('backup-status-text');
   let pollInterval = null;
   let currentTaskId = null;
+  let uploadCancel = null;
+  let stopped = false;
+  let message = 'Initializing…';
+  let details = '';
+  const startedAt = performance.now();
+  const renderStatus = () => {
+    const seconds = Math.floor((performance.now() - startedAt) / 1000);
+    const elapsed = seconds >= 60 ? `${Math.floor(seconds / 60)}m ${seconds % 60}s` : `${seconds}s`;
+    statusText.textContent = `${message}${details ? `: ${details}` : ''} • ${elapsed} elapsed`;
+  };
+  renderStatus();
+  const elapsedTimer = setInterval(renderStatus, 1000);
 
   const closeModal = () => {
+    stopped = true;
+    clearInterval(elapsedTimer);
     modal.classList.remove('visible');
     setTimeout(() => {
       modal.style.display = 'none';
@@ -588,20 +762,40 @@ function showProgressModal(title) {
   cancelBtn.onclick = () => {
     if (currentTaskId) {
       fetch(`/backup/cancel/${currentTaskId}/`);
+    } else if (uploadCancel) {
+      uploadCancel();
     }
     closeModal();
   };
 
   return {
     updateMessage: (msg) => {
-      statusText.textContent = msg;
+      if (stopped) return;
+      message = msg;
+      details = '';
+      renderStatus();
     },
+    updateProgress: (percent, msg) => {
+      if (stopped) return;
+      progressBar.style.width = `${Math.max(0, Math.min(100, percent))}%`;
+      message = msg;
+      details = '';
+      renderStatus();
+    },
+    setUploadCancel: (handler) => { uploadCancel = handler; },
     startPolling: (taskId, isDownload = true, successMsg = "Process completed successfully!") => {
+      if (stopped) return;
       currentTaskId = taskId;
+      uploadCancel = null;
+      progressBar.style.width = '0%';
+      message = 'Starting…';
+      details = '';
+      renderStatus();
       pollInterval = setInterval(() => {
         fetch(`/backup/status/${taskId}/`)
           .then(res => res.json())
           .then(data => {
+            if (stopped) return;
             if (data.error) {
               clearInterval(pollInterval);
               alert("Error: " + data.error);
@@ -611,13 +805,13 @@ function showProgressModal(title) {
 
             progressBar.style.width = `${data.progress}%`;
             
-            // Format: "Message... Details"
-            const message = data.message || 'Processing';
-            const details = data.details || '';
-            statusText.textContent = `${message}... ${details}`;
+            message = data.message || 'Processing';
+            details = data.details || '';
+            renderStatus();
 
             if (data.status === 'completed') {
               clearInterval(pollInterval);
+              clearInterval(elapsedTimer);
               statusText.textContent = "Completed!";
               progressBar.style.width = '100%';
               
@@ -637,6 +831,7 @@ function showProgressModal(title) {
             }
           })
           .catch(err => {
+            if (stopped) return;
             console.error(err);
             clearInterval(pollInterval);
             closeModal();
@@ -688,28 +883,37 @@ if (uploadBtn && uploadInput) {
     formData.append("backup_file", file);
     const csrftoken = getCookie("csrftoken");
 
-    fetch("/backup/import/", {
-      method: "POST",
-      headers: {
-        "X-CSRFToken": csrftoken,
-      },
-      body: formData,
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        if (data.task_id) {
-          modal.startPolling(data.task_id, false, "Backup restored successfully!");
-        } else {
-          alert(data.error || "Upload failed.");
-          modal.close();
-        }
-      })
-      .catch((err) => {
-        console.error("Backup import failed:", err);
-        alert("Backup import failed.");
+    // XMLHttpRequest exposes upload progress; fetch does not provide it here.
+    const request = new XMLHttpRequest();
+    request.open('POST', '/backup/import/');
+    request.setRequestHeader('X-CSRFToken', csrftoken);
+    request.responseType = 'json';
+    modal.setUploadCancel(() => request.abort());
+    request.upload.onprogress = event => {
+      if (!event.lengthComputable || event.total <= 0) return;
+      const unit = event.total >= 1024 ** 3 ? 'GB' : 'MB';
+      const divisor = unit === 'GB' ? 1024 ** 3 : 1024 ** 2;
+      const transferred = `${(event.loaded / divisor).toFixed(1)} / ${(event.total / divisor).toFixed(1)} ${unit}`;
+      modal.updateProgress(event.loaded / event.total * 100, `Uploading backup: ${transferred}`);
+    };
+    request.upload.onload = () => {
+      modal.updateProgress(100, 'Upload sent. Waiting for the server…');
+    };
+    request.onload = () => {
+      const data = request.response;
+      if (request.status >= 200 && request.status < 300 && data?.task_id) {
+        modal.startPolling(data.task_id, false, 'Backup restored successfully!');
+      } else {
+        alert(data?.error || 'Upload failed.');
         modal.close();
-      })
-      .finally(() => { uploadInput.value = ""; });
+      }
+    };
+    request.onerror = () => {
+      alert('Backup upload failed.');
+      modal.close();
+    };
+    request.onloadend = () => { uploadInput.value = ''; };
+    request.send(formData);
   });
 }
 

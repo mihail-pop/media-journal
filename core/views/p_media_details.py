@@ -1,15 +1,18 @@
 import os
 import json
 import time
+import re
+from urllib.parse import urlsplit
 
 import requests
 from django.conf import settings
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.core.files.storage import default_storage
 from django.views.decorators.csrf import ensure_csrf_cookie
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_GET, require_POST
 
-from core.models import MediaItem
+from core.models import MediaItem, Screenshot
+from core.services.g_api import serialize_game_screenshot
 from core.services.g_utils import download_image, get_sharded_path
 from core.services.m_games import get_game_extra_info
 from core.services.m_music import get_music_extra_info
@@ -166,6 +169,48 @@ def get_extra_info(request):
     return JsonResponse(data)
 
 
+@require_POST
+def favorite_game_screenshot(request):
+    favorite = request.POST.get("is_favorite")
+    if favorite not in ("true", "false"):
+        return JsonResponse({"success": False, "message": "Invalid favorite value."}, status=400)
+    try:
+        item = MediaItem.objects.get(media_type="game", provider_ids__igdb=str(request.POST.get("igdb_id", "")))
+        shot = item.game_screenshots.get(pk=request.POST.get("screenshot_id"))
+    except (MediaItem.DoesNotExist, Screenshot.DoesNotExist, ValueError, TypeError):
+        return JsonResponse({"success": False, "message": "Screenshot not found."}, status=404)
+    shot.is_favorite = favorite == "true"
+    shot.save(update_fields=["is_favorite"])
+    return JsonResponse({"success": True, "screenshot": serialize_game_screenshot(shot)})
+
+
+@require_GET
+def game_screenshot_image(request):
+    # Relay only IGDB's public raster images for browser downloads/canvas crops.
+    url = request.GET.get("url", "")
+    try:
+        parsed = urlsplit(url)
+    except ValueError:
+        return JsonResponse({"error": "Invalid screenshot URL."}, status=400)
+    if not (
+        parsed.scheme == "https"
+        and parsed.netloc == "images.igdb.com"
+        and not parsed.query
+        and not parsed.fragment
+        and re.fullmatch(r"/igdb/image/upload/t_[a-z0-9_]+/[A-Za-z0-9_-]+\.(?:jpg|jpeg|png|webp)", parsed.path)
+    ):
+        return JsonResponse({"error": "Invalid screenshot URL."}, status=400)
+
+    try:
+        response = requests.get(url, timeout=20, allow_redirects=False)
+        content_type = response.headers.get("Content-Type", "").split(";")[0].strip().lower()
+        if response.status_code != 200 or content_type not in ("image/jpeg", "image/png", "image/webp"):
+            return JsonResponse({"error": "Could not retrieve the screenshot."}, status=502)
+        return HttpResponse(response.content, content_type=content_type)
+    except requests.RequestException:
+        return JsonResponse({"error": "Could not retrieve the screenshot."}, status=502)
+
+
 # Delete, Swap, Add actions
 @ensure_csrf_cookie
 def upload_game_screenshots(request):
@@ -198,36 +243,62 @@ def upload_game_screenshots(request):
 
     # DELETE action
     if action == "delete":
-        screenshot_url = request.POST.get("screenshot_url")
-        if not screenshot_url:
+        try:
+            limit = max(1, int(request.POST["limit"])) if "limit" in request.POST else None
+        except ValueError:
+            return JsonResponse({"success": False, "message": "Invalid screenshot limit."}, status=400)
+        screenshot_urls = request.POST.getlist("screenshot_urls[]")
+        if not screenshot_urls:
+            screenshot_urls = [request.POST.get("screenshot_url")]
+        screenshot_urls = list(dict.fromkeys(url for url in screenshot_urls if url))
+        if not screenshot_urls:
             return JsonResponse(
                 {"success": False, "message": "Missing screenshot_url."}, status=400
             )
 
-        # Remove actual file from disk
-        filename = screenshot_url.replace(settings.MEDIA_URL, "")
-        file_path = os.path.join(settings.MEDIA_ROOT, filename)
-        if os.path.exists(file_path):
-            os.remove(file_path)
+        screenshots = list(media_item.game_screenshots.filter(url__in=screenshot_urls))
+        if {shot.url for shot in screenshots} != set(screenshot_urls):
+            return JsonResponse(
+                {"success": False, "message": "One or more screenshots no longer belong to this game. Refresh the page and try again."},
+                status=404,
+            )
 
-        from core.models import Screenshot
-        Screenshot.objects.filter(item=media_item, url=screenshot_url).delete()
+        # Only remove files referenced by this game's saved screenshot records.
+        try:
+            for shot in screenshots:
+                if not shot.is_full_url and shot.url.startswith(settings.MEDIA_URL):
+                    filename = shot.url[len(settings.MEDIA_URL):]
+                    default_storage.delete(filename)
+                shot.delete()
+        except OSError:
+            return JsonResponse(
+                {"success": False, "message": "Could not delete every screenshot. Refresh the page to check which were removed before trying again."},
+                status=500,
+            )
 
         # Return updated list from DB
-        return_screenshots = [{"url": s.url, "is_full_url": s.is_full_url} for s in media_item.game_screenshots.all()]
+        queryset = media_item.game_screenshots.order_by('position', 'date_added', 'pk')
+        if request.POST.get("favorites_only") == "true":
+            queryset = queryset.filter(is_favorite=True)
+        total = queryset.count()
+        rows = queryset[:limit] if limit is not None else queryset
+        return_screenshots = [serialize_game_screenshot(shot) for shot in rows]
         return JsonResponse(
             {
                 "success": True,
-                "message": "Screenshot deleted.",
+                "message": "Screenshots deleted.",
                 "screenshots": return_screenshots,
+                "total": total,
+                "has_more": total > len(return_screenshots),
             }
         )
 
     # ADD / REPLACE actions
     files = request.FILES.getlist("screenshots[]")
+    files = [file for file in files if os.path.splitext(file.name)[1].lower() in (".jpg", ".jpeg", ".png")]
     if not files:
         return JsonResponse(
-            {"success": False, "message": "No files uploaded."}, status=400
+            {"success": False, "message": "No supported screenshots uploaded."}, status=400
         )
 
     if action == "replace":

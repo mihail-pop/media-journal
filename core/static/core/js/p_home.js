@@ -1,4 +1,9 @@
 document.addEventListener("DOMContentLoaded", function () {
+  function saveDashboardChoice(key, value) {
+    try { localStorage.setItem(key, value); } catch (error) {
+      // Switching still works if the browser cannot save the preference.
+    }
+  }
 
   const bannerImg = document.getElementById("rotating-banner");
   const quoteBox = document.querySelector(".banner-quote");
@@ -10,7 +15,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const upcomingContainer = document.getElementById("upcoming-view-container");
 
   if (activityContainer && upcomingContainer) {
-    const savedActView = localStorage.getItem("homeDashboardActivityView") || "activity";
+    const savedActView = document.documentElement.dataset.homeActivityView || "activity";
     
     function triggerHomeSync() {
         fetch('/api/calendar/sync/', {
@@ -20,9 +25,12 @@ document.addEventListener("DOMContentLoaded", function () {
         }).then(res => res.json()).then(data => {
             // ONLY refresh the DOM if the API actually synced/found updates
             if (data.synced_count > 0) {
-                // Silently fetch the home page again
-                fetch(window.location.href)
-                    .then(response => response.text())
+                // Refresh only Upcoming; keep the fully rendered initial page.
+                return fetch(upcomingContainer.dataset.refreshUrl)
+                    .then(response => {
+                        if (!response.ok) throw new Error('Unable to refresh Upcoming');
+                        return response.text();
+                    })
                     .then(html => {
                         const parser = new DOMParser();
                         const doc = parser.parseFromString(html, 'text/html');
@@ -34,18 +42,12 @@ document.addEventListener("DOMContentLoaded", function () {
                             oldTiles.innerHTML = newTiles.innerHTML;
                         }
 
-                        // Swap the List Container
-                        const newList = doc.querySelector('#upcoming-activity-list');
-                        const oldList = document.querySelector('#upcoming-activity-list');
+                        // Refresh the list and its controls together, including when
+                        // syncing changes whether a Show More button is needed.
+                        const newList = doc.querySelector('.recent-activity');
+                        const oldList = upcomingContainer.querySelector('.recent-activity');
                         if (newList && oldList) {
                             oldList.innerHTML = newList.innerHTML;
-                            
-                            // Reset the Show More button state if it exists
-                            const upcToggle = document.getElementById("toggle-upcoming-btn");
-                            if (upcToggle) {
-                                upcToggle.textContent = "Show More";
-                                upcToggle.dataset.state = "more";
-                            }
                         }
 
                         // Re-attach the tooltips to the newly injected elements
@@ -55,23 +57,17 @@ document.addEventListener("DOMContentLoaded", function () {
                         centerTodayTile();
                     });
             }
+        }).catch(error => {
+            // Leave the currently displayed content in place if syncing fails.
+            console.warn('Unable to update Upcoming releases:', error);
         });
-    }
-
-    if (savedActView === "upcoming") {
-      activityContainer.style.display = "none";
-      upcomingContainer.style.display = "block";
-    } else {
-      activityContainer.style.display = "block";
-      upcomingContainer.style.display = "none";
     }
 
     // Toggle to Upcoming
     document.querySelectorAll('.swap-to-upcoming').forEach(btn => {
       btn.addEventListener('click', () => {
-        activityContainer.style.display = "none";
-        upcomingContainer.style.display = "block";
-        localStorage.setItem("homeDashboardActivityView", "upcoming");
+        document.documentElement.dataset.homeActivityView = 'upcoming';
+        saveDashboardChoice("homeDashboardActivityView", "upcoming");
         centerTodayTile();
         triggerHomeSync();
       });
@@ -80,15 +76,14 @@ document.addEventListener("DOMContentLoaded", function () {
     // Toggle to Activity
     document.querySelectorAll('.swap-to-activity').forEach(btn => {
       btn.addEventListener('click', () => {
-        activityContainer.style.display = "block";
-        upcomingContainer.style.display = "none";
-        localStorage.setItem("homeDashboardActivityView", "activity");
+        document.documentElement.dataset.homeActivityView = 'activity';
+        saveDashboardChoice("homeDashboardActivityView", "activity");
       });
     });
 
     // Center the today tile on load if upcoming is active
     if (savedActView === "upcoming") {
-        setTimeout(centerTodayTile, 100);
+        centerTodayTile();
         setTimeout(triggerHomeSync, 300); // trigger slightly after load
     }
   }
@@ -97,19 +92,16 @@ document.addEventListener("DOMContentLoaded", function () {
       const tilesContainer = document.querySelector('.upcoming-tiles-container');
       const todayTile = document.querySelector('.today-tile');
       
-      if (tilesContainer && todayTile) {
-          requestAnimationFrame(() => {
-              const containerRect = tilesContainer.getBoundingClientRect();
-              const tileRect = todayTile.getBoundingClientRect();
-              
-              const containerCenter = tilesContainer.clientWidth / 2;
-              const tileCenter = todayTile.clientWidth / 2;
-              
-              // Calculate accurate absolute scroll position
-              const scrollPos = tilesContainer.scrollLeft + (tileRect.left - containerRect.left) - containerCenter + tileCenter;
-              
-              tilesContainer.scrollTo({ left: scrollPos, behavior: 'smooth' });
-          });
+      if (tilesContainer && todayTile && tilesContainer.clientWidth > 0) {
+          const containerRect = tilesContainer.getBoundingClientRect();
+          const tileRect = todayTile.getBoundingClientRect();
+          const containerCenter = tilesContainer.clientWidth / 2;
+          const tileCenter = todayTile.clientWidth / 2;
+
+          // Position today before the next paint rather than animating from the start.
+          const scrollPos = tilesContainer.scrollLeft + (tileRect.left - containerRect.left) - containerCenter + tileCenter;
+          tilesContainer.scrollTo({ left: scrollPos, behavior: 'instant' });
+          tilesContainer.classList.add('is-centered');
       }
   }
 
@@ -161,126 +153,41 @@ document.addEventListener("DOMContentLoaded", function () {
   attachPillTooltips(); // Attach on initial load
   
   if (statsContainer && collectionsContainer) {
-    const savedView = localStorage.getItem("homeDashboardView") || "stats";
-    
-    // Initial Load Check
-    if (savedView === "collections") {
-      statsContainer.style.display = "none";
-      collectionsContainer.style.display = "block";
-    } else {
-      statsContainer.style.display = "block";
-      collectionsContainer.style.display = "none";
-    }
-
     // Toggle to Collections
     document.querySelectorAll('.swap-to-collections').forEach(btn => {
       btn.addEventListener('click', () => {
-        statsContainer.style.display = "none";
-        collectionsContainer.style.display = "block";
-        localStorage.setItem("homeDashboardView", "collections");
+        document.documentElement.dataset.homeDashboardView = 'collections';
+        saveDashboardChoice("homeDashboardView", "collections");
       });
     });
 
     // Toggle to Stats
     document.querySelectorAll('.swap-to-stats').forEach(btn => {
       btn.addEventListener('click', () => {
-        statsContainer.style.display = "block";
-        collectionsContainer.style.display = "none";
-        localStorage.setItem("homeDashboardView", "stats");
+        document.documentElement.dataset.homeDashboardView = 'stats';
+        saveDashboardChoice("homeDashboardView", "stats");
       });
     });
   }
 
-  let bannerPool = [];
-  let firstLoad = true;
-  let lastBannerIndex = -1;
+  let stopBannerRotator = null;
 
   function initBannerRotator() {
-    const cards = [...document.querySelectorAll(".card")];
-
-    bannerPool = cards
+    const banners = [...document.querySelectorAll(".card")]
       .map(card => {
         const bannerUrl = card.dataset.bannerUrl;
         const notes = card.dataset.notes?.trim();
         const media_type = card.dataset.mediaType;
         return bannerUrl && !bannerUrl.includes("placeholder")
-          ? { media_type,bannerUrl, notes: notes === "None" ? "" : notes }
+          ? { media_type, bannerUrl, notes: notes === "None" ? "" : notes }
           : null;
       })
       .filter(Boolean);
 
-    if (bannerPool.length === 0) return;
-
-    const currentSrc = bannerImg.getAttribute("src");
-    if (firstLoad && currentSrc && !currentSrc.includes("placeholder.png")) {
-        firstLoad = false; 
-        // Start the timer for the NEXT rotation, but don't call updateBanner() now
-        setInterval(updateBanner, 30000); 
-        return; 
-    }
-
-    updateBanner();
-    setInterval(updateBanner, 30000); // rotate every 30 seconds
-  }
-
-  function updateBanner() {
-    if (bannerPool.length === 0) return;
-
-    let random;
-    if (bannerPool.length > 1) {
-      do {
-        random = Math.floor(Math.random() * bannerPool.length);
-      } while (random === lastBannerIndex);
-    } else {
-      random = 0;
-    }
-    lastBannerIndex = random;
-
-    const { media_type, bannerUrl, notes } = bannerPool[random];
-
-    if (firstLoad) {
-      // Show banner immediately without fade
-      bannerImg.src = bannerUrl;
-      bannerImg.style.opacity = 1;
-      bannerImg.alt = media_type;
-
-      if (quoteBox) {
-        if (notes) {
-          quoteBox.innerText = `“${notes}”\n\n~You`;
-          quoteBox.style.display = "block";
-          quoteBox.style.opacity = 1;
-        } else {
-          quoteBox.innerText = "";
-          quoteBox.style.display = "none";
-          quoteBox.style.opacity = 0;
-        }
-      }
-
-      firstLoad = false;
-      return;
-    }
-
-    // Fade out
-    bannerImg.style.opacity = 0;
-    if (quoteBox) quoteBox.style.opacity = 0;
-
-    setTimeout(() => {
-      bannerImg.src = bannerUrl;
-      bannerImg.alt = media_type;
-      
-      if (quoteBox) {
-        if (notes) {
-          quoteBox.innerText = `“${notes}”\n\n~You`;
-          quoteBox.style.display = "block";
-        } else {
-          quoteBox.innerText = "";
-          quoteBox.style.display = "none";
-        }
-        quoteBox.style.opacity = notes ? 1 : 0;
-      }
-
-      bannerImg.style.opacity = 1;
-    }, 1000); // match CSS transition time
+    stopBannerRotator?.();
+    stopBannerRotator = window.createBannerRotator({
+      image: bannerImg, quote: quoteBox, banners, updateMediaType: true,
+    });
   }
 
   initBannerRotator();
@@ -403,9 +310,9 @@ advancedBtn?.addEventListener("click", () => {
 });
 
 // Upcoming List toggle
-const upcomingToggleBtn = document.getElementById("toggle-upcoming-btn");
-
-upcomingToggleBtn?.addEventListener("click", () => {
+document.getElementById("upcoming-view-container")?.addEventListener("click", (event) => {
+  const upcomingToggleBtn = event.target.closest("#toggle-upcoming-btn");
+  if (!upcomingToggleBtn) return;
   // Dynamically query items > 2 at the exact moment of click
   const itemsToToggle = document.querySelectorAll("#upcoming-activity-list li:nth-child(n+3)");
   if (upcomingToggleBtn.dataset.state === "more") {

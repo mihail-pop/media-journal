@@ -1,7 +1,5 @@
 ## Setup for Windows
 
-> [**Youtube Tutorial**](https://youtu.be/Kopjki76ZxM?si=iQCA4Pbh_YYu9Q7y)
-
 1. Download [Python 3.13.0](https://www.python.org/downloads/release/python-3130/).  
     During installation check the option:
     *“Add Python to PATH”*.
