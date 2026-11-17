@@ -2184,6 +2184,14 @@ body[data-media-type="tvshows"] .simple-title-cell a {
 }
 
 /* Container-level preferences apply to initial, paginated and edited cards alike. */
+#card-view:is([data-overlay-mode="compact"], [data-overlay-mode="hidden"]) .card {
+  border-radius: 3px;
+}
+@media (orientation: portrait) {
+  #card-view:is([data-overlay-mode="compact"], [data-overlay-mode="hidden"]) .card {
+    border-radius: 8px;
+  }
+}
 #card-view[data-overlay-mode="hidden"] .card-title-overlay { display: none; }
 #card-view[data-overlay-mode="compact"] .card-title-overlay {
   background: transparent;
