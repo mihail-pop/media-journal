@@ -742,6 +742,12 @@ html[data-home-activity-view="upcoming"] .upcoming-tiles-container:not(.is-cente
   width: 14px;
   height: 14px;
   border-radius: 3px;
+  cursor: default;
+}
+
+a.activity-cell:focus-visible {
+  outline: 2px solid var(--activity-high);
+  outline-offset: 2px;
 }
 
 .activity-none {

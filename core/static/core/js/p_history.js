@@ -66,6 +66,18 @@ document.addEventListener("DOMContentLoaded", () => {
   
   let releaseYear = isBackForwardNav ? (sessionStorage.getItem('history_release_year') || "") : "";
 
+  // Home's activity links select a day before the first request. Back navigation
+  // keeps the user's restored filters, which may have changed since opening the link.
+  if (!isBackForwardNav) {
+    const linkedDate = new URLSearchParams(window.location.search).get('date') || '';
+    const parts = /^(\d{4})-(\d{2})-(\d{2})$/.exec(linkedDate);
+    if (parts && resolveActivityDate({ year: parts[1], month: parts[2], day: parts[3] })) {
+      selectedActivityYear = parts[1];
+      selectedActivityMonth = parts[2];
+      selectedActivityDay = parts[3];
+    }
+  }
+
   // === MULTI SELECT LOGIC ===
   function initMultiSelect(config) {
     const {

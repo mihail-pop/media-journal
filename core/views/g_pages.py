@@ -206,6 +206,7 @@ def home(request):
         activity_data.append(
             {
                 "date": day.strftime("%A %d %B %Y"),
+                "date_iso": day.isoformat(),
                 "count": count_by_day.get(day, 0),
             }
         )

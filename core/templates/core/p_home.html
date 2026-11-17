@@ -242,12 +242,14 @@
       {% for column in activity_columns %}
         <div class="activity-column">
           {% for day in column %}
-            <div class="activity-cell 
-                        {% if day.count == 0 %}activity-none
-                        {% elif day.count == 1 %}activity-low
-                        {% else %}activity-high{% endif %}"
-                 title="{{ day.date }} ~ {{ day.count }} item{{ day.count|pluralize }}">
-            </div>
+            {% if day.count %}
+              <a href="{% url 'history' %}?date={{ day.date_iso }}"
+                 class="activity-cell {% if day.count == 1 %}activity-low{% else %}activity-high{% endif %}"
+                 title="{{ day.date }} ~ {{ day.count }} item{{ day.count|pluralize }}"
+                 aria-label="{{ day.date }} ~ {{ day.count }} item{{ day.count|pluralize }}"></a>
+            {% else %}
+              <div class="activity-cell activity-none" title="{{ day.date }} ~ 0 items"></div>
+            {% endif %}
           {% endfor %}
         </div>
       {% endfor %}
