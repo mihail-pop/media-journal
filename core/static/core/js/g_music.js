@@ -706,21 +706,25 @@ function setMusicPlayerScrollLock(locked) {
         document.body.style.setProperty('--music-player-scroll-left', -musicPlayerScrollPosition.x + 'px');
         document.documentElement.classList.add('music-player-scroll-locked');
         document.body.classList.add('music-player-scroll-locked');
-    } else if (!locked && musicPlayerScrollPosition) {
+    } else if (!locked) {
         const position = musicPlayerScrollPosition;
         document.documentElement.classList.remove('music-player-scroll-locked');
         document.body.classList.remove('music-player-scroll-locked');
         document.body.style.removeProperty('--music-player-scroll-top');
         document.body.style.removeProperty('--music-player-scroll-left');
         musicPlayerScrollPosition = null;
-        window.scrollTo({ left: position.x, top: position.y, behavior: 'instant' });
+        if (position) window.scrollTo({ left: position.x, top: position.y, behavior: 'instant' });
     }
 }
 
 function updateContainerSize() {
     const container = document.getElementById('music-player-container');
-    if (!container) return;
     const wrapper = document.getElementById('mp-wrapper');
+    // A remembered fullscreen preference must not lock a page without an active player.
+    if (!container || !wrapper || container.style.display === 'none' || !localStorage.getItem('musicPlayerEnabled')) {
+        setMusicPlayerScrollLock(false);
+        return;
+    }
     const historyEl = document.getElementById('mp-history');
     const controlsEl = document.getElementById('mp-controls');
     
@@ -1107,6 +1111,8 @@ window.addEventListener('pageshow', (e) => {
     
     if (localStorage.getItem('musicPlayerEnabled')) {
       initMusicPlayer();
+    } else {
+      hideEmbeddedMusicPlayer();
     }
   }
 });
@@ -1221,8 +1227,14 @@ document.addEventListener('DOMContentLoaded', () => {
       hideEmbeddedMusicPlayer();
     }
     if (isMusicPopout) return;
-    if (e.key === 'musicPlayerEnabled' && toggle) {
-      toggle.checked = e.newValue === toggle.dataset.mode || (e.newValue === 'list' && toggle.dataset.mode === 'filtered');
+    if (e.key === 'musicPlayerEnabled') {
+      if (toggle) {
+        toggle.checked = e.newValue === toggle.dataset.mode || (e.newValue === 'list' && toggle.dataset.mode === 'filtered');
+      }
+      if (!localStorage.getItem('musicPlayerEnabled')) {
+        hideEmbeddedMusicPlayer();
+        return;
+      }
     }
     if (isRestoringFromBfcache) return; // Skip stale queued storage events
     if (e.key === 'music_player_active_tab' && e.newValue && e.newValue !== String(tabId)) {
