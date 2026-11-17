@@ -80,26 +80,16 @@
   </div>
   {% endif %}
 
-  <h3>Activity Year</h3>
-  <div class="year-filter filter-group">
-    <button class="filter-btn year-btn" data-year="{{ current_year }}">{{ current_year }}</button>
-    <button class="filter-btn year-btn" data-year="{{ previous_year }}">{{ previous_year }}</button>
-    <input type="number" id="custom-year" placeholder="Year">
-  </div>
-
-  <div id="month-filter" class="month-filter filter-group" style="display:none;">
-    <button class="filter-btn month-btn" data-month="1">Jan</button>
-    <button class="filter-btn month-btn" data-month="2">Feb</button>
-    <button class="filter-btn month-btn" data-month="3">Mar</button>
-    <button class="filter-btn month-btn" data-month="4">Apr</button>
-    <button class="filter-btn month-btn" data-month="5">May</button>
-    <button class="filter-btn month-btn" data-month="6">Jun</button>
-    <button class="filter-btn month-btn" data-month="7">Jul</button>
-    <button class="filter-btn month-btn" data-month="8">Aug</button>
-    <button class="filter-btn month-btn" data-month="9">Sep</button>
-    <button class="filter-btn month-btn" data-month="10">Oct</button>
-    <button class="filter-btn month-btn" data-month="11">Nov</button>
-    <button class="filter-btn month-btn" data-month="12">Dec</button>
+  <div class="activity-date-filter">
+    <div class="activity-date-header">
+      <h3>Activity Date</h3>
+      <button type="button" id="activity-rewind" class="filter-mode-btn" title="Rewind activity days" aria-label="Rewind activity days" aria-pressed="false">Rewind</button>
+    </div>
+    <div class="activity-date-inputs">
+      <input type="text" id="activity-day" placeholder="Day" aria-label="Activity day" inputmode="numeric" maxlength="2" pattern="[0-9]*" autocomplete="off">
+      <input type="text" id="activity-month" placeholder="Month" aria-label="Activity month" inputmode="numeric" maxlength="2" pattern="[0-9]*" autocomplete="off">
+      <input type="text" id="activity-year" placeholder="Year" aria-label="Activity year" inputmode="numeric" maxlength="4" pattern="[0-9]*" autocomplete="off">
+    </div>
   </div>
 
   <div class="release-year-header">

@@ -215,17 +215,6 @@ p {
 
 .activity-date-options { margin: 0 auto; }
 .activity-date-mode-button { justify-content: center; }
-.activity-date-help {
-  box-sizing: border-box;
-  min-height: 9em;
-  margin: 1rem 0 0;
-  padding: 0.75rem;
-  background: var(--bg-tertiary);
-  border-radius: 6px;
-  color: var(--text-primary);
-  font-size: 0.85rem;
-  line-height: 1.5;
-}
 
 
 .custom-select-wrapper {

@@ -71,7 +71,7 @@ class MediaItem(models.Model):
     personal_rating = models.PositiveSmallIntegerField(null=True,blank=True)  # Stores values from 1 to 100
     favorite = models.BooleanField(default=False)
     favorite_position = models.PositiveIntegerField(null=True, blank=True)
-    date_added = models.DateTimeField(default=timezone.now)
+    date_added = models.DateTimeField(default=timezone.now, db_index=True)
     repeats = models.PositiveIntegerField(default=0)
     notes = models.TextField(blank=True, null=True)
 

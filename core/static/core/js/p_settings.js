@@ -60,23 +60,14 @@ document.addEventListener("DOMContentLoaded", function () {
   const activityDateModes = document.getElementById('activity-date-modes');
   if (activityDateModes) {
     const buttons = [...activityDateModes.querySelectorAll('button[data-mode]')];
-    const help = document.getElementById('activity-date-help');
     const selectedButton = () => buttons.find(button => button.getAttribute('aria-pressed') === 'true');
-    const showHelp = button => { help.textContent = button?.dataset.description || ''; };
     const selectMode = mode => {
       buttons.forEach(button => {
         const selected = button.dataset.mode === mode;
         button.classList.toggle('active', selected);
         button.setAttribute('aria-pressed', String(selected));
       });
-      showHelp(selectedButton());
     };
-    buttons.forEach(button => {
-      button.addEventListener('mouseenter', () => showHelp(button));
-      button.addEventListener('focus', () => showHelp(button));
-      button.addEventListener('mouseleave', () => showHelp(selectedButton()));
-      button.addEventListener('blur', () => showHelp(selectedButton()));
-    });
     activityDateModes.addEventListener('click', async event => {
       const button = event.target.closest('button[data-mode]');
       if (!button || button.disabled || button.getAttribute('aria-pressed') === 'true') return;

@@ -1185,10 +1185,10 @@ def settings_page(request):
 
     current_rating_mode = settings.rating_mode
     activity_date_descriptions = {
-        'manual': 'Keep the activity date unless you change it manually.',
-        'status': 'Update to the current date and time whenever the status changes.',
-        'status_score': 'Update only when status and score both change in the same edit. Completing with the plus alone keeps the date.',
-        'combined': 'Update when Watching, Reading or Playing changes to Completed, Dropped or Paused, or when status and score change together. Completing with the plus updates the date.',
+        'manual': "Don't update Activity Date automatically.",
+        'status': 'Update Activity Date on any status change.',
+        'status_score': 'Update Activity Date on any status change + score change.',
+        'combined': 'Update Activity Date when Watching/Reading/Playing changes to Completed, Dropped or Paused, or on any status change + score change.',
     }
     activity_date_modes = [
         {'value': value, 'label': label, 'description': activity_date_descriptions[value]}
@@ -1228,9 +1228,6 @@ def settings_page(request):
             "show_collections_field": settings.show_collections_field,
             "activity_date_mode": settings.activity_date_mode,
             "activity_date_modes": activity_date_modes,
-            "activity_date_mode_description": activity_date_descriptions.get(
-                settings.activity_date_mode, activity_date_descriptions['combined']
-            ),
             "details_sections_order": settings.details_sections_order,
             "favorite_sections_order": settings.get_favorite_sections_order(),
             "share_favorite_sections": favorite_export_options(settings),

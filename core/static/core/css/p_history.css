@@ -398,10 +398,29 @@ html {
   background-color: var(--table-bg);
 }
 
-#custom-year {
-  flex: none;
-  width: 3.5rem;
-  padding: 0.4rem 0.6rem;
+.activity-date-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.activity-date-header h3 {
+  margin: 0;
+}
+
+.activity-date-inputs {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr) minmax(0, 1.3fr);
+  gap: 0.4rem;
+}
+
+.activity-date-inputs input {
+  min-width: 0;
+  width: 100%;
+  padding: 0.4rem 0.2rem;
   font-size: 0.9rem;
   color: var(--text-primary);
   background-color: var(--bg-filter);
@@ -413,24 +432,36 @@ html {
   transition: background-color 0.3s ease;
   margin-bottom: 0;
 }
-#custom-year:focus {
+
+.activity-date-inputs input:focus {
   background-color: var(--bg-quaternary);
 }
-/* Hide spin buttons on number input */
-#custom-year::-webkit-inner-spin-button,
-#custom-year::-webkit-outer-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-#custom-year[type=number] {
-  -moz-appearance: textfield;
-  appearance: textfield;
+
+.activity-date-inputs input[aria-invalid="true"] {
+  outline: 1px solid #d86464;
+  outline-offset: -1px;
 }
 
-#custom-year::placeholder {
+.activity-date-inputs input::placeholder {
   color: var(--text-primary);
   opacity: 1;
 }
+
+#activity-rewind {
+  flex: none;
+  white-space: nowrap;
+}
+
+#activity-rewind[aria-pressed="true"] {
+  background-color: var(--bg-quaternary);
+}
+
+#activity-rewind:focus-visible {
+  outline: 2px solid var(--text-primary);
+  outline-offset: 2px;
+}
+
+#activity-rewind:disabled { opacity: 0.45; cursor: default; }
 
 .date-range-filter {
   display: flex;
@@ -900,13 +931,6 @@ html {
   opacity: 0.9 !important;
 }
 
-#month-filter {
-  margin-top: 0.4rem;
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0.4rem;
-}
-
 /* SLIDER */
 .release-year-header {
   display: flex;
@@ -1360,7 +1384,7 @@ html {
   .sidebar h3,
   #sort-asc,
   #sort-desc,
-  #custom-year {
+  .activity-date-inputs input {
     font-size: 2.5rem;
   }
 
@@ -1507,7 +1531,12 @@ html {
     margin-top: 0;
   }
 
-  #custom-year{
-    width: 100%;
+  .activity-date-inputs {
+    gap: 0.5rem;
   }
+
+  .activity-date-inputs input {
+    padding: 0.8rem;
+  }
+
 }

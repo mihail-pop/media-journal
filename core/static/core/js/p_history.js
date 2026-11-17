@@ -11,10 +11,11 @@ document.addEventListener("DOMContentLoaded", () => {
   
   // Filter Controls
   const filterModeToggle = document.getElementById('filter-mode-toggle');
-  const yearBtns = [...document.querySelectorAll(".year-btn")];
-  const monthBtns = [...document.querySelectorAll(".month-btn")];
-  const monthFilterDiv = document.getElementById("month-filter");
-  const customYearInput = document.getElementById("custom-year");
+  const activityDayInput = document.getElementById('activity-day');
+  const activityMonthInput = document.getElementById('activity-month');
+  const activityYearInput = document.getElementById('activity-year');
+  const activityDateInputs = [activityDayInput, activityMonthInput, activityYearInput].filter(Boolean);
+  const rewindButton = document.getElementById('activity-rewind');
   
   // Slider Controls
   const releaseYearSlider = document.getElementById("release-year-slider");
@@ -27,12 +28,20 @@ document.addEventListener("DOMContentLoaded", () => {
   let isLoading = false;
   let hasMore = true;
   let allItems = [];
+  let activeRequest = null;
+  let requestVersion = 0;
+  let rewindRunning = false;
+  let rewindGeneration = 0;
+  let rewindTimer;
+  let activityDateTimeout;
+  const rewindDelay = 2000;
 
   const isBackForwardNav = performance.getEntriesByType('navigation')[0]?.type === 'back_forward';
   
   if (!isBackForwardNav) {
     sessionStorage.removeItem('history_activity_year');
     sessionStorage.removeItem('history_activity_month');
+    sessionStorage.removeItem('history_activity_day');
     sessionStorage.removeItem('history_search');
     sessionStorage.removeItem('history_sort_order');
     sessionStorage.removeItem('history_sort_by');
@@ -45,6 +54,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let selectedActivityYear = isBackForwardNav ? (sessionStorage.getItem('history_activity_year') || "all") : "all";
   let selectedActivityMonth = isBackForwardNav ? (sessionStorage.getItem('history_activity_month') || "all") : "all";
+  let selectedActivityDay = isBackForwardNav ? (sessionStorage.getItem('history_activity_day') || "all") : "all";
   let searchQuery = isBackForwardNav ? (sessionStorage.getItem('history_search') || "") : "";
   let sortOrder = isBackForwardNav ? (sessionStorage.getItem('history_sort_order') || "desc") : "desc";
   let sortBy = isBackForwardNav ? (sessionStorage.getItem('history_sort_by') || "activity_date") : "activity_date";
@@ -399,6 +409,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let searchTimeout;
   searchInput.addEventListener("input", e => {
+    stopRewind();
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(() => {
       searchQuery = e.target.value;
@@ -407,78 +418,147 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 300);
   });
 
-  function updateMonthFilterVisibility() {
-    monthFilterDiv.style.display = selectedActivityYear !== "all" ? "flex" : "none";
+  function resolveActivityDate(raw = {
+    year: selectedActivityYear, month: selectedActivityMonth, day: selectedActivityDay,
+  }) {
+    const year = raw.year === 'all' ? '' : raw.year;
+    const month = raw.month === 'all' ? '' : raw.month;
+    const day = raw.day === 'all' ? '' : raw.day;
+    if ((year && (!/^\d{4}$/.test(year) || Number(year) < 1)) ||
+        (month && (!/^\d{1,2}$/.test(month) || Number(month) < 1 || Number(month) > 12)) ||
+        (day && (!/^\d{1,2}$/.test(day) || Number(day) < 1 || Number(day) > 31))) return null;
+    const today = new Date();
+    const resolved = {
+      year: year ? Number(year) : (month || day ? today.getFullYear() : null),
+      month: month ? Number(month) : (day ? today.getMonth() + 1 : null),
+      day: day ? Number(day) : null,
+    };
+    if (resolved.day) {
+      const date = new Date(0);
+      date.setUTCFullYear(resolved.year, resolved.month - 1, resolved.day);
+      if (date.getUTCFullYear() !== resolved.year || date.getUTCMonth() + 1 !== resolved.month ||
+          date.getUTCDate() !== resolved.day) return null;
+    }
+    return resolved;
   }
 
-  function clearYearAndMonth() {
-    selectedActivityYear = "all";
-    selectedActivityMonth = "all";
-    yearBtns.forEach(b => b.classList.remove("active"));
-    monthBtns.forEach(b => b.classList.remove("active"));
-    customYearInput.value = '';
+  function readActivityDateInputs(showErrors = false) {
+    const raw = {
+      year: activityYearInput?.value || '', month: activityMonthInput?.value || '', day: activityDayInput?.value || '',
+    };
+    const valid = resolveActivityDate(raw) !== null;
+    const incomplete = (raw.year && raw.year.length < 4) || raw.month === '0' || raw.day === '0';
+    activityDateInputs.forEach(input => {
+      const invalid = !valid && !!input.value && (showErrors || !incomplete);
+      const message = invalid ? 'Enter a valid date. Use four digits for the year.' : '';
+      input.setCustomValidity(message);
+      input.setAttribute('aria-invalid', String(invalid));
+      input.title = message;
+    });
+    if (rewindButton) rewindButton.disabled = !valid && !rewindRunning;
+    return valid ? raw : null;
+  }
+
+  function applyActivityDate(raw, fillInputs = false) {
+    selectedActivityYear = raw.year || 'all';
+    selectedActivityMonth = raw.month || 'all';
+    selectedActivityDay = raw.day || 'all';
     sessionStorage.setItem('history_activity_year', selectedActivityYear);
     sessionStorage.setItem('history_activity_month', selectedActivityMonth);
-    updateMonthFilterVisibility();
-    resetAndLoad();
+    sessionStorage.setItem('history_activity_day', selectedActivityDay);
+    if (fillInputs) {
+      if (activityYearInput) activityYearInput.value = raw.year;
+      if (activityMonthInput) activityMonthInput.value = raw.month;
+      if (activityDayInput) activityDayInput.value = raw.day;
+      readActivityDateInputs();
+    }
   }
 
-  yearBtns.forEach(btn => btn.addEventListener("click", () => {
-    if (btn.classList.contains("active")) {
-      // If clicking the already selected year, deselect and go back to all
-      clearYearAndMonth();
-    } else {
-      yearBtns.forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-      selectedActivityYear = btn.dataset.year;
-      customYearInput.value = '';
-      
-      selectedActivityMonth = "all";
-      monthBtns.forEach(b => b.classList.remove("active"));
+  function cancelHistoryRequest() {
+    activeRequest?.controller.abort();
+    activeRequest = null;
+    requestVersion++;
+    isLoading = false;
+    loadingIndicator.style.display = 'none';
+  }
 
-      sessionStorage.setItem('history_activity_year', selectedActivityYear);
-      sessionStorage.setItem('history_activity_month', selectedActivityMonth);
-      updateMonthFilterVisibility();
-      resetAndLoad();
-    }
-  }));
+  function updateRewindButton() {
+    if (!rewindButton) return;
+    rewindButton.textContent = rewindRunning ? 'Stop' : 'Rewind';
+    const label = rewindRunning ? 'Stop activity rewind' : 'Rewind activity days';
+    rewindButton.title = label;
+    rewindButton.setAttribute('aria-label', label);
+    rewindButton.setAttribute('aria-pressed', String(rewindRunning));
+    readActivityDateInputs();
+  }
 
-  customYearInput.addEventListener("input", (e) => {
-    if (e.target.value.length > 4) {
-      e.target.value = e.target.value.slice(0, 4);
-    }
-    
-    if (e.target.value.length === 4) {
-      yearBtns.forEach(b => b.classList.remove("active"));
-      selectedActivityYear = e.target.value;
-      
-      selectedActivityMonth = "all";
-      monthBtns.forEach(b => b.classList.remove("active"));
+  function stopRewind() {
+    rewindRunning = false;
+    rewindGeneration++;
+    clearTimeout(rewindTimer);
+    if (activeRequest?.rewind) cancelHistoryRequest();
+    updateRewindButton();
+  }
 
-      sessionStorage.setItem('history_activity_year', selectedActivityYear);
-      sessionStorage.setItem('history_activity_month', selectedActivityMonth);
-      updateMonthFilterVisibility();
-      resetAndLoad();
-    } else if (e.target.value === "") {
-      // If the user clears the input field, reset to all years
-      if (selectedActivityYear !== "all" && !yearBtns.some(b => b.classList.contains("active"))) {
-        clearYearAndMonth();
-      }
+  async function advanceRewind(generation, before = '') {
+    if (!rewindRunning || generation !== rewindGeneration) return;
+    const data = await loadItems(1, true, { rewind: true, before, generation });
+    if (!rewindRunning || generation !== rewindGeneration) return;
+    if (!data || data.rewind_exhausted || !data.activity_date) {
+      stopRewind();
+      return;
     }
+    // Start the viewing interval after the results arrive, never overlapping requests.
+    rewindTimer = setTimeout(() => advanceRewind(generation, data.activity_date), rewindDelay);
+  }
+
+  rewindButton?.addEventListener('click', () => {
+    if (rewindRunning) {
+      stopRewind();
+      return;
+    }
+    clearTimeout(activityDateTimeout);
+    const raw = readActivityDateInputs(true);
+    if (!raw) return;
+    clearTimeout(searchTimeout);
+    searchQuery = searchInput.value;
+    sessionStorage.setItem('history_search', searchQuery);
+    clearTimeout(releaseYearDebounce);
+    if (releaseYearDisplay.style.display !== 'none' && /^\d{4}$/.test(releaseYearValue.value)) {
+      releaseYear = releaseYearValue.value;
+      sessionStorage.setItem('history_release_year', releaseYear);
+    }
+    applyActivityDate(raw);
+    rewindRunning = true;
+    const generation = ++rewindGeneration;
+    updateRewindButton();
+    advanceRewind(generation);
   });
 
-  monthBtns.forEach(btn => btn.addEventListener("click", () => {
-    if (btn.classList.contains("active")) {
-      // If clicking the already selected month, deselect and go back to all years
-      clearYearAndMonth();
-    } else {
-      monthBtns.forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-      selectedActivityMonth = btn.dataset.month;
-      sessionStorage.setItem('history_activity_month', selectedActivityMonth);
+  activityDateInputs.forEach(input => {
+    input.addEventListener('input', () => {
+      stopRewind();
+      cancelHistoryRequest();
+      input.value = input.value.replace(/\D/g, '').slice(0, input.maxLength);
+      clearTimeout(activityDateTimeout);
+      const raw = readActivityDateInputs();
+      if (!raw) return;
+      activityDateTimeout = setTimeout(() => {
+        applyActivityDate(raw);
+        resetAndLoad();
+      }, 250);
+    });
+    input.addEventListener('blur', () => readActivityDateInputs(true));
+    input.addEventListener('keydown', event => {
+      if (event.key !== 'Enter') return;
+      event.preventDefault();
+      clearTimeout(activityDateTimeout);
+      const raw = readActivityDateInputs(true);
+      if (!raw) return;
+      applyActivityDate(raw);
       resetAndLoad();
-    }
-  }));
+    });
+  });
 
   let lastValidReleaseYear = releaseYearSlider.value;
   if (releaseYear) {
@@ -494,6 +574,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let releaseYearDebounce;
 
   releaseYearSlider.addEventListener("input", (e) => {
+    stopRewind();
     releaseYearValue.value = e.target.value;
     releaseYearDisplay.style.display = 'inline';
     
@@ -520,6 +601,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Release year custom input event listeners
   releaseYearValue.addEventListener("input", (e) => {
+    stopRewind();
     if (e.target.value.length > 4) {
       e.target.value = e.target.value.slice(0, 4);
     }
@@ -557,87 +639,85 @@ document.addEventListener("DOMContentLoaded", () => {
     resetAndLoad();
   });
 
-  // Restore states
-  if (isBackForwardNav) {
-    searchInput.value = searchQuery;
-    const yearBtn = yearBtns.find(b => b.dataset.year === selectedActivityYear);
-    if (yearBtn) {
-      yearBtns.forEach(b => b.classList.remove("active"));
-      yearBtn.classList.add("active");
-      customYearInput.value = '';
-    } else if (selectedActivityYear !== "all") {
-      yearBtns.forEach(b => b.classList.remove("active"));
-      customYearInput.value = selectedActivityYear;
-    }
-    const monthBtn = monthBtns.find(b => b.dataset.month === selectedActivityMonth);
-    if (monthBtn) {
-      monthBtns.forEach(b => b.classList.remove("active"));
-      monthBtn.classList.add("active");
-    }
-  }
-  updateMonthFilterVisibility();
+  // Restore entered values, keeping inferred year/month defaults out of the boxes.
+  if (isBackForwardNav) searchInput.value = searchQuery;
+  applyActivityDate({
+    year: selectedActivityYear === 'all' ? '' : selectedActivityYear,
+    month: selectedActivityMonth === 'all' ? '' : selectedActivityMonth,
+    day: selectedActivityDay === 'all' ? '' : selectedActivityDay,
+  }, true);
   updateSortButtons();
 
   // === API FUNCTIONS ===
-  async function loadItems(page = 1, reset = false) {
-    if (isLoading || (!hasMore && !reset)) return;
+  async function loadItems(page = 1, reset = false, options = {}) {
+    if (!reset && (isLoading || !hasMore)) return null;
+    if (reset) activeRequest?.controller.abort();
+    const request = { controller: new AbortController(), rewind: !!options.rewind };
+    activeRequest = request;
+    const version = ++requestVersion;
     isLoading = true;
-    
-    const loadingTimeout = setTimeout(() => {
-      loadingIndicator.style.display = 'block';
+    const loadingTimeout = options.rewind ? null : setTimeout(() => {
+      if (version === requestVersion) loadingIndicator.style.display = 'block';
     }, 200);
-    
     try {
       const params = new URLSearchParams({
-        page: page,
-        search: searchQuery,
-        sort_by: sortBy,
-        sort_order: sortOrder,
-        filter_mode: currentFilterMode
+        page, search: searchQuery, sort_by: sortBy, sort_order: sortOrder, filter_mode: currentFilterMode,
       });
-      
-      if (selectedActivityYear !== 'all') params.append('activity_year', selectedActivityYear);
-      if (selectedActivityMonth !== 'all') params.append('month', selectedActivityMonth);
+      const date = resolveActivityDate();
+      if (!date) return null;
+      if (date.year) params.append('activity_year', date.year);
+      if (date.month) params.append('month', date.month);
+      if (date.day) params.append('day', date.day);
+      if (options.rewind) {
+        params.append('rewind', '1');
+        if (options.before) params.append('rewind_before', options.before);
+      }
       if (releaseYear) params.append('release_year', releaseYear);
       if (currentTypes.length > 0) params.append('types', currentTypes.map(t => t.value).join(','));
       if (currentStatuses.length > 0) params.append('statuses', currentStatuses.map(s => s.value).join(','));
       if (currentCollections.length > 0) params.append('collections', currentCollections.map(c => c.value).join(','));
-      
       const historyCacheVersion = sessionStorage.getItem('cacheVersion_history');
-      if (historyCacheVersion) {
-        params.append('_v', historyCacheVersion);
-      }
-
-      const response = await fetch(`/api/history/?${params}`);
+      if (historyCacheVersion) params.append('_v', historyCacheVersion);
+      const response = await fetch(`/api/history/?${params}`, { signal: request.controller.signal });
       const data = await response.json();
-      
-      if (reset) {
-        allItems = data.items || [];
-        currentPage = 1;
-      } else {
-        const existingMap = new Map(allItems.map((it, idx) => [String(it.id), idx]));
-        for (const ni of (data.items || [])) {
-          const nid = String(ni.id);
-          if (existingMap.has(nid)) {
-            allItems[existingMap.get(nid)] = ni;
-          } else {
-            existingMap.set(nid, allItems.length);
-            allItems.push(ni);
+      if (version !== requestVersion || request.controller.signal.aborted) return null;
+      if (!response.ok) throw new Error(data.error || 'Unable to load history.');
+      if (options.rewind) {
+        if (!rewindRunning || options.generation !== rewindGeneration) return null;
+        if (data.rewind_exhausted) return data;
+        const parts = /^(\d{4})-(\d{2})-(\d{2})$/.exec(data.activity_date || '');
+        if (!parts) throw new Error('Invalid activity date in rewind response.');
+        applyActivityDate({ year: parts[1], month: parts[2], day: parts[3] }, true);
+      }
+      if (reset) allItems = data.items || [];
+      else {
+        const existingMap = new Map(allItems.map((item, index) => [String(item.id), index]));
+        for (const item of data.items || []) {
+          const id = String(item.id);
+          if (existingMap.has(id)) allItems[existingMap.get(id)] = item;
+          else {
+            existingMap.set(id, allItems.length);
+            allItems.push(item);
           }
         }
       }
-      
       hasMore = data.has_more;
       currentPage = data.page;
-      
       renderItems();
-      
+      return data;
     } catch (error) {
-      console.error('Error loading items:', error);
+      if (error.name !== 'AbortError' && version === requestVersion) {
+        console.error('Error loading items:', error);
+        if (reset) hasMore = false;
+      }
+      return null;
     } finally {
       clearTimeout(loadingTimeout);
-      isLoading = false;
-      loadingIndicator.style.display = 'none';
+      if (version === requestVersion) {
+        activeRequest = null;
+        isLoading = false;
+        loadingIndicator.style.display = 'none';
+      }
     }
   }
 
@@ -683,16 +763,14 @@ document.addEventListener("DOMContentLoaded", () => {
           if (currentFilterMode === 'exclude' && statusMatches) return false;
         }
 
-        if (selectedActivityYear && selectedActivityYear !== 'all') {
-          const y = new Date(it.date_added).getFullYear();
-          if (String(y) !== String(selectedActivityYear)) return false;
-          
-          if (selectedActivityMonth && selectedActivityMonth !== 'all') {
-             const m = new Date(it.date_added).getMonth() + 1;
-             if (String(m) !== String(selectedActivityMonth)) return false;
-          }
+        const activityDate = resolveActivityDate();
+        if (activityDate && (activityDate.year || activityDate.month || activityDate.day)) {
+          const [year, month, day] = String(it.date_added || '').slice(0, 10).split('-').map(Number);
+          if ((activityDate.year && year !== activityDate.year) ||
+              (activityDate.month && month !== activityDate.month) ||
+              (activityDate.day && day !== activityDate.day)) return false;
         }
-        
+
         if (releaseYear) {
           if (!it.release_date || !it.release_date.startsWith(String(releaseYear))) return false;
         }
@@ -884,15 +962,16 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function resetAndLoad() {
-    allItems = [];
-    currentPage = 1;
-    hasMore = true;
-    loadItems(1, true);
+    stopRewind();
+    clearTimeout(activityDateTimeout);
+    const raw = readActivityDateInputs();
+    if (raw) applyActivityDate(raw);
+    return loadItems(1, true);
   }
 
   // === SCROLL PAGINATION ===
   function handleScroll() {
-    if (isLoading || !hasMore) return;
+    if (rewindRunning || isLoading || !hasMore) return;
     
     const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
     const windowHeight = window.innerHeight;
@@ -907,6 +986,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // === GLOBAL EDIT MODAL FUNCTION ===
   window.openEditModal = function(element) {
+    stopRewind();
     const itemId = element.dataset.id;
     const coverUrl = element.dataset.coverUrl;
     const title = element.dataset.title;
@@ -961,10 +1041,19 @@ document.addEventListener("DOMContentLoaded", () => {
   const pageKey = 'scrollPage_history';
   
   window.addEventListener('pagehide', () => {
+    stopRewind();
+    cancelHistoryRequest();
+    clearTimeout(activityDateTimeout);
+    clearTimeout(searchTimeout);
+    clearTimeout(releaseYearDebounce);
     sessionStorage.setItem(scrollKey, window.scrollY);
     sessionStorage.setItem(pageKey, currentPage);
   });
   
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) stopRewind();
+  });
+
   const savedPage = parseInt(sessionStorage.getItem(pageKey)) || 1;
   const savedScroll = parseInt(sessionStorage.getItem(scrollKey)) || 0;
   

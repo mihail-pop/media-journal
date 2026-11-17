@@ -1,11 +1,13 @@
 import logging
-from datetime import datetime
+from datetime import date, datetime, timedelta
 
+from django.conf import settings
 from django.http import JsonResponse
 from django.urls import reverse
 from django.db.models import F, Case, When, Value, IntegerField, Prefetch
 from django.db.models.functions import Lower
 from django.views.decorators.http import require_GET
+from django.utils import timezone
 
 from core.models import MediaItem, FavoritePerson, Collection, CollectionItem
 from core.services.g_utils import normalize_search_text
@@ -1192,20 +1194,83 @@ def books_banners_api(request):
             )
     return JsonResponse({"banners": banners})
 
+def _history_date_part(value, label, max_digits, maximum):
+    value = value.strip()
+    if not value or value == "all":
+        return None
+    if not value.isascii() or not value.isdigit() or len(value) > max_digits:
+        raise ValueError(f"{label} must contain at most {max_digits} digits.")
+    number = int(value)
+    if not 1 <= number <= maximum:
+        raise ValueError(f"{label} must be between 1 and {maximum}.")
+    return number
+
+
+def _history_next_day(value):
+    # There is no representable timestamp after the final supported date.
+    return value + timedelta(days=1) if value < date.max else None
+
+
+def _history_activity_bounds(params, today):
+    year = _history_date_part(params.get("activity_year", ""), "Year", 4, 9999)
+    month = _history_date_part(
+        params.get("activity_month", params.get("month", "")), "Month", 2, 12
+    )
+    day = _history_date_part(
+        params.get("activity_day", params.get("day", "")), "Day", 2, 31
+    )
+
+    if year is None and (month is not None or day is not None):
+        year = today.year
+    if month is None and day is not None:
+        month = today.month
+    if year is None:
+        return None, None
+    if day is not None:
+        start = date(year, month, day)
+        return start, _history_next_day(start)
+    if month is not None:
+        start = date(year, month, 1)
+        if month < 12:
+            return start, date(year, month + 1, 1)
+        return start, date(year + 1, 1, 1) if year < 9999 else None
+    return date(year, 1, 1), date(year + 1, 1, 1) if year < 9999 else None
+
+
+def _history_midnight(value):
+    timestamp = datetime.combine(value, datetime.min.time())
+    return timezone.make_aware(timestamp) if settings.USE_TZ else timestamp
+
+
 @require_GET
 def history_api(request):
     page = int(request.GET.get("page", 1))
     search = request.GET.get("search", "").strip()
     sort_by = request.GET.get("sort_by", "activity_date")
     sort_order = request.GET.get("sort_order", "desc")
-    activity_year = request.GET.get("activity_year", "")
-    month = request.GET.get("month", "")
+    rewind = request.GET.get("rewind") == "1"
     release_year = request.GET.get("release_year", "")
     types_param = request.GET.get("types", "")
     statuses_param = request.GET.get("statuses", "")
     collections_param = request.GET.get("collections", "")
     filter_mode = request.GET.get("filter_mode", "include")
     page_size = 50
+
+    now = timezone.now()
+    today = timezone.localtime(now).date() if timezone.is_aware(now) else now.date()
+    cursor = request.GET.get("rewind_before", "").strip() if rewind else ""
+    try:
+        if cursor:
+            cursor_date = date.fromisoformat(cursor)
+            if cursor_date.isoformat() != cursor:
+                raise ValueError("rewind_before must use YYYY-MM-DD.")
+            activity_start, activity_end = None, cursor_date
+        else:
+            activity_start, activity_end = _history_activity_bounds(request.GET, today)
+            if rewind and activity_start is None:
+                activity_end = _history_next_day(today)
+    except ValueError as error:
+        return JsonResponse({"error": str(error)}, status=400)
 
     queryset = MediaItem.objects.all()
 
@@ -1223,11 +1288,6 @@ def history_api(request):
             if normalized_query in target_text:
                 matching_ids.append(item_id)
         queryset = queryset.filter(id__in=matching_ids)
-
-    if activity_year and activity_year != "all":
-        queryset = queryset.filter(date_added__year=activity_year)
-        if month and month != "all":
-            queryset = queryset.filter(date_added__month=month)
 
     if release_year:
         queryset = queryset.filter(release_date__startswith=release_year)
@@ -1252,6 +1312,28 @@ def history_api(request):
             queryset = queryset.exclude(collections__id__in=selected_collections)
         else:
             queryset = queryset.filter(collections__id__in=selected_collections).distinct()
+
+    activity_date = None
+    if rewind:
+        seek_queryset = queryset
+        if activity_end is not None:
+            seek_queryset = seek_queryset.filter(date_added__lt=_history_midnight(activity_end))
+        latest_activity = seek_queryset.order_by("-date_added").values_list("date_added", flat=True).first()
+        if latest_activity is None:
+            return JsonResponse({
+                "items": [], "has_more": False, "page": page,
+                "activity_date": None, "rewind_exhausted": True,
+            })
+        activity_date = (
+            timezone.localtime(latest_activity).date()
+            if timezone.is_aware(latest_activity) else latest_activity.date()
+        )
+        activity_start, activity_end = activity_date, _history_next_day(activity_date)
+
+    if activity_start is not None:
+        queryset = queryset.filter(date_added__gte=_history_midnight(activity_start))
+    if activity_end is not None:
+        queryset = queryset.filter(date_added__lt=_history_midnight(activity_end))
 
     # Pre-calculate rating order to allow sorting
     queryset = queryset.annotate(
@@ -1333,7 +1415,10 @@ def history_api(request):
             }
         )
 
-    return JsonResponse({"items": items_data, "has_more": has_more, "page": page})
+    response_data = {"items": items_data, "has_more": has_more, "page": page}
+    if rewind:
+        response_data.update(activity_date=activity_date.isoformat(), rewind_exhausted=False)
+    return JsonResponse(response_data)
 
 @require_GET
 def favorites_api(request):
