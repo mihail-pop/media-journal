@@ -14,6 +14,7 @@ const musicPopoutModeKey = 'music_player_popout';
 const musicDockStateKey = 'music_player_dock_state';
 const musicPopoutPositionKey = 'music_player_popout_position';
 let pendingMusicPopoutState = null;
+let musicControlsVisibility = null;
 
 function musicPopoutWindowFeatures() {
     let width = 640;
@@ -418,6 +419,9 @@ function createPlayer(videoId, startTime = 0, startPaused = false) {
       historyIndex = 0;
       saveHistory();
   }
+
+  musicControlsVisibility?.destroy();
+  musicControlsVisibility = null;
   
   if (musicPlayer && musicPlayer.destroy) {
     try { musicPlayer.destroy(); } catch(e) {}
@@ -493,7 +497,14 @@ function createPlayer(videoId, startTime = 0, startPaused = false) {
       .mp-fullscreen #mp-controls {
          position: absolute; bottom: 0.5rem; left: 50%; transform: translateX(-50%);
          background: rgba(0,0,0,0.8); border-radius: 12px; height: 60px; padding: 0 20px; width: 600px; max-width: 90vw; box-sizing: border-box;
+         opacity: 1; transition: opacity 100ms cubic-bezier(0, 0, 0.2, 1);
       }
+      .mp-fullscreen.mp-controls-hidden #mp-controls {
+         opacity: 0; pointer-events: none;
+         transition: opacity 200ms cubic-bezier(0.4, 0, 1, 1);
+      }
+      .mp-controls-wake { display: none; position: absolute; inset: 0; z-index: 2; touch-action: none; cursor: none; }
+      .mp-fullscreen.mp-controls-hidden .mp-controls-wake { display: block; }
       .mp-fullscreen #mp-history {
          position: absolute; bottom: 100px; right: 20px; width: 300px; max-height: 50vh;
          background: rgba(0,0,0,0.8); border-radius: 8px; border: 1px solid #333;
@@ -607,6 +618,7 @@ function createPlayer(videoId, startTime = 0, startPaused = false) {
           </div>
           <div id="mp-video-wrap">
              <div id="music-player"></div>
+             <div class="mp-controls-wake" aria-hidden="true"></div>
              <div class="mp-drag-zone mp-drag-zone-left" title="Drag to move player"></div>
              <div class="mp-drag-zone mp-drag-zone-right" title="Drag to move player"></div>
           </div>
@@ -619,6 +631,7 @@ function createPlayer(videoId, startTime = 0, startPaused = false) {
   renderHistoryList();
   bindPlayerEvents();
   bindMusicPlayerDragging(container);
+  musicControlsVisibility = bindMusicControlsVisibility(container);
   
   musicPlayer = new YT.Player('music-player', {
     height: '100%',
@@ -633,6 +646,7 @@ function createPlayer(videoId, startTime = 0, startPaused = false) {
       onReady: (e) => {
         isMusicPlayerReady = true;
         if (!startPaused) e.target.playVideo();
+        musicControlsVisibility?.refresh();
       },
       onStateChange: onPlayerStateChange
     }
@@ -699,7 +713,68 @@ function bindMusicPlayerDragging(container) {
 
 let musicPlayerScrollPosition = null;
 
+function bindMusicControlsVisibility(container) {
+    const wrapper = document.getElementById('mp-wrapper');
+    const controls = document.getElementById('mp-controls');
+    const history = document.getElementById('mp-history');
+    const wakeLayer = container.querySelector('.mp-controls-wake');
+    let hideTimer = null;
+
+    const isFullscreen = () => !isMusicPopout && wrapper.isConnected &&
+        container.style.display !== 'none' && wrapper.classList.contains('mp-fullscreen') &&
+        !!localStorage.getItem('musicPlayerEnabled');
+    const isPlaying = () => musicPlayer && isMusicPlayerReady &&
+        musicPlayer.getPlayerState() === YT.PlayerState.PLAYING;
+
+    function reset() {
+        clearTimeout(hideTimer);
+        hideTimer = null;
+        wrapper.classList.remove('mp-controls-hidden');
+    }
+
+    function refresh() {
+        reset();
+        if (!isFullscreen() || !isPlaying()) return;
+        hideTimer = setTimeout(() => {
+            hideTimer = null;
+            const hoveringControls = window.matchMedia('(hover: hover)').matches && controls.matches(':hover');
+            if (!isFullscreen() || !isPlaying() || hoveringControls || controls.querySelector(':focus-visible') ||
+                history.style.display !== 'none') return;
+            wrapper.classList.add('mp-controls-hidden');
+        }, 4000);
+    }
+
+    function wakeControls(event) {
+        // The layer receives this click, so pause through YouTube's API as well.
+        event.preventDefault();
+        event.stopPropagation();
+        if (event.isPrimary && event.button === 0 && isFullscreen() && isPlaying()) {
+            musicPlayer.pauseVideo();
+        }
+        refresh();
+    }
+
+    // YouTube's iframe does not forward pointer movement. Only cover it while idle,
+    // and remove the layer on the first movement so its own controls work normally.
+    const activityEvents = ['pointermove', 'pointerdown', 'keydown', 'focusin', 'focusout'];
+    activityEvents.forEach(type => container.addEventListener(type, refresh));
+    controls.addEventListener('pointerleave', refresh);
+    wakeLayer.addEventListener('pointerdown', wakeControls);
+
+    return {
+        refresh,
+        reset,
+        destroy() {
+            reset();
+            activityEvents.forEach(type => container.removeEventListener(type, refresh));
+            controls.removeEventListener('pointerleave', refresh);
+            wakeLayer.removeEventListener('pointerdown', wakeControls);
+        },
+    };
+}
+
 function setMusicPlayerScrollLock(locked) {
+    if (!locked) musicControlsVisibility?.reset();
     if (locked && !musicPlayerScrollPosition) {
         musicPlayerScrollPosition = { x: window.scrollX, y: window.scrollY };
         document.body.style.setProperty('--music-player-scroll-top', -musicPlayerScrollPosition.y + 'px');
@@ -822,6 +897,7 @@ function updateContainerSize() {
         btnFs.innerHTML = isFullscreen ? iconFsExit : iconFsEnter;
         btnFs.title = isFullscreen ? "Exit Fullscreen" : "Fullscreen";
     }
+    musicControlsVisibility?.refresh();
 }
 
 function saveHistory() {
@@ -995,6 +1071,7 @@ function playVideoInternal(videoObj) {
 }
 
 function onPlayerStateChange(event) {
+  musicControlsVisibility?.refresh();
   const ppBtn = document.getElementById('mp-playpause');
   if (ppBtn) {
     if (event.data === YT.PlayerState.PLAYING) {
