@@ -2122,34 +2122,44 @@ body[data-media-type="tvshows"] .simple-title-cell a {
 .quick-progress {
   display: inline-flex;
   align-items: center;
-  gap: 0.05em;
   white-space: nowrap;
+}
+.card-progress:has(> .quick-progress),
+.list-row .quick-progress {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+}
+.card:hover .card-progress:has(> .quick-progress),
+.card-progress:has(> .quick-progress):focus-within,
+.list-row:hover .quick-progress,
+.list-row .quick-progress:focus-within {
+  opacity: 1;
+  pointer-events: auto;
 }
 .progress-increment-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 1.1em;
-  height: 1.1em;
+  gap: 0.05em;
   padding: 0;
   border: none;
   background: transparent;
   color: inherit;
   font: inherit;
   cursor: pointer;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.15s, color 0.15s;
 }
-.progress-increment-btn svg { width: 100%; height: 100%; }
-.card:hover .progress-increment-btn,
-.list-row:hover .progress-increment-btn,
-.progress-increment-btn:focus-visible {
-  opacity: 1;
-  pointer-events: auto;
+.progress-increment-btn svg {
+  width: 1.1em;
+  height: 1.1em;
+  flex-shrink: 0;
+  color: grey;
+  transition: color 0.15s;
 }
-.progress-increment-btn:hover { color: var(--special-color); }
+.progress-increment-btn:hover svg,
+.progress-increment-btn:active svg,
+.progress-increment-btn:focus-visible svg { color: #b0b0b0; }
 .progress-increment-btn:disabled { opacity: 0.4; cursor: wait; }
 .quick-progress-title {
   display: flex;
@@ -2169,7 +2179,8 @@ body[data-media-type="tvshows"] .simple-title-cell a {
   font-weight: normal;
 }
 @media (hover: none) {
-  .progress-increment-btn { opacity: 1; pointer-events: auto; }
+  .card-progress:has(> .quick-progress),
+  .list-row .quick-progress { opacity: 1; pointer-events: auto; }
 }
 
 /* Container-level preferences apply to initial, paginated and edited cards alike. */
@@ -2200,33 +2211,6 @@ body[data-media-type="tvshows"] .simple-title-cell a {
   border-radius: 999px;
 }
 #card-view[data-overlay-mode="compact"] .card-progress { padding: 0.2em 0.6em; }
-#card-view[data-overlay-mode="compact"] .quick-progress { gap: 0; }
-/* Collapse the plus until hover so the progress pill grows around it. */
-#card-view[data-overlay-mode="compact"] .progress-increment-btn {
-  width: 0;
-  height: 1.1em;
-  padding: 0;
-  margin-left: 0;
-  overflow: hidden;
-  background: transparent;
-  transition: width 0.15s, margin-left 0.15s, opacity 0.15s, color 0.15s;
-}
-#card-view[data-overlay-mode="compact"] .progress-increment-btn svg {
-  width: 1.1em;
-  height: 1.1em;
-  flex-shrink: 0;
-}
-#card-view[data-overlay-mode="compact"] .card:hover .progress-increment-btn,
-#card-view[data-overlay-mode="compact"] .progress-increment-btn:focus-visible {
-  width: 1.1em;
-  margin-left: 0.05em;
-}
-@media (hover: none) {
-  #card-view[data-overlay-mode="compact"] .progress-increment-btn {
-    width: 1.1em;
-    margin-left: 0.05em;
-  }
-}
 #card-view[data-overlay-mode="compact"] .card-rating:has(> svg) { padding: 0.2em; }
 #card-view[data-overlay-mode="compact"] .card-rating:has(> .rating-number) { font-size: 0.82rem; }
 #card-view[data-overlay-mode="compact"] .star-rating {
