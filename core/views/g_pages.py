@@ -318,9 +318,14 @@ def home(request):
         "title", "status", "date_added", "source", "provider_ids", "media_type", "cover_url",
     ).order_by("-date_added")[:12]
     recent_activity = []
+    activity_now = timezone.now()
 
     for item in recent_items:
-        time_ago = timesince(item.date_added).split(",")[0] + " ago"
+        seconds_ago = max(1, int((activity_now - item.date_added).total_seconds()))
+        if seconds_ago < 60:
+            time_ago = f"{seconds_ago} second{'s' if seconds_ago != 1 else ''} ago"
+        else:
+            time_ago = timesince(item.date_added, activity_now).split(",")[0] + " ago"
         if item.status == "completed":
             action = f"Completed {item.title}"
         elif item.status == "planned":

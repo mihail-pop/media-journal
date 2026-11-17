@@ -91,7 +91,11 @@ def get_home_upcoming():
         elif e.item.source == "musicbrainz" and e.item.media_type == "music":
             url = reverse("musicbrainz_detail", args=[e.item.source_id])
 
-        time_until = timeuntil(e.date, now).split(',')[0]
+        seconds_until = max(1, int((e.date - now).total_seconds()))
+        if seconds_until < 60:
+            time_until = f"{seconds_until} second{'s' if seconds_until != 1 else ''}"
+        else:
+            time_until = timeuntil(e.date, now).split(',')[0]
 
         if e.title and e.title not in ["Global Release", "Release Date", "Game Release"]:
             action = f"{e.item.title} {e.title}"
