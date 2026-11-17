@@ -124,6 +124,27 @@ def update_preferences(request):
 
 
 @require_POST
+def update_activity_date_mode(request):
+    AppSettings = apps.get_model('core', 'AppSettings')
+    try:
+        data = json.loads(request.body)
+        mode = data.get('mode') if isinstance(data, dict) else None
+        valid_modes = dict(AppSettings._meta.get_field('activity_date_mode').choices)
+        if not isinstance(mode, str) or mode not in valid_modes:
+            raise ValueError
+    except (ValueError, TypeError):
+        return JsonResponse({'success': False, 'error': 'Invalid activity date mode.'}, status=400)
+
+    with transaction.atomic():
+        settings = AppSettings.objects.select_for_update().first()
+        if not settings:
+            settings = AppSettings.objects.create()
+        settings.activity_date_mode = mode
+        settings.save(update_fields=['activity_date_mode'])
+    return JsonResponse({'success': True})
+
+
+@require_POST
 def update_adult_content(request):
     try:
         data = json.loads(request.body)

@@ -170,7 +170,8 @@ p {
   gap: 1.2rem;
 }
 
-.rating-mode-options {
+.rating-mode-options,
+.activity-date-options {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
@@ -178,7 +179,8 @@ p {
   max-width: 260px;
 }
 
-.rating-mode-button {
+.rating-mode-button,
+.activity-date-mode-button {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -194,17 +196,35 @@ p {
 }
 
 .rating-mode-button:hover,
-.rating-mode-button:focus-visible {
+.rating-mode-button:focus-visible,
+.activity-date-mode-button:hover,
+.activity-date-mode-button:focus-visible {
   background: var(--hover-bg);
 }
 
-.rating-mode-button.active {
+.rating-mode-button.active,
+.activity-date-mode-button.active {
   border-color: var(--special-color);
   color: var(--text-secondary);
 }
 
-.rating-mode-button:disabled {
+.rating-mode-button:disabled,
+.activity-date-mode-button:disabled {
   cursor: wait;
+}
+
+.activity-date-options { margin: 0 auto; }
+.activity-date-mode-button { justify-content: center; }
+.activity-date-help {
+  box-sizing: border-box;
+  min-height: 9em;
+  margin: 1rem 0 0;
+  padding: 0.75rem;
+  background: var(--bg-tertiary);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  line-height: 1.5;
 }
 
 

@@ -57,6 +57,50 @@ function saveRatingMode(value) {
 }
 
 document.addEventListener("DOMContentLoaded", function () {
+  const activityDateModes = document.getElementById('activity-date-modes');
+  if (activityDateModes) {
+    const buttons = [...activityDateModes.querySelectorAll('button[data-mode]')];
+    const help = document.getElementById('activity-date-help');
+    const selectedButton = () => buttons.find(button => button.getAttribute('aria-pressed') === 'true');
+    const showHelp = button => { help.textContent = button?.dataset.description || ''; };
+    const selectMode = mode => {
+      buttons.forEach(button => {
+        const selected = button.dataset.mode === mode;
+        button.classList.toggle('active', selected);
+        button.setAttribute('aria-pressed', String(selected));
+      });
+      showHelp(selectedButton());
+    };
+    buttons.forEach(button => {
+      button.addEventListener('mouseenter', () => showHelp(button));
+      button.addEventListener('focus', () => showHelp(button));
+      button.addEventListener('mouseleave', () => showHelp(selectedButton()));
+      button.addEventListener('blur', () => showHelp(selectedButton()));
+    });
+    activityDateModes.addEventListener('click', async event => {
+      const button = event.target.closest('button[data-mode]');
+      if (!button || button.disabled || button.getAttribute('aria-pressed') === 'true') return;
+      const previousMode = selectedButton()?.dataset.mode || 'combined';
+      buttons.forEach(control => { control.disabled = true; });
+      selectMode(button.dataset.mode);
+      try {
+        const response = await fetch(activityDateModes.dataset.saveUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+          body: JSON.stringify({ mode: button.dataset.mode }),
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error('Unable to save activity date preference.');
+        showNotification('Activity date preference updated!');
+      } catch (error) {
+        selectMode(previousMode);
+        alert('Could not save activity date preference. Please try again.');
+      } finally {
+        buttons.forEach(control => { control.disabled = false; });
+      }
+    });
+  }
+
   const adultContentToggle = document.getElementById('allow-adult-content');
   adultContentToggle?.addEventListener('change', async () => {
     const enabled = adultContentToggle.checked;

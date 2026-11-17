@@ -342,6 +342,16 @@ class AppSettings(models.Model):
         default='faces'
     )
     allow_adult_content = models.BooleanField(default=True)
+    activity_date_mode = models.CharField(
+        max_length=20,
+        choices=[
+            ('manual', 'Manual Only'),
+            ('status', 'Any Status Change'),
+            ('status_score', 'Status + Score'),
+            ('combined', 'Combined'),
+        ],
+        default='combined',
+    )
     show_banner_notes = models.BooleanField(default=True)
     show_date_field = models.BooleanField(default=False)
     show_repeats_field = models.BooleanField(default=False)

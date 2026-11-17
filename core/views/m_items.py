@@ -440,15 +440,16 @@ def edit_item(request, item_id):
                 new_status = data["status"]
                 item.status = new_status
 
+            AppSettings = apps.get_model("core", "AppSettings")
+            try:
+                app_settings = AppSettings.objects.first()
+            except Exception:
+                app_settings = None
+
             # --- Handle personal_rating FIRST to know if it changed ---
             rating_changed = False
             if "personal_rating" in data:
-                AppSettings = apps.get_model("core", "AppSettings")
-                try:
-                    app_settings = AppSettings.objects.first()
-                    rating_mode = app_settings.rating_mode if app_settings else "faces"
-                except Exception:
-                    rating_mode = "faces"
+                rating_mode = app_settings.rating_mode if app_settings else "faces"
 
                 try:
                     new_rating = rating_from_edit(data["personal_rating"], rating_mode, item.personal_rating)
@@ -462,10 +463,16 @@ def edit_item(request, item_id):
             # --- Handle date_added ---
             status_changed = new_status != old_status
             
-            # Keep the status + score rule, and also date active items when
-            # they are finished or dropped, even without a rating change.
+            activity_date_mode = app_settings.activity_date_mode if app_settings else 'combined'
+            # Manual dates still take priority below. Both edit-modal changes
+            # and progress shortcuts use this same automatic update decision.
             auto_update_date = status_changed and (
-                rating_changed or (old_status == 'ongoing' and new_status in ('completed', 'dropped'))
+                activity_date_mode == 'status'
+                or (activity_date_mode in ('status_score', 'combined') and rating_changed)
+                or (
+                    activity_date_mode == 'combined' and old_status == 'ongoing'
+                    and new_status in ('completed', 'dropped', 'on_hold')
+                )
             )
 
             user_date = data.get("date_added")
@@ -526,12 +533,7 @@ def edit_item(request, item_id):
                     item.progress_secondary = item.total_secondary
 
             if "repeats" in data:
-                AppSettings = apps.get_model("core", "AppSettings")
-                try:
-                    app_settings = AppSettings.objects.first()
-                    show_repeats = app_settings.show_repeats_field if app_settings else False
-                except Exception:
-                    show_repeats = False
+                show_repeats = app_settings.show_repeats_field if app_settings else False
 
                 if show_repeats:
                     try:
@@ -566,12 +568,7 @@ def edit_item(request, item_id):
                 item.favorite = new_favorite_status
 
             if "collections" in data:
-                AppSettings = apps.get_model("core", "AppSettings")
-                try:
-                    app_settings = AppSettings.objects.first()
-                    show_cols = app_settings.show_collections_field if app_settings else False
-                except Exception:
-                    show_cols = False
+                show_cols = app_settings.show_collections_field if app_settings else False
                 
                 # Only overwrite collections if the field is actually enabled in settings.
                 # Otherwise, the frontend hidden field sends an empty array [] and wipes it!
@@ -581,12 +578,7 @@ def edit_item(request, item_id):
             item.save()
 
             # Build a minimal serialized item to return to the client for UI updates
-            AppSettings = apps.get_model("core", "AppSettings")
-            try:
-                settings = AppSettings.objects.first()
-                rating_mode = settings.rating_mode if settings else "faces"
-            except Exception:
-                rating_mode = "faces"
+            rating_mode = app_settings.rating_mode if app_settings else "faces"
 
             display_rating = rating_to_display(item.personal_rating, rating_mode)
 

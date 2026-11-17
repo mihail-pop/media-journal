@@ -79,6 +79,7 @@ urlpatterns = [
     path('settings/favorites/export-png-archive/', views.export_favorites_png_archive, name='export_favorites_png_archive'),
     path('settings/favorites/export-image/<str:kind>/<int:item_id>/', views.export_favorites_image, name='favorite_export_image'),
     path("settings/update_preferences/", views.update_preferences, name="update_preferences"),
+    path('settings/update_activity_date_mode/', views.update_activity_date_mode, name='update_activity_date_mode'),
     path('settings/update_favorite_sections/', views.update_favorite_sections, name='update_favorite_sections'),
     path('settings/update_list_card_overlays/', views.update_list_card_overlays, name='update_list_card_overlays'),
     path('settings/update_live_search/', views.update_live_search_settings, name='update_live_search_settings'),

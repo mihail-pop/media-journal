@@ -1184,6 +1184,16 @@ def settings_page(request):
     from core.services.g_favorites_export import favorite_export_options
 
     current_rating_mode = settings.rating_mode
+    activity_date_descriptions = {
+        'manual': 'Keep the activity date unless you change it manually.',
+        'status': 'Update to the current date and time whenever the status changes.',
+        'status_score': 'Update only when status and score both change in the same edit. Completing with the plus alone keeps the date.',
+        'combined': 'Update when Watching, Reading or Playing changes to Completed, Dropped or Paused, or when status and score change together. Completing with the plus updates the date.',
+    }
+    activity_date_modes = [
+        {'value': value, 'label': label, 'description': activity_date_descriptions[value]}
+        for value, label in AppSettings._meta.get_field('activity_date_mode').choices
+    ]
     live_search_preferences = settings.get_live_search_settings()
     card_overlay_preferences = settings.get_list_card_overlay_settings()
     live_search_types = [
@@ -1216,6 +1226,11 @@ def settings_page(request):
             "show_date_field": settings.show_date_field,
             "show_repeats_field": settings.show_repeats_field,
             "show_collections_field": settings.show_collections_field,
+            "activity_date_mode": settings.activity_date_mode,
+            "activity_date_modes": activity_date_modes,
+            "activity_date_mode_description": activity_date_descriptions.get(
+                settings.activity_date_mode, activity_date_descriptions['combined']
+            ),
             "details_sections_order": settings.details_sections_order,
             "favorite_sections_order": settings.get_favorite_sections_order(),
             "share_favorite_sections": favorite_export_options(settings),

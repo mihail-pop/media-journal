@@ -372,6 +372,9 @@ const dateGroup = document.getElementById("date_added_group");
 const dateInput = form.querySelector('input[name="date_added"]');
 
 if (dateGroup && dateInput) {
+    dateInput.value = "";
+    dateInput.removeAttribute('data-display');
+    dateInput.disabled = !item.show_date_field;
     if (item.show_date_field) {
         dateGroup.style.display = "block";
 
@@ -387,6 +390,7 @@ if (dateGroup && dateInput) {
     } else {
         dateGroup.style.display = "none";
     }
+    form.dataset.initialDate = dateInput.value;
 }
 
 // --- Collections ---
@@ -935,6 +939,8 @@ document.getElementById("edit-delete-btn")?.addEventListener("click", function (
       const formData = Object.fromEntries(new FormData(form));
       // Unrelated edits must not replace the stored score with its rounded display value.
       if (formData.personal_rating === form.dataset.initialRating) delete formData.personal_rating;
+      // Only an intentional date edit may override the automatic date preference.
+      if (formData.date_added === form.dataset.initialDate) delete formData.date_added;
       formData.collections = editCurrentCollections; // Append custom array to payload
       // Debug: log the value being sent for personal_rating
 

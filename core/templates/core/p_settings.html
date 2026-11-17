@@ -305,6 +305,15 @@
         </div>
         <p class="live-search-help"><b>Include adult titles in search and Discover. Saved items are unaffected.</b></p>
       </div>
+      <section class="preferences-section activity-date-section">
+        <h3>Activity Date Updates</h3>
+        <div id="activity-date-modes" class="activity-date-options" role="group" aria-label="Activity date update mode" data-save-url="{% url 'update_activity_date_mode' %}">
+          {% for option in activity_date_modes %}
+            <button type="button" class="activity-date-mode-button{% if activity_date_mode == option.value %} active{% endif %}" data-mode="{{ option.value }}" data-description="{{ option.description }}" aria-pressed="{% if activity_date_mode == option.value %}true{% else %}false{% endif %}" aria-describedby="activity-date-help">{{ option.label }}</button>
+          {% endfor %}
+        </div>
+        <p id="activity-date-help" class="activity-date-help" aria-live="polite">{{ activity_date_mode_description }}</p>
+      </section>
     </div>
   </div>
 
