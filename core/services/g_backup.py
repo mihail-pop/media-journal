@@ -10,8 +10,8 @@ import tempfile
 import threading
 import time
 import zipfile
-from collections import Counter, defaultdict, deque
-from datetime import datetime, timedelta
+from collections import Counter
+from datetime import datetime, timedelta, timezone as datetime_timezone
 from pathlib import Path, PurePosixPath
 from urllib.parse import quote
 
@@ -19,11 +19,13 @@ from django.apps import apps
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
-from django.core.serializers import deserialize, serialize
+from django.core.serializers import deserialize
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import connection, models, transaction
 from django.db.models import Q
 from django.utils import timezone
+
+from core.services.g_backup_store import RecordStore, iter_json_records
 
 
 BACKUP_LOCK = threading.Lock()
@@ -58,8 +60,14 @@ class BackupJSONEncoder(DjangoJSONEncoder):
 
 
 def _identity_value(value, legacy_datetime_precision):
-    if legacy_datetime_precision and isinstance(value, datetime):
-        return value.replace(microsecond=value.microsecond // 1000 * 1000)
+    if isinstance(value, datetime):
+        if legacy_datetime_precision:
+            value = value.replace(microsecond=value.microsecond // 1000 * 1000)
+        # Equal datetimes need the same disk-index key, including UTC offsets
+        # and the fold bit that Python datetime equality otherwise ignores.
+        if timezone.is_aware(value):
+            value = value.astimezone(datetime_timezone.utc)
+        value = value.replace(fold=0)
     return value
 
 
@@ -87,54 +95,8 @@ def _scan_error(error):
 
 
 def export_archive(task):
-    root = Path(settings.MEDIA_ROOT).resolve()
-    task.message = 'Gathering database data'
-    with transaction.atomic():
-        objects = []
-        for model in backup_models():
-            check_cancelled(task)
-            objects.extend(model.objects.all().order_by(model._meta.pk.name))
-        data = serialize('json', objects, use_natural_foreign_keys=True, cls=BackupJSONEncoder)
-        counts = Counter(obj._meta.label_lower for obj in objects)
-        counts.update({model._meta.label_lower: 0 for model in backup_models()})
-
-        task.message = 'Scanning files'
-        files = []
-        if root.exists() and not root.is_dir():
-            raise ValueError('The configured media directory is not a directory.')
-        # A fresh library may have database records but no media directory yet.
-        directories = os.walk(root, onerror=_scan_error) if root.exists() else ()
-        for directory, dirs, names in directories:
-            check_cancelled(task)
-            dirs[:] = [name for name in dirs if not name.startswith(STAGING_PREFIX)]
-            for name in dirs:
-                if (Path(directory) / name).is_symlink():
-                    raise ValueError(f'Cannot archive a symbolic-link directory: {name}')
-            for name in names:
-                path = Path(directory) / name
-                if not path.resolve().is_relative_to(root):
-                    raise ValueError(f'Media file points outside the media directory: {path.name}')
-                relative = path.relative_to(root).as_posix()
-                if relative in (DATA_FILE, MANIFEST_FILE):
-                    raise ValueError(f'Reserved backup filename in media directory: {relative}')
-                files.append((path, relative))
-
-        descriptor, task.result_path = tempfile.mkstemp(prefix='media_journal_backup_', suffix='.zip')
-        os.close(descriptor)
-        total = len(files) + 2
-        with zipfile.ZipFile(task.result_path, 'w', zipfile.ZIP_STORED) as archive:
-            archive.writestr(DATA_FILE, data)
-            archive.writestr(MANIFEST_FILE, json.dumps({
-                'format_version': 2, 'models': counts, 'file_count': len(files),
-                'datetime_precision': 'microseconds',
-            }))
-            for index, (path, relative) in enumerate(files, 3):
-                check_cancelled(task)
-                # A missing/unreadable file invalidates the backup, never skip it.
-                archive.write(path, relative)
-                if index % 100 == 0 or index == total:
-                    task.update_progress(index, total, 'Archiving')
-        check_cancelled(task)
+    from core.services.g_backup_export import export_archive as stream_export_archive
+    return stream_export_archive(task)
 
 
 def _archive_path(name, root):
@@ -150,41 +112,60 @@ def _archive_path(name, root):
     return parts.as_posix(), target
 
 
-def _read_records(archive, registry):
+def _read_records(archive, registry, records, task):
     names = archive.namelist()
     data_file = DATA_FILE if DATA_FILE in names else 'media_items.json'
     if data_file not in names:
         raise ValueError('The archive does not contain backup database data.')
-    records = json.loads(archive.read(data_file))
-    if not isinstance(records, list):
-        raise ValueError('Invalid backup database data.')
+
     manifest = None
+    expected = None
     if MANIFEST_FILE in names:
         manifest = json.loads(archive.read(MANIFEST_FILE))
-        if manifest.get('format_version') != 2:
+        if not isinstance(manifest, dict) or manifest.get('format_version') != 2:
             raise ValueError('Unsupported backup version. Please update Media Journal.')
-        counts = Counter(record['model'] for record in records)
-        expected = manifest['models']
-        if any(counts[name] != count for name, count in expected.items()) or set(counts) - set(expected):
-            raise ValueError('The backup record counts do not match its manifest.')
-    seen = set()
-    for record in records:
-        if not isinstance(record, dict) or record.get('model') not in registry:
-            raise ValueError('The backup contains an unsupported database model.')
-        if not isinstance(record.get('fields'), dict) or record.get('pk') is None:
-            raise ValueError('The backup contains an invalid database record.')
-        identity = (record['model'], str(record['pk']))
-        if identity in seen:
-            raise ValueError(f'Duplicate backup record: {identity}')
-        seen.add(identity)
-        fields = record['fields']
-        if record['model'] == 'core.mediaitem' and 'source_id' in fields:
-            # Backups made before the provider_ids migration.
-            source_id = fields.pop('source_id')
-            fields.setdefault('provider_ids', {})[fields['source']] = str(source_id)
-        if record['model'] == 'core.favoriteperson':
-            fields.setdefault('source', 'custom' if str(fields.get('person_id', '')).startswith('custom_')
-                              else 'anilist' if fields.get('type') == 'character' else 'tmdb')
+        expected = manifest.get('models')
+        if (not isinstance(expected, dict)
+                or any(not isinstance(name, str) or type(count) is not int or count < 0
+                       for name, count in expected.items())):
+            raise ValueError('Invalid backup model counts.')
+    total = sum(expected.values()) if expected is not None else None
+    counts = Counter()
+    _report_progress(task, 0, total or 1, 'Validating database data')
+    with archive.open(data_file) as source:
+        for record in iter_json_records(source, check_cancelled=lambda: check_cancelled(task)):
+            check_cancelled(task)
+            if (not isinstance(record, dict) or not isinstance(record.get('model'), str)
+                    or record['model'] not in registry):
+                raise ValueError('The backup contains an unsupported database model.')
+            if not isinstance(record.get('fields'), dict) or record.get('pk') is None:
+                raise ValueError('The backup contains an invalid database record.')
+            # Canonicalize IDs before duplicate detection (e.g. 1 and "01").
+            try:
+                primary_key = registry[record['model']]._meta.pk.to_python(record['pk'])
+            except Exception as error:
+                raise ValueError('The backup contains an invalid database ID.') from error
+            record['pk'] = primary_key if isinstance(primary_key, (int, str)) else str(primary_key)
+
+            fields = record['fields']
+            if record['model'] == 'core.mediaitem' and 'source_id' in fields:
+                source_id = fields.pop('source_id')
+                fields.setdefault('provider_ids', {})[fields['source']] = str(source_id)
+            if record['model'] == 'core.favoriteperson':
+                fields.setdefault('source', 'custom' if str(fields.get('person_id', '')).startswith('custom_')
+                                  else 'anilist' if fields.get('type') == 'character' else 'tmdb')
+            records.add(record)
+            counts[record['model']] += 1
+            processed = len(records)
+            if total is not None:
+                _report_progress(task, processed, max(1, total), 'Validating database data')
+            elif processed % 500 == 0:
+                task.details = f'{processed:,} records checked'
+
+    if expected is not None and (
+            any(counts[name] != count for name, count in expected.items()) or set(counts) - set(expected)):
+        raise ValueError('The backup record counts do not match its manifest.')
+    _report_progress(task, len(records), max(1, len(records)), 'Validating database data')
     return records, manifest, data_file
 
 
@@ -207,12 +188,12 @@ def _restore_order(registry):
     return ordered
 
 
-def _match_object(obj, fields, used, indexes, legacy_datetime_precision):
+def _match_object(obj, fields, records, legacy_datetime_precision):
     model = type(obj)
     query = model.objects.all()
 
     def first(candidates):
-        return next((row for row in candidates.order_by('pk').iterator(chunk_size=100) if row.pk not in used), None)
+        return next((row for row in candidates.order_by('pk').iterator(chunk_size=100) if not records.is_used(model._meta.label_lower, row.pk)), None)
 
     name = model._meta.label_lower
     if model == get_user_model():
@@ -255,37 +236,26 @@ def _match_object(obj, fields, used, indexes, legacy_datetime_precision):
     if not lookup:
         return None
     if name in CHILD_IDENTITIES:
-        # One scan per child table, rather than a growing IN clause or a full
-        # per-image scan for games with tens of thousands of screenshots.
-        key = (model, tuple(lookup))
-        if key not in indexes:
-            index = defaultdict(deque)
-            for row in query.order_by('pk').values_list('pk', *lookup).iterator():
-                identity = tuple(_identity_value(value, legacy_datetime_precision) for value in row[1:])
-                index[identity].append(row[0])
-            indexes[key] = index
+        # Snapshot existing identities once, on disk. Newly restored rows must
+        # not become candidates for a second distinct backup record.
+        keys = tuple(lookup)
+        rows = (
+            (row[0], *(_identity_value(value, legacy_datetime_precision) for value in row[1:]))
+            for row in query.order_by('pk').values_list('pk', *keys).iterator(chunk_size=500)
+        )
+        records.ensure_candidates(name, keys, rows)
         identity = tuple(_identity_value(value, legacy_datetime_precision) for value in lookup.values())
-        candidates = indexes[key].get(identity, deque())
-        while candidates:
-            pk = candidates.popleft()
-            if pk not in used:
-                return query.get(pk=pk)
-        return None
+        pk = records.pop_candidate(name, keys, identity)
+        return query.get(pk=pk) if pk is not None else None
     return first(query.filter(**lookup))
 
 
 def _restore_database(records, registry, task, total, legacy_datetime_precision=False):
-    grouped = defaultdict(list)
-    for record in records:
-        grouped[record['model']].append(record)
-    id_map = {}
-    used = defaultdict(set)
-    indexes = {}
     processed = 0
     _report_progress(task, 0, total, 'Restoring database')
     for model in _restore_order(registry):
         label = model._meta.label_lower
-        for record in grouped[label]:
+        for record in records.iter_model(label):
             check_cancelled(task)
             old_id = record['pk']
             try:
@@ -299,12 +269,13 @@ def _restore_database(records, registry, task, total, legacy_datetime_precision=
                     related_id = getattr(obj, field.attname)
                     if related_id is None:
                         continue
-                    key = (field.remote_field.model._meta.label_lower, related_id)
-                    if key not in id_map:
-                        raise ValueError(f'Missing backup parent for {field.name}: {related_id}')
-                    setattr(obj, field.attname, id_map[key])
+                    try:
+                        parent_id = records.get_mapping(field.remote_field.model._meta.label_lower, related_id)
+                    except KeyError as error:
+                        raise ValueError(f'Missing backup parent for {field.name}: {related_id}') from error
+                    setattr(obj, field.attname, parent_id)
 
-                existing = _match_object(obj, record['fields'], used[label], indexes, legacy_datetime_precision)
+                existing = _match_object(obj, record['fields'], records, legacy_datetime_precision)
                 target = existing or obj
                 if existing:
                     # Old backups must not reset settings/fields they never contained.
@@ -324,15 +295,17 @@ def _restore_database(records, registry, task, total, legacy_datetime_precision=
                             setattr(target, field.attname, timezone.now())
                 # raw=True preserves auto_now/auto_now_add values from the backup.
                 models.Model.save_base(target, raw=True, force_insert=existing is None)
-                id_map[(label, old_id)] = target.pk
-                used[label].add(target.pk)
+                records.set_mapping(label, old_id, target.pk)
+                records.mark_used(label, target.pk)
                 for field_name, values in (restored.m2m_data or {}).items():
                     raw_values = record['fields'][field_name]
                     if raw_values and not isinstance(raw_values[0], (list, tuple)):
                         related_model = model._meta.get_field(field_name).remote_field.model
                         # Legacy numeric auth relationships need backed-up parents too.
-                        values = [id_map[(related_model._meta.label_lower, value)] for value in values]
+                        values = [records.get_mapping(related_model._meta.label_lower, value) for value in values]
                     getattr(target, field_name).set(values)
+            except BackupCancelled:
+                raise
             except Exception as error:
                 raise ValueError(f'Cannot restore {label} record {old_id}: {error}') from error
             processed += 1
@@ -399,9 +372,16 @@ def _plan_files(files, records, root, task):
 
     if replacements:
         _report_progress(task, 0, len(records), 'Updating file references')
-        for index, record in enumerate(records, 1):
+        updated = 0
+
+        def rewrite_record(record):
+            nonlocal updated
             record['fields'] = rewrite(record['fields'])
-            _report_progress(task, index, len(records), 'Updating file references')
+            updated += 1
+            _report_progress(task, updated, len(records), 'Updating file references')
+            return record
+
+        records.transform(rewrite_record)
     return planned
 
 
@@ -414,9 +394,11 @@ def restore_archive(task):
     stage = Path(tempfile.mkdtemp(prefix=STAGING_PREFIX, dir=root))
     installed = []
     keep_recovery_files = False
+    records = None
     try:
+        records = RecordStore(stage, check_cancelled=lambda: check_cancelled(task))
         with zipfile.ZipFile(task.upload_path) as archive:
-            records, manifest, data_file = _read_records(archive, registry)
+            records, manifest, data_file = _read_records(archive, registry, records, task)
             files = []
             seen = set()
             file_count = sum(
@@ -483,5 +465,9 @@ def restore_archive(task):
                                    + '; '.join(recovery_errors))
             raise
     finally:
-        if not keep_recovery_files:
-            shutil.rmtree(stage, ignore_errors=True)
+        try:
+            if records is not None:
+                records.close()
+        finally:
+            if not keep_recovery_files:
+                shutil.rmtree(stage, ignore_errors=True)
