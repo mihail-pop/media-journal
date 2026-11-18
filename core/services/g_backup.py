@@ -37,6 +37,8 @@ CHILD_IDENTITIES = {
     'core.screenshot': ('item', 'url', 'date_added'),
     'core.musicvideo': ('item', 'url', 'date_added'),
     'core.mediaitemlog': ('item', 'date_added'),
+    # Activity records keep their identity even when restore remaps item IDs.
+    'core.mediaitemactivity': ('event_id',),
     'core.calendarevent': ('item', 'date_added'),
 }
 

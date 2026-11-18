@@ -16,6 +16,7 @@ from django.db.models import Max, F
 from django.views.decorators.http import require_GET, require_POST
 
 from core.models import MediaItem, Collection, CollectionItem, MediaItemLog, AppSettings
+from core.services.g_activity import item_activity_state, record_item_activity
 from core.services.g_utils import display_to_rating, rating_to_display, rating_from_edit, get_sharded_path
 from core.services.m_books import save_openlib_item
 from core.services.m_games import save_igdb_item
@@ -309,6 +310,7 @@ def create_custom_item(request):
 @ensure_csrf_cookie
 def edit_metadata(request, item_id):
     if request.method == "POST":
+        uploaded_names = []
         try:
             item = MediaItem.objects.get(id=item_id)
 
@@ -353,11 +355,6 @@ def edit_metadata(request, item_id):
             cache_bust = int(time.time() * 1000)
 
             if "cover_image" in request.FILES:
-                if item.cover_url and item.cover_url.startswith("/media/"):
-                    old_path = os.path.join(settings.MEDIA_ROOT, item.cover_url.replace("/media/", ""))
-                    if os.path.exists(old_path):
-                        os.remove(old_path)
-
                 file_obj = request.FILES["cover_image"]
                 ext = os.path.splitext(file_obj.name)[1] or ".jpg"
                 if item.source in ["tmdb", "anilist"]:
@@ -367,14 +364,10 @@ def edit_metadata(request, item_id):
                 
                 sharded_filename = get_sharded_path(flat_filename)
                 saved_name = fs.save(sharded_filename, file_obj)
+                uploaded_names.append(saved_name)
                 item.cover_url = fs.url(saved_name)
 
             if "banner_image" in request.FILES:
-                if item.banner_url and item.banner_url.startswith("/media/"):
-                    old_path = os.path.join(settings.MEDIA_ROOT, item.banner_url.replace("/media/", ""))
-                    if os.path.exists(old_path):
-                        os.remove(old_path)
-
                 file_obj = request.FILES["banner_image"]
                 ext = os.path.splitext(file_obj.name)[1] or ".jpg"
                 if item.source in ["tmdb", "anilist"]:
@@ -384,11 +377,44 @@ def edit_metadata(request, item_id):
                 
                 sharded_filename = get_sharded_path(flat_filename)
                 saved_name = fs.save(sharded_filename, file_obj)
+                uploaded_names.append(saved_name)
                 item.banner_url = fs.url(saved_name)
 
-            item.save()
+            update_fields = ['title', 'release_date', 'overview', 'genres', 'creators']
+            update_fields.extend(field for field in ('progress_main', 'progress_secondary', 'total_secondary') if field in request.POST)
+            if ((item.media_type != 'movie' and 'total_main' in request.POST)
+                    or (item.media_type == 'movie' and ('length_hours' in request.POST or 'length_minutes' in request.POST))):
+                update_fields.append('total_main')
+            image_fields = [field for field, upload in (('cover_url', 'cover_image'), ('banner_url', 'banner_image')) if upload in request.FILES]
+            update_fields.extend(image_fields)
+
+            # Uploads finish before this short transaction. Fetch the live
+            # baseline again and leave unrelated personal fields untouched.
+            with transaction.atomic():
+                current = MediaItem.objects.select_for_update().get(id=item_id)
+                activity_before = item_activity_state(current)
+                old_images = [getattr(current, field) for field in image_fields]
+                for field in update_fields:
+                    setattr(current, field, getattr(item, field))
+                current.save(update_fields=update_fields)
+                record_item_activity(current, activity_before, origin='metadata')
+
+                def delete_old_images():
+                    for url in old_images:
+                        if url and url.startswith('/media/') and url not in (current.cover_url, current.banner_url):
+                            try:
+                                fs.delete(url.removeprefix('/media/'))
+                            except OSError:
+                                pass
+
+                transaction.on_commit(delete_old_images, robust=True)
             return JsonResponse({"success": True})
         except Exception as e:
+            for name in uploaded_names:
+                try:
+                    fs.delete(name)
+                except OSError:
+                    pass
             import traceback
             traceback.print_exc()
             return JsonResponse({"success": False, "error": str(e)})
@@ -402,6 +428,7 @@ def edit_item(request, item_id):
         try:
             data = json.loads(request.body)
             item = MediaItem.objects.select_for_update().get(id=item_id)
+            activity_before = item_activity_state(item)
 
             old_status = item.status
             quick_complete = False
@@ -577,6 +604,8 @@ def edit_item(request, item_id):
 
             item.save()
 
+            record_item_activity(item, activity_before)
+
             # Build a minimal serialized item to return to the client for UI updates
             rating_mode = app_settings.rating_mode if app_settings else "faces"
 
@@ -613,6 +642,7 @@ def edit_item(request, item_id):
             )
 
         except Exception as e:
+            transaction.set_rollback(True)
             return JsonResponse({"success": False, "error": str(e)})
 
     return JsonResponse({"success": False, "error": "Invalid request"})

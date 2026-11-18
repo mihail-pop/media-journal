@@ -91,6 +91,32 @@ class MediaItem(models.Model):
         self.provider_ids[self.source] = str(value)
     
 
+class MediaItemActivity(models.Model):
+    """Automatic edit history, separate from Activity Date and manual journals.
+
+    Existing/initial progress is a baseline, not recorded consumption. Keep
+    before/after values (including decreases) so corrections can be accounted
+    for. Primary and secondary counters overlap; never add them together.
+    """
+
+    item = models.ForeignKey(MediaItem, on_delete=models.CASCADE, related_name='activity_records')
+    event_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    recorded_at = models.DateTimeField(default=timezone.now, db_index=True)
+    media_type = models.CharField(max_length=20, choices=MediaItem.MEDIA_TYPES)
+    origin = models.CharField(max_length=20, choices=[('edit', 'Edit'), ('metadata', 'Metadata')])
+
+    # Main: TV/anime episodes, manga chapters, game hours, book pages.
+    # Secondary: TV seasons, manga volumes. Unused counters stay null.
+    progress_main_before = models.PositiveIntegerField(null=True, blank=True)
+    progress_main_after = models.PositiveIntegerField(null=True, blank=True)
+    progress_secondary_before = models.PositiveIntegerField(null=True, blank=True)
+    progress_secondary_after = models.PositiveIntegerField(null=True, blank=True)
+    status_before = models.CharField(max_length=20, choices=MediaItem.STATUS_CHOICES)
+    status_after = models.CharField(max_length=20, choices=MediaItem.STATUS_CHOICES)
+    repeats_before = models.PositiveIntegerField()
+    repeats_after = models.PositiveIntegerField()
+
+
 class MediaItemLog(models.Model):
     item = models.ForeignKey(
         'MediaItem', 
