@@ -2,6 +2,7 @@
 from .g_api import *  # noqa: F403
 from .g_lists import *  # noqa: F403
 from .g_pages import *  # noqa: F403
+from .g_music_tracking import record_music_plays
 
 # Media (m_) - Logic for API integration, media data fetching and processing
 from .m_anime_manga import *  # noqa: F403

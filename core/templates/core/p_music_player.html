@@ -14,6 +14,7 @@
 <body data-music-popout="true">
   {% csrf_token %}
   <div id="music-player-container" class="music-player-container"></div>
+  <script src="{% static 'core/js/g_music_tracking.js' %}"></script>
   <script src="{% static 'core/js/g_music.js' %}"></script>
 </body>
 </html>

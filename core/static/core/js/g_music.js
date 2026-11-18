@@ -15,6 +15,13 @@ const musicDockStateKey = 'music_player_dock_state';
 const musicPopoutPositionKey = 'music_player_popout_position';
 let pendingMusicPopoutState = null;
 let musicControlsVisibility = null;
+let nextMusicPlayIsFresh = false;
+let nextMusicSessionIsFresh = false;
+const musicPlayTracking = window.createMusicPlayTracker?.({
+    getPlayer: () => isMusicPlayerReady ? musicPlayer : null,
+    getCookie,
+    isOwner: () => localStorage.getItem('music_player_active_tab') === String(tabId),
+});
 
 function musicPopoutWindowFeatures() {
     let width = 640;
@@ -91,6 +98,8 @@ function musicPlayerSnapshot(videoId, time = 0, paused = false) {
         history: sessionHistory, historyIndex,
         played: playedSongs, sequential: isSequentialMode,
         videoId, time, paused, mode: localStorage.getItem('musicPlayerEnabled'),
+        tracking: musicPlayTracking?.snapshot() || null,
+        newPlay: nextMusicPlayIsFresh, newSession: nextMusicSessionIsFresh,
     };
 }
 
@@ -99,6 +108,7 @@ function sendMusicPopoutCommand(action, state = null) {
 }
 
 function hideEmbeddedMusicPlayer() {
+    musicPlayTracking?.suspend();
     if (musicPlayer && musicPlayer.destroy) musicPlayer.destroy();
     musicPlayer = null;
     isMusicPlayerReady = false;
@@ -171,6 +181,9 @@ function restoreMusicPopoutState() {
     playedSongs = state.played || [];
     isSequentialMode = state.sequential;
     localStorage.setItem('musicPlayerEnabled', state.mode || 'list');
+    musicPlayTracking?.restore(state.tracking);
+    nextMusicPlayIsFresh = !!state.newPlay;
+    nextMusicSessionIsFresh = !!state.newSession;
     saveHistory();
     claimMusicPlayer();
     createPlayer(state.videoId, state.time, state.paused);
@@ -203,6 +216,10 @@ const iconHeart = (isFav) => {
 };
 
 window.startCustomPlaylist = function(playlist, startIndex) {
+    musicPlayTracking?.suspend();
+    nextMusicSessionIsFresh = !localStorage.getItem('musicPlayerEnabled')
+        || (!isMusicPlayerReady && !isMusicPopoutOpen());
+    nextMusicPlayIsFresh = true;
     window.prepareMusicPlayerWindow();
     sessionHistory = [];
     historyIndex = -1;
@@ -383,6 +400,8 @@ function loadPlaylist() {
 function createPlayer(videoId, startTime = 0, startPaused = false) {
   if (!isMusicPopout && isMusicPopoutOpen()) {
     sendMusicPopoutCommand('play', musicPlayerSnapshot(videoId, startTime, startPaused));
+    nextMusicPlayIsFresh = false;
+    nextMusicSessionIsFresh = false;
     hideEmbeddedMusicPlayer();
     return;
   }
@@ -420,6 +439,7 @@ function createPlayer(videoId, startTime = 0, startPaused = false) {
       saveHistory();
   }
 
+  musicPlayTracking?.suspend();
   musicControlsVisibility?.destroy();
   musicControlsVisibility = null;
   
@@ -632,6 +652,11 @@ function createPlayer(videoId, startTime = 0, startPaused = false) {
   bindPlayerEvents();
   bindMusicPlayerDragging(container);
   musicControlsVisibility = bindMusicControlsVisibility(container);
+
+  if (nextMusicSessionIsFresh) musicPlayTracking?.startSession({ fresh: true });
+  musicPlayTracking?.begin(currentData, { fresh: nextMusicPlayIsFresh });
+  nextMusicPlayIsFresh = false;
+  nextMusicSessionIsFresh = false;
   
   musicPlayer = new YT.Player('music-player', {
     height: '100%',
@@ -644,8 +669,10 @@ function createPlayer(videoId, startTime = 0, startPaused = false) {
     },
     events: {
       onReady: (e) => {
+        if (e.target !== musicPlayer) return;
         isMusicPlayerReady = true;
         if (!startPaused) e.target.playVideo();
+        musicPlayTracking?.stateChange(e.target.getPlayerState());
         musicControlsVisibility?.refresh();
       },
       onStateChange: onPlayerStateChange
@@ -1007,6 +1034,9 @@ function clearMusicPlaybackState() {
 }
 
 function closePlayer() {
+    musicPlayTracking?.close();
+    nextMusicPlayIsFresh = false;
+    nextMusicSessionIsFresh = false;
     setMusicPlayerScrollLock(false);
     if (musicPlayer && musicPlayer.destroy) {
       musicPlayer.destroy();
@@ -1051,6 +1081,7 @@ function renderHistoryList() {
 
 function playVideoInternal(videoObj) {
     if (musicPlayer && isMusicPlayerReady) {
+        musicPlayTracking?.begin(videoObj, { fresh: true });
         musicPlayer.loadVideoById(videoObj.video_id);
         localStorage.setItem('music_player_video', videoObj.video_id);
         localStorage.setItem('music_player_time', '0');
@@ -1071,6 +1102,8 @@ function playVideoInternal(videoObj) {
 }
 
 function onPlayerStateChange(event) {
+  if (event.target && event.target !== musicPlayer) return;
+  musicPlayTracking?.stateChange(event.data);
   musicControlsVisibility?.refresh();
   const ppBtn = document.getElementById('mp-playpause');
   if (ppBtn) {
@@ -1163,11 +1196,15 @@ window.addEventListener('pagehide', () => {
     const owner = JSON.parse(localStorage.getItem(musicPopoutOwnerKey) || 'null');
     // Returning to the page releases ownership before closing this window.
     if (owner && owner.id === tabId) {
+      musicPlayTracking?.close();
       localStorage.removeItem(musicPopoutOwnerKey);
       clearMusicPlaybackState();
+    } else {
+      musicPlayTracking?.suspend();
     }
     return;
   }
+  musicPlayTracking?.suspend();
   if (musicPlayer && isMusicPlayerReady && typeof musicPlayer.getCurrentTime === 'function' && localStorage.getItem('musicPlayerEnabled')) {
     try {
       const time = musicPlayer.getCurrentTime();
@@ -1221,8 +1258,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const mode = this.dataset.mode;
       
       if (enabled) {
+        const wasPlaying = isMusicPlayerReady || isMusicPopoutOpen();
         window.prepareMusicPlayerWindow();
         const oldMode = localStorage.getItem('musicPlayerEnabled');
+        nextMusicSessionIsFresh = !oldMode || !wasPlaying;
+        nextMusicPlayIsFresh = true;
         if (oldMode && oldMode !== mode) {
           localStorage.removeItem('music_player_video');
           localStorage.removeItem('music_player_time');
@@ -1239,6 +1279,9 @@ document.addEventListener('DOMContentLoaded', () => {
         loadYouTubeAPI();
       } else {
         if (!isMusicPopout && isMusicPopoutOpen()) sendMusicPopoutCommand('stop');
+        else musicPlayTracking?.close();
+        nextMusicPlayIsFresh = false;
+        nextMusicSessionIsFresh = false;
         localStorage.removeItem('musicPlayerEnabled');
         localStorage.removeItem('music_player_video');
         localStorage.removeItem('music_player_time');
@@ -1328,6 +1371,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
           } catch (e) {}
         }
+        musicPlayTracking?.suspend();
         if (musicPlayer && musicPlayer.destroy) {
           musicPlayer.destroy();
         }

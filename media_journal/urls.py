@@ -53,6 +53,7 @@ urlpatterns = [
     path('music/', views.music, name='music'),
     path('music/player/', TemplateView.as_view(template_name='core/p_music_player.html'), name='music_player'),
     path('api/music/', views.music_api, name='music_api'),
+    path('api/music/plays/', views.record_music_plays, name='record_music_plays'),
     path('api/music/banners/', views.music_banners_api, name='music_banners_api'),
     path("discover/", views.discover_view, name="discover"),
     path("favorites/", views.favorites_page, name="favorites"),
