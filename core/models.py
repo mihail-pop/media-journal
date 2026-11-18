@@ -66,6 +66,7 @@ class MediaItem(models.Model):
     progress_secondary = models.PositiveIntegerField(null=True, blank=True)
     total_main = models.PositiveIntegerField(null=True, blank=True) # Total of episodes/chapters/pages received from the api / Movie Length in minutes
     total_secondary = models.PositiveIntegerField(null=True, blank=True)
+    episode_runtime = models.PositiveIntegerField(null=True, blank=True) # TV/anime: estimated minutes per episode
 
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="planned")
     personal_rating = models.PositiveSmallIntegerField(null=True,blank=True)  # Stores values from 1 to 100

@@ -8,6 +8,7 @@ from requests.exceptions import RequestException
 from datetime import datetime
 
 from core.models import APIKey, MediaItem
+from core.services.g_runtimes import tmdb_episode_runtime, tmdb_season_runtime
 from core.services.g_utils import download_image
 
 TMDB_MOVIE_GENRES = {
@@ -201,6 +202,7 @@ def save_tmdb_item(media_type, tmdb_id, *, http=None, prepare_only=False):
             seasons=seasons,
             total_main=total_episodes if media_type == "tv" else data.get("runtime"),
             total_secondary=total_seasons if media_type == "tv" else None,
+            episode_runtime=tmdb_episode_runtime(data) if media_type == 'tv' else None,
             genres=genres,
             creators=creators,
         )
@@ -338,6 +340,7 @@ def save_tmdb_season(tmdb_id, season_number, *, http=None, prepare_only=False):
             episodes=episodes_data,
             total_main=len(episodes_data),
             total_secondary=1,
+            episode_runtime=tmdb_season_runtime(season_data, show_data),
             genres=genres,
             creators=creators,
         )
@@ -560,21 +563,7 @@ def get_tv_extra_info(tmdb_id):
                 except Exception:
                     pass
 
-        run_times = data.get("episode_run_time", [])
-        episode_runtime = run_times[0] if run_times else None
-
-        # 2. FALLBACK: If the list is empty, check the last episode's runtime
-        if not episode_runtime:
-            last_ep = data.get("last_episode_to_air")
-            if last_ep:
-                # This field is often populated even when the main list isn't
-                episode_runtime = last_ep.get("runtime")
-
-        # 3. SECOND FALLBACK: Check the first episode (if available)
-        if not episode_runtime:
-            first_ep = data.get("next_episode_to_air")
-            if first_ep:
-                episode_runtime = first_ep.get("runtime")
+        episode_runtime = tmdb_episode_runtime(data)
 
         homepage_url = data.get("homepage")
 
@@ -794,6 +783,10 @@ def update_tmdb_seasons(media_item):
         media_item.last_updated = timezone.now()
         media_item.save()
         return False
+
+    episode_runtime = tmdb_episode_runtime(data)
+    if episode_runtime is not None:
+        media_item.episode_runtime = episode_runtime
 
     fetched_seasons = data.get("seasons", [])
 

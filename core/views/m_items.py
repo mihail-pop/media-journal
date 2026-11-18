@@ -829,6 +829,8 @@ def refresh_item(request):
 
         # Apply the new text-based metadata only if requested
         if refresh_type in ['all', 'data']:
+            if item.media_type in ('tv', 'anime') and new_item.episode_runtime is not None:
+                metadata_fields.append('episode_runtime')
             for field in metadata_fields:
                 setattr(item, field, getattr(new_item, field))
 

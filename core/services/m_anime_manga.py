@@ -6,6 +6,7 @@ from django.http import JsonResponse
 from django.utils import timezone
 
 from core.models import MediaItem
+from core.services.g_runtimes import positive_runtime
 from core.services.g_utils import download_image
 
 
@@ -93,6 +94,7 @@ def save_anilist_item(media_type, anilist_id=None, mal_id=None, *, http=None, pr
             related_titles=related_titles,
             total_main=data.get("total_main"),
             total_secondary=data.get("total_secondary"),
+            episode_runtime=data.get("episode_runtime") if media_type == "anime" else None,
             genres=data["genres"],
             creators=data["creators"],
         )
@@ -133,6 +135,7 @@ def fetch_anilist_data(media_type, anilist_id=None, mal_id=None, *, http=None):
           day
         }
         episodes
+        duration
         chapters
         volumes
         bannerImage
@@ -385,6 +388,7 @@ def fetch_anilist_data(media_type, anilist_id=None, mal_id=None, *, http=None):
         "recommendations": recommendations,
         "total_main": media.get("episodes") or media.get("chapters"),
         "total_secondary": media.get("volumes"),
+        "episode_runtime": positive_runtime(media.get("duration")) if media_type == "anime" else None,
         "genres": genres,
         "creators": creators,
     }
@@ -1047,6 +1051,9 @@ def update_anilist_anime_manga(item: MediaItem):
         )
         item.related_titles = existing + new_sequels
         item.notification = True
+
+    if item.media_type == "anime" and anilist_data.get("episode_runtime"):
+        item.episode_runtime = anilist_data["episode_runtime"]
 
     item.last_updated = timezone.now()
     item.save()

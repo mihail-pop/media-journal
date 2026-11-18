@@ -13,6 +13,7 @@ from django.db import close_old_connections
 
 from core.models import APIKey, MediaItem
 from core.services.g_backup import BACKUP_LOCK, BackupCancelled, check_cancelled, export_archive, restore_archive
+from core.services.g_runtimes import tmdb_episode_runtime
 from core.services.m_books import save_openlib_item
 from core.services.m_movies_tvshows import save_tmdb_season
 
@@ -443,6 +444,7 @@ def refresh_tmdb_item(media_type, tmdb_id, existing_seasons=None, existing_cast=
         seasons=seasons,
         total_main=total_episodes if media_type == "tv" else data.get("runtime"),
         total_secondary=total_seasons if media_type == "tv" else None,
+        episode_runtime=tmdb_episode_runtime(data) if media_type == "tv" else None,
         notification=has_new_season,
         genres=genres,
         creators=creators,
@@ -545,6 +547,7 @@ def refresh_anilist_item(media_type, anilist_id=None, mal_id=None, existing_rela
         related_titles=related_titles,
         total_main=data.get("total_main"),
         total_secondary=data.get("total_secondary"),
+        episode_runtime=data.get("episode_runtime") if media_type == "anime" else None,
         notification=has_new_sequel,
         genres=data["genres"],
         creators=data["creators"],
@@ -731,6 +734,10 @@ class RefreshTask(threading.Thread):
                 # Copy strictly API-driven fields
                 # Base uneditable structural fields that are always safe to overwrite
                 metadata_fields = ['cast', 'seasons', 'episodes', 'related_titles']
+                # Runtime is API-only metadata; a missing response must not erase
+                # a previously known value. Editable totals keep their checkbox.
+                if media_type in ('tv', 'anime') and new_item.episode_runtime is not None:
+                    metadata_fields.append('episode_runtime')
                 
                 # Append editable fields only if the user explicitly checked them
                 if 'title' in self.selected_fields: 
