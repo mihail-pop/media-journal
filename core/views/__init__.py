@@ -25,3 +25,4 @@ from .p_person_details import *  # noqa: F403
 from .p_calendar import *  # noqa: F403
 from .p_collections import *  # noqa: F403
 from .p_collection import *  # noqa: F403
+from .p_year_review import year_review, year_review_image

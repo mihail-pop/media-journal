@@ -1,0 +1,109 @@
+{% extends 'core/g_base.html' %}
+{% load static %}
+
+{% block head %}
+{{ block.super }}
+<title>{{ review.year }} Year in Review - Media Journal</title>
+<link rel="stylesheet" href="{% static 'core/css/p_year_review.css' %}">
+{% endblock %}
+
+{% block content %}
+<script>document.body.dataset.theme = '{{ theme_mode|escapejs }}';document.body.dataset.mediaType = 'year-review';</script>
+<div id="year-review" class="review-wrap" data-year="{{ review.year }}" data-edition="{{ review.edition.key }}" data-placeholder="{% static 'core/img/placeholder.png' %}">
+  <div class="review-toolbar">
+    <span class="review-edition"><span aria-hidden="true">✦</span> {{ review.edition.label }}</span>
+    <div class="review-tools">
+      <details id="review-years" class="review-dropdown">
+        <summary aria-label="Choose a review year">{{ review.year }}<svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg></summary>
+        <div class="review-year-options">
+          {% for year in review.years %}<a href="{% url 'year_review_year' year %}"{% if year == review.year %} aria-current="page"{% endif %}>{{ year }}</a>{% endfor %}
+        </div>
+      </details>
+      {% if has_review_data %}
+      <details id="review-share" class="review-dropdown">
+        <summary><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V3m-4 4 4-4 4 4M5 14v6a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-6"/></svg>Share</summary>
+        <div class="review-share-options">
+          <p class="review-menu-label">Include</p>
+          <div class="review-scope-options" role="group" aria-label="Choose what to share">
+            <button type="button" data-review-scope="overview" aria-pressed="true">Overview</button>
+            {% if review.favorites %}<button type="button" data-review-scope="favorites" aria-pressed="false">Favorited</button>{% endif %}
+            {% if review.completed %}<button type="button" data-review-scope="completed" aria-pressed="false">Completed</button>{% endif %}
+            {% if review.dropped %}<button type="button" data-review-scope="dropped" aria-pressed="false">Dropped</button>{% endif %}
+          </div>
+          <p class="review-menu-label">Download</p>
+          <div class="review-format-options"><button type="button" data-review-export="png">PNG</button><button type="button" data-review-export="pdf">PDF</button></div>
+          <p id="review-export-status" class="review-export-status" role="status" hidden></p>
+        </div>
+      </details>
+      {% endif %}
+    </div>
+  </div>
+
+  <section class="review-hero" aria-labelledby="review-title">
+    <div class="review-hero-copy">
+      <p class="review-kicker">Your year in media</p>
+      <h1 id="review-title">{{ review.year }}</h1>
+      {% if has_review_data %}
+      <div class="review-hero-totals"><span><strong>{{ review.counts.completed }}</strong> completed</span>{% if review.counts.favorites %}<span><strong>{{ review.counts.favorites }}</strong> favorited</span>{% endif %}{% if review.counts.dropped %}<span><strong>{{ review.counts.dropped }}</strong> dropped</span>{% endif %}</div>
+      <a class="review-jump" href="{% if review.completed %}#review-completed{% else %}#review-stats{% endif %}">Revisit the year <span aria-hidden="true">↓</span></a>
+      {% else %}
+      <p class="review-empty-intro">Nothing to look back on for this year yet.</p>
+      {% endif %}
+    </div>
+    <div class="review-collage" aria-hidden="true">
+      {% for card in review.hero_items %}<div class="review-hero-cover review-hero-cover--{{ forloop.counter }}{% if card.media_type == 'music' %} review-hero-cover--music{% endif %}"><img src="{% if card.cover_url %}{{ card.cover_url }}{% else %}{% static 'core/img/placeholder.png' %}{% endif %}" alt="" decoding="async"{% if forloop.counter > 3 %} loading="lazy"{% endif %}></div>{% empty %}<span class="review-empty-star">✦</span>{% endfor %}
+      <span class="review-spark review-spark--one">✦</span><span class="review-spark review-spark--two">✦</span>
+    </div>
+  </section>
+
+  {% if review.favorites %}
+  <section class="review-section" data-review-reveal aria-labelledby="review-favorites-title">
+    <div class="review-section-heading"><div><span class="review-section-mark" aria-hidden="true">♡</span><h2 id="review-favorites-title">Favorited</h2><span class="review-count">{{ review.counts.favorites }}</span></div></div>
+    <div class="review-shelf review-favorites-shelf">{% for card in review.favorites %}{% include 'core/p_year_review_card.html' with kind='favorite' %}{% endfor %}</div>
+  </section>
+  {% endif %}
+
+  {% if review.completed %}
+  <section id="review-completed" class="review-section" data-review-reveal aria-labelledby="review-completed-title">
+    <div class="review-section-heading"><div><span class="review-section-mark" aria-hidden="true">✓</span><h2 id="review-completed-title">Completed</h2></div><span id="review-completed-count" class="review-section-note">{{ review.counts.completed }} item{{ review.counts.completed|pluralize }}</span></div>
+    <div class="review-months" role="group" aria-label="Filter completed items by month">
+      <button type="button" data-review-month="all" aria-pressed="true">All year</button>
+      {% for month in review.months %}<button type="button" data-review-month="{{ month.number }}" aria-pressed="false" title="{{ month.label }} · {{ month.count }} item{{ month.count|pluralize }}"{% if not month.count %} disabled{% endif %}>{{ month.short }}<span>{{ month.count }}</span></button>{% endfor %}
+    </div>
+    <div id="review-completed-grid" class="review-grid">{% for card in review.completed %}{% include 'core/p_year_review_card.html' with kind='completed' %}{% endfor %}</div>
+    <p id="review-completed-empty" class="review-quiet-empty" hidden>No completed items this month.</p>
+    <button id="review-show-more" class="review-show-more{% if review.counts.completed <= 12 %} review-show-more--mobile-only{% endif %}" type="button"{% if review.counts.completed <= 6 %} hidden{% endif %}>Show more</button>
+  </section>
+  {% endif %}
+
+  {% if review.dropped %}
+  <section class="review-section review-dropped-section" data-review-reveal aria-labelledby="review-dropped-title">
+    <div class="review-section-heading"><div><span class="review-section-mark" aria-hidden="true">↘</span><h2 id="review-dropped-title">Dropped</h2><span class="review-count">{{ review.counts.dropped }}</span></div><button id="review-replay-dropped" class="review-replay" type="button" title="Replay the crumble animation"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10a9 9 0 1 1 1.8 7.4M3 4v6h6"/></svg>Replay</button></div>
+    <div class="review-shelf review-dropped-shelf">{% for card in review.dropped %}{% include 'core/p_year_review_card.html' with kind='dropped' %}{% endfor %}</div>
+  </section>
+  {% endif %}
+
+  {% if has_review_data %}
+  <section id="review-stats" class="review-section" data-review-reveal aria-labelledby="review-stats-title">
+    <div class="review-section-heading"><div><span class="review-section-mark" aria-hidden="true">✧</span><h2 id="review-stats-title">Stats</h2></div></div>
+    <div class="review-stat-cards">
+      {% if review.stats.tracked.watch_minutes or review.stats.tracked.game_hours %}<div class="review-stat review-stat--time" title="Completed movie runtimes plus recorded TV/anime episode estimates and game hours."><span class="review-stat-label">Estimated screen time</span><strong>{{ review.stats.tracked.estimated_time_label }}</strong><span class="review-stat-detail">Movies, episodes &amp; games</span></div>{% endif %}
+      {% if review.stats.movie_count %}<div class="review-stat"><span class="review-stat-label">Movie runtime</span><strong>{% if review.stats.movie_runtime_count %}{{ review.stats.movie_hours_label }}{% else %}—{% endif %}</strong><span class="review-stat-detail">{{ review.stats.movie_runtime_count }} film{{ review.stats.movie_runtime_count|pluralize }} with saved runtime</span></div>{% endif %}
+      {% if review.stats.rating.count %}<div class="review-stat review-stat--rating"><span class="review-stat-label">{% if review.stats.rating.mode == 'faces' %}How they felt{% else %}Average score{% endif %}</span>{% if review.stats.rating.mode == 'faces' %}<div class="review-faces">{% for face in review.stats.rating.faces %}<span title="{{ face.label }}"><span aria-hidden="true">{{ face.symbol }}</span><strong>{{ face.count }}</strong><span class="review-face-label">{{ face.label }}</span></span>{% endfor %}</div>{% else %}<strong>{{ review.stats.rating.average|floatformat:1 }} <small>/ {{ review.stats.rating.maximum }}</small></strong><span class="review-stat-detail">{{ review.stats.rating.count }} rated item{{ review.stats.rating.count|pluralize }}</span>{% endif %}</div>{% endif %}
+      {% if review.stats.music.plays %}<div class="review-stat"><span class="review-stat-label">Music plays</span><strong>{{ review.stats.music.plays }}</strong><span class="review-stat-detail">{{ review.stats.music.unique_items }} different entr{{ review.stats.music.unique_items|pluralize:'y,ies' }}</span></div>{% endif %}
+    </div>
+    <div class="review-stat-panels">
+      {% if review.stats.media_counts %}<div class="review-panel"><h3>Your media mix</h3><div class="review-media-mix">{% for media in review.stats.media_counts %}<div class="review-mix-row" data-media="{{ media.key }}"><span>{{ media.label }}</span><div class="review-mix-track"><span style="width: {{ media.percent|stringformat:'f' }}%"></span></div><strong>{{ media.count }}</strong></div>{% endfor %}</div></div>{% endif %}
+      {% if review.stats.tracked.metrics %}<div class="review-panel"><h3>Progress recorded</h3><div class="review-progress-metrics">{% for metric in review.stats.tracked.metrics %}<div><strong>{{ metric.value }}</strong><span>{{ metric.label }}</span></div>{% endfor %}</div>{% if review.stats.tracked.first_recorded %}<p class="review-panel-note" title="Progress is attributed to the date it was recorded. Decreases correct earlier increases; existing totals are a baseline.">First recorded update: {{ review.stats.tracked.first_recorded }}</p>{% endif %}</div>{% endif %}
+      {% if review.stats.music.top_items %}<div class="review-panel review-music-panel"><h3>On repeat</h3><ol class="review-music-ranking">{% for card in review.stats.music.top_items %}<li><span class="review-track-rank">{{ forloop.counter }}</span><a href="{{ card.url }}"><span class="review-track-cover">{% if card.cover_url %}<img src="{{ card.cover_url }}" alt="" loading="lazy" decoding="async">{% endif %}</span><span>{{ card.title }}</span></a><strong>{{ card.plays }} <small>play{{ card.plays|pluralize }}</small></strong></li>{% endfor %}</ol></div>{% endif %}
+    </div>
+  </section>
+  {% endif %}
+</div>
+{{ review|json_script:'review-data' }}
+{% endblock %}
+
+{% block script %}
+{{ block.super }}
+<script src="{% static 'core/js/p_year_review.js' %}"></script>
+{% endblock %}
