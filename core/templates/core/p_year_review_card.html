@@ -3,11 +3,7 @@
 <a class="review-card review-card--{{ card.media_type }}{% if kind == 'favorite' %} review-favorite-card{% elif kind == 'dropped' %} review-dropped-card{% endif %}{% if card.highlight %} review-card--highlight{% endif %}" href="{{ card.url }}" data-id="{{ card.id }}" data-month="{{ card.month }}" title="{{ card.title }} · {{ card.media_label }} · {{ card.date_label }}{% if card.rating_label %} · {{ card.rating_label }}{% endif %}">
   <div class="review-card-art">
     <img src="{{ card.cover_url|default:review_placeholder }}" alt="{{ card.title }}" loading="lazy" decoding="async">
-    {% if kind == 'favorite' %}
-      <span class="review-card-heart" aria-label="Favorited"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54z"/></svg></span>
-    {% elif card.highlight %}
-      <span class="review-card-score" title="Highest rated · {{ card.rating_label }}">{{ card.rating_label }}</span>
-    {% endif %}
+    {% if card.highlight and kind != 'favorite' %}<span class="review-card-score" title="Highest rated · {{ card.rating_label }}">{{ card.rating_label }}</span>{% endif %}
   </div>
   <div class="review-card-title">{{ card.title }}</div>
 </a>

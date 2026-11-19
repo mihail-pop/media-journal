@@ -44,40 +44,120 @@ document.addEventListener('DOMContentLoaded', () => {
     })));
   }
   const friend = document.getElementById('review-snowfriend');
-  let flightClock = 0, friendHovered = false, friendFocused = false, boopUntil = 0;
-  let friendUnavailable = false, friendSize = 74, friendX = 0, friendY = 0;
+  const guestArt = [...(friend?.querySelectorAll('[data-review-guest]') || [])];
+  const guestLights = [...(friend?.querySelectorAll('.review-corner-lights circle') || [])];
+  const guestGift = friend?.querySelector('[data-review-guest-gift]');
+  const guestBubble = friend?.querySelector('.review-corner-bubble');
+  const unavailableGuests = new Set();
+  const guestDetails = {
+    snowman: { tilt: -12, title: 'Shake a little snow loose', label: 'Shake the snowman for a snow shower', bubble: 'Snow much fun!' },
+    tree: { tilt: -7, title: 'A little gift from the tree', label: 'Shake the Christmas tree for a shower of tiny gifts', bubble: 'A little gift for you!' },
+    party: { tilt: -13, title: 'Launch a little celebration', label: 'Launch a celebration from the party popper', bubble: 'Make a little noise!' },
+  };
+  // The corner guest has its own randomness, so the original scene seeds stay intact.
+  const guestRandom = () => Math.random();
+  const cornerParticles = [];
+  let friendHovered = false, friendFocused = false, boopUntil = 0;
+  let friendSize = 116, friendX = 12, friendY = 0, guestKind = 'snowman';
+  let guestStart = 0, guestUntil = 0, guestVisits = 0, nextGuestAt = 4 + guestRandom() * 5;
+  let nextGuestFlake = 0, nextGuestClick = 0;
   function measureFriend() {
-    if (friend) friendSize = parseFloat(getComputedStyle(friend).getPropertyValue('--review-friend-size')) || 74;
+    if (!friend || !ambient) return;
+    const computed = getComputedStyle(friend);
+    friendSize = parseFloat(computed.getPropertyValue('--review-friend-size')) || 116;
+    friendX = parseFloat(computed.left) || 12;
+    friendY = ambient.height - (parseFloat(computed.bottom) || 12) - friendSize;
   }
-  function paintFriend(dt) {
-    if (!friend || friendUnavailable || !ambient) return;
-    const caught = elapsed < boopUntil;
-    if (!friendHovered && !friendFocused && !caught) flightClock += dt;
-    const phase = flightClock % 28;
-    if (phase > 16) { friend.hidden = true;return; }
-    const w = ambient.width, h = ambient.height;
-    friendX = -friendSize + (w + friendSize * 2) * phase / 16;
-    if (friendFocused) friendX = Math.max(8, Math.min(w - friendSize - 8, friendX));
-    const lane = .35 + Math.sin(Math.floor(flightClock / 28) * 1.7 + year) * .16;
-    friendY = Math.max(80, Math.min(h - friendSize - 20, h * lane + Math.sin(phase * .5 + year) * 27));
-    const tilt = caught ? Math.sin((boopUntil - elapsed) * 14) * 18 : Math.sin(phase * .8) * 9;
+  function resetFriend() {
+    friendHovered = false;friendFocused = false;boopUntil = 0;
+    guestUntil = 0;nextGuestAt = elapsed + 4 + guestRandom() * 5;
+    nextGuestClick = 0;cornerParticles.length = 0;
+    if (friend) { friend.hidden = true;friend.classList.remove('is-celebrating'); }
+  }
+  function visitFriend() {
+    const choices = edition === 'winter' ? ['snowman', 'snowman', 'snowman', 'tree', 'tree', 'party'] :
+      edition === 'midnight' ? ['snowman', 'snowman', 'tree', 'party', 'party', 'party'] : ['snowman', 'snowman', 'tree', 'tree', 'party', 'party', 'party'];
+    const available = choices.filter(kind => !unavailableGuests.has(kind));
+    if (!available.length || !guestArt.length) return;
+    guestKind = guestVisits === 0 && !unavailableGuests.has('snowman') ? 'snowman' : available[Math.floor(guestRandom() * available.length)];
+    guestVisits++;
+    const detail = guestDetails[guestKind];
+    guestArt.forEach(art => { art.hidden = art.dataset.reviewGuest !== guestKind; });
+    friend.title = detail.title;friend.setAttribute('aria-label', detail.label);
+    if (guestBubble) guestBubble.textContent = detail.bubble;
+    guestStart = elapsed;guestUntil = elapsed + 12 + guestRandom() * 6;nextGuestFlake = elapsed + .3;
     friend.hidden = false;
-    friend.classList.toggle('is-caught', caught);
-    friend.style.transform = `translate3d(${friendX.toFixed(1)}px, ${friendY.toFixed(1)}px, 0) rotate(${tilt.toFixed(1)}deg)`;
+  }
+  function addCornerParticle(kind, x, y, options = {}) {
+    if (cornerParticles.length >= 112) return;
+    cornerParticles.push({ kind, x, y, born: elapsed, life: 1.6 + guestRandom() * .7,
+      vx: (guestRandom() - .5) * 80, vy: -35 - guestRandom() * 65, gravity: 65,
+      size: 2 + guestRandom() * 2, phase: guestRandom() * Math.PI * 2,
+      color: [palette.cream, palette.rose, palette.second, palette.green][Math.floor(guestRandom() * 4)], ...options });
+  }
+  function cornerBurst(kind, x, y) {
+    const count = kind === 'tree' ? 30 : kind === 'party' ? 42 : 34;
+    for (let index = 0; index < count; index++) {
+      if (kind === 'snowman') {
+        addCornerParticle('snow', x + (guestRandom() - .5) * friendSize * .4, y,
+          { color: palette.snow, vx: (guestRandom() - .5) * 125, vy: -20 - guestRandom() * 75, gravity: 62, size: 2 + guestRandom() * 2.7 });
+      } else if (kind === 'tree') {
+        addCornerParticle(index % 4 === 0 ? 'gift' : 'star', x, y,
+          { vy: -65 - guestRandom() * 100, vx: (guestRandom() - .4) * 100, gravity: 115, size: index % 4 === 0 ? 14 + guestRandom() * 7 : 2.5 + guestRandom() * 2.5 });
+      } else {
+        const angle = index * Math.PI * 2 / count, speed = 30 + guestRandom() * 65;
+        addCornerParticle(index % 3 === 0 ? 'star' : 'confetti', x, y,
+          { vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed - 15, gravity: 45, life: 1.4 + guestRandom() * .6 });
+      }
+    }
+  }
+  function paintFriend() {
+    if (!friend || !ambient || !enabled) return;
+    if (friend.hidden) {
+      if (elapsed < nextGuestAt) return;
+      visitFriend();
+      if (friend.hidden) return;
+    }
+    const caught = elapsed < boopUntil;
+    if (friendHovered || friendFocused || caught) guestUntil = Math.max(guestUntil, elapsed + 1.2);
+    if (elapsed >= guestUntil) {
+      friend.hidden = true;nextGuestAt = elapsed + 15 + guestRandom() * 15;
+      friend.classList.remove('is-celebrating');return;
+    }
+    const age = elapsed - guestStart;
+    const tilt = guestDetails[guestKind].tilt + Math.sin(age * 1.35) * 2.8 + (caught ? Math.sin((boopUntil - elapsed) * 22) * 7 : 0);
+    friend.classList.toggle('is-celebrating', caught);
+    friend.style.opacity = String(Math.min(1, age / .65, (guestUntil - elapsed) / .55));
+    friend.style.transform = `rotate(${tilt.toFixed(2)}deg)`;
+    if (guestKind === 'tree') guestLights.forEach((light, index) => {
+      light.style.opacity = String(.2 + (Math.sin(elapsed * (caught ? 8 : 2) + index * 1.7) + 1) * .4);
+    });
+    if (guestKind === 'snowman' && elapsed >= nextGuestFlake) {
+      addCornerParticle('snow', friendX + friendSize * (.28 + guestRandom() * .42), friendY + friendSize * .4,
+        { color: palette.snow, vx: 3 + guestRandom() * 14, vy: 9 + guestRandom() * 10, gravity: 10, life: 2.4, size: 1.8 + guestRandom() * 1.6 });
+      nextGuestFlake = elapsed + .28 + guestRandom() * .25;
+    }
   }
   friend?.addEventListener('pointerenter', event => { if (event.pointerType === 'mouse' || event.pointerType === 'pen') friendHovered = true; });
   friend?.addEventListener('pointerleave', () => { friendHovered = false; });
   friend?.addEventListener('pointercancel', () => { friendHovered = false; });
   friend?.addEventListener('focus', () => { friendFocused = friend.matches(':focus-visible'); });
   friend?.addEventListener('blur', () => { friendFocused = false; });
-  friend?.querySelector('img')?.addEventListener('error', () => { friendUnavailable = true;friend.hidden = true; }, { once: true });
+  guestArt.forEach(art => art.querySelector('img')?.addEventListener('error', () => {
+    unavailableGuests.add(art.dataset.reviewGuest);
+    if (guestKind === art.dataset.reviewGuest) { friend.hidden = true;nextGuestAt = elapsed + 2; }
+  }, { once: true }));
   friend?.addEventListener('click', event => {
-    event.stopPropagation();
-    if (!enabled || !active || friendUnavailable) return;
+    event.preventDefault();event.stopPropagation();
+    if (!enabled || !active || friend.hidden || !ambient || elapsed < nextGuestClick) return;
     if (event.detail !== 0) { friendFocused = false;friend.blur(); }
-    boopUntil = elapsed + 1.6;
-    burst(ambient, event.detail === 0 ? friendX + friendSize / 2 : event.clientX,
-      event.detail === 0 ? friendY + friendSize / 2 : event.clientY, true);
+    boopUntil = elapsed + 1.6;nextGuestClick = elapsed + .65;
+    const x = friendX + friendSize * .55, y = friendY + friendSize * .35;
+    if (guestKind === 'party') {
+      if (ambient.rockets.length < 3) ambient.rockets.push({ corner: true, start: x, startY: y,
+        x: Math.min(ambient.width - 45, x + 55 + guestRandom() * 55),
+        y: Math.max(65, y - 130 - guestRandom() * 90), born: elapsed });
+    } else cornerBurst(guestKind, x, y);
     wake();
   });
   measureFriend();
@@ -249,6 +329,28 @@ document.addEventListener('DOMContentLoaded', () => {
     context.globalAlpha = 1;
   }
 
+  function paintCornerParticles(scene, time) {
+    const context = scene.context;
+    for (let index = cornerParticles.length - 1; index >= 0; index--) {
+      const particle = cornerParticles[index], age = time - particle.born;
+      if (age >= particle.life) { cornerParticles.splice(index, 1);continue; }
+      const fade = Math.min(1, (particle.life - age) / .65);
+      const x = particle.x + particle.vx * age, y = particle.y + particle.vy * age + particle.gravity * age * age / 2;
+      context.globalAlpha = fade * .82;
+      if (particle.kind === 'snow') {
+        context.strokeStyle = particle.color;context.lineWidth = 1;
+        snowflake(context, x, y, particle.size, particle.phase + age * .6);
+      } else if (particle.kind === 'gift' && guestGift?.complete && guestGift.naturalWidth) {
+        context.save();context.translate(x, y);context.rotate(Math.sin(particle.phase + age * 3) * .5);
+        context.drawImage(guestGift, -particle.size / 2, -particle.size / 2, particle.size, particle.size);context.restore();
+      } else if (particle.kind === 'confetti') {
+        context.save();context.translate(x, y);context.rotate(particle.phase + age * 4);
+        context.fillStyle = particle.color;context.fillRect(-3, -1.5, 6, 3);context.restore();
+      } else star(context, x, y, particle.size, particle.color);
+    }
+    context.globalAlpha = 1;
+  }
+
   function paint(scene, time) {
     const { context, width: w, height: h, particles } = scene;
     context.clearRect(0, 0, w, h);
@@ -322,18 +424,23 @@ document.addEventListener('DOMContentLoaded', () => {
       for (let index = scene.rockets.length - 1; index >= 0; index--) {
         const rocket = scene.rockets[index], progress = (time - rocket.born) / .85;
         if (progress >= 1) {
-          if (progress < 2) burst(scene, rocket.x, rocket.y);
+          if (progress < 2) {
+            if (rocket.corner) cornerBurst('party', rocket.x, rocket.y);
+            else burst(scene, rocket.x, rocket.y);
+          }
           scene.rockets.splice(index, 1);
           continue;
         }
         const ease = 1 - (1 - progress) ** 1.6;
-        const x = rocket.start + (rocket.x - rocket.start) * ease, y = h + 8 + (rocket.y - h - 8) * ease;
+        const startY = rocket.startY ?? h + 8;
+        const x = rocket.start + (rocket.x - rocket.start) * ease, y = startY + (rocket.y - startY) * ease;
         context.globalAlpha = .55;context.strokeStyle = palette.cream;context.lineWidth = 1.2;
         context.beginPath();context.moveTo(x, y + 18 * (1 - progress));context.lineTo(x, y);context.stroke();
         star(context, x, y, 2.3, palette.cream);
       }
     }
     context.globalAlpha = 1;paintBursts(scene, time);
+    if (scene.kind === 'ambient') paintCornerParticles(scene, time);
   }
 
   function draw(now) {
@@ -351,7 +458,7 @@ document.addEventListener('DOMContentLoaded', () => {
       nextFirework = elapsed + 5 + random() * 4;
     }
     scenes.forEach(scene => { if (scene.visible) paint(scene, elapsed); });
-    paintFriend(dt);
+    paintFriend();
     if (scenes.some(scene => scene.visible)) frame = requestAnimationFrame(draw);
   }
 
@@ -364,11 +471,10 @@ document.addEventListener('DOMContentLoaded', () => {
     root.classList.toggle('review-effects-paused', !enabled);
     if (toggle) {
       toggle.setAttribute('aria-pressed', String(enabled));
-      toggle.title = enabled ? 'Pause background effects. Click empty space for a celebration.' : 'Play background effects';
+      toggle.title = enabled ? 'Pause background effects' : 'Play background effects';
     }
     stop();
-    boopUntil = 0;
-    if (friend) { friend.hidden = true;friend.classList.remove('is-caught'); }
+    resetFriend();
     scenes.forEach(scene => { scene.bursts.length = 0;scene.rockets.length = 0;paint(scene, 0); });
     wake();
   }
@@ -388,6 +494,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (visibility) visibility.observe(scene.canvas);else scene.visible = true;
     resize?.observe(scene.canvas);
   });
+  measureFriend();
   window.addEventListener('resize', () => { if (!active) return;scenes.forEach(resizeScene);measureFriend();if (!enabled) scenes.forEach(scene => paint(scene, 0));wake(); }, { passive: true });
   document.addEventListener('visibilitychange', () => { if (document.hidden) stop();else wake(); });
   document.addEventListener('click', event => {
@@ -398,13 +505,14 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   window.addEventListener('pagehide', () => {
     active = false;stop();visibility?.disconnect();resize?.disconnect();
-    friendHovered = false;friendFocused = false;if (friend) friend.hidden = true;
+    resetFriend();
     scenes.forEach(scene => { scene.bursts.length = 0;scene.rockets.length = 0;if (scene.cache) { scene.cache.width = 1;scene.cache.height = 1; }scene.cache = null;scene.canvas.width = 1;scene.canvas.height = 1; });
   });
   window.addEventListener('pageshow', event => {
     if (!event.persisted) return;
-    active = true;measureFriend();
+    active = true;
     scenes.forEach(scene => { resizeScene(scene);visibility?.observe(scene.canvas);resize?.observe(scene.canvas); });
+    measureFriend();
     updateToggle();
   });
   updateToggle();

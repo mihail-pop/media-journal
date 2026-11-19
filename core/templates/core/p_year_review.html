@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="{% static 'core/css/p_year_review.css' %}">
 <link rel="stylesheet" href="{% static 'core/css/p_year_review_ratings.css' %}">
 <link rel="stylesheet" href="{% static 'core/css/p_year_review_effects.css' %}">
+<link rel="stylesheet" href="{% static 'core/css/p_year_review_corner.css' %}">
 <link rel="stylesheet" href="{% static 'core/css/p_year_review_sections.css' %}">
 {% endblock %}
 
@@ -15,10 +16,7 @@
 <div id="year-review" class="review-wrap" data-year="{{ review.year }}" data-edition="{{ review.edition.key }}" data-placeholder="{% static 'core/img/placeholder.png' %}">
   <canvas class="review-ambience" data-review-scene="ambient" aria-hidden="true"></canvas>
   {# Twemoji graphics by Twitter, Inc. and other contributors, CC BY 4.0. https://github.com/jdecked/twemoji #}
-  <button id="review-snowfriend" class="review-snowfriend" type="button" title="Catch me!" aria-label="Catch the flying snowman for a celebration" hidden>
-    <img src="{% static 'core/img/year_review/snowman.svg' %}" alt="" draggable="false">
-    <span class="review-snowfriend-bubble" aria-hidden="true">Wheee!</span>
-  </button>
+  {% include 'core/p_year_review_corner.html' %}
   <div class="review-toolbar">
     <span class="review-edition"><span aria-hidden="true">✦</span> {{ review.edition.label }}</span>
     <div class="review-tools">
@@ -65,7 +63,7 @@
   {% if review.favorites %}
   <section id="review-favorites" class="review-section review-scene-section" aria-labelledby="review-favorites-title">
     <canvas class="review-scene" data-review-scene="hearts" aria-hidden="true"></canvas>
-    <div class="review-section-heading"><div><span class="review-section-mark" aria-hidden="true">♡</span><h2 id="review-favorites-title">Favorited</h2><span class="review-count">{{ review.counts.favorites }}</span></div></div>
+    <div class="review-section-heading"><div><span class="review-section-mark" aria-hidden="true">♡</span><h2 id="review-favorites-title">Favorited</h2></div><span class="review-section-note">{{ review.counts.favorites }} item{{ review.counts.favorites|pluralize }}</span></div>
     <div class="review-shelf review-favorites-shelf">{% for card in review.favorites %}{% include 'core/p_year_review_card.html' with kind='favorite' %}{% endfor %}</div>
   </section>
   {% endif %}
@@ -87,9 +85,9 @@
   {% endif %}
 
   {% if review.dropped %}
-  <section class="review-section review-dropped-section review-scene-section" aria-labelledby="review-dropped-title">
+  <section id="review-dropped" class="review-section review-dropped-section review-scene-section" aria-labelledby="review-dropped-title">
     <canvas class="review-scene" data-review-scene="fire" aria-hidden="true"></canvas>
-    <div class="review-section-heading"><div><span class="review-section-mark" aria-hidden="true">↘</span><h2 id="review-dropped-title">Dropped</h2><span class="review-count">{{ review.counts.dropped }}</span></div></div>
+    <div class="review-section-heading"><div><span class="review-section-mark" aria-hidden="true">↘</span><h2 id="review-dropped-title">Dropped</h2></div><span class="review-section-note">{{ review.counts.dropped }} item{{ review.counts.dropped|pluralize }}</span></div>
     <div class="review-shelf review-dropped-shelf">{% for card in review.dropped %}{% include 'core/p_year_review_card.html' with kind='dropped' %}{% endfor %}</div>
   </section>
   {% endif %}
@@ -98,10 +96,10 @@
   <section id="review-stats" class="review-section" aria-labelledby="review-stats-title">
     <div class="review-section-heading"><div><span class="review-section-mark" aria-hidden="true">✧</span><h2 id="review-stats-title">Stats</h2></div></div>
     <div class="review-stat-cards">
-      {% if review.stats.tracked.watch_minutes or review.stats.tracked.game_hours %}<div class="review-stat review-stat--time" title="Completed movie runtimes plus recorded TV/anime episode estimates and game hours."><span class="review-stat-label">Estimated screen time</span><strong>{{ review.stats.tracked.estimated_time_label }}</strong><span class="review-stat-detail">Movies, episodes &amp; games</span></div>{% endif %}
-      {% if review.stats.movie_count %}<div class="review-stat"><span class="review-stat-label">Time with movies</span><strong>{% if review.stats.movie_runtime_count %}{{ review.stats.movie_hours_label }}{% else %}—{% endif %}</strong><span class="review-stat-detail">{{ review.stats.movie_runtime_count }} movie{{ review.stats.movie_runtime_count|pluralize }} with a known length</span></div>{% endif %}
-      {% if review.stats.music.plays %}<div class="review-stat"><span class="review-stat-label">Music plays</span><strong>{{ review.stats.music.plays }}</strong><span class="review-stat-detail">{{ review.stats.music.unique_items }} different entr{{ review.stats.music.unique_items|pluralize:'y,ies' }}</span></div>{% endif %}
+      {% if review.stats.movie_count %}<div class="review-stat"><span class="review-stat-label">Time with movies</span><strong>{% if review.stats.movie_runtime_count %}{{ review.stats.movie_hours_label }}{% else %}—{% endif %}</strong></div>{% endif %}
       {% include 'core/p_year_review_ratings.html' %}
+      {% if review.stats.tracked.watch_minutes or review.stats.tracked.game_hours %}<div class="review-stat review-stat--time" title="Completed movie runtimes plus recorded TV/anime episode estimates and game hours."><span class="review-stat-label">Estimated screen time</span><strong>{{ review.stats.tracked.estimated_time_label }}</strong><span class="review-stat-detail">Movies, episodes &amp; games</span></div>{% endif %}
+      {% if review.stats.music.plays %}<div class="review-stat"><span class="review-stat-label">Music plays</span><strong>{{ review.stats.music.plays }}</strong><span class="review-stat-detail">{{ review.stats.music.unique_items }} different entr{{ review.stats.music.unique_items|pluralize:'y,ies' }}</span></div>{% endif %}
     </div>
     <div class="review-stat-panels">
       {% if review.stats.media_counts %}<div class="review-panel"><h3>Your media mix</h3><div class="review-media-mix">{% for media in review.stats.media_counts %}<div class="review-mix-row" data-media="{{ media.key }}"><span>{{ media.label }}</span><div class="review-mix-track"><span style="width: {{ media.percent|stringformat:'f' }}%"></span></div><strong>{{ media.count }}</strong></div>{% endfor %}</div></div>{% endif %}

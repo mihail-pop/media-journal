@@ -21,11 +21,6 @@
 .review-festive-art .review-art-gift { width: 48px; right: 91px; bottom: 5px; rotate: -9deg; }
 .review-festive-art .review-art-popper { width: 103px; right: 7px; bottom: 8px; rotate: -9deg; }
 .review-festive-art .review-art-ribbon { width: 48px; right: 17px; top: 8px; rotate: 11deg; }
-.review-wrap .review-snowfriend { --review-friend-size: 74px; position: fixed; top: 0; left: 0; z-index: 9; width: var(--review-friend-size); height: var(--review-friend-size); padding: 0; border: 0; background: transparent; border-radius: 50%; touch-action: manipulation; will-change: transform; }
-.review-snowfriend > img { display: block; width: 100%; height: 100%; user-select: none; pointer-events: none; }
-.review-snowfriend:focus-visible { outline-offset: 5px; }
-.review-snowfriend-bubble { position: absolute; bottom: calc(100% + 5px); left: 50%; translate: -50% 0; padding: 6px 10px; border-radius: 12px 12px 12px 2px; background: var(--review-surface); color: var(--review-ink); box-shadow: 0 3px 13px #0002; font-size: .72rem; white-space: nowrap; opacity: 0; transition: opacity .12s; pointer-events: none; }
-.review-snowfriend.is-caught .review-snowfriend-bubble { opacity: 1; }
 @keyframes review-tree-twinkle { from { opacity: .16; } to { opacity: .95; } }
 .review-wrap[data-edition="winter"] .review-hero { background-image: radial-gradient(ellipse at 100% 100%, #69978312, transparent 60%); }
 .review-wrap[data-edition="midnight"] .review-hero { background-image: radial-gradient(ellipse at 100% 0, #d8b9760d, transparent 65%); }
@@ -34,7 +29,6 @@
   .review-wrap:is([data-edition="winter"], [data-edition="midnight"]) .review-collage { translate: -4% 0; }
 }
 @media (max-width: 600px) {
-  .review-wrap .review-snowfriend { --review-friend-size: 58px; }
   .review-festive-art .review-art-tree { width: 97px; }
   .review-festive-art .review-tree-lights { height: 97px; }
   .review-festive-art .review-art-gift { width: 36px; right: 70px; }
