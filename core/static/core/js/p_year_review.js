@@ -5,7 +5,6 @@ document.addEventListener('DOMContentLoaded', () => {
   try { review = JSON.parse(document.getElementById('review-data').textContent); }
   catch (error) { /* The page remains readable if export data is unavailable. */ }
 
-  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const timers = new Set();
   const requests = new Set();
   const objectUrls = new Set();
@@ -20,36 +19,108 @@ document.addEventListener('DOMContentLoaded', () => {
     for (const character of String(seed)) value = Math.imul(value ^ character.charCodeAt(0), 16777619);
     return () => { value = Math.imul(value ^ (value >>> 16), 2246822507); return (value >>> 0) / 4294967296; };
   };
-
   const completedGrid = document.getElementById('review-completed-grid');
-  const completedCards = [...(completedGrid?.querySelectorAll('[data-month]') || [])];
+  const completedScroll = document.getElementById('review-completed-scroll');
+  const cardTemplate = document.getElementById('review-card-template');
   const monthButtons = [...root.querySelectorAll('[data-review-month]')];
   const showMore = document.getElementById('review-show-more');
   const completedCount = document.getElementById('review-completed-count');
   const completedEmpty = document.getElementById('review-completed-empty');
+  const allCompleted = Array.isArray(review.completed) ? review.completed : [];
   let activeMonth = 'all';
   const pageSize = () => window.matchMedia('(max-width: 600px)').matches ? 6 : 12;
-  let visibleLimit = pageSize();
+  let matchingCards = allCompleted;
+  let renderedCount = 0;
+  let expanded = false;
+  let pagingFrame = 0;
+
+  function fillCompletedScroll() {
+    if (pagingFrame || !expanded || !pageActive || !completedScroll) return;
+    pagingFrame = requestAnimationFrame(() => {
+      pagingFrame = 0;
+      if (!pageActive || renderedCount >= matchingCards.length) return;
+      if (completedScroll.scrollHeight - completedScroll.scrollTop - completedScroll.clientHeight < 220) {
+        appendCompletedPage();
+        fillCompletedScroll();
+      }
+    });
+  }
+
+  function imageFallback(image) {
+    const fallback = () => {
+      if (image.dataset.reviewFallback || !root.dataset.placeholder) return;
+      image.dataset.reviewFallback = 'true';
+      image.src = root.dataset.placeholder;
+    };
+    image.addEventListener('error', fallback, { once: true });
+    if (image.complete && !image.naturalWidth) fallback();
+  }
+  root.querySelectorAll('.review-card-art img, .review-hero-cover img').forEach(imageFallback);
+
+  function createCard(card) {
+    const element = cardTemplate.content.firstElementChild.cloneNode(true);
+    element.classList.add(`review-card--${card.media_type}`);
+    element.href = card.url || '#';
+    element.dataset.id = card.id;
+    element.dataset.month = card.month;
+    element.title = [card.title, card.media_label, card.date_label, card.rating_label].filter(Boolean).join(' · ');
+    const image = element.querySelector('img');
+    image.src = card.cover_url || root.dataset.placeholder;
+    image.alt = card.title;
+    imageFallback(image);
+    image.addEventListener('load', fillCompletedScroll, { once: true });
+    element.querySelector('.review-card-title').textContent = card.title;
+    if (card.highlight) {
+      element.classList.add('review-card--highlight');
+      const score = element.querySelector('.review-card-score');
+      score.hidden = false;
+      score.textContent = card.rating_label;
+      score.title = `Highest rated · ${card.rating_label}`;
+    }
+    return element;
+  }
+
+  // Only the first page has live image elements. Opening the shelf is a single
+  // action; subsequent pages are appended when its own scrollbar nears the end.
+  function appendCompletedPage(amount = pageSize()) {
+    if (!completedGrid || !cardTemplate) return;
+    const fragment = document.createDocumentFragment();
+    const end = Math.min(matchingCards.length, renderedCount + amount);
+    for (; renderedCount < end; renderedCount++) fragment.appendChild(createCard(matchingCards[renderedCount]));
+    completedGrid.appendChild(fragment);
+    if (showMore) showMore.hidden = expanded || matchingCards.length <= renderedCount;
+    completedScroll?.setAttribute('aria-label', `Completed items, ${renderedCount} of ${matchingCards.length} shown`);
+  }
 
   function filterCompleted() {
-    let matches = 0;
-    for (const card of completedCards) {
-      const selected = activeMonth === 'all' || card.dataset.month === activeMonth;
-      card.hidden = !selected || matches >= visibleLimit;
-      if (selected) matches++;
-    }
+    if (!completedGrid || !cardTemplate || !Array.isArray(review.completed)) return;
+    matchingCards = allCompleted.filter(card => activeMonth === 'all' || String(card.month) === activeMonth);
+    completedGrid.replaceChildren();
+    renderedCount = 0;
+    if (completedScroll) completedScroll.scrollTop = 0;
+    appendCompletedPage(expanded ? pageSize() * 2 : pageSize());
     monthButtons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.reviewMonth === activeMonth)));
-    if (showMore) showMore.hidden = matches <= visibleLimit;
-    if (completedCount) completedCount.textContent = `${matches} item${matches === 1 ? '' : 's'}`;
-    if (completedEmpty) completedEmpty.hidden = matches !== 0;
-    completedGrid?.classList.add('is-ready');
+    if (completedCount) completedCount.textContent = `${matchingCards.length} item${matchingCards.length === 1 ? '' : 's'}`;
+    if (completedEmpty) completedEmpty.hidden = matchingCards.length !== 0;
+    completedGrid.classList.add('is-ready');
+    fillCompletedScroll();
   }
   monthButtons.forEach(button => button.addEventListener('click', () => {
     activeMonth = button.dataset.reviewMonth;
-    visibleLimit = pageSize();
     filterCompleted();
   }));
-  showMore?.addEventListener('click', () => { visibleLimit += pageSize(); filterCompleted(); });
+  showMore?.addEventListener('click', () => {
+    expanded = true;
+    completedScroll?.classList.add('is-expanded');
+    completedScroll?.setAttribute('tabindex', '0');
+    appendCompletedPage(pageSize() * 2);
+    completedScroll?.focus({ preventScroll: true });
+    fillCompletedScroll();
+  });
+  completedScroll?.addEventListener('scroll', () => {
+    fillCompletedScroll();
+  }, { passive: true });
+  window.addEventListener('resize', fillCompletedScroll, { passive: true });
   filterCompleted();
 
   const disclosures = [document.getElementById('review-years'), document.getElementById('review-share')].filter(Boolean);
@@ -59,118 +130,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('keydown', event => {
     if (event.key === 'Escape') disclosures.forEach(details => { details.open = false; });
   });
-
-  if (root.dataset.placeholder) {
-    root.querySelectorAll('.review-card-art img, .review-hero-cover img').forEach(image => {
-      const fallback = () => {
-        if (image.dataset.reviewFallback) return;
-        image.dataset.reviewFallback = 'true';
-        image.src = root.dataset.placeholder;
-      };
-      image.addEventListener('error', fallback, { once: true });
-      if (image.complete && !image.naturalWidth) fallback();
-    });
-  }
-
-  function hearts(card) {
-    const art = card.querySelector('.review-card-art');
-    if (reducedMotion || !art || art.querySelector('.review-heart-particle')) return;
-    const next = random(`hearts-${card.dataset.id || card.textContent}`);
-    for (let index = 0; index < 4; index++) {
-      const heart = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-      heart.setAttribute('viewBox', '0 0 24 24');
-      heart.setAttribute('aria-hidden', 'true');
-      heart.classList.add('review-heart-particle');
-      heart.style.setProperty('--heart-x', `${20 + next() * 60}%`);
-      heart.style.setProperty('--heart-drift', `${(next() - 0.5) * 45}px`);
-      heart.style.setProperty('--heart-turn', `${(next() - 0.5) * 35}deg`);
-      heart.style.animationDelay = `${index * 90}ms`;
-      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      path.setAttribute('d', 'M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z');
-      heart.appendChild(path);
-      art.appendChild(heart);
-      later(() => heart.remove(), 1600);
-    }
-  }
-
-  function crumble(card) {
-    const art = card.querySelector('.review-card-art');
-    const image = art?.querySelector('img');
-    if (!pageActive || reducedMotion || !art || !image || card.classList.contains('is-crumbling')) return;
-    if (!image.complete) {
-      if (!card.dataset.crumbleWaiting) {
-        card.dataset.crumbleWaiting = 'true';
-        image.addEventListener('load', () => { delete card.dataset.crumbleWaiting; crumble(card); }, { once: true });
-      }
-      return;
-    }
-    if (!image.naturalWidth) return;
-    const artBox = art.getBoundingClientRect();
-    const imageBox = image.getBoundingClientRect();
-    let crop = null;
-    if (artBox.width > 0 && artBox.height > 0 && imageBox.width > 0 && imageBox.height > 0 && image.naturalHeight > 0) {
-      const scale = Math.max(imageBox.width / image.naturalWidth, imageBox.height / image.naturalHeight);
-      crop = {
-        width: image.naturalWidth * scale, height: image.naturalHeight * scale,
-        left: imageBox.left - artBox.left + (imageBox.width - image.naturalWidth * scale) / 2,
-        top: imageBox.top - artBox.top + (imageBox.height - image.naturalHeight * scale) / 2,
-      };
-    }
-    const next = random(`ash-${card.dataset.id || card.textContent}`);
-    for (let row = 0; row < 4; row++) {
-      for (let column = 0; column < 4; column++) {
-        const piece = document.createElement('span');
-        piece.className = 'review-ash-piece';
-        piece.setAttribute('aria-hidden', 'true');
-        Object.assign(piece.style, {
-          left: `${column * 25}%`, top: `${row * 25}%`, width: '25.2%', height: '25.2%',
-          backgroundImage: `url(${JSON.stringify(image.currentSrc || image.src)})`,
-          backgroundSize: crop ? `${crop.width}px ${crop.height}px` : '400% 400%',
-          backgroundPosition: crop ? `${crop.left - column * artBox.width / 4}px ${crop.top - row * artBox.height / 4}px` : `${column * 100 / 3}% ${row * 100 / 3}%`,
-        });
-        piece.style.setProperty('--ash-x', `${(next() - 0.5) * 100}px`);
-        piece.style.setProperty('--ash-y', `${-35 - next() * 70}px`);
-        piece.style.setProperty('--ash-turn', `${(next() - 0.5) * 70}deg`);
-        piece.style.setProperty('--ash-delay', `${next() * 180}ms`);
-        art.appendChild(piece);
-      }
-    }
-    card.classList.add('is-crumbling');
-    later(() => {
-      art.querySelectorAll('.review-ash-piece').forEach(piece => piece.remove());
-      card.classList.remove('is-crumbling');
-    }, 1500);
-  }
-  root.querySelectorAll('.review-favorite-card').forEach(card => card.addEventListener('mouseenter', () => hearts(card)));
-  const droppedCards = [...root.querySelectorAll('.review-dropped-card')];
-  function visibleDropped(card) {
-    if (card.hidden) return false;
-    const box = card.getBoundingClientRect();
-    const shelf = card.closest('.review-shelf')?.getBoundingClientRect();
-    const left = Math.max(0, shelf?.left ?? 0);
-    const top = Math.max(0, shelf?.top ?? 0);
-    const right = Math.min(window.innerWidth, shelf?.right ?? window.innerWidth);
-    const bottom = Math.min(window.innerHeight, shelf?.bottom ?? window.innerHeight);
-    return box.right > left && box.left < right && box.bottom > top && box.top < bottom;
-  }
-  document.getElementById('review-replay-dropped')?.addEventListener('click', () => {
-    droppedCards.filter(visibleDropped).slice(0, 8).forEach((card, index) => later(() => crumble(card), index * 90));
-  });
-  if ('IntersectionObserver' in window) {
-    const observer = new IntersectionObserver(entries => {
-      for (const entry of entries) {
-        if (!entry.isIntersecting) continue;
-        entry.target.classList.add('is-revealed');
-        if (entry.target.classList.contains('review-favorite-card')) hearts(entry.target);
-        if (entry.target.classList.contains('review-dropped-card')) crumble(entry.target);
-        observer.unobserve(entry.target);
-      }
-    }, { threshold: 0.18 });
-    root.querySelectorAll('[data-review-reveal], .review-favorite-card, .review-dropped-card').forEach(element => observer.observe(element));
-    window.addEventListener('pagehide', () => observer.disconnect(), { once: true });
-  } else {
-    root.querySelectorAll('[data-review-reveal]').forEach(element => element.classList.add('is-revealed'));
-  }
 
   const status = document.getElementById('review-export-status');
   const exportButtons = [...root.querySelectorAll('[data-review-export]')];
@@ -251,7 +210,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function renderExport(section) {
-    const completed = (review.completed || []).filter(card => activeMonth === 'all' || String(card.month) === activeMonth);
+    const exportMonth = activeMonth;
+    const completed = (review.completed || []).filter(card => exportMonth === 'all' || String(card.month) === exportMonth);
     const candidates = section === 'overview' ? [...(review.favorites || []), ...(review.completed || []), ...(review.stats?.music?.top_items || []), ...(review.dropped || [])] : section === 'completed' ? completed : review[section] || [];
     const seen = new Set();
     const all = candidates.filter(card => { if (seen.has(card.id)) return false; seen.add(card.id); return true; });
@@ -278,6 +238,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const padding = 68;
       const gap = 20;
       const columns = Math.max(1, Math.min(5, cards.length));
+      const artRatio = (card, index) => card.media_type === 'music' ? 1 : Math.min(2.2, images[index]?.height / images[index]?.width || 1.4);
       const top = section === 'overview' ? 302 : 218;
       let cardWidth = Math.min(208, (1200 - padding * 2 - gap * (columns - 1)) / columns);
       let rows;
@@ -290,9 +251,9 @@ document.addEventListener('DOMContentLoaded', () => {
         let y = top;
         for (let start = 0; start < cards.length; start += columns) {
           const values = cards.slice(start, start + columns);
-          const artHeight = Math.max(...values.map(card => (cardWidth - 20) * (card.media_type === 'music' ? 1 : 1.4)));
+          const artHeight = Math.max(...values.map((card, index) => (cardWidth - 20) * artRatio(card, start + index)));
           const lines = values.map(card => titleLines(context, card.title, cardWidth - 24));
-          const height = 12 + artHeight + 14 + Math.max(...lines.map(value => value.length)) * titleSize * 1.25 + 30;
+          const height = 12 + artHeight + 14 + Math.max(...lines.map(value => value.length)) * titleSize * 1.25 + 18;
           rows.push({ start, y, height, artHeight, lines });
           y += height + gap;
         }
@@ -321,7 +282,7 @@ document.addEventListener('DOMContentLoaded', () => {
       context.fillStyle = palette.ink;
       context.font = `500 25px ${font}`;
       let heading = { overview: 'Your year in media', favorites: 'Favorited', completed: 'Completed', dropped: 'Dropped' }[section];
-      if (section === 'completed' && activeMonth !== 'all') heading += ` · ${new Intl.DateTimeFormat('en', { month: 'long' }).format(new Date(2020, Number(activeMonth) - 1, 1))}`;
+      if (section === 'completed' && exportMonth !== 'all') heading += ` · ${new Intl.DateTimeFormat('en', { month: 'long' }).format(new Date(2020, Number(exportMonth) - 1, 1))}`;
       context.fillText(heading, 600, 182);
       if (section === 'overview') {
         const metrics = [];
@@ -330,7 +291,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         countMetric(review.counts?.completed, 'Completed');
         countMetric(review.counts?.favorites, 'Favorited');
-        if (review.stats?.movie_minutes > 0) metrics.push({ value: review.stats.movie_hours_label, label: 'Movie runtime' });
+        if (review.stats?.movie_minutes > 0) metrics.push({ value: review.stats.movie_hours_label, label: 'Time with movies' });
         countMetric(review.stats?.music?.plays, 'Music plays');
         countMetric(review.counts?.dropped, 'Dropped');
         for (const metric of review.stats?.tracked?.metrics || []) {
@@ -363,14 +324,14 @@ document.addEventListener('DOMContentLoaded', () => {
           context.fillStyle = palette.surface;
           context.beginPath();context.roundRect(x, row.y, cardWidth, row.height, 12);context.fill();
           const width = cardWidth - 20;
-          const height = width * (card.media_type === 'music' ? 1 : 1.4);
+          const height = width * artRatio(card, row.start + column);
           const y = row.y + 10 + row.artHeight - height;
           const image = images[row.start + column];
           context.save();context.beginPath();context.roundRect(x + 10, y, width, height, 7);context.clip();
           if (image) {
             const targetWidth = card.media_type === 'music' ? width * 1.79 : width;
             const offset = card.media_type === 'music' ? -width * 0.395 : 0;
-            const scale = Math.max(targetWidth / image.width, height / image.height);
+            const scale = card.media_type === 'music' ? Math.max(targetWidth / image.width, height / image.height) : Math.min(width / image.width, height / image.height);
             context.drawImage(image, x + 10 + offset + (targetWidth - image.width * scale) / 2, y + (height - image.height * scale) / 2, image.width * scale, image.height * scale);
           } else {
             context.fillStyle = palette.paper;context.fillRect(x + 10, y, width, height);
@@ -381,8 +342,6 @@ document.addEventListener('DOMContentLoaded', () => {
           context.fillStyle = palette.ink;context.font = `500 ${titleSize}px ${font}`;
           const textY = row.y + 12 + row.artHeight + 14 + titleSize;
           row.lines[column].forEach((line, index) => context.fillText(line, x + cardWidth / 2, textY + index * titleSize * 1.25));
-          context.fillStyle = palette.muted;context.font = `400 ${Math.max(12, titleSize * 0.7)}px ${font}`;
-          context.fillText(card.media_label || '', x + cardWidth / 2, row.y + row.height - 12);
         });
       }
       if (all.length > cards.length) {
@@ -432,11 +391,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   window.addEventListener('pagehide', () => {
     pageActive = false;
+    cancelAnimationFrame(pagingFrame);pagingFrame = 0;
     timers.forEach(timer => clearTimeout(timer));timers.clear();
     requests.forEach(controller => controller.abort());requests.clear();
     objectUrls.forEach(url => URL.revokeObjectURL(url));objectUrls.clear();
-    root.querySelectorAll('.review-ash-piece, .review-heart-particle').forEach(element => element.remove());
-    droppedCards.forEach(card => card.classList.remove('is-crumbling'));
   });
-  window.addEventListener('pageshow', () => { pageActive = true; });
+  window.addEventListener('pageshow', () => { pageActive = true; fillCompletedScroll(); });
 });

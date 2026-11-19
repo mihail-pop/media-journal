@@ -1,0 +1,21 @@
+.review-wrap .review-stat--rating { grid-column: 1 / -1; min-width: 0; }
+.review-rating-faces { display: flex; flex-wrap: wrap; gap: 22px 44px; margin-top: 22px; }
+.review-rating-face { display: grid; grid-template-columns: 25px auto; align-items: center; gap: 5px 9px; }
+.review-wrap .review-rating-face svg { width: 25px; height: 25px; fill: currentColor; stroke: none; }
+.review-rating-face--good svg { color: #4caf50; }
+.review-rating-face--neutral svg { color: #fbc02d; }
+.review-rating-face--bad svg { color: #e53935; }
+.review-rating-face strong { font-size: 1.1rem; font-weight: 500; }
+.review-rating-face > span { grid-column: 1 / -1; color: var(--review-muted); font-size: .68rem; }
+.review-rating-histogram { display: flex; gap: clamp(6px, 2vw, 22px); width: 100%; max-width: 740px; margin: 24px 0 0; padding: 0; list-style: none; }
+.review-rating-histogram li { display: flex; flex: 1; flex-direction: column; align-items: center; gap: 7px; min-width: 0; }
+.review-rating-bin-count { color: var(--review-muted); font-size: .72rem; font-variant-numeric: tabular-nums; }
+.review-rating-bin-track { display: flex; align-items: flex-end; width: 100%; height: 75px; border-bottom: 1px solid var(--review-line); }
+.review-rating-bin-track > span { display: block; width: 100%; border-radius: 3px 3px 0 0; background: var(--review-accent); }
+.review-rating-bin-label { color: var(--review-muted); font-size: .68rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+@media (max-width: 600px) {
+  .review-rating-faces { gap: 18px 30px; margin-top: 18px; }
+  .review-rating-histogram { gap: 5px; margin-top: 20px; }
+  .review-rating-bin-track { height: 62px; }
+  .review-rating-bin-label { font-size: .55rem; }
+}

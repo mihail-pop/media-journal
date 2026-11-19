@@ -1,4 +1,4 @@
-"""URL-only Year in Review experiment. All endpoints are read-only."""
+"""Year in Review pages and cover exports. All endpoints are read-only."""
 
 import mimetypes
 from pathlib import Path
@@ -38,6 +38,7 @@ def year_review(request, year=None):
     )
     return render(request, 'core/p_year_review.html', {
         'review': review, 'has_review_data': has_data,
+        'can_choose_year': request.GET.get('browse') == '1',
         'theme_mode': app_settings.theme_mode if app_settings else 'dark',
         'page_type': 'year-review',
     })

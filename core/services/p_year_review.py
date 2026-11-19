@@ -9,13 +9,13 @@ from django.db.models import Count
 from django.urls import NoReverseMatch, reverse
 from django.utils import timezone
 
-from core.models import AppSettings, MediaItem, MediaItemActivity, MusicPlay
+from core.models import AppSettings, MediaItem, MediaItemActivity, MusicPlay, default_favorite_sections_order
 from core.services.g_utils import rating_to_display
 
 
 MEDIA_LABELS = {
-    'movie': 'Movies', 'tv': 'TV Shows', 'anime': 'Anime', 'manga': 'Manga',
-    'game': 'Games', 'book': 'Books', 'music': 'Music',
+    'movie': 'Movie', 'tv': 'TV Show', 'anime': 'Anime', 'manga': 'Manga',
+    'game': 'Game', 'book': 'Book', 'music': 'Music',
 }
 CARD_FIELDS = (
     'id', 'title', 'media_type', 'source', 'provider_ids', 'cover_url', 'status',
@@ -92,9 +92,11 @@ def _card(row, year, rating_mode):
     activity_date = _local_date(row['date_added'])
     raw_rating = row['personal_rating']
     display_rating = rating_to_display(raw_rating, rating_mode) if raw_rating and 0 < raw_rating <= 100 else None
+    rating_face = ''
     if rating_mode == 'faces':
-        face = {1: ('🙁', 'Disliked'), 50: ('😐', 'Neutral'), 100: ('🙂', 'Liked')}.get(display_rating)
-        rating = face[0] if face else None
+        face = {1: ('bad', 'Disliked'), 50: ('neutral', 'Neutral'), 100: ('good', 'Liked')}.get(display_rating)
+        rating = display_rating
+        rating_face = face[0] if face else ''
         rating_label = face[1] if face else ''
     else:
         rating = display_rating
@@ -106,10 +108,77 @@ def _card(row, year, rating_mode):
         'cover_url': row['cover_url'] or '', 'url': _item_url(row),
         'date_label': f'{activity_date.day} {month_name[activity_date.month]} {activity_date.year}',
         'month': activity_date.month, 'month_label': month_name[activity_date.month],
-        'rating': rating, 'rating_label': rating_label, 'highlight': False,
+        'rating': rating, 'rating_label': rating_label, 'rating_face': rating_face, 'highlight': False,
         'favorite_position': row['favorite_position'],
         'export_image_url': _url('year_review_image', year, row['id']),
     }
+
+
+def _media_order(app_settings):
+    sections = app_settings.get_favorite_sections_order() if app_settings else default_favorite_sections_order()
+    return [section['id'] for section in sections if section['id'] in MEDIA_LABELS]
+
+
+def _group_cards(cards, media_order):
+    """Use the saved media order without changing order inside each media type."""
+    positions = {media_type: index for index, media_type in enumerate(media_order)}
+    return sorted(cards, key=lambda card: positions.get(card['media_type'], len(positions)))
+
+
+def _histogram_bins(scores, rating_mode):
+    """Keep occupied scores and enough empty bins to make a useful scale."""
+    counts = Counter((score - 1) // 10 + 1 if rating_mode == 'scale_100' else score for score in scores)
+    if rating_mode == 'stars_5':
+        selected = set(range(1, 6))
+    else:
+        selected = set(counts)
+        if not selected:
+            selected = set(range(1, 6))
+        elif len(selected) < 5:
+            first, last = min(selected), max(selected)
+            span = last - first + 1
+            if span <= 5:
+                first = max(1, min(first - (5 - span) // 2, 6))
+                selected = set(range(first, first + 5))
+            else:
+                while len(selected) < 5:
+                    ordered = sorted(selected)
+                    lower, upper = max(zip(ordered, ordered[1:]), key=lambda gap: gap[1] - gap[0])
+                    selected.add((lower + upper) // 2)
+    highest_count = max(counts.values(), default=1)
+    bins = []
+    for value in sorted(selected):
+        label = f'{(value - 1) * 10 + 1}–{value * 10}' if rating_mode == 'scale_100' else str(value)
+        bins.append({
+            'key': value, 'label': label, 'count': counts[value],
+            'percent': round(counts[value] * 100 / highest_count, 2),
+        })
+    return bins
+
+
+def _rating_stats(cards, completed_rows, rating_mode):
+    rated = [card for card in cards if card['rating'] is not None]
+    rating = {
+        'mode': rating_mode, 'count': len(rated), 'average': None,
+        'maximum': 10 if rating_mode == 'faces' else {'stars_5': 5, 'scale_10': 10, 'scale_100': 100}[rating_mode],
+        'faces': [], 'bins': [],
+    }
+    if rating_mode == 'faces':
+        face_counts = Counter(card['rating_face'] for card in rated)
+        rating['faces'] = [
+            {'key': key, 'label': label, 'count': face_counts[key]}
+            for key, label in (('good', 'Liked'), ('neutral', 'Neutral'), ('bad', 'Disliked'))
+        ]
+        scores = [
+            rating_to_display(row['personal_rating'], 'scale_10') for row in completed_rows
+            if row['personal_rating'] and 0 < row['personal_rating'] <= 100
+        ]
+    else:
+        scores = [card['rating'] for card in rated]
+        rating['bins'] = _histogram_bins(scores, rating_mode)
+    if scores:
+        rating['average'] = round(sum(scores) / len(scores), 1)
+    return rating
 
 
 def _duration_label(minutes):
@@ -252,26 +321,18 @@ def build_year_review(year=None, app_settings=None):
         date_added__gte=start, date_added__lt=end, status__in=('completed', 'dropped'),
     ).order_by('-date_added', '-id').values(*CARD_FIELDS))
     completed_rows = [row for row in rows if row['status'] == 'completed']
-    completed = [_card(row, year, rating_mode) for row in completed_rows]
-    dropped = [_card(row, year, rating_mode) for row in rows if row['status'] == 'dropped']
+    media_order = _media_order(app_settings)
+    completed = _group_cards([_card(row, year, rating_mode) for row in completed_rows], media_order)
+    dropped = _group_cards([_card(row, year, rating_mode) for row in rows if row['status'] == 'dropped'], media_order)
     favorite_ids = {row['id'] for row in completed_rows if row['favorite']}
-    favorites = sorted(
+    favorites = _group_cards(sorted(
         (card for card in completed if card['id'] in favorite_ids),
         key=lambda card: (card['favorite_position'] is None, card['favorite_position'] or 0, card['id']),
-    )
+    ), media_order)
 
     rated = [card for card in completed if card['rating'] is not None]
-    rating = {'mode': rating_mode, 'count': len(rated), 'average': None, 'maximum': None, 'faces': []}
-    if rating_mode == 'faces':
-        face_counts = Counter(card['rating'] for card in rated)
-        rating['faces'] = [
-            {'key': key, 'label': label, 'symbol': symbol, 'count': face_counts[symbol]}
-            for key, label, symbol in (('happy', 'Liked', '🙂'), ('neutral', 'Neutral', '😐'), ('sad', 'Disliked', '🙁'))
-        ]
-    else:
-        rating['maximum'] = {'stars_5': 5, 'scale_10': 10, 'scale_100': 100}[rating_mode]
-        if rated:
-            rating['average'] = round(sum(card['rating'] for card in rated) / len(rated), 1)
+    rating = _rating_stats(completed, completed_rows, rating_mode)
+    if rating_mode != 'faces':
         groups = {}
         for card in rated:
             groups.setdefault(card['rating'], []).append(card)

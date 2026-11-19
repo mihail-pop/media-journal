@@ -1,6 +1,6 @@
 {% load static %}
 {% static 'core/img/placeholder.png' as review_placeholder %}
-<a class="review-card review-card--{{ card.media_type }}{% if kind == 'favorite' %} review-favorite-card{% elif kind == 'dropped' %} review-dropped-card{% endif %}{% if card.highlight %} review-card--highlight{% endif %}" href="{{ card.url }}" data-id="{{ card.id }}" data-month="{{ card.month }}" title="{{ card.title }} · {{ card.date_label }}">
+<a class="review-card review-card--{{ card.media_type }}{% if kind == 'favorite' %} review-favorite-card{% elif kind == 'dropped' %} review-dropped-card{% endif %}{% if card.highlight %} review-card--highlight{% endif %}" href="{{ card.url }}" data-id="{{ card.id }}" data-month="{{ card.month }}" title="{{ card.title }} · {{ card.media_label }} · {{ card.date_label }}{% if card.rating_label %} · {{ card.rating_label }}{% endif %}">
   <div class="review-card-art">
     <img src="{{ card.cover_url|default:review_placeholder }}" alt="{{ card.title }}" loading="lazy" decoding="async">
     {% if kind == 'favorite' %}
@@ -10,5 +10,4 @@
     {% endif %}
   </div>
   <div class="review-card-title">{{ card.title }}</div>
-  <div class="review-card-meta"><span>{{ card.media_label }}</span>{% if kind == 'completed' %}<span>{{ card.month_label|slice:':3' }}</span>{% endif %}</div>
 </a>
