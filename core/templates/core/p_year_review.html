@@ -6,14 +6,17 @@
 <title>{{ review.year }} Year in Review - Media Journal</title>
 <link rel="stylesheet" href="{% static 'core/css/p_year_review.css' %}">
 <link rel="stylesheet" href="{% static 'core/css/p_year_review_ratings.css' %}">
+<link rel="stylesheet" href="{% static 'core/css/p_year_review_effects.css' %}">
 {% endblock %}
 
 {% block content %}
 <script>document.body.dataset.theme = '{{ theme_mode|escapejs }}';document.body.dataset.mediaType = 'year-review';</script>
 <div id="year-review" class="review-wrap" data-year="{{ review.year }}" data-edition="{{ review.edition.key }}" data-placeholder="{% static 'core/img/placeholder.png' %}">
+  <canvas class="review-ambience" data-review-scene="ambient" aria-hidden="true"></canvas>
   <div class="review-toolbar">
     <span class="review-edition"><span aria-hidden="true">✦</span> {{ review.edition.label }}</span>
     <div class="review-tools">
+      <button id="review-effects-toggle" class="review-effects-toggle" type="button" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5Z"/></svg>Effects</button>
       {% if can_choose_year %}
       <details id="review-years" class="review-dropdown">
         <summary aria-label="Choose a review year">{{ review.year }}<svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg></summary>
@@ -26,6 +29,7 @@
   </div>
 
   <section class="review-hero" aria-labelledby="review-title">
+    <canvas class="review-scene review-hero-scene" data-review-scene="celebration" aria-hidden="true"></canvas>
     <div class="review-hero-copy">
       <p class="review-kicker">Your year in media</p>
       <h1 id="review-title">{{ review.year }}</h1>
@@ -43,7 +47,8 @@
   </section>
 
   {% if review.favorites %}
-  <section class="review-section" data-review-reveal aria-labelledby="review-favorites-title">
+  <section id="review-favorites" class="review-section review-scene-section" aria-labelledby="review-favorites-title">
+    <canvas class="review-scene" data-review-scene="hearts" aria-hidden="true"></canvas>
     <div class="review-section-heading"><div><span class="review-section-mark" aria-hidden="true">♡</span><h2 id="review-favorites-title">Favorited</h2><span class="review-count">{{ review.counts.favorites }}</span></div></div>
     <div class="review-shelf review-favorites-shelf">{% for card in review.favorites %}{% include 'core/p_year_review_card.html' with kind='favorite' %}{% endfor %}</div>
   </section>
@@ -67,7 +72,8 @@
   {% endif %}
 
   {% if review.dropped %}
-  <section class="review-section review-dropped-section" data-review-reveal aria-labelledby="review-dropped-title">
+  <section class="review-section review-dropped-section review-scene-section" aria-labelledby="review-dropped-title">
+    <canvas class="review-scene" data-review-scene="fire" aria-hidden="true"></canvas>
     <div class="review-section-heading"><div><span class="review-section-mark" aria-hidden="true">↘</span><h2 id="review-dropped-title">Dropped</h2><span class="review-count">{{ review.counts.dropped }}</span></div></div>
     <div class="review-shelf review-dropped-shelf">{% for card in review.dropped %}{% include 'core/p_year_review_card.html' with kind='dropped' %}{% endfor %}</div>
   </section>
@@ -115,4 +121,5 @@
 {% block script %}
 {{ block.super }}
 <script src="{% static 'core/js/p_year_review.js' %}"></script>
+<script src="{% static 'core/js/p_year_review_effects.js' %}"></script>
 {% endblock %}

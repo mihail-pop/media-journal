@@ -1,0 +1,20 @@
+.review-wrap { position: relative; isolation: isolate; }
+.review-ambience { display: block; position: fixed; inset: 0; width: 100vw; height: 100vh; height: 100dvh; z-index: -1; pointer-events: none; }
+.review-scene { display: block; position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.review-hero-scene { z-index: 0; }
+.review-collage { z-index: 1; }
+.review-scene-section { position: relative; isolation: isolate; }
+.review-scene-section > .review-scene { z-index: -1; inset: -16px -18px -8px; width: calc(100% + 36px); height: calc(100% + 24px); }
+.review-effects-toggle { display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 8px 11px; border-radius: 9px; background: transparent; color: var(--review-muted) !important; font-size: .75rem !important; transition: color .18s, background .18s; }
+.review-effects-toggle:hover { color: var(--review-ink) !important; background: var(--review-surface); }
+.review-effects-toggle > svg { width: 16px; height: 16px; color: var(--review-accent); }
+.review-effects-toggle[aria-pressed="false"] > svg { opacity: .4; }
+.review-effects-paused .review-hero-cover { animation: none; }
+.review-wrap[data-edition="winter"] .review-hero { background-image: radial-gradient(ellipse at 100% 100%, #69978312, transparent 60%); }
+.review-wrap[data-edition="midnight"] .review-hero { background-image: radial-gradient(ellipse at 100% 0, #d8b9760d, transparent 65%); }
+.review-wrap[data-edition="confetti"] .review-hero { background-image: radial-gradient(ellipse at 85% 10%, #da879412, transparent 60%); }
+@media (max-width: 600px) {
+  .review-effects-toggle { gap: 5px; padding: 8px; font-size: .66rem !important; }
+  .review-effects-toggle > svg { width: 14px; height: 14px; }
+  .review-scene-section > .review-scene { left: -10px; right: -10px; width: calc(100% + 20px); }
+}
