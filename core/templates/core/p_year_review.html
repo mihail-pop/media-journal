@@ -7,12 +7,18 @@
 <link rel="stylesheet" href="{% static 'core/css/p_year_review.css' %}">
 <link rel="stylesheet" href="{% static 'core/css/p_year_review_ratings.css' %}">
 <link rel="stylesheet" href="{% static 'core/css/p_year_review_effects.css' %}">
+<link rel="stylesheet" href="{% static 'core/css/p_year_review_sections.css' %}">
 {% endblock %}
 
 {% block content %}
 <script>document.body.dataset.theme = '{{ theme_mode|escapejs }}';document.body.dataset.mediaType = 'year-review';</script>
 <div id="year-review" class="review-wrap" data-year="{{ review.year }}" data-edition="{{ review.edition.key }}" data-placeholder="{% static 'core/img/placeholder.png' %}">
   <canvas class="review-ambience" data-review-scene="ambient" aria-hidden="true"></canvas>
+  {# Twemoji graphics by Twitter, Inc. and other contributors, CC BY 4.0. https://github.com/jdecked/twemoji #}
+  <button id="review-snowfriend" class="review-snowfriend" type="button" title="Catch me!" aria-label="Catch the flying snowman for a celebration" hidden>
+    <img src="{% static 'core/img/year_review/snowman.svg' %}" alt="" draggable="false">
+    <span class="review-snowfriend-bubble" aria-hidden="true">Wheee!</span>
+  </button>
   <div class="review-toolbar">
     <span class="review-edition"><span aria-hidden="true">✦</span> {{ review.edition.label }}</span>
     <div class="review-tools">
@@ -30,6 +36,16 @@
 
   <section class="review-hero" aria-labelledby="review-title">
     <canvas class="review-scene review-hero-scene" data-review-scene="celebration" aria-hidden="true"></canvas>
+    <div class="review-festive-art" aria-hidden="true">
+      {% if review.edition.key == 'winter' %}
+      <img class="review-art-tree" src="{% static 'core/img/year_review/christmas-tree.svg' %}" alt="" decoding="async">
+      <svg class="review-art-tree review-tree-lights" viewBox="0 0 36 36" focusable="false"><circle cx="16.1" cy="11.6" r=".65"/><circle cx="19.6" cy="24.6" r=".75"/><circle cx="22" cy="15" r=".75"/><circle cx="9.6" cy="25.6" r=".65"/><circle cx="13.6" cy="18.6" r=".65"/><circle cx="25.6" cy="22.6" r=".65"/></svg>
+      <img class="review-art-gift" src="{% static 'core/img/year_review/wrapped-gift.svg' %}" alt="" decoding="async">
+      {% else %}
+      <img class="review-art-popper" src="{% static 'core/img/year_review/party-popper.svg' %}" alt="" decoding="async">
+      {% endif %}
+      {% if review.edition.key != 'midnight' %}<img class="review-art-ribbon" src="{% static 'core/img/year_review/ribbon.svg' %}" alt="" decoding="async">{% endif %}
+    </div>
     <div class="review-hero-copy">
       <p class="review-kicker">Your year in media</p>
       <h1 id="review-title">{{ review.year }}</h1>

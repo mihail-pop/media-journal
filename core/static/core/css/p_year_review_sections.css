@@ -1,0 +1,96 @@
+/* Section-wide keepsakes: a little ceremony for finishing, a star chart for totals. */
+.review-wrap :is(#review-completed, #review-stats) {
+  position: relative;
+  isolation: isolate;
+  margin-inline: -22px;
+  padding: 26px 22px 28px;
+  border-radius: 20px;
+}
+
+.review-wrap :is(#review-completed, #review-stats)::before,
+.review-wrap :is(#review-completed, #review-stats)::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+/* Gold and sage washes frame the shelf, with open space behind the covers. */
+.review-wrap #review-completed {
+  --review-completion-gold: color-mix(in srgb, var(--review-accent) 78%, #bc9e5a);
+  --review-completion-sage: color-mix(in srgb, var(--review-accent-2) 45%, #89a784);
+}
+
+.review-wrap #review-completed::before {
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 100% 0%, color-mix(in srgb, var(--review-completion-gold) 15%, transparent), transparent 49%),
+    radial-gradient(ellipse at 0% 100%, color-mix(in srgb, var(--review-completion-sage) 12%, transparent), transparent 55%),
+    linear-gradient(125deg, color-mix(in srgb, var(--review-completion-gold) 4%, var(--review-paper)), color-mix(in srgb, var(--review-completion-sage) 3%, var(--review-paper)));
+}
+
+.review-wrap #review-completed::after {
+  inset: 0;
+  background: var(--review-completion-gold);
+  opacity: .24;
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 210'%3E%3Cg fill='none' stroke='white' stroke-linecap='round' stroke-linejoin='round'%3E%3Cg transform='translate(211 65) rotate(12)'%3E%3Ccircle r='37' stroke-width='1.4'/%3E%3Ccircle r='29' stroke-width='.7' stroke-dasharray='2 5'/%3E%3Cpath d='m-15 0 10 10 21-23' stroke-width='3'/%3E%3Cpath d='m-20 31-5 36 18-10 10 14 7-35M9 35l11 32 10-16 17 3-17-29' stroke-width='1.4'/%3E%3C/g%3E%3Cpath d='m91 48 5 6 11-13m31 75 6 6 12-15m126 25 6 6 12-15' stroke-width='2.3'/%3E%3Cpath d='m135 33 3 7 7 3-7 3-3 7-3-7-7-3 7-3Zm142 52 2 5 5 2-5 2-2 5-2-5-5-2 5-2Z' stroke-width='1.2'/%3E%3Cpath d='m70 103 5 8m38 56 8-3m164 10 3 9M169 19l5-5' stroke-width='2'/%3E%3C/g%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 210'%3E%3Cg fill='none' stroke='white' stroke-linecap='round' stroke-linejoin='round'%3E%3Cg transform='translate(211 65) rotate(12)'%3E%3Ccircle r='37' stroke-width='1.4'/%3E%3Ccircle r='29' stroke-width='.7' stroke-dasharray='2 5'/%3E%3Cpath d='m-15 0 10 10 21-23' stroke-width='3'/%3E%3Cpath d='m-20 31-5 36 18-10 10 14 7-35M9 35l11 32 10-16 17 3-17-29' stroke-width='1.4'/%3E%3C/g%3E%3Cpath d='m91 48 5 6 11-13m31 75 6 6 12-15m126 25 6 6 12-15' stroke-width='2.3'/%3E%3Cpath d='m135 33 3 7 7 3-7 3-3 7-3-7-7-3 7-3Zm142 52 2 5 5 2-5 2-2 5-2-5-5-2 5-2Z' stroke-width='1.2'/%3E%3Cpath d='m70 103 5 8m38 56 8-3m164 10 3 9M169 19l5-5' stroke-width='2'/%3E%3C/g%3E%3C/svg%3E");
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: right top;
+  mask-position: right top;
+  -webkit-mask-size: 320px 210px;
+  mask-size: 320px 210px;
+  animation: review-keepsake-glow 14s ease-in-out infinite alternate;
+}
+
+/* A faded ledger grows into a small constellation, like connecting the year's dots. */
+.review-wrap #review-stats {
+  --review-ledger-ink: color-mix(in srgb, var(--review-accent-2) 75%, var(--review-accent));
+}
+
+.review-wrap #review-stats::before {
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 100% 0%, color-mix(in srgb, var(--review-ledger-ink) 14%, transparent), transparent 56%),
+    radial-gradient(ellipse at 0% 100%, color-mix(in srgb, var(--review-accent) 9%, transparent), transparent 51%),
+    linear-gradient(175deg, color-mix(in srgb, var(--review-surface) 28%, var(--review-paper)), color-mix(in srgb, var(--review-accent) 3%, var(--review-paper)));
+}
+
+.review-wrap #review-stats::after {
+  inset: 0;
+  background: var(--review-ledger-ink);
+  opacity: .26;
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 420 230'%3E%3Cg stroke='white' fill='none' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath opacity='.22' d='M75 30h300M75 64h300M75 98h300M75 132h300M75 166h300M75 200h300M103 20v190M137 20v190M171 20v190M205 20v190M239 20v190M273 20v190M307 20v190M341 20v190' stroke-width='.7'/%3E%3Cpath d='m118 140 55-44 51 21 57-69 66 19' stroke-width='1.3'/%3E%3Cpath d='m281 39 3 6 6 3-6 3-3 6-3-6-6-3 6-3Zm66 20 3 5 5 3-5 3-3 5-3-5-5-3 5-3Z' stroke-width='1.3'/%3E%3Ccircle cx='118' cy='140' r='3' fill='white'/%3E%3Ccircle cx='173' cy='96' r='3' fill='white'/%3E%3Ccircle cx='224' cy='117' r='3' fill='white'/%3E%3Cpath d='M302 158v24m14-35v35m14-44v44m14-59v59' stroke-width='3' opacity='.6'/%3E%3Cpath d='m87 75 2 5 5 2-5 2-2 5-2-5-5-2 5-2Zm286 29 2 5 5 2-5 2-2 5-2-5-5-2 5-2Z' stroke-width='1'/%3E%3C/g%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 420 230'%3E%3Cg stroke='white' fill='none' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath opacity='.22' d='M75 30h300M75 64h300M75 98h300M75 132h300M75 166h300M75 200h300M103 20v190M137 20v190M171 20v190M205 20v190M239 20v190M273 20v190M307 20v190M341 20v190' stroke-width='.7'/%3E%3Cpath d='m118 140 55-44 51 21 57-69 66 19' stroke-width='1.3'/%3E%3Cpath d='m281 39 3 6 6 3-6 3-3 6-3-6-6-3 6-3Zm66 20 3 5 5 3-5 3-3 5-3-5-5-3 5-3Z' stroke-width='1.3'/%3E%3Ccircle cx='118' cy='140' r='3' fill='white'/%3E%3Ccircle cx='173' cy='96' r='3' fill='white'/%3E%3Ccircle cx='224' cy='117' r='3' fill='white'/%3E%3Cpath d='M302 158v24m14-35v35m14-44v44m14-59v59' stroke-width='3' opacity='.6'/%3E%3Cpath d='m87 75 2 5 5 2-5 2-2 5-2-5-5-2 5-2Zm286 29 2 5 5 2-5 2-2 5-2-5-5-2 5-2Z' stroke-width='1'/%3E%3C/g%3E%3C/svg%3E");
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: right -18px top -12px;
+  mask-position: right -18px top -12px;
+  -webkit-mask-size: 420px 230px;
+  mask-size: 420px 230px;
+}
+
+@keyframes review-keepsake-glow {
+  from { opacity: .19; }
+  to { opacity: .29; }
+}
+
+.review-effects-paused #review-completed::after { animation-play-state: paused; }
+
+@media (max-width: 760px) {
+  .review-wrap :is(#review-completed, #review-stats) { margin-inline: -14px; padding: 22px 14px 24px; border-radius: 16px; }
+  .review-wrap #review-completed::after { -webkit-mask-size: 255px 167px; mask-size: 255px 167px; }
+  .review-wrap #review-stats::after { -webkit-mask-size: 315px 173px; mask-size: 315px 173px; }
+}
+
+@media (max-width: 600px) {
+  .review-wrap :is(#review-completed, #review-stats) { margin-inline: -10px; padding: 22px 10px 24px; }
+  .review-wrap #review-completed::after { -webkit-mask-position: right -32px top 5px; mask-position: right -32px top 5px; opacity: .2; }
+  .review-wrap #review-stats::after { -webkit-mask-position: right -42px top -16px; mask-position: right -42px top -16px; opacity: .22; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .review-wrap #review-completed::after { animation: none; }
+}
