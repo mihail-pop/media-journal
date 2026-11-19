@@ -53,7 +53,9 @@ document.addEventListener('DOMContentLoaded', () => {
       image.src = root.dataset.placeholder;
     };
     image.addEventListener('error', fallback, { once: true });
-    if (image.complete && !image.naturalWidth) fallback();
+    // Template clones are inert until inserted; complete can still be true
+    // before their first request. Only inspect images already on the page.
+    if (image.isConnected && image.complete && !image.naturalWidth) fallback();
   }
   root.querySelectorAll('.review-card-art img, .review-hero-cover img').forEach(imageFallback);
 
@@ -65,9 +67,9 @@ document.addEventListener('DOMContentLoaded', () => {
     element.dataset.month = card.month;
     element.title = [card.title, card.media_label, card.date_label, card.rating_label].filter(Boolean).join(' · ');
     const image = element.querySelector('img');
+    imageFallback(image);
     image.src = card.cover_url || root.dataset.placeholder;
     image.alt = card.title;
-    imageFallback(image);
     image.addEventListener('load', fillCompletedScroll, { once: true });
     element.querySelector('.review-card-title').textContent = card.title;
     if (card.highlight) {
