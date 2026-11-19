@@ -323,11 +323,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const values = cards.slice(row.start, row.start + columns);
         values.forEach((card, column) => {
           const x = (1200 - gridWidth) / 2 + column * (cardWidth + gap);
-          context.fillStyle = palette.surface;
-          context.beginPath();context.roundRect(x, row.y, cardWidth, row.height, 12);context.fill();
           const width = cardWidth - 20;
           const height = width * artRatio(card, row.start + column);
-          const y = row.y + 10 + row.artHeight - height;
+          const panelOffset = row.artHeight - height;
+          const panelY = row.y + panelOffset;
+          context.fillStyle = palette.surface;
+          context.beginPath();context.roundRect(x, panelY, cardWidth, row.height - panelOffset, 12);context.fill();
+          const y = panelY + 10;
           const image = images[row.start + column];
           context.save();context.beginPath();context.roundRect(x + 10, y, width, height, 7);context.clip();
           if (image) {
@@ -345,10 +347,6 @@ document.addEventListener('DOMContentLoaded', () => {
           const textY = row.y + 12 + row.artHeight + 14 + titleSize;
           row.lines[column].forEach((line, index) => context.fillText(line, x + cardWidth / 2, textY + index * titleSize * 1.25));
         });
-      }
-      if (all.length > cards.length) {
-        context.fillStyle = palette.muted;context.font = `400 16px ${font}`;
-        context.fillText(`${cards.length} of ${all.length} items`, 600, canvas.height - 25);
       }
       return { canvas, missing: images.filter(image => !image).length };
     } finally {
