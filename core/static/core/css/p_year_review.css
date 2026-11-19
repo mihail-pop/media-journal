@@ -1,4 +1,4 @@
-/* This experiment inherits the app palette; yearly editions change accents. */
+/* Inherit the app palette; yearly editions add their own festive accents. */
 .review-wrap {
   --review-paper: var(--bg-primary, #0b1622);
   --review-surface: var(--bg-tertiary, #151f2e);
@@ -44,7 +44,7 @@
 .review-share-options { width: min(290px, calc(100vw - 36px)); }
 .review-share-footer { display: flex; justify-content: center; padding-top: 48px; padding-bottom: 12px; }
 .review-share-footer .review-dropdown { z-index: 6; }
-.review-share-footer summary { min-width: 190px; padding: 15px 30px; gap: 12px; font-size: 1rem; background: color-mix(in srgb, var(--review-accent) 16%, var(--review-surface)); }
+.review-share-footer .review-dropdown summary { min-width: 190px; padding: 15px 30px; gap: 12px; font-size: 1rem; background: color-mix(in srgb, var(--review-accent) 16%, var(--review-surface)); }
 .review-share-footer summary > svg { width: 21px; height: 21px; }
 .review-share-footer .review-share-options { top: auto; bottom: calc(100% + 12px); right: 50%; transform: translateX(50%); text-align: left; }
 .review-menu-label { margin: 3px 0 8px; font-size: .72rem; letter-spacing: .06em; color: var(--review-muted); }
@@ -110,7 +110,6 @@
 .review-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); align-items: stretch; gap: 25px 18px; }
 .review-completed-scroll.is-expanded { max-height: min(680px, 74vh); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--review-line) transparent; padding: 3px 12px 8px 0; }
 .review-completed-scroll:focus-visible { outline: 2px solid var(--review-accent); outline-offset: 6px; border-radius: 6px; }
-.review-scroll-sentinel { height: 1px; }
 #review-completed-grid:not(.is-ready) > :nth-child(n+13) { display: none; }
 .review-completed-scroll:has(#review-completed-grid:not(.is-ready)) ~ .review-show-more--mobile-only { display: none; }
 .review-months { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin: -2px 0 24px; }
@@ -131,11 +130,6 @@
 .review-stat strong small { color: var(--review-muted); font-size: .45em; letter-spacing: 0; }
 .review-stat--time > strong { color: var(--review-accent); }
 .review-stat-detail { color: var(--review-muted); font-size: .68rem; }
-.review-faces { display: flex; gap: 20px; justify-content: space-between; margin-top: 13px; }
-.review-faces > span { display: grid; grid-template-columns: auto auto; align-items: center; gap: 6px; }
-.review-faces > span > span:first-child { font-size: 1.3rem; }
-.review-faces strong { font-size: 1.1rem; font-weight: 500; }
-.review-face-label { grid-column: span 2; color: var(--review-muted); font-size: .61rem; }
 .review-stat-panels { display: grid; grid-template-columns: repeat(auto-fit, minmax(285px, 1fr)); gap: 18px; margin-top: 24px; }
 .review-panel { min-width: 0; padding: 21px 0; border-top: 1px solid var(--review-line); }
 .review-panel h3 { margin: 0 0 22px; font-size: .88rem; font-weight: 500; }
@@ -224,8 +218,6 @@
   .review-stat > strong { font-size: 25px; margin-top: 12px; }
   .review-stat-detail { font-size: .59rem; line-height: 1.4; }
   .review-stat--rating { grid-column: 1 / -1; }
-  .review-faces { max-width: 260px; margin-top: 12px; }
-  .review-faces strong { font-size: 1.15rem; }
   .review-stat-panels { grid-template-columns: 1fr; gap: 0; margin-top: 20px; }
   .review-panel { padding: 22px 0; }
   .review-mix-row { grid-template-columns: 80px 1fr 30px; }

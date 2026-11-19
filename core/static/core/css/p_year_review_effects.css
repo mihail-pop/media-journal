@@ -13,6 +13,9 @@
 .review-wrap[data-edition="winter"] .review-hero { background-image: radial-gradient(ellipse at 100% 100%, #69978312, transparent 60%); }
 .review-wrap[data-edition="midnight"] .review-hero { background-image: radial-gradient(ellipse at 100% 0, #d8b9760d, transparent 65%); }
 .review-wrap[data-edition="confetti"] .review-hero { background-image: radial-gradient(ellipse at 85% 10%, #da879412, transparent 60%); }
+@media (min-width: 761px) {
+  .review-wrap:is([data-edition="winter"], [data-edition="midnight"]) .review-collage { translate: -4% 0; }
+}
 @media (max-width: 600px) {
   .review-effects-toggle { gap: 5px; padding: 8px; font-size: .66rem !important; }
   .review-effects-toggle > svg { width: 14px; height: 14px; }

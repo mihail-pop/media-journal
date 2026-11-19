@@ -55,7 +55,7 @@
   {% endif %}
 
   {% if review.completed %}
-  <section id="review-completed" class="review-section" data-review-reveal aria-labelledby="review-completed-title">
+  <section id="review-completed" class="review-section" aria-labelledby="review-completed-title">
     <div class="review-section-heading"><div><span class="review-section-mark" aria-hidden="true">✓</span><h2 id="review-completed-title">Completed</h2></div><span id="review-completed-count" class="review-section-note">{{ review.counts.completed }} item{{ review.counts.completed|pluralize }}</span></div>
     <div class="review-months" role="group" aria-label="Filter completed items by month">
       <button type="button" data-review-month="all" aria-pressed="true">All year</button>
@@ -63,7 +63,6 @@
     </div>
     <div id="review-completed-scroll" class="review-completed-scroll">
       <div id="review-completed-grid" class="review-grid">{% for card in review.completed|slice:':12' %}{% include 'core/p_year_review_card.html' with kind='completed' %}{% endfor %}</div>
-      <div id="review-completed-sentinel" class="review-scroll-sentinel" aria-hidden="true"></div>
     </div>
     <template id="review-card-template"><a class="review-card"><div class="review-card-art"><img alt="" loading="lazy" decoding="async"><span class="review-card-score" hidden></span></div><div class="review-card-title"></div></a></template>
     <p id="review-completed-empty" class="review-quiet-empty" hidden>No completed items this month.</p>
@@ -80,13 +79,13 @@
   {% endif %}
 
   {% if has_review_data %}
-  <section id="review-stats" class="review-section" data-review-reveal aria-labelledby="review-stats-title">
+  <section id="review-stats" class="review-section" aria-labelledby="review-stats-title">
     <div class="review-section-heading"><div><span class="review-section-mark" aria-hidden="true">✧</span><h2 id="review-stats-title">Stats</h2></div></div>
     <div class="review-stat-cards">
       {% if review.stats.tracked.watch_minutes or review.stats.tracked.game_hours %}<div class="review-stat review-stat--time" title="Completed movie runtimes plus recorded TV/anime episode estimates and game hours."><span class="review-stat-label">Estimated screen time</span><strong>{{ review.stats.tracked.estimated_time_label }}</strong><span class="review-stat-detail">Movies, episodes &amp; games</span></div>{% endif %}
       {% if review.stats.movie_count %}<div class="review-stat"><span class="review-stat-label">Time with movies</span><strong>{% if review.stats.movie_runtime_count %}{{ review.stats.movie_hours_label }}{% else %}—{% endif %}</strong><span class="review-stat-detail">{{ review.stats.movie_runtime_count }} movie{{ review.stats.movie_runtime_count|pluralize }} with a known length</span></div>{% endif %}
-      {% include 'core/p_year_review_ratings.html' %}
       {% if review.stats.music.plays %}<div class="review-stat"><span class="review-stat-label">Music plays</span><strong>{{ review.stats.music.plays }}</strong><span class="review-stat-detail">{{ review.stats.music.unique_items }} different entr{{ review.stats.music.unique_items|pluralize:'y,ies' }}</span></div>{% endif %}
+      {% include 'core/p_year_review_ratings.html' %}
     </div>
     <div class="review-stat-panels">
       {% if review.stats.media_counts %}<div class="review-panel"><h3>Your media mix</h3><div class="review-media-mix">{% for media in review.stats.media_counts %}<div class="review-mix-row" data-media="{{ media.key }}"><span>{{ media.label }}</span><div class="review-mix-track"><span style="width: {{ media.percent|stringformat:'f' }}%"></span></div><strong>{{ media.count }}</strong></div>{% endfor %}</div></div>{% endif %}

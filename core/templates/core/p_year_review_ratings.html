@@ -28,7 +28,7 @@
     <li aria-label="{{ bin.label }}: {{ bin.count }} item{{ bin.count|pluralize }}" title="{{ bin.label }}: {{ bin.count }} item{{ bin.count|pluralize }}">
       <span class="review-rating-bin-count">{{ bin.count }}</span>
       <span class="review-rating-bin-track" aria-hidden="true"><span style="height: {{ bin.percent|stringformat:'f' }}%"></span></span>
-      <span class="review-rating-bin-label">{{ bin.label }}</span>
+      <span class="review-rating-bin-label">{{ bin.label }}{% if rating.mode == 'stars_5' %}<svg viewBox="0 0 24 24" aria-label="star"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9Z"/></svg>{% endif %}</span>
     </li>
     {% endfor %}
   </ol>

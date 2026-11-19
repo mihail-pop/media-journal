@@ -13,6 +13,7 @@
 .review-rating-bin-track { display: flex; align-items: flex-end; width: 100%; height: 75px; border-bottom: 1px solid var(--review-line); }
 .review-rating-bin-track > span { display: block; width: 100%; border-radius: 3px 3px 0 0; background: var(--review-accent); }
 .review-rating-bin-label { color: var(--review-muted); font-size: .68rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.review-wrap .review-rating-bin-label svg { display: inline-block; width: 11px; height: 11px; margin-left: 3px; vertical-align: -1px; fill: var(--review-accent); stroke: none; }
 @media (max-width: 600px) {
   .review-rating-faces { gap: 18px 30px; margin-top: 18px; }
   .review-rating-histogram { gap: 5px; margin-top: 20px; }

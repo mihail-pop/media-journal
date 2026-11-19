@@ -279,11 +279,13 @@ body {
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  width: 44px;
+  min-width: 44px;
+  gap: 6px;
+  padding: 0 10px;
   height: 38px;
   border: 1px solid var(--overview-border);
   border-radius: 8px;
-  background: var(--button-bg);
+  background: color-mix(in srgb, var(--button-bg) 86%, #d8af69);
   color: var(--text-secondary);
   text-decoration: none;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
@@ -302,6 +304,7 @@ body {
 }
 
 .home-review-icon { display: block; }
+.home-review-label { font-size: .78rem; font-weight: 500; }
 .home-review-spark { fill: #d8af69; }
 .home-review-confetti { stroke: #c7857d; }
 
@@ -1792,6 +1795,9 @@ a.all-collections-btn:hover {
     z-index: 2;
     width: var(--home-banner-control-size);
     height: var(--home-banner-control-size);
+    flex-direction: column;
+    gap: 2px;
+    padding: 4px;
     border-radius: 20%;
     background: var(--bg-tertiary);
   }
@@ -1800,7 +1806,8 @@ a.all-collections-btn:hover {
     right: calc(2.5rem + var(--home-banner-control-size));
   }
 
-  .home-review-icon { width: 3rem; height: 3rem; }
+  .home-review-icon { width: 2.5rem; height: 2.5rem; }
+  .home-review-label { font-size: .7rem; }
 
   .notifications-button,
   .discover-button,

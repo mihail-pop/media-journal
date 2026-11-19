@@ -1531,6 +1531,9 @@ table select {
 .extras-review-section .extras-review-note { margin: 1rem 0 0; font-size: 0.85rem; }
 .extras-review-link { box-sizing: border-box; min-width: 0; padding: 0.75rem; font-size: 0.9rem; }
 .extras-review-link:focus-visible { outline: 2px solid var(--special-color); outline-offset: 3px; }
+@media (orientation: landscape) and (max-width: 900px) {
+  .extras-review-row { grid-template-columns: minmax(0, 340px); }
+}
 .share-favorite-sections { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 0.75rem; }
 .share-section-option, .share-format-option { cursor: pointer; }
 .share-section-option input, .share-format-option input {

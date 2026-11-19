@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const scenes = [...root.querySelectorAll('[data-review-scene]')].map(canvas => ({
     canvas, context: canvas.getContext('2d'), kind: canvas.dataset.reviewScene,
-    width: 0, height: 0, visible: false, cache: null, bursts: [],
+    width: 0, height: 0, visible: false, cache: null, bursts: [], rockets: [],
     particles: Array.from({ length: 42 }, () => ({
       x: random(), y: random(), size: 1.2 + random() * 3.8,
       speed: .018 + random() * .038, phase: random() * Math.PI * 2,
@@ -89,6 +89,21 @@ document.addEventListener('DOMContentLoaded', () => {
           context.globalAlpha = .48;
         }
       }
+      // Small evergreen swags frame the lights; these paths are cached once.
+      for (const direction of [-1, 1]) {
+        context.save();context.translate(direction === 1 ? 8 : w - 8, 7);context.scale(direction, 1);
+        context.strokeStyle = palette.green;context.globalAlpha = .52;context.lineWidth = 1.2;
+        const length = Math.min(145, w * .2);
+        context.beginPath();context.moveTo(0, 0);context.quadraticCurveTo(length * .55, 23, length, 10);context.stroke();
+        context.beginPath();
+        for (let index = 1; index < 17; index++) {
+          const px = index / 17 * length, py = Math.sin(index / 17 * Math.PI) * 13;
+          context.moveTo(px, py);context.lineTo(px - 13, py - 8);
+          context.moveTo(px, py);context.lineTo(px - 9, py + 10);
+        }
+        context.stroke();context.restore();
+        bow(context, direction === 1 ? length * .72 : w - length * .72, 17, .42, palette.rose);
+      }
       const x = w * .93, base = h + 6, height = Math.min(h * .8, 275);
       context.fillStyle = '#76553e';context.fillRect(x - 8, base - 28, 16, 36);
       for (let layer = 3; layer >= 0; layer--) {
@@ -118,7 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (edition === 'midnight') {
       // The clock is decoration, deliberately fixed at a minute to midnight.
       const x = w * .83, y = h * .57, radius = Math.min(h * .45, w * .18);
-      context.strokeStyle = palette.accent;context.globalAlpha = .2;
+      context.strokeStyle = palette.accent;context.globalAlpha = .3;
       context.beginPath();context.arc(x, y, radius, 0, Math.PI * 2);context.stroke();
       context.beginPath();context.arc(x, y, radius - 7, 0, Math.PI * 2);context.stroke();
       for (let index = 0; index < 60; index++) {
@@ -135,6 +150,14 @@ document.addEventListener('DOMContentLoaded', () => {
         context.beginPath();context.moveTo(px, 0);context.lineTo(px, py);context.stroke();
         star(context, px, py + 6, index % 2 ? 6 : 9, palette.accent, 5);
       }
+      context.globalAlpha = .13;context.lineWidth = .8;
+      const fan = Math.min(h * .62, w * .22);
+      for (let index = 0; index < 10; index++) {
+        const angle = Math.PI * (.52 + index * .05);
+        context.beginPath();context.moveTo(w + 5 + Math.cos(angle) * fan * .36, -5 + Math.sin(angle) * fan * .36);
+        context.lineTo(w + 5 + Math.cos(angle) * fan, -5 + Math.sin(angle) * fan);context.stroke();
+      }
+      context.beginPath();context.arc(w + 5, -5, fan * .36, Math.PI * .52, Math.PI * .97);context.stroke();
     } else {
       // Paper streamers and two fabric bows frame the collage without covering it.
       context.globalAlpha = .45;context.lineWidth = 5;
@@ -144,13 +167,17 @@ document.addEventListener('DOMContentLoaded', () => {
         context.stroke();
       });
       bow(context, w * .88, 34, .85, palette.rose);
-      bow(context, w * .06, h - 25, .65, palette.second);
+      context.strokeStyle = palette.second;context.lineWidth = 3;context.globalAlpha = .35;
+      context.beginPath();context.moveTo(w * .5, h + 5);
+      context.bezierCurveTo(w * .45, h * .64, w * .88, h * 1.05, w * .68, h * .86);context.stroke();
+      bow(context, w * .68, h * .86, .65, palette.second);
       for (let index = 0; index < 16; index++) {
         context.globalAlpha = .25;
         star(context, (index * .137 % 1) * w, 15 + (index * .237 % 1) * (h - 30), 3 + index % 3, index % 2 ? palette.second : palette.cream);
       }
     }
     context.globalAlpha = 1;
+    if (scene.cache) { scene.cache.width = 1;scene.cache.height = 1; }
     scene.cache = cache;
   }
 
@@ -188,6 +215,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function paintBursts(scene, time) {
+    if (!scene.bursts.length) return;
     const context = scene.context;
     scene.bursts = scene.bursts.filter(item => time - item.born < item.life);
     for (const item of scene.bursts) {
@@ -215,6 +243,19 @@ document.addEventListener('DOMContentLoaded', () => {
     context.clearRect(0, 0, w, h);
     if (scene.kind === 'celebration') {
       if (scene.cache) context.drawImage(scene.cache, 0, 0, w, h);
+      for (let index = scene.rockets.length - 1; index >= 0; index--) {
+        const rocket = scene.rockets[index], progress = (time - rocket.born) / .85;
+        if (progress >= 1) {
+          if (progress < 2) burst(scene, rocket.x, rocket.y);
+          scene.rockets.splice(index, 1);
+          continue;
+        }
+        const ease = 1 - (1 - progress) ** 1.6;
+        const x = rocket.start + (rocket.x - rocket.start) * ease, y = h + 8 + (rocket.y - h - 8) * ease;
+        context.globalAlpha = .55;context.strokeStyle = palette.cream;context.lineWidth = 1.2;
+        context.beginPath();context.moveTo(x, y + 18 * (1 - progress));context.lineTo(x, y);context.stroke();
+        star(context, x, y, 2.3, palette.cream);
+      }
       if (edition === 'winter') {
         for (let index = 0; index < 14; index++) {
           const x = w * (index + 1) / 16, y = 126 * ((index + 1) / 16) * (1 - (index + 1) / 16);
@@ -281,7 +322,10 @@ document.addEventListener('DOMContentLoaded', () => {
     previous = now;elapsed += dt;
     const hero = scenes.find(scene => scene.kind === 'celebration' && scene.visible);
     if (hero && edition !== 'winter' && elapsed >= nextFirework) {
-      burst(hero, hero.width * (.18 + random() * .68), hero.height * (.2 + random() * .38));
+      if (hero.rockets.length < 2) {
+        const x = hero.width * (.66 + random() * .28);
+        hero.rockets.push({ x, y: hero.height * (.12 + random() * .35), start: x + (random() - .5) * 60, born: elapsed });
+      }
       nextFirework = elapsed + 7 + random() * 4;
     }
     scenes.forEach(scene => { if (scene.visible) paint(scene, elapsed); });
@@ -299,7 +343,7 @@ document.addEventListener('DOMContentLoaded', () => {
       toggle.title = enabled ? 'Pause background effects. Click empty space for a celebration.' : 'Play background effects';
     }
     stop();
-    scenes.forEach(scene => { scene.bursts.length = 0;paint(scene, 0); });
+    scenes.forEach(scene => { scene.bursts.length = 0;scene.rockets.length = 0;paint(scene, 0); });
     wake();
   }
   toggle?.addEventListener('click', () => { enabled = !enabled;updateToggle(); });
@@ -331,7 +375,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   window.addEventListener('pagehide', () => {
     active = false;stop();visibility?.disconnect();resize?.disconnect();
-    scenes.forEach(scene => { scene.bursts.length = 0;scene.cache = null;scene.canvas.width = 1;scene.canvas.height = 1; });
+    scenes.forEach(scene => { scene.bursts.length = 0;scene.rockets.length = 0;if (scene.cache) { scene.cache.width = 1;scene.cache.height = 1; }scene.cache = null;scene.canvas.width = 1;scene.canvas.height = 1; });
   });
   window.addEventListener('pageshow', event => {
     if (!event.persisted) return;
