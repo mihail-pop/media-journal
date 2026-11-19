@@ -43,6 +43,14 @@
 
 <!-- Separator Bar -->
 <div class="separator-bar">
+{% now 'Y' as current_review_year %}
+<a href="{% url 'year_review_year' current_review_year %}" class="home-review-button{% if favorite_sections_dict.Music %} home-review-button--with-music{% endif %}" title="{{ current_review_year }} Year in Review" aria-label="Open your {{ current_review_year }} Year in Review">
+  <svg class="home-review-icon" width="28" height="28" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path d="M7 10h11M7 10v16h18V15M11 7v6M17 7v6M7 16h11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    <path class="home-review-spark" d="m24 3 1.8 4.2L30 9l-4.2 1.8L24 15l-1.8-4.2L18 9l4.2-1.8L24 3Z"/>
+    <path class="home-review-confetti" d="m3 5 2 1M3 18l-1 2M27 23l2 1M14 21h4" stroke-width="1.8" stroke-linecap="round"/>
+  </svg>
+</a>
 {% if favorite_sections_dict.Music %}
 <label class="music-player-btn">
   <input type="checkbox" id="music-player-toggle" data-mode="favorites">

@@ -273,6 +273,38 @@ body {
   padding: 0 1rem;
 }
 
+.home-review-button {
+  box-sizing: border-box;
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 38px;
+  border: 1px solid var(--overview-border);
+  border-radius: 8px;
+  background: var(--button-bg);
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.home-review-button:hover,
+.home-review-button:focus-visible {
+  border-color: #d8af69;
+  color: var(--text-secondary);
+  box-shadow: 0 0 12px rgba(216, 175, 105, 0.2);
+}
+
+.home-review-button:focus-visible {
+  outline: 2px solid #d8af69;
+  outline-offset: 3px;
+}
+
+.home-review-icon { display: block; }
+.home-review-spark { fill: #d8af69; }
+.home-review-confetti { stroke: #c7857d; }
+
 
 .card-grid {
   border-radius: 4px;
@@ -1729,6 +1761,7 @@ a.all-collections-btn:hover {
   }
 
   .separator-bar {
+    --home-banner-control-size: calc(3rem + 20px);
     position: relative;
     height: 6rem;
     justify-content: center;
@@ -1751,6 +1784,23 @@ a.all-collections-btn:hover {
     height: 3rem;
     border: none;
   }
+
+  .separator-bar .home-review-button {
+    position: absolute;
+    right: 1.5rem;
+    bottom: calc(100% + 1.5rem);
+    z-index: 2;
+    width: var(--home-banner-control-size);
+    height: var(--home-banner-control-size);
+    border-radius: 20%;
+    background: var(--bg-tertiary);
+  }
+
+  .separator-bar .home-review-button--with-music {
+    right: calc(2.5rem + var(--home-banner-control-size));
+  }
+
+  .home-review-icon { width: 3rem; height: 3rem; }
 
   .notifications-button,
   .discover-button,

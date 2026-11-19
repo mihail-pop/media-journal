@@ -30,7 +30,7 @@ def year_review(request, year=None):
         year = int(value)
     if year is not None:
         _valid_year(year)
-    app_settings = AppSettings.objects.only('theme_mode', 'rating_mode').first()
+    app_settings = AppSettings.objects.only('theme_mode', 'rating_mode', 'favorite_sections_order').first()
     review = build_year_review(year, app_settings=app_settings)
     has_data = bool(
         review['completed'] or review['dropped']

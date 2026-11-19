@@ -1521,6 +1521,16 @@ table select {
 .card-overlay-type button[aria-pressed="true"] { border-color: var(--special-color); color: var(--text-secondary); }
 
 .share-favorites-section { grid-column: 1 / -1; min-width: 0; }
+.extras-review-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 2rem;
+  grid-column: 1 / -1;
+}
+.extras-review-section p { margin: 0 0 1rem; line-height: 1.6; }
+.extras-review-section .extras-review-note { margin: 1rem 0 0; font-size: 0.85rem; }
+.extras-review-link { box-sizing: border-box; min-width: 0; padding: 0.75rem; font-size: 0.9rem; }
+.extras-review-link:focus-visible { outline: 2px solid var(--special-color); outline-offset: 3px; }
 .share-favorite-sections { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 0.75rem; }
 .share-section-option, .share-format-option { cursor: pointer; }
 .share-section-option input, .share-format-option input {
@@ -1559,6 +1569,9 @@ table select {
 #export-favorites-btn:disabled { opacity: 0.6; cursor: default; }
 @media (orientation: portrait) {
   /* Settings already scales up in portrait; keep these controls within that layout. */
+  .extras-review-row { grid-template-columns: minmax(0, 1fr); gap: 1rem; }
+  .extras-review-link { min-height: 3rem; font-size: 1rem; }
+
   .live-search-types {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 0.65rem;
