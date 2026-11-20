@@ -74,7 +74,7 @@ def save_openlib_item(work_id, *, http=None, prepare_only=False):
 
     cache_bust = int(time.time() * 1000)
     local_poster = (
-        download_image(poster_url, f"posters/openlib_{work_id}_{cache_bust}.jpg")
+        download_image(poster_url, f"posters/openlib_{work_id}_{cache_bust}.jpg", timeout=60)
         if poster_url
         else ""
     )

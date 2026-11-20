@@ -1,6 +1,57 @@
 document.addEventListener("DOMContentLoaded", function () {
   const modal = document.getElementById("edit-modal");
   const overlay = document.getElementById("edit-overlay");
+  const mediaListPaths = {
+    movie: '/movies/', tv: '/tvshows/', anime: '/anime/', manga: '/manga/',
+    game: '/games/', book: '/books/', music: '/music/',
+  };
+  let detailNavigationTimer = null;
+
+  function cancelDetailNavigation() {
+    if (detailNavigationTimer !== null) window.clearTimeout(detailNavigationTimer);
+    detailNavigationTimer = null;
+    document.removeEventListener('click', cancelOnNavigationLink, true);
+  }
+
+  function cancelOnNavigationLink(event) {
+    const link = event.target.closest?.('a[href]');
+    const href = link?.getAttribute('href') || '';
+    if (link && href && !href.startsWith('#') && !href.startsWith('javascript:')
+        && link.target !== '_blank' && !event.ctrlKey && !event.metaKey && !event.shiftKey) {
+      cancelDetailNavigation();
+    }
+  }
+
+  function reloadDetailsAfterDelete(mediaType) {
+    cancelDetailNavigation();
+    const fallback = (mediaListPaths[mediaType] || '/movies/') + '?detail_unavailable=1';
+    const detailsUrl = new URL(window.location.href);
+    detailsUrl.searchParams.set('after_delete', '1');
+    detailsUrl.searchParams.delete('detail_unavailable');
+    // The old document stays active while the native navigation is pending.
+    // A successful new page cancels this timer through pagehide below.
+    detailNavigationTimer = window.setTimeout(() => {
+      cancelDetailNavigation();
+      window.location.replace(fallback);
+    }, 30000);
+    document.addEventListener('click', cancelOnNavigationLink, true);
+    window.location.replace(detailsUrl.href);
+  }
+
+  window.addEventListener('pagehide', cancelDetailNavigation);
+
+  // These flags belong only to the navigation, not the item's permanent URL.
+  try {
+    const currentUrl = new URL(window.location.href);
+    const unavailable = currentUrl.searchParams.get('detail_unavailable') === '1';
+    const afterDelete = currentUrl.searchParams.get('after_delete') === '1';
+    if (unavailable || afterDelete) {
+      if (unavailable) currentUrl.searchParams.delete('detail_unavailable');
+      if (afterDelete) currentUrl.searchParams.delete('after_delete');
+      window.history.replaceState(window.history.state, '', currentUrl.pathname + currentUrl.search + currentUrl.hash);
+    }
+    if (unavailable) showNotification('Details are temporarily unavailable. Returned to your list.', 'warning');
+  } catch (error) { /* URL cleanup must not prevent the modal from working. */ }
 
   // Collection State
   let editCurrentCollections = [];
@@ -783,7 +834,12 @@ const hiddenInput = form.querySelector('#edit_status_hidden');
   });
   
 document.getElementById("edit-delete-btn")?.addEventListener("click", function () {
+  if (this.disabled) return;
+  const deleteButton = this;
   const itemId = form.dataset.itemId;
+  const mediaType = form.dataset.mediaType || document.body.dataset.mediaType;
+  let deletionSucceeded = false;
+  deleteButton.disabled = true;
 
   fetch(`/delete-item/${itemId}/`, {
     method: "POST",
@@ -795,27 +851,18 @@ document.getElementById("edit-delete-btn")?.addEventListener("click", function (
   .then(res => res.json())
   .then(res => {
     if (res.success) {
+      deletionSucceeded = true;
+      modal.classList.add('modal-hidden');
+      overlay.classList.add('modal-hidden');
+      window.modalScrollLock.unlock('edit-item');
       // If on detail page, reload or redirect to update UI state
       if (document.getElementById("edit-button")) {
-        
-        // If it's a custom item, redirect to the respective list page instead of reloading
+        showNotification('Deleted.', 'success');
         const sourceId = document.body.dataset.sourceId;
-        if (sourceId && sourceId.startsWith('custom_')) {
-          const mediaType = form.dataset.mediaType;
-          const typeMap = {
-            'movie': 'movies',
-            'tv': 'tvshows',
-            'anime': 'anime',
-            'manga': 'manga',
-            'game': 'games',
-            'book': 'books',
-            'music': 'music'
-          };
-          const mappedType = typeMap[mediaType] || 'movies';
-          window.location.href = `/${mappedType}/`;
+        if (document.body.dataset.source === 'custom' || sourceId?.startsWith('custom_')) {
+          window.location.replace(mediaListPaths[mediaType] || '/movies/');
         } else {
-          // Normal API items just reload
-          window.location.reload();
+          reloadDetailsAfterDelete(mediaType);
         }
         return;
       }
@@ -823,19 +870,21 @@ document.getElementById("edit-delete-btn")?.addEventListener("click", function (
       // Remove from lists and history views if helpers are present
       if (window.removeItemElement) window.removeItemElement(itemId);
       if (window.removeHistoryItem) window.removeHistoryItem(itemId);
-      // Close modal and notify
-      modal.classList.add('modal-hidden');
-      overlay.classList.add('modal-hidden');
-      window.modalScrollLock.unlock('edit-item');
-
       showNotification('Deleted.', 'success');
+      deleteButton.disabled = false;
     } else {
+      deleteButton.disabled = false;
       alert("Failed to delete item.");
     }
   })
   .catch(err => {
-    console.error("Delete request failed:", err);
-    alert("Delete failed.");
+    deleteButton.disabled = false;
+    console.error(deletionSucceeded ? 'Could not update the page after deletion:' : 'Delete request failed:', err);
+    if (deletionSucceeded) {
+      showNotification('Deleted. Please reload this page to update it.', 'warning');
+    } else {
+      alert("Delete failed.");
+    }
   });
 });
 

@@ -45,14 +45,14 @@ def get_sharded_path(original_path):
     return os.path.join(directory, shard_folder, filename).replace('\\', '/')
 
 
-def download_image(url, relative_path):
+def download_image(url, relative_path, *, timeout=10):
     sharded_relative_path = get_sharded_path(relative_path)
     
     local_path = Path(settings.MEDIA_ROOT) / sharded_relative_path
     local_path.parent.mkdir(parents=True, exist_ok=True)  # Ensure folder exists
 
     try:
-        response = requests.get(url, timeout=10)
+        response = requests.get(url, timeout=timeout)
         if response.status_code == 200:
             with open(local_path, "wb") as f:
                 f.write(response.content)

@@ -6,6 +6,7 @@ from django.views.generic import TemplateView
 from django.contrib.auth import views as auth_views
 
 from core import views
+from core.views.g_detail_navigation import detail_after_delete
 
 urlpatterns = [
     path('manifest.webmanifest', views.web_manifest, name='web_manifest'),
@@ -24,11 +25,11 @@ urlpatterns = [
     path('edit-metadata/<int:item_id>/', views.edit_metadata, name='edit_metadata'),
     path("edit-item/<int:item_id>/", views.edit_item, name="edit_item"),
     path("delete-item/<int:item_id>/", views.delete_item, name="delete_item"),
-    path('tmdb/<str:media_type>/<str:tmdb_id>/', views.tmdb_detail, name='tmdb_detail'),
-    path('tmdb/season/<int:tmdb_id>/<int:season_number>/', views.tmdb_season_detail, name='tmdb_season_detail'),
-    path('igdb/game/<str:igdb_id>/', views.igdb_detail, name='igdb_detail'),
-    path('openlib/book/<str:work_id>/', views.openlib_detail, name='openlib_detail'),
-    path('musicbrainz/music/<str:recording_id>/', views.musicbrainz_detail, name='musicbrainz_detail'),
+    path('tmdb/<str:media_type>/<str:tmdb_id>/', detail_after_delete()(views.tmdb_detail), name='tmdb_detail'),
+    path('tmdb/season/<int:tmdb_id>/<int:season_number>/', detail_after_delete('tv')(views.tmdb_season_detail), name='tmdb_season_detail'),
+    path('igdb/game/<str:igdb_id>/', detail_after_delete('game')(views.igdb_detail), name='igdb_detail'),
+    path('openlib/book/<str:work_id>/', detail_after_delete('book')(views.openlib_detail), name='openlib_detail'),
+    path('musicbrainz/music/<str:recording_id>/', detail_after_delete('music')(views.musicbrainz_detail), name='musicbrainz_detail'),
     path('', views.home, name='home'),
     path('api/home/upcoming/', views.home_upcoming, name='home_upcoming'),
     path('year-in-review/', views.year_review, name='year_review'),
@@ -159,6 +160,6 @@ urlpatterns = [
     path('api/collection/<int:collection_id>/add/', views.collection_add_items, name='collection_add_items'),
     path('api/collection/<int:collection_id>/remove/', views.collection_remove_items, name='collection_remove_items'),
     path('api/collection/<int:collection_id>/reorder/', views.collection_reorder_items, name='collection_reorder_items'),
-    path('<str:source>/<str:media_type>/<str:source_id>/', views.anilist_detail, name='anilist_detail'), # greedy! needs to be at the bottom :D
+    path('<str:source>/<str:media_type>/<str:source_id>/', detail_after_delete()(views.anilist_detail), name='anilist_detail'), # greedy! needs to be at the bottom :D
     re_path(r'^media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT}),
 ]

@@ -1,14 +1,42 @@
 import re
 import datetime
+import time
 
 import requests
 from django.apps import apps
 from django.http import JsonResponse
-from django.shortcuts import render
+from django.shortcuts import redirect, render
+from django.urls import reverse
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET
 
 from core.models import MediaItem
+
+
+def _openlib_json(url, *, params=None, deadline=None, optional=False):
+    # Normal browsing allows slow Open Library responses. After deletion, all
+    # required/optional calls share one shorter navigation budget.
+    timeout = 60
+    if deadline is not None:
+        # Leave time to render an already fetched Work before the browser's
+        # post-delete guard expires; optional metadata must not consume it all.
+        timeout = min(timeout, deadline - time.monotonic() - (3 if optional else 0))
+        if timeout <= 0:
+            raise requests.Timeout("Open Library detail navigation timed out.")
+    options = {"timeout": timeout}
+    if params is not None:
+        options["params"] = params
+    response = requests.get(url, **options)
+    response.raise_for_status()
+    data = response.json()
+    if not isinstance(data, dict):
+        raise ValueError("Invalid Open Library response.")
+    return data
+
+
+def _openlib_list(data, field):
+    value = data.get(field)
+    return value if isinstance(value, list) else []
 
 
 @ensure_csrf_cookie
@@ -22,35 +50,49 @@ def openlib_search(request):
     url = "https://openlibrary.org/search.json"
     params = {"q": query}
 
-    response = requests.get(url, params=params)
-    if response.status_code != 200:
-        return JsonResponse({"error": "Failed to fetch from Open Library."}, status=500)
-
-    data = response.json()
+    try:
+        data = _openlib_json(url, params=params)
+    except (requests.RequestException, ValueError):
+        return JsonResponse({"error": "Open Library is unavailable. Please try again.", "results": []}, status=503)
     results = []
+    editions_available = True
 
-    for item in data.get("docs", []):
-        title = item.get("title") or "Untitled"
-        author = ", ".join(item.get("author_name", []))
+    for item in _openlib_list(data, "docs"):
+        if not isinstance(item, dict):
+            continue
+        title = item.get("title") if isinstance(item.get("title"), str) and item["title"] else "Untitled"
+        author = ", ".join(name for name in _openlib_list(item, "author_name") if isinstance(name, str))
         year = item.get("first_publish_year", "")
         description = item.get("subtitle", "")
         poster_url = None
 
         # Prefer edition-based cover if possible
-        edition_keys = item.get("edition_key", [])
-        if edition_keys:
+        edition_keys = _openlib_list(item, "edition_key")
+        if editions_available and edition_keys:
             for key in edition_keys[:3]:  # Check up to 3 editions
-                edition_response = requests.get(
-                    f"https://openlibrary.org/books/{key}.json"
-                )
-                if edition_response.status_code == 200:
-                    ed_data = edition_response.json()
-                    fmt = ed_data.get("physical_format", "").lower()
-                    if "hardcover" in fmt or "paperback" in fmt or "book" in fmt:
-                        cover_ids = ed_data.get("covers", [])
-                        if cover_ids:
-                            poster_url = f"https://covers.openlibrary.org/b/id/{cover_ids[0]}-L.jpg"
-                            break
+                if not isinstance(key, str) or not key:
+                    continue
+                try:
+                    ed_data = _openlib_json(f"https://openlibrary.org/books/{key}.json")
+                except (requests.Timeout, requests.ConnectionError):
+                    # Preserve the search results instead of repeating the same
+                    # optional outage for every edition of every result.
+                    editions_available = False
+                    break
+                except requests.HTTPError as error:
+                    if error.response is not None and (error.response.status_code == 429 or error.response.status_code >= 500):
+                        editions_available = False
+                        break
+                    continue
+                except (requests.RequestException, ValueError):
+                    continue
+                fmt = ed_data.get("physical_format")
+                fmt = fmt.lower() if isinstance(fmt, str) else ""
+                if "hardcover" in fmt or "paperback" in fmt or "book" in fmt:
+                    cover_ids = _openlib_list(ed_data, "covers")
+                    if cover_ids:
+                        poster_url = f"https://covers.openlibrary.org/b/id/{cover_ids[0]}-L.jpg"
+                        break
 
         # Fallback to search cover if edition didn't yield better one
         if not poster_url and "cover_i" in item:
@@ -58,7 +100,7 @@ def openlib_search(request):
 
         results.append(
             {
-                "id": item.get("key", "").split("/")[-1],  # Extract OLxxxxxW
+                "id": item.get("key", "").split("/")[-1] if isinstance(item.get("key"), str) else "",  # Extract OLxxxxxW
                 "title": title,
                 "media_type": "book",
                 "poster_path": poster_url,
@@ -75,6 +117,7 @@ def openlib_search(request):
 @require_GET
 def openlib_detail(request, work_id):
     item = None
+    deadline = time.monotonic() + 30 if request.GET.get("after_delete") == "1" else None
     try:
         item = MediaItem.objects.get(provider_ids__openlib=str(work_id))
 
@@ -123,22 +166,20 @@ def openlib_detail(request, work_id):
 
     # Fetch from Open Library API
     detail_url = f"https://openlibrary.org/works/{work_id}.json"
-    detail_response = requests.get(detail_url)
-
-    if detail_response.status_code != 200:
-        return JsonResponse(
-            {"error": "Failed to fetch book details from Open Library."}, status=500
-        )
-
-    detail_data = detail_response.json()
+    try:
+        detail_data = _openlib_json(detail_url, deadline=deadline)
+    except (requests.RequestException, ValueError):
+        return redirect(f"{reverse('books')}?detail_unavailable=1")
 
     # Title and description
-    title = detail_data.get("title", "Untitled")
+    title = detail_data.get("title") if isinstance(detail_data.get("title"), str) and detail_data["title"] else "Untitled"
     description_raw = detail_data.get("description", "")
     if isinstance(description_raw, dict):
         description = description_raw.get("value", "")
     else:
         description = description_raw
+    if not isinstance(description, str):
+        description = ""
 
     description = re.sub(
         r"- \[.*?\]\(https?://[^\)]+\)", "", description
@@ -154,7 +195,7 @@ def openlib_detail(request, work_id):
     description = description.strip()
 
     # Cover image
-    cover_ids = detail_data.get("covers", [])
+    cover_ids = _openlib_list(detail_data, "covers")
     poster_url = (
         f"https://covers.openlibrary.org/b/id/{cover_ids[0]}-L.jpg"
         if cover_ids
@@ -162,7 +203,10 @@ def openlib_detail(request, work_id):
     )
 
     # Try to format a date (note: not always present)
-    raw_date = detail_data.get("created", {}).get("value", "")
+    created = detail_data.get("created")
+    raw_date = created.get("value", "") if isinstance(created, dict) else ""
+    if not isinstance(raw_date, str):
+        raw_date = ""
     formatted_release_date = ""
     try:
         if raw_date:
@@ -173,45 +217,66 @@ def openlib_detail(request, work_id):
 
     # Author names (optional enhancement)
     author_names = []
-    for a in detail_data.get("authors", []):
-        author_key = a.get("author", {}).get("key", "")
+    extras_available = True
+    for a in _openlib_list(detail_data, "authors"):
+        if deadline is not None and time.monotonic() >= deadline - 3:
+            break
+        author = a.get("author") if isinstance(a, dict) else None
+        author_key = author.get("key", "") if isinstance(author, dict) else ""
+        if not isinstance(author_key, str) or not author_key.startswith("/authors/"):
+            continue
         if author_key:
-            author_response = requests.get(f"https://openlibrary.org{author_key}.json")
-            if author_response.status_code == 200:
-                author_data = author_response.json()
-                name = author_data.get("name")
-                if name:
-                    author_names.append(name)
+            try:
+                author_data = _openlib_json(f"https://openlibrary.org{author_key}.json", deadline=deadline, optional=True)
+            except (requests.Timeout, requests.ConnectionError):
+                extras_available = False
+                break
+            except requests.HTTPError as error:
+                if error.response is not None and (error.response.status_code == 429 or error.response.status_code >= 500):
+                    extras_available = False
+                    break
+                continue
+            except (requests.RequestException, ValueError):
+                continue
+            name = author_data.get("name")
+            if isinstance(name, str) and name:
+                author_names.append(name)
 
     # Recommendations: based on shared subjects (limit to 8)
-    subjects = detail_data.get("subjects", [])
+    subjects = [value for value in _openlib_list(detail_data, "subjects") if isinstance(value, str) and value]
     recommendations = []
-    if subjects:
-        subject = subjects[0].replace(" ", "+")
-        rec_response = requests.get(
-            f"https://openlibrary.org/search.json?subject={subject}"
-        )
-        if rec_response.status_code == 200:
-            rec_data = rec_response.json()
-            for doc in rec_data.get("docs", []):
-                rec_id = doc.get("key", "").split("/")[-1]
-                rec_title = doc.get("title", "Untitled")
-                rec_cover_id = doc.get("cover_i")
-                rec_cover_url = (
-                    f"https://covers.openlibrary.org/b/id/{rec_cover_id}-M.jpg"
-                    if rec_cover_id
-                    else None
-                )
-                recommendations.append(
-                    {
-                        "id": rec_id,
-                        "title": rec_title,
-                        "poster_path": rec_cover_url,
-                        "media_type": "book",
-                    }
-                )
-                if len(recommendations) >= 8:
-                    break
+    if extras_available and subjects and (deadline is None or time.monotonic() < deadline - 3):
+        try:
+            rec_data = _openlib_json(
+                "https://openlibrary.org/search.json",
+                params={"subject": subjects[0], "limit": 8, "fields": "key,title,cover_i"},
+                deadline=deadline, optional=True,
+            )
+        except (requests.RequestException, ValueError):
+            rec_data = {}
+        for doc in _openlib_list(rec_data, "docs"):
+            if not isinstance(doc, dict) or not isinstance(doc.get("key"), str):
+                continue
+            rec_id = doc["key"].split("/")[-1]
+            if not rec_id:
+                continue
+            rec_title = doc.get("title", "Untitled")
+            rec_cover_id = doc.get("cover_i")
+            rec_cover_url = (
+                f"https://covers.openlibrary.org/b/id/{rec_cover_id}-M.jpg"
+                if rec_cover_id
+                else None
+            )
+            recommendations.append(
+                {
+                    "id": rec_id,
+                    "title": rec_title,
+                    "poster_path": rec_cover_url,
+                    "media_type": "book",
+                }
+            )
+            if len(recommendations) >= 8:
+                break
 
     # Get theme mode
     AppSettings = apps.get_model("core", "AppSettings")
