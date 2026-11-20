@@ -332,7 +332,6 @@ body {
   -webkit-mask-composite: source-over;
   mask-composite: add;
   opacity: 0;
-  transition: background-position .6s ease, opacity .15s;
 }
 
 .home-review-button:hover,
@@ -344,8 +343,13 @@ body {
 
 .home-review-button:hover::after,
 .home-review-button:focus-visible::after {
-  opacity: .8;
-  background-position: -100% 0;
+  animation: home-review-ribbon-sheen .6s ease;
+}
+
+@keyframes home-review-ribbon-sheen {
+  0% { background-position: 100% 0; opacity: 0; }
+  25%, 75% { opacity: .8; }
+  100% { background-position: -100% 0; opacity: 0; }
 }
 
 .home-review-button:focus-visible {

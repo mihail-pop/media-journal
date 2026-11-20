@@ -221,6 +221,15 @@ def _listening_duration_label(seconds):
     return f'{seconds} s'
 
 
+def _days_label(seconds):
+    days = seconds / 86400
+    if 0 < days < .1:
+        value = f'{days:.4f}'.rstrip('0').rstrip('.')
+        return f'{value} days' if value != '0' else '<0.0001 days'
+    value = f'{days:,.1f}'
+    return f'{value} {"day" if value == "1.0" else "days"}'
+
+
 def _quantity_label(value, unit):
     return f'{value:,} {unit}{"" if value == 1 else "s"}'
 
@@ -481,7 +490,7 @@ def _media_summaries(year, completed_rows, tracked, music, media_order, rating_m
         media_totals['movie'] = {
             'value_label': _duration_label(movie_minutes) if known_movies else '—',
             'detail': f'{_quantity_label(absent, "movie")} without runtime' if absent else '',
-            'tooltip': 'Known runtimes of movies completed in this review year.',
+            'tooltip': _days_label(movie_minutes * 60) if known_movies else '',
         }
         ranking_items['movie'] = [
             {**_card(row, year, rating_mode), 'metric_label': _duration_label(row['total_main'])}
@@ -494,15 +503,14 @@ def _media_summaries(year, completed_rows, tracked, music, media_order, rating_m
         if metric is None:
             continue
         details = []
-        tooltip = metric[3]
+        tooltip = _days_label(primary * 3600) if kind == 'game' else ''
         value_label = metric[2]
         if kind in ('tv', 'anime') and primary > 0:
             if minutes[kind] > 0:
                 value_label = _duration_label(minutes[kind])
+                tooltip = _days_label(minutes[kind] * 60)
             if missing[kind] > 0 and kind != 'anime':
                 details.append(f'{_quantity_label(missing[kind], "episode")} without runtime')
-            episodes = 'Recorded episodes or saved totals for AniList anime completed this year' if kind == 'anime' else 'Recorded episodes'
-            tooltip = f'{episodes}, multiplied by each entry\'s episode runtime. Episodes without runtime are excluded from the time total.'
         if primary > 0 and secondary_fallbacks[kind] > 0:
             unit, primary_unit = ('season', 'episode') if kind == 'tv' else ('volume', 'chapter')
             details.append(f'{_quantity_label(secondary_fallbacks[kind], unit)} without {primary_unit} progress')
@@ -512,7 +520,7 @@ def _media_summaries(year, completed_rows, tracked, music, media_order, rating_m
         media_totals['music'] = {
             'value_label': _listening_duration_label(music['listening_seconds']) if music['timed_listens'] else '—',
             'detail': '',
-            'tooltip': '',
+            'tooltip': _days_label(music['listening_seconds']) if music['timed_listens'] else '',
         }
         ranking_items['music'] = [
             {**card, 'metric_label': _quantity_label(card['plays'], 'play')}
@@ -653,7 +661,7 @@ def build_year_review(year=None, app_settings=None):
             'movie_minutes': movie_minutes, 'movie_hours_label': _duration_label(movie_minutes),
             'movie_count': len(movies), 'movie_runtime_count': len(known_movies),
             'media_counts': [
-                {'key': key, 'label': MEDIA_LABELS[key], 'count': media_counts[key],
+                {'key': key, 'label': MEDIA_PLURAL_LABELS[key], 'count': media_counts[key],
                  'percent': round(media_counts[key] * 100 / len(completed), 2)}
                 for key in media_order if media_counts[key]
             ],

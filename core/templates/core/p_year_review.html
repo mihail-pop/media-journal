@@ -93,7 +93,7 @@
       <div class="review-stat review-stat--media">
         <span class="review-stat-label">Time with each media</span>
         <div class="review-progress-metrics">
-          {% for media in review.stats.media_totals %}<div{% if media.tooltip %} title="{{ media.tooltip }}"{% endif %}><strong>{{ media.value_label }}</strong><span>{{ media.label }}</span>{% if media.detail %}<small>{{ media.detail }}</small>{% endif %}</div>{% empty %}<span class="review-stat-detail">—</span>{% endfor %}
+          {% for media in review.stats.media_totals %}<div><strong{% if media.tooltip %} title="{{ media.tooltip }}"{% endif %}>{{ media.value_label }}</strong><span>{{ media.label }}</span>{% if media.detail %}<small>{{ media.detail }}</small>{% endif %}</div>{% empty %}<span class="review-stat-detail">—</span>{% endfor %}
         </div>
       </div>
       {% include 'core/p_year_review_ratings.html' %}
