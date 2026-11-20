@@ -1,8 +1,10 @@
 .review-wrap { position: relative; isolation: isolate; }
 .review-ambience { display: block; position: fixed; inset: 0; width: 100vw; height: 100vh; height: 100dvh; z-index: 7; pointer-events: none; }
 .review-scene { display: block; position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+/* Keep animated canvas repaints separate from the cover lists being scrolled. */
+.review-wrap:not(.review-effects-paused) :is(.review-ambience, .review-scene) { contain: paint; will-change: transform; }
 .review-hero-scene { z-index: 0; }
-.review-collage { z-index: 1; }
+.review-collage { z-index: 1; left: -1.5rem; }
 .review-scene-section { position: relative; isolation: isolate; }
 .review-scene-section > .review-scene { z-index: -1; inset: -16px -18px -8px; width: calc(100% + 36px); height: calc(100% + 24px); }
 .review-effects-toggle { display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 8px 11px; border-radius: 9px; background: transparent; color: var(--review-muted) !important; font-size: .75rem !important; transition: color .18s, background .18s; }
@@ -12,16 +14,7 @@
 .review-effects-paused .review-hero-cover { animation: none; }
 .review-festive-art { position: absolute; inset: 0; z-index: 3; pointer-events: none; overflow: hidden; border-radius: inherit; }
 .review-festive-art img { position: absolute; display: block; width: 64px; height: auto; }
-.review-festive-art .review-art-tree { width: 128px; right: -5px; bottom: 0; rotate: 4deg; }
-.review-festive-art .review-tree-lights { position: absolute; width: 128px; height: 128px; fill: #fff2bc; stroke: none; }
-.review-tree-lights circle { animation: review-tree-twinkle 3.8s ease-in-out infinite alternate; }
-.review-tree-lights circle:nth-child(2n) { animation-delay: -1.7s; }
-.review-tree-lights circle:nth-child(3n) { animation-delay: -3.1s; }
-.review-effects-paused .review-tree-lights circle { animation: none; opacity: .5; }
-.review-festive-art .review-art-gift { width: 48px; right: 91px; bottom: 5px; rotate: -9deg; }
-.review-festive-art .review-art-popper { width: 103px; right: 7px; bottom: 8px; rotate: -9deg; }
 .review-festive-art .review-art-ribbon { width: 48px; right: 17px; top: 8px; rotate: 11deg; }
-@keyframes review-tree-twinkle { from { opacity: .16; } to { opacity: .95; } }
 .review-wrap[data-edition="winter"] .review-hero { background-image: radial-gradient(ellipse at 100% 100%, #69978312, transparent 60%); }
 .review-wrap[data-edition="midnight"] .review-hero { background-image: radial-gradient(ellipse at 100% 0, #d8b9760d, transparent 65%); }
 .review-wrap[data-edition="confetti"] .review-hero { background-image: radial-gradient(ellipse at 85% 10%, #da879412, transparent 60%); }
@@ -29,10 +22,6 @@
   .review-wrap:is([data-edition="winter"], [data-edition="midnight"]) .review-collage { translate: -4% 0; }
 }
 @media (max-width: 600px) {
-  .review-festive-art .review-art-tree { width: 97px; }
-  .review-festive-art .review-tree-lights { height: 97px; }
-  .review-festive-art .review-art-gift { width: 36px; right: 70px; }
-  .review-festive-art .review-art-popper { width: 80px; }
   .review-festive-art .review-art-ribbon { width: 39px; right: 10px; }
   .review-effects-toggle { gap: 5px; padding: 8px; font-size: .66rem !important; }
   .review-effects-toggle > svg { width: 14px; height: 14px; }

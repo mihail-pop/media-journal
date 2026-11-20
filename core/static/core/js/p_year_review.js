@@ -28,7 +28,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const completedEmpty = document.getElementById('review-completed-empty');
   const allCompleted = Array.isArray(review.completed) ? review.completed : [];
   let activeMonth = 'all';
-  const pageSize = () => window.matchMedia('(max-width: 600px)').matches ? 6 : 12;
+  const pageSize = () => {
+    const columns = parseInt(getComputedStyle(root).getPropertyValue('--review-columns'), 10) || 7;
+    return columns * 2;
+  };
   let matchingCards = allCompleted;
   let renderedCount = 0;
   let expanded = false;

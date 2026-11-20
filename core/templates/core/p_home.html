@@ -46,7 +46,6 @@
 {% comment %}TODO after design sign-off: show Dec 20–Jan 7; January opens the previous review year.{% endcomment %}
 {% now 'Y' as current_review_year %}
 <a href="{% url 'year_review_year' current_review_year %}" class="home-review-button{% if favorite_sections_dict.Music %} home-review-button--with-music{% endif %}" title="{{ current_review_year }} Year in Review" aria-label="Open your {{ current_review_year }} Year in Review">
-  <img class="home-review-icon" src="{% static 'core/img/year_review/party-popper.svg' %}" width="22" height="22" alt="" aria-hidden="true">
   <span class="home-review-label">Year in Review</span>
 </a>
 {% if favorite_sections_dict.Music %}

@@ -1,5 +1,5 @@
-/* Canvas celebrations; Twemoji artwork by Twitter, Inc. and other contributors.
- * CC BY 4.0: https://github.com/jdecked/twemoji — local attribution accompanies the SVGs. */
+/* Canvas celebrations; third-party artwork credits and licenses are included
+ * in core/static/core/img/year_review/ATTRIBUTION.md. */
 document.addEventListener('DOMContentLoaded', () => {
   const root = document.getElementById('year-review');
   if (!root) return;
@@ -16,6 +16,9 @@ document.addEventListener('DOMContentLoaded', () => {
     rose: '#da8794', cream: '#f2d9a4', green: '#699783',
     snow: ['light', 'pink', 'cake'].includes(document.body.dataset.theme) ? '#8196a4' : '#f6f5ed',
   };
+  // Reuse four small vector paths; particle positions, sizes and motion stay live.
+  // Older canvas implementations can still use the original drawing commands.
+  const shapePaths = typeof Path2D === 'function' ? { stars: new Map(), snowflake: null, heart: null } : null;
   let enabled = !motion.matches;
   let active = true;
   let frame = 0;
@@ -34,8 +37,8 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!scenes.length) { if (toggle) toggle.hidden = true; return; }
 
   const ambient = scenes.find(scene => scene.kind === 'ambient');
-  // Extra snow/confetti belongs only to the foreground. Keep the original
-  // heart/fire seed particles and their drawing code exactly as they were.
+  // Append foreground particles after section particles so each year's seeded
+  // section layouts stay the same when adding more foreground effects.
   if (ambient) {
     ambient.visible = true;
     ambient.particles.push(...Array.from({ length: 54 }, () => ({
@@ -43,126 +46,181 @@ document.addEventListener('DOMContentLoaded', () => {
       speed: .018 + random() * .038, phase: random() * Math.PI * 2,
     })));
   }
-  const friend = document.getElementById('review-snowfriend');
-  const guestArt = [...(friend?.querySelectorAll('[data-review-guest]') || [])];
-  const guestLights = [...(friend?.querySelectorAll('.review-corner-lights circle') || [])];
-  const guestGift = friend?.querySelector('[data-review-guest-gift]');
-  const guestBubble = friend?.querySelector('.review-corner-bubble');
-  const unavailableGuests = new Set();
-  const guestDetails = {
-    snowman: { tilt: -12, title: 'Shake a little snow loose', label: 'Shake the snowman for a snow shower', bubble: 'Snow much fun!' },
-    tree: { tilt: -7, title: 'A little gift from the tree', label: 'Shake the Christmas tree for a shower of tiny gifts', bubble: 'A little gift for you!' },
-    party: { tilt: -13, title: 'Launch a little celebration', label: 'Launch a celebration from the party popper', bubble: 'Make a little noise!' },
-  };
-  // The corner guest has its own randomness, so the original scene seeds stay intact.
-  const guestRandom = () => Math.random();
-  const cornerParticles = [];
-  let friendHovered = false, friendFocused = false, boopUntil = 0;
-  let friendSize = 116, friendX = 12, friendY = 0, guestKind = 'snowman';
-  let guestStart = 0, guestUntil = 0, guestVisits = 0, nextGuestAt = 4 + guestRandom() * 5;
-  let nextGuestFlake = 0, nextGuestClick = 0;
-  function measureFriend() {
-    if (!friend || !ambient) return;
-    const computed = getComputedStyle(friend);
-    friendSize = parseFloat(computed.getPropertyValue('--review-friend-size')) || 116;
-    friendX = parseFloat(computed.left) || 12;
-    friendY = ambient.height - (parseFloat(computed.bottom) || 12) - friendSize;
+  const decoration = document.getElementById('review-hero-decoration');
+  const decorationArt = decoration?.querySelector('[data-decoration-art]');
+  const decorationCookie = decoration?.querySelector('[data-decoration-cookie]');
+  const decorationKind = decoration?.dataset.decoration;
+  const decorationKinds = ['tree', 'party', 'gingerbread', 'champagne', 'stockings', 'disco', 'house', 'toast', 'sleigh', 'clock'];
+  // Interaction randomness never consumes the original background scene seeds.
+  const heroRandom = () => Math.random();
+  const heroColors = [palette.cream, palette.rose, palette.second, palette.green, '#cfb3ff'];
+  const fireworkColors = ['#ffd169', '#fe8da2', '#b6e4ff', '#cfb3ff', '#9ae3cb'];
+  const heroParticles = [];
+  const heroParticleLimit = 200;
+  let heroEmitter = null, reactionUntil = 0, nextDecorationClick = 0;
+
+  function resetHeroEffects() {
+    heroParticles.length = 0;heroEmitter = null;reactionUntil = 0;nextDecorationClick = 0;
+    decoration?.classList.remove('is-reacting');
   }
-  function resetFriend() {
-    friendHovered = false;friendFocused = false;boopUntil = 0;
-    guestUntil = 0;nextGuestAt = elapsed + 4 + guestRandom() * 5;
-    nextGuestClick = 0;cornerParticles.length = 0;
-    if (friend) { friend.hidden = true;friend.classList.remove('is-celebrating'); }
+
+  function reactDecoration(duration = .7) {
+    if (!enabled || !active || document.hidden) return;
+    reactionUntil = elapsed + duration;
+    decoration?.classList.add('is-reacting');
+    wake();
   }
-  function visitFriend() {
-    const choices = edition === 'winter' ? ['snowman', 'snowman', 'snowman', 'tree', 'tree', 'party'] :
-      edition === 'midnight' ? ['snowman', 'snowman', 'tree', 'party', 'party', 'party'] : ['snowman', 'snowman', 'tree', 'tree', 'party', 'party', 'party'];
-    const available = choices.filter(kind => !unavailableGuests.has(kind));
-    if (!available.length || !guestArt.length) return;
-    guestKind = guestVisits === 0 && !unavailableGuests.has('snowman') ? 'snowman' : available[Math.floor(guestRandom() * available.length)];
-    guestVisits++;
-    const detail = guestDetails[guestKind];
-    guestArt.forEach(art => { art.hidden = art.dataset.reviewGuest !== guestKind; });
-    friend.title = detail.title;friend.setAttribute('aria-label', detail.label);
-    if (guestBubble) guestBubble.textContent = detail.bubble;
-    guestStart = elapsed;guestUntil = elapsed + 12 + guestRandom() * 6;nextGuestFlake = elapsed + .3;
-    friend.hidden = false;
+
+  function addHeroParticle(kind, x, y, options = {}) {
+    if (heroParticles.length >= heroParticleLimit) return;
+    heroParticles.push({ kind, x, y, born: elapsed, life: 1.8 + heroRandom() * .6,
+      vx: (heroRandom() - .5) * 150, vy: -80 - heroRandom() * 100, gravity: 95,
+      size: 3 + heroRandom() * 3, phase: heroRandom() * Math.PI * 2,
+      spin: (heroRandom() - .5) * 6, wobble: 0,
+      color: heroColors[Math.floor(heroRandom() * heroColors.length)], ...options });
   }
-  function addCornerParticle(kind, x, y, options = {}) {
-    if (cornerParticles.length >= 112) return;
-    cornerParticles.push({ kind, x, y, born: elapsed, life: 1.6 + guestRandom() * .7,
-      vx: (guestRandom() - .5) * 80, vy: -35 - guestRandom() * 65, gravity: 65,
-      size: 2 + guestRandom() * 2, phase: guestRandom() * Math.PI * 2,
-      color: [palette.cream, palette.rose, palette.second, palette.green][Math.floor(guestRandom() * 4)], ...options });
-  }
-  function cornerBurst(kind, x, y) {
-    const count = kind === 'tree' ? 30 : kind === 'party' ? 42 : 34;
+
+  function heroShell(x, y) {
+    const count = 54;
     for (let index = 0; index < count; index++) {
-      if (kind === 'snowman') {
-        addCornerParticle('snow', x + (guestRandom() - .5) * friendSize * .4, y,
-          { color: palette.snow, vx: (guestRandom() - .5) * 125, vy: -20 - guestRandom() * 75, gravity: 62, size: 2 + guestRandom() * 2.7 });
-      } else if (kind === 'tree') {
-        addCornerParticle(index % 4 === 0 ? 'gift' : 'star', x, y,
-          { vy: -65 - guestRandom() * 100, vx: (guestRandom() - .4) * 100, gravity: 115, size: index % 4 === 0 ? 14 + guestRandom() * 7 : 2.5 + guestRandom() * 2.5 });
-      } else {
-        const angle = index * Math.PI * 2 / count, speed = 30 + guestRandom() * 65;
-        addCornerParticle(index % 3 === 0 ? 'star' : 'confetti', x, y,
-          { vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed - 15, gravity: 45, life: 1.4 + guestRandom() * .6 });
+      const angle = index * Math.PI * 2 / count + heroRandom() * .12;
+      // The outer shell travels much farther than ordinary 45–155 px/s fireworks.
+      const speed = [245, 175, 110][index % 3] + heroRandom() * 25;
+      addHeroParticle('firework', x, y, {
+        vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+        gravity: 25, life: 2.3 + heroRandom() * .35, size: 2.2 + heroRandom() * 1.8,
+        color: fireworkColors[index % fireworkColors.length],
+      });
+    }
+    addHeroParticle('ring', x, y, { vx: 0, vy: 0, gravity: 0, life: .8, size: 12, radiusSpeed: 150, color: '#fff2cf' });
+  }
+
+  function launchHeroRocket(x, y, targetX, targetY, life) {
+    addHeroParticle('rocket', x, y, { targetX, targetY, life, size: 4, gravity: 0, color: palette.cream });
+  }
+
+  function celebrateDecoration(kind, x, y) {
+    if (kind === 'party') {
+      for (let index = 0; index < 3; index++) {
+        const targetX = Math.max(55, Math.min(ambient.width - 55, x - 100 + (index - 1) * 155));
+        const targetY = Math.max(55, y - 230 - (index % 2) * 100);
+        launchHeroRocket(x, y, targetX, targetY, .55 + index * .18);
       }
+      for (let index = 0; index < 26; index++) {
+        addHeroParticle(index % 4 ? 'paper' : 'curl', x, y, { vx: -180 + heroRandom() * 300, vy: -130 - heroRandom() * 170, size: 5 + heroRandom() * 4, life: 3 });
+      }
+    } else if (kind === 'tree') {
+      for (let index = 0; index < 58; index++) {
+        addHeroParticle(index % 3 ? 'star' : 'ice', x + (heroRandom() - .5) * 70, y, {
+          vx: -100 + heroRandom() * 180, vy: -120 - heroRandom() * 180, gravity: 115,
+          size: index % 3 ? 2 + heroRandom() * 4 : 7 + heroRandom() * 7, life: 2.8,
+          color: index % 3 ? ['#fff1ae', '#f2accb', '#bce9d2'][Math.floor(index / 3) % 3] : palette.snow,
+        });
+      }
+    } else if (kind === 'gingerbread' || kind === 'stockings') {
+      for (let index = 0; index < 58; index++) {
+        const cookie = index % 5 === 0;
+        addHeroParticle(cookie ? 'cookie' : kind === 'gingerbread' ? 'crumb' : 'paper', x + (index % 2 ? -17 : 17), y, {
+          vx: -160 + heroRandom() * 290, vy: -150 - heroRandom() * 180, gravity: 210,
+          life: 2.4 + heroRandom() * .5, size: cookie ? 20 + heroRandom() * 14 : 2 + heroRandom() * 4,
+          color: kind === 'gingerbread' ? ['#d08b58', '#f1c492', '#fff0d8'][index % 3] : heroColors[index % heroColors.length],
+        });
+      }
+    } else if (kind === 'champagne') {
+      heroEmitter = { x, y, until: elapsed + 1.15, next: elapsed };
+      addHeroParticle('cork', x, y, { vx: -160, vy: -310, gravity: 210, life: 2.6, size: 9, color: '#d9b77d', spin: -8 });
+    } else if (kind === 'toast') {
+      for (let index = 0; index < 64; index++) {
+        const side = index % 2 ? -1 : 1;
+        addHeroParticle(index % 5 ? 'bubble' : 'star', x + side * 24, y, {
+          vx: side * (20 + heroRandom() * 80), vy: -100 - heroRandom() * 160, gravity: 45,
+          life: 2.5 + heroRandom() * .5, size: index % 5 ? 2 + heroRandom() * 5 : 4 + heroRandom() * 3,
+          color: index % 3 ? '#ffd77f' : '#fff4cf', wobble: 12,
+        });
+      }
+      addHeroParticle('ring', x, y, { vx: 0, vy: 0, gravity: 0, life: .7, size: 12, radiusSpeed: 110, color: '#ffe0a2' });
+    } else if (kind === 'disco') {
+      for (let index = 0; index < 12; index++) {
+        addHeroParticle('beam', x, y, { vx: 0, vy: 0, gravity: 0, size: 9, life: 1.9,
+          phase: index * Math.PI * 2 / 12, spin: .45, color: fireworkColors[index % fireworkColors.length] });
+      }
+      for (let index = 0; index < 65; index++) {
+        addHeroParticle(index % 4 ? 'star' : 'paper', x, y, { vx: (heroRandom() - .5) * 420,
+          vy: -180 + heroRandom() * 220, gravity: 25, size: 2 + heroRandom() * 4,
+          color: fireworkColors[index % fireworkColors.length], life: 2.4 });
+      }
+    } else if (kind === 'house') {
+      for (let index = 0; index < 70; index++) {
+        // A short snowfall spreading from the roof, rather than another idle loop.
+        addHeroParticle('ice', x + (heroRandom() - .5) * Math.min(ambient.width, 620), y - 30 - heroRandom() * 180, {
+          vx: -18 - heroRandom() * 45, vy: 12 + heroRandom() * 30, gravity: 18, size: 5 + heroRandom() * 10,
+          life: 3.2, wobble: 18, spin: (heroRandom() - .5) * 1.2, color: index % 3 ? palette.snow : '#a8d5ee',
+        });
+      }
+    } else if (kind === 'sleigh') {
+      addHeroParticle('trail', x, y, { vx: -360, vy: -130, gravity: 0, life: 1.6, size: 12, color: '#ffe4a0' });
+      for (let index = 0; index < 65; index++) {
+        const delay = index * .018;
+        addHeroParticle(index % 4 ? 'spark' : 'ice', x - 360 * delay, y - 130 * delay - Math.sin(delay * 2) * 50, {
+          born: elapsed + delay, vx: -35 + heroRandom() * 70, vy: 10 + heroRandom() * 40,
+          gravity: 25, size: index % 4 ? 2 + heroRandom() * 3 : 6 + heroRandom() * 5,
+          life: 1.4, color: index % 4 ? '#fff0ba' : '#c9e9ff',
+        });
+      }
+    } else if (kind === 'clock') {
+      for (let index = 0; index < 3; index++) {
+        addHeroParticle('countdown', x, y - 44, { born: elapsed + index * .4, vx: 0, vy: -25,
+          gravity: 0, life: .4, size: 42, number: 3 - index, color: '#ffe8ad' });
+        addHeroParticle('ring', x, y, { born: elapsed + index * .12, vx: 0, vy: 0, gravity: 0,
+          life: .9, size: 18, radiusSpeed: 130, squash: .8, color: '#ffd778' });
+      }
+      // A timed cue shares the capped particle list and is cleared with it.
+      addHeroParticle('finale', x, y, { life: 1.2, vx: 0, vy: 0, gravity: 0, size: 0 });
     }
   }
-  function paintFriend() {
-    if (!friend || !ambient || !enabled) return;
-    if (friend.hidden) {
-      if (elapsed < nextGuestAt) return;
-      visitFriend();
-      if (friend.hidden) return;
-    }
-    const caught = elapsed < boopUntil;
-    if (friendHovered || friendFocused || caught) guestUntil = Math.max(guestUntil, elapsed + 1.2);
-    if (elapsed >= guestUntil) {
-      friend.hidden = true;nextGuestAt = elapsed + 15 + guestRandom() * 15;
-      friend.classList.remove('is-celebrating');return;
-    }
-    const age = elapsed - guestStart;
-    const tilt = guestDetails[guestKind].tilt + Math.sin(age * 1.35) * 2.8 + (caught ? Math.sin((boopUntil - elapsed) * 22) * 7 : 0);
-    friend.classList.toggle('is-celebrating', caught);
-    friend.style.opacity = String(Math.min(1, age / .65, (guestUntil - elapsed) / .55));
-    friend.style.transform = `rotate(${tilt.toFixed(2)}deg)`;
-    if (guestKind === 'tree') guestLights.forEach((light, index) => {
-      light.style.opacity = String(.2 + (Math.sin(elapsed * (caught ? 8 : 2) + index * 1.7) + 1) * .4);
-    });
-    if (guestKind === 'snowman' && elapsed >= nextGuestFlake) {
-      addCornerParticle('snow', friendX + friendSize * (.28 + guestRandom() * .42), friendY + friendSize * .4,
-        { color: palette.snow, vx: 3 + guestRandom() * 14, vy: 9 + guestRandom() * 10, gravity: 10, life: 2.4, size: 1.8 + guestRandom() * 1.6 });
-      nextGuestFlake = elapsed + .28 + guestRandom() * .25;
-    }
-  }
-  friend?.addEventListener('pointerenter', event => { if (event.pointerType === 'mouse' || event.pointerType === 'pen') friendHovered = true; });
-  friend?.addEventListener('pointerleave', () => { friendHovered = false; });
-  friend?.addEventListener('pointercancel', () => { friendHovered = false; });
-  friend?.addEventListener('focus', () => { friendFocused = friend.matches(':focus-visible'); });
-  friend?.addEventListener('blur', () => { friendFocused = false; });
-  guestArt.forEach(art => art.querySelector('img')?.addEventListener('error', () => {
-    unavailableGuests.add(art.dataset.reviewGuest);
-    if (guestKind === art.dataset.reviewGuest) { friend.hidden = true;nextGuestAt = elapsed + 2; }
-  }, { once: true }));
-  friend?.addEventListener('click', event => {
+
+  decoration?.addEventListener('pointerenter', event => {
+    if (event.pointerType === 'mouse' || event.pointerType === 'pen') reactDecoration();
+  });
+  decoration?.addEventListener('focus', () => { if (decoration.matches(':focus-visible')) reactDecoration(); });
+  decoration?.addEventListener('click', event => {
     event.preventDefault();event.stopPropagation();
-    if (!enabled || !active || friend.hidden || !ambient || elapsed < nextGuestClick) return;
-    if (event.detail !== 0) { friendFocused = false;friend.blur(); }
-    boopUntil = elapsed + 1.6;nextGuestClick = elapsed + .65;
-    const x = friendX + friendSize * .55, y = friendY + friendSize * .35;
-    if (guestKind === 'party') {
-      if (ambient.rockets.length < 3) ambient.rockets.push({ corner: true, start: x, startY: y,
-        x: Math.min(ambient.width - 45, x + 55 + guestRandom() * 55),
-        y: Math.max(65, y - 130 - guestRandom() * 90), born: elapsed });
-    } else cornerBurst(guestKind, x, y);
+    if (!enabled || !active || document.hidden || !ambient || !decorationKinds.includes(decorationKind) || elapsed < nextDecorationClick) return;
+    // Read layout only for the interaction: the large hero artwork stays in place.
+    const box = (decorationArt || decoration).getBoundingClientRect(), canvasBox = ambient.canvas.getBoundingClientRect();
+    if (!canvasBox.width || !canvasBox.height) return;
+    const origins = {
+      tree: [.5, .32], party: [.48, .42], gingerbread: [.5, .45], champagne: [.25, .2],
+      stockings: [.5, .3], disco: [.5, .5], house: [.5, .25], toast: [.5, .34],
+      sleigh: [.2, .4], clock: [.5, .32],
+    };
+    const tip = origins[decorationKind];
+    const x = (box.left + box.width * tip[0] - canvasBox.left) * ambient.width / canvasBox.width;
+    const y = (box.top + box.height * tip[1] - canvasBox.top) * ambient.height / canvasBox.height;
+    nextDecorationClick = elapsed + (decorationKind === 'clock' ? 2.5 : .85);
+    reactDecoration(decorationKind === 'disco' ? .95 : .7);
+    celebrateDecoration(decorationKind, x, y);
     wake();
   });
-  measureFriend();
 
   function star(context, x, y, radius, color, points = 4) {
+    if (shapePaths && (points === 4 || points === 5)) {
+      let path = shapePaths.stars.get(points);
+      if (!path) {
+        path = new Path2D();
+        for (let point = 0; point < points * 2; point++) {
+          const angle = -Math.PI / 2 + point * Math.PI / points;
+          const length = point % 2 ? .28 : 1;
+          if (point) path.lineTo(Math.cos(angle) * length, Math.sin(angle) * length);
+          else path.moveTo(Math.cos(angle) * length, Math.sin(angle) * length);
+        }
+        path.closePath();shapePaths.stars.set(points, path);
+      }
+      context.fillStyle = color;
+      context.save();context.translate(x, y);context.scale(radius, radius);
+      context.fill(path);context.restore();
+      return;
+    }
     context.fillStyle = color;
     context.beginPath();
     for (let point = 0; point < points * 2; point++) {
@@ -176,6 +234,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function snowflake(context, x, y, size, turn = 0) {
     context.save();context.translate(x, y);context.rotate(turn);
+    if (shapePaths && size > 0) {
+      if (!shapePaths.snowflake) {
+        const path = new Path2D();
+        for (let arm = 0; arm < 6; arm++) {
+          const angle = arm * Math.PI / 3, dx = Math.cos(angle), dy = Math.sin(angle);
+          path.moveTo(0, 0);path.lineTo(dx, dy);
+          for (const direction of [-1, 1]) {
+            const branch = angle + direction * Math.PI / 3;
+            path.moveTo(dx * .55, dy * .55);
+            path.lineTo(dx * .55 + Math.cos(branch) * .3, dy * .55 + Math.sin(branch) * .3);
+          }
+        }
+        shapePaths.snowflake = path;
+      }
+      context.scale(size, size);context.lineWidth /= size;
+      context.stroke(shapePaths.snowflake);context.restore();
+      return;
+    }
     context.beginPath();
     for (let arm = 0; arm < 6; arm++) {
       const angle = arm * Math.PI / 3, dx = Math.cos(angle), dy = Math.sin(angle);
@@ -191,6 +267,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function heart(context, x, y, size) {
     context.save();context.translate(x, y);context.scale(size / 24, size / 24);
+    if (shapePaths) {
+      if (!shapePaths.heart) {
+        const path = new Path2D();
+        path.moveTo(0, 8);path.bezierCurveTo(-23, -6, -9, -23, 0, -12);
+        path.bezierCurveTo(9, -23, 23, -6, 0, 8);shapePaths.heart = path;
+      }
+      context.fill(shapePaths.heart);context.restore();
+      return;
+    }
     context.beginPath();context.moveTo(0, 8);
     context.bezierCurveTo(-23, -6, -9, -23, 0, -12);
     context.bezierCurveTo(9, -23, 23, -6, 0, 8);
@@ -329,26 +414,118 @@ document.addEventListener('DOMContentLoaded', () => {
     context.globalAlpha = 1;
   }
 
-  function paintCornerParticles(scene, time) {
+  function paintHeroParticles(scene, time) {
     const context = scene.context;
-    for (let index = cornerParticles.length - 1; index >= 0; index--) {
-      const particle = cornerParticles[index], age = time - particle.born;
-      if (age >= particle.life) { cornerParticles.splice(index, 1);continue; }
-      const fade = Math.min(1, (particle.life - age) / .65);
-      const x = particle.x + particle.vx * age, y = particle.y + particle.vy * age + particle.gravity * age * age / 2;
-      context.globalAlpha = fade * .82;
-      if (particle.kind === 'snow') {
-        context.strokeStyle = particle.color;context.lineWidth = 1;
-        snowflake(context, x, y, particle.size, particle.phase + age * .6);
-      } else if (particle.kind === 'gift' && guestGift?.complete && guestGift.naturalWidth) {
-        context.save();context.translate(x, y);context.rotate(Math.sin(particle.phase + age * 3) * .5);
-        context.drawImage(guestGift, -particle.size / 2, -particle.size / 2, particle.size, particle.size);context.restore();
-      } else if (particle.kind === 'confetti') {
-        context.save();context.translate(x, y);context.rotate(particle.phase + age * 4);
-        context.fillStyle = particle.color;context.fillRect(-3, -1.5, 6, 3);context.restore();
+    if (heroEmitter) {
+      while (heroEmitter.next <= time && heroEmitter.next < heroEmitter.until) {
+        for (let index = 0; index < 6; index++) {
+          addHeroParticle(index % 5 ? 'bubble' : 'spark', heroEmitter.x, heroEmitter.y, {
+            born: heroEmitter.next, vx: -110 + heroRandom() * 120, vy: -130 - heroRandom() * 210,
+            gravity: 135, life: 1.4 + heroRandom() * .6, size: 1.5 + heroRandom() * 3.5,
+            color: index % 3 ? '#ffda8b' : '#fff5cf', wobble: 6,
+          });
+        }
+        heroEmitter.next += .06;
+      }
+      if (time >= heroEmitter.until) heroEmitter = null;
+    }
+    for (let index = heroParticles.length - 1; index >= 0; index--) {
+      const particle = heroParticles[index], age = time - particle.born;
+      if (age < 0) continue;
+      if (age >= particle.life) {
+        heroParticles.splice(index, 1);
+        if (particle.kind === 'rocket') heroShell(particle.targetX, particle.targetY);
+        if (particle.kind === 'finale') {
+          for (let launch = 0; launch < 3; launch++) {
+            launchHeroRocket(particle.x, particle.y,
+              Math.max(55, Math.min(scene.width - 55, particle.x - 100 + (launch - 1) * 150)),
+              Math.max(55, particle.y - 190 - (launch % 2) * 110), .45 + launch * .15);
+          }
+        }
+        continue;
+      }
+      if (particle.kind === 'finale') continue;
+      const fade = Math.min(1, (particle.life - age) / .6);
+      let x = particle.x + particle.vx * age + (Math.sin(particle.phase + age * 2) - Math.sin(particle.phase)) * particle.wobble;
+      let y = particle.y + particle.vy * age + particle.gravity * age * age / 2;
+      context.globalAlpha = fade * .95;
+      if (particle.kind === 'rocket') {
+        const progress = age / particle.life, ease = 1 - (1 - progress) ** 1.7;
+        x = particle.x + (particle.targetX - particle.x) * ease;y = particle.y + (particle.targetY - particle.y) * ease;
+        context.strokeStyle = particle.color;context.lineWidth = 2;
+        context.beginPath();context.moveTo(x + (particle.x - particle.targetX) * .08 * (1 - progress), y + 30 * (1 - progress));context.lineTo(x, y);context.stroke();
+        star(context, x, y, 4, '#fff5d2');
+      } else if (particle.kind === 'cookie') {
+        const size = particle.size;
+        const art = decorationKind === 'gingerbread' ? decorationArt : decorationCookie;
+        context.save();context.translate(x, y);context.rotate(particle.phase + age * particle.spin * .4);
+        if (art?.complete && art.naturalWidth) context.drawImage(art, -size / 2, -size / 2, size, size);
+        context.restore();
+      } else if (particle.kind === 'paper' || particle.kind === 'curl') {
+        context.save();context.translate(x, y);context.rotate(particle.phase + age * particle.spin);
+        if (particle.kind === 'curl') {
+          context.strokeStyle = particle.color;context.lineWidth = 2.4;
+          context.beginPath();context.moveTo(-particle.size, -particle.size * 2);
+          context.bezierCurveTo(particle.size * 2, -particle.size * 2, -particle.size * 2, particle.size, particle.size, particle.size * 2);context.stroke();
+        } else {
+          context.fillStyle = particle.color;
+          context.fillRect(-particle.size / 2, -particle.size / 2, particle.size, particle.size * (.4 + Math.abs(Math.sin(age * 5 + particle.phase))));
+        }
+        context.restore();
+      } else if (particle.kind === 'crumb' || particle.kind === 'cork') {
+        context.save();context.translate(x, y);context.rotate(particle.phase + age * particle.spin);
+        context.fillStyle = particle.color;
+        context.beginPath();context.ellipse(0, 0, particle.size * .6, particle.size, 0, 0, Math.PI * 2);context.fill();
+        context.restore();
+      } else if (particle.kind === 'bubble') {
+        context.fillStyle = particle.color;context.globalAlpha = fade * .2;
+        context.beginPath();context.arc(x, y, particle.size, 0, Math.PI * 2);context.fill();
+        context.globalAlpha = fade * .85;context.strokeStyle = particle.color;context.lineWidth = 1.1;
+        context.stroke();
+        context.fillStyle = '#fff9e6';context.beginPath();context.arc(x - particle.size * .3, y - particle.size * .3, .8, 0, Math.PI * 2);context.fill();
+      } else if (particle.kind === 'beam') {
+        context.save();context.translate(x, y);context.rotate(particle.phase + age * particle.spin);
+        const length = Math.min(scene.width, 410);
+        const glow = context.createLinearGradient(0, 0, length, 0);
+        glow.addColorStop(0, particle.color);glow.addColorStop(1, 'transparent');
+        context.fillStyle = glow;context.globalAlpha = Math.sin(age / particle.life * Math.PI) * .22;
+        context.beginPath();context.moveTo(0, 0);context.lineTo(length, -26);context.lineTo(length, 26);context.closePath();context.fill();
+        context.restore();
+      } else if (particle.kind === 'countdown') {
+        context.save();context.font = `700 ${particle.size}px system-ui, sans-serif`;
+        context.textAlign = 'center';context.textBaseline = 'middle';
+        context.strokeStyle = '#3a263b';context.lineWidth = 3;context.lineJoin = 'round';
+        context.strokeText(String(particle.number), x, y);context.fillStyle = particle.color;context.fillText(String(particle.number), x, y);
+        context.restore();
+      } else if (particle.kind === 'ice') {
+        context.strokeStyle = particle.color;context.lineWidth = particle.size > 16 ? 1.9 : 1.2;
+        snowflake(context, x, y, particle.size, particle.phase + age * particle.spin);
+      } else if (particle.kind === 'ring') {
+        context.save();context.translate(x, y);context.scale(1, particle.squash || 1);
+        context.strokeStyle = particle.color;context.lineWidth = 2.6 * fade;
+        context.beginPath();context.arc(0, 0, particle.size + age * particle.radiusSpeed, 0, Math.PI * 2);context.stroke();context.restore();
+      } else if (particle.kind === 'trail') {
+        y -= Math.sin(age * 2) * 50;
+        const tailX = x - particle.vx * .22, tailY = y - particle.vy * .22;
+        const gradient = context.createLinearGradient(tailX, tailY, x, y);
+        gradient.addColorStop(0, '#ffe4a000');gradient.addColorStop(1, '#ffe4a0');
+        context.strokeStyle = gradient;context.lineWidth = 8;context.lineCap = 'round';
+        context.beginPath();context.moveTo(tailX, tailY);context.lineTo(x, y);context.stroke();
+        context.lineCap = 'butt';star(context, x, y, particle.size, '#fff1ba', 5);
+      } else if (particle.kind === 'spark' || particle.kind === 'firework') {
+        context.strokeStyle = particle.color;context.lineWidth = particle.size;
+        const tail = particle.kind === 'firework' ? .085 : .045;
+        context.beginPath();context.moveTo(x - particle.vx * tail, y - (particle.vy + particle.gravity * age) * tail);context.lineTo(x, y);context.stroke();
       } else star(context, x, y, particle.size, particle.color);
     }
     context.globalAlpha = 1;
+  }
+
+  function paintDecorationReaction() {
+    if (!reactionUntil) return;
+    if (elapsed >= reactionUntil) {
+      reactionUntil = 0;decoration?.classList.remove('is-reacting');
+    }
   }
 
   function paint(scene, time) {
@@ -425,8 +602,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const rocket = scene.rockets[index], progress = (time - rocket.born) / .85;
         if (progress >= 1) {
           if (progress < 2) {
-            if (rocket.corner) cornerBurst('party', rocket.x, rocket.y);
-            else burst(scene, rocket.x, rocket.y);
+            burst(scene, rocket.x, rocket.y);
           }
           scene.rockets.splice(index, 1);
           continue;
@@ -440,7 +616,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
     context.globalAlpha = 1;paintBursts(scene, time);
-    if (scene.kind === 'ambient') paintCornerParticles(scene, time);
+    if (scene.kind === 'ambient') paintHeroParticles(scene, time);
   }
 
   function draw(now) {
@@ -458,7 +634,7 @@ document.addEventListener('DOMContentLoaded', () => {
       nextFirework = elapsed + 5 + random() * 4;
     }
     scenes.forEach(scene => { if (scene.visible) paint(scene, elapsed); });
-    paintFriend();
+    paintDecorationReaction();
     if (scenes.some(scene => scene.visible)) frame = requestAnimationFrame(draw);
   }
 
@@ -474,7 +650,7 @@ document.addEventListener('DOMContentLoaded', () => {
       toggle.title = enabled ? 'Pause background effects' : 'Play background effects';
     }
     stop();
-    resetFriend();
+    resetHeroEffects();
     scenes.forEach(scene => { scene.bursts.length = 0;scene.rockets.length = 0;paint(scene, 0); });
     wake();
   }
@@ -488,15 +664,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     wake();
   }) : null;
-  const resize = 'ResizeObserver' in window ? new ResizeObserver(() => { if (!active) return;scenes.forEach(resizeScene);measureFriend();if (!enabled) scenes.forEach(scene => paint(scene, 0));wake(); }) : null;
+  const resize = 'ResizeObserver' in window ? new ResizeObserver(() => { if (!active) return;scenes.forEach(resizeScene);if (!enabled) scenes.forEach(scene => paint(scene, 0));wake(); }) : null;
   scenes.forEach(scene => {
     resizeScene(scene);
     if (visibility) visibility.observe(scene.canvas);else scene.visible = true;
     resize?.observe(scene.canvas);
   });
-  measureFriend();
-  window.addEventListener('resize', () => { if (!active) return;scenes.forEach(resizeScene);measureFriend();if (!enabled) scenes.forEach(scene => paint(scene, 0));wake(); }, { passive: true });
-  document.addEventListener('visibilitychange', () => { if (document.hidden) stop();else wake(); });
+  window.addEventListener('resize', () => { if (!active) return;scenes.forEach(resizeScene);if (!enabled) scenes.forEach(scene => paint(scene, 0));wake(); }, { passive: true });
+  document.addEventListener('visibilitychange', () => { if (document.hidden) { stop();resetHeroEffects(); } else wake(); });
   document.addEventListener('click', event => {
     if (!enabled || !active || event.target.closest('a, button, summary, input, select, textarea, [role="button"], [contenteditable="true"]')) return;
     if (!ambient) return;
@@ -505,14 +680,13 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   window.addEventListener('pagehide', () => {
     active = false;stop();visibility?.disconnect();resize?.disconnect();
-    resetFriend();
+    resetHeroEffects();
     scenes.forEach(scene => { scene.bursts.length = 0;scene.rockets.length = 0;if (scene.cache) { scene.cache.width = 1;scene.cache.height = 1; }scene.cache = null;scene.canvas.width = 1;scene.canvas.height = 1; });
   });
   window.addEventListener('pageshow', event => {
     if (!event.persisted) return;
     active = true;
     scenes.forEach(scene => { resizeScene(scene);visibility?.observe(scene.canvas);resize?.observe(scene.canvas); });
-    measureFriend();
     updateToggle();
   });
   updateToggle();

@@ -274,28 +274,78 @@ body {
 }
 
 .home-review-button {
+  --gift-paper-top: #91434f;
+  --gift-paper-bottom: #682734;
+  --gift-ribbon-start: 14px;
+  --gift-ribbon-width: 10px;
+  --gift-ribbon-bottom: 6px;
+  position: relative;
   box-sizing: border-box;
   display: inline-flex;
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  padding: 0 0.85rem;
-  height: 36px;
-  border: 1px solid color-mix(in srgb, var(--overview-border) 65%, #d8af69);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--bg-tertiary) 88%, #d8af69);
-  color: var(--text-secondary);
+  height: 40px;
+  padding: 0 18px 0 calc(var(--gift-ribbon-start) + var(--gift-ribbon-width) + 14px);
+  overflow: hidden;
+  border: 2px solid transparent;
+  border-radius: 5px;
+  /* Foil ribbon over textured cranberry wrapping paper, with a folded gold edge. */
+  background:
+    linear-gradient(90deg, transparent var(--gift-ribbon-start), #8c5b36 var(--gift-ribbon-start), #f6dfb0 calc(var(--gift-ribbon-start) + 3px), #d9b475 calc(var(--gift-ribbon-start) + var(--gift-ribbon-width) - 2px), #a67540 calc(var(--gift-ribbon-start) + var(--gift-ribbon-width)), transparent calc(var(--gift-ribbon-start) + var(--gift-ribbon-width))) padding-box,
+    repeating-linear-gradient(135deg, #fff1c912 0 1px, transparent 1px 7px) padding-box,
+    linear-gradient(115deg, var(--gift-paper-top), var(--gift-paper-bottom)) padding-box,
+    linear-gradient(135deg, #f4dfb5, #b7834a 36%, #eed2a0 62%, #966137) border-box;
+  box-shadow: inset 0 1px 0 #fff3, inset 0 -2px 0 #37111b45, 0 2px 0 #35121d24;
+  color: #fff2d7;
   text-decoration: none;
   white-space: nowrap;
-  transition: background-color 0.2s ease, border-color 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.home-review-button--with-music {
+  /* Match the space before Community's content beyond its 10px button padding. */
+  margin-inline-end: 10px;
+}
+
+.home-review-button::before,
+.home-review-button::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+}
+
+.home-review-button::before {
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(180deg, transparent calc(100% - var(--gift-ribbon-bottom) - 5px), #8c5b36 calc(100% - var(--gift-ribbon-bottom) - 5px), #f2d9aa calc(100% - var(--gift-ribbon-bottom) - 4px), #dcb77a calc(100% - var(--gift-ribbon-bottom) - 1px), #9c693a calc(100% - var(--gift-ribbon-bottom)), transparent calc(100% - var(--gift-ribbon-bottom)));
+}
+
+.home-review-button::after {
+  inset: 0;
+  background: linear-gradient(115deg, transparent 35%, #fff6dcb3 50%, transparent 65%);
+  background-size: 250% 100%;
+  background-position: 100% 0;
+  /* Only the crossed ribbon catches the light; the lettering stays on dark paper. */
+  -webkit-mask-image: linear-gradient(90deg, transparent var(--gift-ribbon-start), #000 var(--gift-ribbon-start), #000 calc(var(--gift-ribbon-start) + var(--gift-ribbon-width)), transparent calc(var(--gift-ribbon-start) + var(--gift-ribbon-width))), linear-gradient(180deg, transparent calc(100% - var(--gift-ribbon-bottom) - 5px), #000 calc(100% - var(--gift-ribbon-bottom) - 5px), #000 calc(100% - var(--gift-ribbon-bottom)), transparent calc(100% - var(--gift-ribbon-bottom)));
+  mask-image: linear-gradient(90deg, transparent var(--gift-ribbon-start), #000 var(--gift-ribbon-start), #000 calc(var(--gift-ribbon-start) + var(--gift-ribbon-width)), transparent calc(var(--gift-ribbon-start) + var(--gift-ribbon-width))), linear-gradient(180deg, transparent calc(100% - var(--gift-ribbon-bottom) - 5px), #000 calc(100% - var(--gift-ribbon-bottom) - 5px), #000 calc(100% - var(--gift-ribbon-bottom)), transparent calc(100% - var(--gift-ribbon-bottom)));
+  -webkit-mask-composite: source-over;
+  mask-composite: add;
+  opacity: 0;
+  transition: background-position .6s ease, opacity .15s;
 }
 
 .home-review-button:hover,
 .home-review-button:focus-visible {
-  border-color: #d8af69;
-  background: color-mix(in srgb, var(--bg-tertiary) 80%, #d8af69);
-  color: var(--text-secondary);
+  --gift-paper-top: #a14e59;
+  --gift-paper-bottom: #79303e;
+  color: #fff2d7;
+}
+
+.home-review-button:hover::after,
+.home-review-button:focus-visible::after {
+  opacity: .8;
+  background-position: -100% 0;
 }
 
 .home-review-button:focus-visible {
@@ -303,8 +353,20 @@ body {
   outline-offset: 3px;
 }
 
-.home-review-icon { display: block; flex-shrink: 0; width: 22px; height: 22px; }
-.home-review-label { font-size: 0.875rem; font-weight: 600; line-height: 1.2; }
+.home-review-label {
+  position: relative;
+  z-index: 1;
+  padding-bottom: 3px;
+  font-size: .875rem;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: .015em;
+  text-shadow: 0 1px 1px #3d14254d;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-review-button::after { display: none; }
+}
 
 
 .card-grid {
@@ -1794,16 +1856,18 @@ a.all-collections-btn:hover {
     width: auto;
     max-width: calc(100% - 3rem);
     height: var(--home-banner-control-size);
-    gap: 0.65rem;
-    padding: 0 1rem;
+    --gift-ribbon-start: clamp(12px, 1.6vw, 22px);
+    --gift-ribbon-width: clamp(10px, 1.4vw, 14px);
+    --gift-ribbon-bottom: 11px;
+    padding: 0 1.1rem 0 calc(var(--gift-ribbon-start) + var(--gift-ribbon-width) + .9rem);
   }
 
   .separator-bar .home-review-button--with-music {
+    margin-inline-end: 0;
     right: calc(2.5rem + var(--home-banner-control-size));
     max-width: calc(100% - 4rem - var(--home-banner-control-size));
   }
 
-  .home-review-icon { width: clamp(1.5rem, 4vw, 2.5rem); height: clamp(1.5rem, 4vw, 2.5rem); }
   .home-review-label { font-size: clamp(0.9rem, 3vw, 1.9rem); }
 
   .notifications-button,

@@ -1,0 +1,6 @@
+{% load static %}
+{# Human-made Jolly, Fluent 3D and 3dicons artwork; local licenses and credits accompany the images. #}
+<button id="review-hero-decoration" class="review-hero-decoration review-hero-decoration--{{ review.decoration.key }}" type="button" data-decoration="{{ review.decoration.key }}" title="{{ review.decoration.action }}" aria-label="{{ review.decoration.action }}">
+  <img class="review-decoration-art" data-decoration-art src="{% static review.decoration.image %}" alt="" width="164" height="164" decoding="async" draggable="false">
+  {% if review.decoration.key == 'stockings' %}<img data-decoration-cookie src="{% static 'core/img/year_review/jolly-gingerbread.png' %}" alt="" draggable="false" hidden>{% endif %}
+</button>

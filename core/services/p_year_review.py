@@ -22,6 +22,26 @@ CARD_FIELDS = (
     'personal_rating', 'favorite', 'favorite_position', 'date_added', 'total_main',
 )
 
+# Fixed ten-year cycle: keep this order to preserve each year's decoration.
+# Future collections should use a new version, rather than reshuffle this one.
+YEAR_DECORATIONS = (
+    ('tree', 'jolly-tree.png', 'Shake out a little Christmas magic'),
+    ('party', 'celebration-popper.png', 'Launch a celebration'),
+    ('gingerbread', 'jolly-gingerbread.png', 'Start a cookie shower'),
+    ('champagne', 'celebration-champagne.png', 'Pop the cork'),
+    ('stockings', 'jolly-stockings.png', 'Shake out a few surprises'),
+    ('disco', 'celebration-disco.png', 'Light up the dance floor'),
+    ('house', 'jolly-house.png', 'Let it snow'),
+    ('toast', 'celebration-toast.png', 'Raise a toast to your year'),
+    ('sleigh', 'jolly-sleigh.png', 'Send a little magic across the sky'),
+    ('clock', 'celebration-clock.png', 'Count down to a celebration'),
+)
+
+
+def _year_decoration(year):
+    key, filename, action = YEAR_DECORATIONS[year % 10]
+    return {'key': key, 'image': f'core/img/year_review/{filename}', 'action': action}
+
 
 def _local_date(value):
     return timezone.localtime(value) if timezone.is_aware(value) else value
@@ -133,18 +153,15 @@ def _histogram_bins(scores, rating_mode):
     else:
         selected = set(counts)
         if not selected:
-            selected = set(range(1, 6))
-        elif len(selected) < 5:
-            first, last = min(selected), max(selected)
-            span = last - first + 1
-            if span <= 5:
-                first = max(1, min(first - (5 - span) // 2, 6))
-                selected = set(range(first, first + 5))
-            else:
-                while len(selected) < 5:
-                    ordered = sorted(selected)
-                    lower, upper = max(zip(ordered, ordered[1:]), key=lambda gap: gap[1] - gap[0])
-                    selected.add((lower + upper) // 2)
+            selected = {1, 3, 5, 8, 10}
+        while len(selected) < 5:
+            # Fill the largest gaps across the whole scale. On midpoint ties,
+            # prefer the outer candidate to spread empty labels over both ends.
+            candidates = set(range(1, 11)) - selected
+            selected.add(max(candidates, key=lambda value: (
+                min(abs(value - other) for other in selected),
+                abs(value - 5.5), value,
+            )))
     highest_count = max(counts.values(), default=1)
     bins = []
     for value in sorted(selected):
@@ -377,6 +394,7 @@ def build_year_review(year=None, app_settings=None):
     return {
         'year': year, 'years': sorted(years, reverse=True),
         'edition': {'key': edition_key, 'label': edition_label},
+        'decoration': _year_decoration(year),
         'completed': completed, 'favorites': favorites, 'dropped': dropped, 'hero_items': hero_items,
         'counts': {'completed': len(completed), 'favorites': len(favorites), 'dropped': len(dropped)},
         'months': [

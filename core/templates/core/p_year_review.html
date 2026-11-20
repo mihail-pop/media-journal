@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="{% static 'core/css/p_year_review.css' %}">
 <link rel="stylesheet" href="{% static 'core/css/p_year_review_ratings.css' %}">
 <link rel="stylesheet" href="{% static 'core/css/p_year_review_effects.css' %}">
-<link rel="stylesheet" href="{% static 'core/css/p_year_review_corner.css' %}">
+<link rel="stylesheet" href="{% static 'core/css/p_year_review_decoration.css' %}">
 <link rel="stylesheet" href="{% static 'core/css/p_year_review_sections.css' %}">
 {% endblock %}
 
@@ -16,7 +16,6 @@
 <div id="year-review" class="review-wrap" data-year="{{ review.year }}" data-edition="{{ review.edition.key }}" data-placeholder="{% static 'core/img/placeholder.png' %}">
   <canvas class="review-ambience" data-review-scene="ambient" aria-hidden="true"></canvas>
   {# Twemoji graphics by Twitter, Inc. and other contributors, CC BY 4.0. https://github.com/jdecked/twemoji #}
-  {% include 'core/p_year_review_corner.html' %}
   <div class="review-toolbar">
     <span class="review-edition"><span aria-hidden="true">✦</span> {{ review.edition.label }}</span>
     <div class="review-tools">
@@ -34,14 +33,8 @@
 
   <section class="review-hero" aria-labelledby="review-title">
     <canvas class="review-scene review-hero-scene" data-review-scene="celebration" aria-hidden="true"></canvas>
+    {% include 'core/p_year_review_decoration.html' %}
     <div class="review-festive-art" aria-hidden="true">
-      {% if review.edition.key == 'winter' %}
-      <img class="review-art-tree" src="{% static 'core/img/year_review/christmas-tree.svg' %}" alt="" decoding="async">
-      <svg class="review-art-tree review-tree-lights" viewBox="0 0 36 36" focusable="false"><circle cx="16.1" cy="11.6" r=".65"/><circle cx="19.6" cy="24.6" r=".75"/><circle cx="22" cy="15" r=".75"/><circle cx="9.6" cy="25.6" r=".65"/><circle cx="13.6" cy="18.6" r=".65"/><circle cx="25.6" cy="22.6" r=".65"/></svg>
-      <img class="review-art-gift" src="{% static 'core/img/year_review/wrapped-gift.svg' %}" alt="" decoding="async">
-      {% else %}
-      <img class="review-art-popper" src="{% static 'core/img/year_review/party-popper.svg' %}" alt="" decoding="async">
-      {% endif %}
       {% if review.edition.key != 'midnight' %}<img class="review-art-ribbon" src="{% static 'core/img/year_review/ribbon.svg' %}" alt="" decoding="async">{% endif %}
     </div>
     <div class="review-hero-copy">
@@ -76,11 +69,11 @@
       {% for month in review.months %}<button type="button" data-review-month="{{ month.number }}" aria-pressed="false" title="{{ month.label }} · {{ month.count }} item{{ month.count|pluralize }}"{% if not month.count %} disabled{% endif %}>{{ month.short }}<span>{{ month.count }}</span></button>{% endfor %}
     </div>
     <div id="review-completed-scroll" class="review-completed-scroll">
-      <div id="review-completed-grid" class="review-grid">{% for card in review.completed|slice:':12' %}{% include 'core/p_year_review_card.html' with kind='completed' %}{% endfor %}</div>
+      <div id="review-completed-grid" class="review-grid">{% for card in review.completed|slice:':14' %}{% include 'core/p_year_review_card.html' with kind='completed' %}{% endfor %}</div>
     </div>
     <template id="review-card-template"><a class="review-card"><div class="review-card-art"><img alt="" loading="lazy" decoding="async"><span class="review-card-score" hidden></span></div><div class="review-card-title"></div></a></template>
     <p id="review-completed-empty" class="review-quiet-empty" hidden>No completed items this month.</p>
-    <button id="review-show-more" class="review-show-more{% if review.counts.completed <= 12 %} review-show-more--mobile-only{% endif %}" type="button"{% if review.counts.completed <= 6 %} hidden{% endif %}>Show more</button>
+    <button id="review-show-more" class="review-show-more{% if review.counts.completed <= 14 %} review-show-more--responsive{% endif %}" type="button"{% if review.counts.completed <= 6 %} hidden{% endif %}>Show more</button>
   </section>
   {% endif %}
 

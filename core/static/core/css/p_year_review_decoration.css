@@ -1,0 +1,70 @@
+.review-wrap .review-hero-decoration {
+  --decoration-size: 164px;
+  position: absolute;
+  right: 5px;
+  bottom: 4px;
+  z-index: 4;
+  width: var(--decoration-size);
+  height: var(--decoration-size);
+  display: block;
+  padding: 0;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.review-decoration-art { display: block; width: 100%; height: 100%; object-fit: contain; user-select: none; pointer-events: none; transform-origin: 50% 85%; }
+.review-hero-decoration:focus-visible { outline: 2px solid var(--review-accent); outline-offset: -3px; }
+.review-wrap :is(.review-hero-decoration--tree, .review-hero-decoration--house, .review-hero-decoration--sleigh) { --decoration-size: 174px; }
+.review-wrap .review-hero-decoration--house { translate: 0 1.5rem; }
+.review-wrap :is(.review-hero-decoration--champagne, .review-hero-decoration--toast, .review-hero-decoration--disco) { --decoration-size: 148px; }
+.review-hero-decoration.is-reacting .review-decoration-art { animation: review-decoration-shake .7s ease-in-out; }
+.review-hero-decoration--clock.is-reacting .review-decoration-art { animation-name: review-decoration-ring; }
+.review-hero-decoration--party.is-reacting .review-decoration-art,
+.review-hero-decoration--champagne.is-reacting .review-decoration-art,
+.review-hero-decoration--sleigh.is-reacting .review-decoration-art { animation-name: review-decoration-recoil; }
+.review-hero-decoration--gingerbread.is-reacting .review-decoration-art { animation-name: review-decoration-bounce; }
+.review-hero-decoration--disco.is-reacting .review-decoration-art { animation: review-decoration-disco .95s ease-in-out; transform-origin: 50% 10%; }
+.review-hero-decoration--house.is-reacting .review-decoration-art { animation-name: review-decoration-light; }
+.review-effects-paused .review-hero-decoration .review-decoration-art { animation: none; }
+@keyframes review-decoration-shake {
+  0%, 100% { transform: translateY(0) rotate(0); }
+  20% { transform: translateY(-4px) rotate(-7deg); }
+  45% { transform: rotate(7deg); }
+  70% { transform: rotate(-4deg); }
+}
+@keyframes review-decoration-ring {
+  0%, 100% { transform: rotate(0); }
+  15% { transform: rotate(17deg); }
+  35% { transform: rotate(-14deg); }
+  55% { transform: rotate(10deg); }
+  75% { transform: rotate(-5deg); }
+}
+@keyframes review-decoration-recoil {
+  0%, 100% { transform: translate(0, 0) rotate(0); }
+  25% { transform: translate(-4px, 5px) rotate(-8deg); }
+  60% { transform: translate(1px, -2px) rotate(2deg); }
+}
+@keyframes review-decoration-bounce {
+  0%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-8px) rotate(-6deg); }
+  65% { transform: translateY(-2px) rotate(5deg); }
+}
+@keyframes review-decoration-disco {
+  0%, 100% { transform: rotate(0); filter: brightness(1); }
+  25% { transform: rotate(11deg); filter: brightness(1.35); }
+  60% { transform: rotate(-8deg); filter: brightness(1.15); }
+}
+@keyframes review-decoration-light {
+  0%, 100% { filter: brightness(1); }
+  40% { filter: brightness(1.25); }
+}
+@media (max-width: 600px) {
+  .review-wrap .review-hero-decoration { --decoration-size: 108px; right: 2px; bottom: 4px; }
+  .review-wrap :is(.review-hero-decoration--tree, .review-hero-decoration--house, .review-hero-decoration--sleigh) { --decoration-size: 120px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .review-hero-decoration .review-decoration-art { animation: none !important; }
+}
