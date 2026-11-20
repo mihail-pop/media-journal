@@ -35,6 +35,7 @@ def year_review(request, year=None):
     has_data = bool(
         review['completed'] or review['dropped']
         or review['stats']['tracked']['metrics'] or review['stats']['music']['plays']
+        or review['stats']['music']['listening_seconds']
     )
     return render(request, 'core/p_year_review.html', {
         'review': review, 'has_review_data': has_data,

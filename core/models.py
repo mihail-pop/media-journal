@@ -471,10 +471,13 @@ class MusicVideo(models.Model):
 
 
 class MusicPlay(models.Model):
-    """One qualified playback; its UUID makes browser retries idempotent."""
+    """One listening session; its UUID makes browser retries idempotent."""
 
     item = models.ForeignKey(MediaItem, on_delete=models.CASCADE, related_name='music_plays')
     event_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     video_id = models.CharField(max_length=11)
     played_at = models.DateTimeField(db_index=True)
     recorded_at = models.DateTimeField(default=timezone.now)
+    # Null means the duration was not recorded by an older app version.
+    listened_seconds = models.FloatField(null=True, blank=True)
+    qualified = models.BooleanField(default=True)

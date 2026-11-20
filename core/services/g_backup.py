@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+import math
 import ntpath
 import os
 import re
@@ -250,6 +251,32 @@ def _match_object(obj, fields, records, legacy_datetime_precision):
     return first(query.filter(**lookup))
 
 
+def _music_play_restore_values(obj, existing, fields):
+    """Merge cumulative listening observations without undoing newer progress."""
+    duration = fields.get('listened_seconds')
+    qualified = fields.get('qualified', True)  # Old backups contain qualified plays only.
+    if duration is not None and (
+            type(duration) not in (int, float) or not 0 <= duration <= 2147483647
+            or not math.isfinite(duration)):
+        raise ValueError('Invalid music listening duration.')
+    if type(qualified) is not bool:
+        raise ValueError('Invalid music play qualification.')
+    if not qualified and duration is None:
+        raise ValueError('A short music listen must include its listening duration.')
+    played_at = obj.played_at
+    if existing is not None:
+        if existing.item_id != obj.item_id or existing.video_id != obj.video_id:
+            raise ValueError('Music play identifier belongs to a different item or video.')
+        durations = [value for value in (existing.listened_seconds, duration) if value is not None]
+        duration = max(durations) if durations else None
+        # Qualification moves the date from the short listen's start to the
+        # qualifying play. Stale/unqualified backups must not move it back.
+        if existing.qualified or not qualified:
+            played_at = existing.played_at
+        qualified = existing.qualified or qualified
+    return {'listened_seconds': duration, 'qualified': qualified, 'played_at': played_at}
+
+
 def _restore_database(records, registry, task, total, legacy_datetime_precision=False):
     processed = 0
     _report_progress(task, 0, total, 'Restoring database')
@@ -276,6 +303,7 @@ def _restore_database(records, registry, task, total, legacy_datetime_precision=
                     setattr(obj, field.attname, parent_id)
 
                 existing = _match_object(obj, record['fields'], records, legacy_datetime_precision)
+                music_values = _music_play_restore_values(obj, existing, record['fields']) if label == 'core.musicplay' else None
                 target = existing or obj
                 if existing:
                     # Old backups must not reset settings/fields they never contained.
@@ -293,6 +321,9 @@ def _restore_database(records, registry, task, total, legacy_datetime_precision=
                     for field in model._meta.fields:
                         if (getattr(field, 'auto_now', False) or getattr(field, 'auto_now_add', False)) and getattr(target, field.attname) is None:
                             setattr(target, field.attname, timezone.now())
+                if music_values is not None:
+                    for name, value in music_values.items():
+                        setattr(target, name, value)
                 # raw=True preserves auto_now/auto_now_add values from the backup.
                 models.Model.save_base(target, raw=True, force_insert=existing is None)
                 records.set_mapping(label, old_id, target.pk)

@@ -8,7 +8,7 @@ from heapq import heappush, heappushpop, nlargest
 from urllib.parse import parse_qs, urlsplit
 
 from django.conf import settings
-from django.db.models import Count, Q
+from django.db.models import Count, Q, Sum
 from django.urls import NoReverseMatch, reverse
 from django.utils import timezone
 
@@ -210,6 +210,17 @@ def _duration_label(minutes):
     return f'{hours:,} h {remainder} m' if hours else f'{remainder} m'
 
 
+def _listening_duration_label(seconds):
+    """Keep short listening sessions visible instead of rounding them to zero."""
+    hours, remainder = divmod(max(0, round(seconds)), 3600)
+    minutes, seconds = divmod(remainder, 60)
+    if hours:
+        return f'{hours:,} h {minutes} m'
+    if minutes:
+        return f'{minutes} m {seconds} s' if seconds else f'{minutes} m'
+    return f'{seconds} s'
+
+
 def _quantity_label(value, unit):
     return f'{value:,} {unit}{"" if value == 1 else "s"}'
 
@@ -407,8 +418,14 @@ def _youtube_video_id(url):
 
 def _music_stats(year, start, end, rating_mode):
     plays = MusicPlay.objects.filter(played_at__gte=start, played_at__lt=end)
-    counts = plays.aggregate(plays=Count('id'), unique_items=Count('item_id', distinct=True))
-    leaders = list(plays.values('item_id').annotate(plays=Count('id')).order_by('-plays', 'item_id')[:10])
+    qualified = Q(qualified=True)
+    counts = plays.aggregate(
+        plays=Count('id', filter=qualified),
+        unique_items=Count('item_id', distinct=True, filter=qualified),
+        listening_seconds=Sum('listened_seconds', default=0),
+        timed_listens=Count('listened_seconds'),
+    )
+    leaders = list(plays.filter(qualified=True).values('item_id').annotate(plays=Count('id')).order_by('-plays', 'item_id')[:10])
     rows = {
         row['id']: row for row in MediaItem.objects.filter(pk__in=[item['item_id'] for item in leaders]).values(*CARD_FIELDS)
     }
@@ -491,9 +508,9 @@ def _media_summaries(year, completed_rows, tracked, music, media_order, rating_m
             details.append(f'{_quantity_label(secondary_fallbacks[kind], unit)} without {primary_unit} progress')
         media_totals[kind] = {'value_label': value_label, 'detail': ' · '.join(details), 'tooltip': tooltip}
 
-    if music['plays']:
+    if music['plays'] or music['listening_seconds'] > 0:
         media_totals['music'] = {
-            'value_label': _duration_label(music['plays'] * 2),
+            'value_label': _listening_duration_label(music['listening_seconds']) if music['timed_listens'] else '—',
             'detail': '',
             'tooltip': '',
         }
