@@ -24,6 +24,7 @@ from core.services.p_home import (
 )
 from core.services.m_people import fetch_actor_data, fetch_character_data, resolve_person_identity
 from core.services.g_utils import get_ordered_types
+from core.services.p_year_review import year_review_calendar
 
 logger = logging.getLogger(__name__)
 
@@ -421,6 +422,7 @@ def home(request):
         {
             "favorite_home_sections": favorite_home_sections,
             "favorite_sections_dict": visible_media_sections,
+            "home_review_year": year_review_calendar()['home_year'],
             "stats": stats,
             "stats_blocks": stats_blocks,
             "extra_stats": extra_stats,

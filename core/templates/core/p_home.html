@@ -43,11 +43,11 @@
 
 <!-- Separator Bar -->
 <div class="separator-bar">
-{% comment %}TODO after design sign-off: show Dec 20–Jan 7; January opens the previous review year.{% endcomment %}
-{% now 'Y' as current_review_year %}
-<a href="{% url 'year_review_year' current_review_year %}" class="home-review-button{% if favorite_sections_dict.Music %} home-review-button--with-music{% endif %}" title="{{ current_review_year }} Year in Review" aria-label="Open your {{ current_review_year }} Year in Review">
+{% if home_review_year %}
+<a href="{% url 'year_review_year' home_review_year %}" class="home-review-button{% if favorite_sections_dict.Music %} home-review-button--with-music{% endif %}" title="{{ home_review_year }} Year in Review" aria-label="Open your {{ home_review_year }} Year in Review">
   <span class="home-review-label">Year in Review</span>
 </a>
+{% endif %}
 {% if favorite_sections_dict.Music %}
 <label class="music-player-btn">
   <input type="checkbox" id="music-player-toggle" data-mode="favorites">

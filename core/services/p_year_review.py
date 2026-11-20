@@ -54,6 +54,18 @@ def _local_date(value):
     return timezone.localtime(value) if timezone.is_aware(value) else value
 
 
+def year_review_calendar(today=None):
+    if today is None:
+        today = _local_date(timezone.now()).date()
+    month_day = (today.month, today.day)
+    latest_year = today.year if month_day >= (12, 20) else today.year - 1
+    latest_year = max(1, min(latest_year, 9998))
+    return {
+        'latest_year': latest_year,
+        'home_year': latest_year if month_day >= (12, 20) or month_day <= (1, 7) else None,
+    }
+
+
 def _year_start(year):
     value = datetime(year, 1, 1)
     return timezone.make_aware(value) if settings.USE_TZ else value
@@ -559,15 +571,12 @@ def _media_summaries(year, completed_rows, tracked, music, media_order, rating_m
 
 
 def build_year_review(year=None, app_settings=None):
-    years = _available_years()
-    current_year = _local_date(timezone.now()).year
-    if year is None:
-        past_years = [value for value in years if value <= current_year]
-        year = current_year if current_year in years else max(past_years, default=current_year)
-    year = int(year)
-    if not 1 <= year <= 9998:
+    latest_year = year_review_calendar()['latest_year']
+    year = latest_year if year is None else int(year)
+    if not 1 <= year <= latest_year:
         raise ValueError('Invalid review year.')
-    years.add(year)
+    years = {value for value in _available_years() if value <= latest_year}
+    years.update((year, latest_year))
     start, end = year_bounds(year)
     if app_settings is None:
         app_settings = AppSettings.objects.first()

@@ -7,12 +7,13 @@ from urllib.parse import unquote, urlsplit
 import requests
 from django.conf import settings
 from django.http import FileResponse, Http404, HttpResponse
-from django.shortcuts import render
+from django.shortcuts import redirect, render
+from django.urls import reverse
 from django.views.decorators.http import require_GET
 
 from core.models import AppSettings, MediaItem, MusicPlay
 from core.services.g_favorites_export import IMAGE_TYPES, MAX_IMAGE_BYTES
-from core.services.p_year_review import build_year_review, year_bounds
+from core.services.p_year_review import build_year_review, year_bounds, year_review_calendar
 
 
 def _valid_year(year):
@@ -30,6 +31,12 @@ def year_review(request, year=None):
         year = int(value)
     if year is not None:
         _valid_year(year)
+        latest_year = year_review_calendar()['latest_year']
+        if year > latest_year:
+            url = reverse('year_review_year', args=[latest_year])
+            if request.GET.get('browse') == '1':
+                url += '?browse=1'
+            return redirect(url)
     app_settings = AppSettings.objects.only('theme_mode', 'rating_mode', 'favorite_sections_order').first()
     review = build_year_review(year, app_settings=app_settings)
     has_data = bool(
@@ -48,7 +55,10 @@ def year_review(request, year=None):
 @require_GET
 def year_review_image(request, year, item_id):
     """Serve an eligible saved cover on our origin for canvas downloads."""
-    start, end = year_bounds(_valid_year(year))
+    year = _valid_year(year)
+    if year > year_review_calendar()['latest_year']:
+        raise Http404('Invalid review year.')
+    start, end = year_bounds(year)
     item = MediaItem.objects.filter(pk=item_id).only('cover_url', 'media_type', 'status', 'date_added').first()
     if item is None:
         raise Http404
