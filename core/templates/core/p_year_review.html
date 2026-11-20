@@ -89,16 +89,35 @@
   <section id="review-stats" class="review-section" aria-labelledby="review-stats-title">
     <div class="review-section-heading"><div><span class="review-section-mark" aria-hidden="true">✧</span><h2 id="review-stats-title">Stats</h2></div></div>
     <div class="review-stat-cards">
-      {% if review.stats.movie_count %}<div class="review-stat"><span class="review-stat-label">Time with movies</span><strong>{% if review.stats.movie_runtime_count %}{{ review.stats.movie_hours_label }}{% else %}—{% endif %}</strong></div>{% endif %}
+      <div class="review-stat review-stat--time"><span class="review-stat-label">Total screen time</span><strong>{{ review.stats.total_screen_time_label }}</strong><span class="review-stat-detail">Movies, TV Shows, Anime, Games</span></div>
+      <div class="review-stat review-stat--media">
+        <span class="review-stat-label">Time with each media</span>
+        <div class="review-progress-metrics">
+          {% for media in review.stats.media_totals %}<div{% if media.tooltip %} title="{{ media.tooltip }}"{% endif %}><strong>{{ media.value_label }}</strong><span>{{ media.label }}</span>{% if media.detail %}<small>{{ media.detail }}</small>{% endif %}</div>{% empty %}<span class="review-stat-detail">—</span>{% endfor %}
+        </div>
+      </div>
       {% include 'core/p_year_review_ratings.html' %}
-      {% if review.stats.tracked.watch_minutes or review.stats.tracked.game_hours %}<div class="review-stat review-stat--time" title="Completed movie runtimes plus recorded TV/anime episode estimates and game hours."><span class="review-stat-label">Estimated screen time</span><strong>{{ review.stats.tracked.estimated_time_label }}</strong><span class="review-stat-detail">Movies, episodes &amp; games</span></div>{% endif %}
-      {% if review.stats.music.plays %}<div class="review-stat"><span class="review-stat-label">Music plays</span><strong>{{ review.stats.music.plays }}</strong><span class="review-stat-detail">{{ review.stats.music.unique_items }} different entr{{ review.stats.music.unique_items|pluralize:'y,ies' }}</span></div>{% endif %}
     </div>
-    <div class="review-stat-panels">
-      {% if review.stats.media_counts %}<div class="review-panel"><h3>Your media mix</h3><div class="review-media-mix">{% for media in review.stats.media_counts %}<div class="review-mix-row" data-media="{{ media.key }}"><span>{{ media.label }}</span><div class="review-mix-track"><span style="width: {{ media.percent|stringformat:'f' }}%"></span></div><strong>{{ media.count }}</strong></div>{% endfor %}</div></div>{% endif %}
-      {% if review.stats.tracked.metrics %}<div class="review-panel"><h3>Progress recorded</h3><div class="review-progress-metrics">{% for metric in review.stats.tracked.metrics %}<div><strong>{{ metric.value }}</strong><span>{{ metric.label }}</span></div>{% endfor %}</div>{% if review.stats.tracked.first_recorded %}<p class="review-panel-note" title="Progress is attributed to the date it was recorded. Decreases correct earlier increases; existing totals are a baseline.">First recorded update: {{ review.stats.tracked.first_recorded }}</p>{% endif %}</div>{% endif %}
-      {% if review.stats.music.top_items %}<div class="review-panel review-music-panel"><h3>On repeat</h3><ol class="review-music-ranking">{% for card in review.stats.music.top_items %}<li><span class="review-track-rank">{{ forloop.counter }}</span><a href="{{ card.url }}"><span class="review-track-cover">{% if card.cover_url %}<img src="{{ card.cover_url }}" alt="" loading="lazy" decoding="async">{% endif %}</span><span>{{ card.title }}</span></a><strong>{{ card.plays }} <small>play{{ card.plays|pluralize }}</small></strong></li>{% endfor %}</ol></div>{% endif %}
+    {% if review.stats.media_counts %}<div class="review-panel review-media-mix-panel"><h3>Your media mix</h3><div class="review-media-mix">{% for media in review.stats.media_counts %}<div class="review-mix-row" data-media="{{ media.key }}"><span>{{ media.label }}</span><div class="review-mix-track"><span style="width: {{ media.percent|stringformat:'f' }}%"></span></div><strong>{{ media.count }}</strong></div>{% endfor %}</div></div>{% endif %}
+    {% if review.stats.rankings %}
+    <div class="review-ranking-panels">
+      {% for group in review.stats.rankings %}
+      <div class="review-panel">
+        <div class="review-ranking-heading"><h3>{{ group.label }}</h3>{% if group.total_label %}<span class="review-section-note">{{ group.total_label }}</span>{% endif %}</div>
+        <ol class="review-media-ranking{% if group.key == 'music' %} review-media-ranking--music{% endif %}"{% if group.items|length > 5 %} tabindex="0" aria-label="{{ group.label }} ranking"{% endif %}>
+          {% for card in group.items %}
+          <li>
+            <span class="review-track-rank">{{ forloop.counter }}</span>
+            <a href="{{ card.url }}" title="{{ card.title }}"><span class="review-track-cover">{% if card.cover_url %}<img src="{{ card.cover_url }}" alt="" loading="lazy" decoding="async">{% endif %}</span><span>{{ card.title }}</span></a>
+            {% if group.key == 'music' %}<button class="review-play-song" type="button" data-review-play="{{ card.id }}" aria-label="Play {{ card.title }}"{% if card.can_play %} title="Play {{ card.title }}"{% else %} disabled title="No saved YouTube video"{% endif %}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></button>{% endif %}
+            <strong{% if card.metric_tooltip %} title="{{ card.metric_tooltip }}"{% endif %}>{{ card.metric_label }}</strong>
+          </li>
+          {% endfor %}
+        </ol>
+      </div>
+      {% endfor %}
     </div>
+    {% endif %}
   </section>
   {% endif %}
   {% if has_review_data %}

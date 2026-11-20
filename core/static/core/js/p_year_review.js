@@ -19,6 +19,16 @@ document.addEventListener('DOMContentLoaded', () => {
     for (const character of String(seed)) value = Math.imul(value ^ character.charCodeAt(0), 16777619);
     return () => { value = Math.imul(value ^ (value >>> 16), 2246822507); return (value >>> 0) / 4294967296; };
   };
+  const rankedPlaylist = Array.isArray(review.stats?.music?.playlist) ? review.stats.music.playlist : [];
+  root.querySelectorAll('[data-review-play]').forEach(button => button.addEventListener('click', event => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!pageActive || button.disabled || typeof window.startCustomPlaylist !== 'function') return;
+    const startIndex = rankedPlaylist.findIndex(song => String(song.item_id) === button.dataset.reviewPlay);
+    if (startIndex < 0) return;
+    // Start during the click so a remembered pop-out can open immediately.
+    window.startCustomPlaylist(rankedPlaylist, startIndex);
+  }));
   const completedGrid = document.getElementById('review-completed-grid');
   const completedScroll = document.getElementById('review-completed-scroll');
   const cardTemplate = document.getElementById('review-card-template');
@@ -294,16 +304,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const countMetric = (value, label) => {
           if (Number(value) > 0) metrics.push({ value: Number(value).toLocaleString('en'), label });
         };
+        if (review.stats?.total_screen_minutes > 0) metrics.push({ value: review.stats.total_screen_time_label, label: 'Total screen time' });
         countMetric(review.counts?.completed, 'Completed');
         countMetric(review.counts?.favorites, 'Favorited');
-        if (review.stats?.movie_minutes > 0) metrics.push({ value: review.stats.movie_hours_label, label: 'Time with movies' });
         countMetric(review.stats?.music?.plays, 'Music plays');
         countMetric(review.counts?.dropped, 'Dropped');
-        for (const metric of review.stats?.tracked?.metrics || []) {
+        for (const metric of review.stats?.media_totals || []) {
           if (metrics.length >= 3) break;
-          if (Number(metric.value) > 0) metrics.push({
-            value: `${Number(metric.value).toLocaleString('en')} ${metric.unit || ''}`.trim(),
-            label: metric.label || 'Progress recorded',
+          if (metric.value_label) metrics.push({
+            value: metric.value_label,
+            label: metric.label || 'Time with each media',
           });
         }
         if (!metrics.length) metrics.push({ value: '0', label: 'Completed' });

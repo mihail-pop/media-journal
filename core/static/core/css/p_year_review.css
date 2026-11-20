@@ -138,16 +138,20 @@
 .review-show-more:hover { color: var(--review-ink) !important; background: color-mix(in srgb, var(--review-surface) 85%, var(--review-muted)); }
 .review-quiet-empty { font-size: .85rem; color: var(--review-muted); }
 
-.review-stat-cards { display: flex; flex-wrap: wrap; align-items: stretch; gap: 15px; }
-.review-stat { display: flex; flex: 1 1 205px; max-width: 310px; min-width: 0; flex-direction: column; align-items: center; justify-content: center; text-align: center; min-height: 145px; padding: 22px 24px; border-radius: 10px; background: var(--review-surface); }
+.review-stat-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 270px), 1fr)); align-items: stretch; gap: 15px; }
+.review-stat { display: flex; min-width: 0; flex-direction: column; align-items: center; justify-content: center; text-align: center; min-height: 145px; padding: 22px 24px; border-radius: 10px; background: var(--review-surface); }
+.review-stat-cards > .review-stat { max-width: none; }
 .review-stat-label { color: var(--review-muted); font-size: .77rem; }
 .review-stat > strong { display: block; margin: 12px 0 8px; font-size: clamp(25px, 2.8vw, 36px); font-weight: 500; line-height: 1.1; letter-spacing: -.04em; }
 .review-stat strong small { color: var(--review-muted); font-size: .45em; letter-spacing: 0; }
 .review-stat--time > strong { color: var(--review-accent); }
 .review-stat-detail { color: var(--review-muted); font-size: .68rem; }
-.review-stat-panels { display: grid; grid-template-columns: repeat(auto-fit, minmax(285px, 1fr)); gap: 18px; margin-top: 24px; }
+.review-media-mix-panel { margin-top: 24px; }
+.review-ranking-panels { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 24px; }
+.review-ranking-heading { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 12px; }
 .review-panel { min-width: 0; padding: 21px 0; border-top: 1px solid var(--review-line); }
 .review-panel h3 { margin: 0 0 22px; font-size: .88rem; font-weight: 500; }
+.review-ranking-heading h3 { margin: 0; }
 .review-media-mix { display: flex; flex-direction: column; gap: 13px; }
 .review-mix-row { display: grid; grid-template-columns: 76px 1fr 32px; align-items: center; gap: 12px; font-size: .73rem; }
 .review-mix-row > span { color: var(--review-muted); }
@@ -155,21 +159,30 @@
 .review-mix-track { height: 5px; overflow: hidden; border-radius: 10px; background: color-mix(in srgb, var(--review-muted) 10%, transparent); }
 .review-mix-track > span { display: block; min-width: 2px; height: 100%; border-radius: inherit; background: var(--review-accent); }
 .review-mix-row:nth-child(even) .review-mix-track > span { background: var(--review-accent-2); }
-.review-progress-metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 21px 15px; }
+.review-progress-metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; gap: 21px 15px; margin-top: 22px; }
 .review-progress-metrics > div { display: flex; flex-direction: column; gap: 6px; }
-.review-progress-metrics strong { font-size: 1.55rem; font-weight: 500; letter-spacing: -.035em; }
+.review-progress-metrics strong { font-size: 1.22rem; font-weight: 500; letter-spacing: -.035em; }
 .review-progress-metrics span { color: var(--review-muted); font-size: .69rem; }
-.review-panel-note { margin: 22px 0 0; font-size: .65rem; color: var(--review-muted); opacity: .8; }
-.review-music-ranking { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
-.review-music-ranking li { display: flex; align-items: center; gap: 11px; }
-.review-track-rank { color: var(--review-muted); width: 10px; font-size: .72rem; }
-.review-music-ranking a { display: flex; align-items: center; gap: 11px; min-width: 0; flex: 1; }
-.review-music-ranking a > span:last-child { font-size: .73rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.review-music-ranking a:hover { color: var(--review-accent); }
-.review-track-cover { display: block; position: relative; flex: 0 0 36px; width: 36px; height: 36px; overflow: hidden; border-radius: 4px; background: var(--review-surface); }
-.review-track-cover img { width: 179%; max-width: none; height: 100%; margin-left: -39.5%; object-fit: cover; }
-.review-music-ranking li > strong { font-size: .75rem; font-weight: 500; white-space: nowrap; }
-.review-music-ranking li > strong small { color: var(--review-muted); font-size: .65rem; font-weight: 400; }
+.review-progress-metrics small { color: var(--review-muted); font-size: .59rem; line-height: 1.4; }
+.review-media-ranking { --review-ranking-row-height: 44px; list-style: none; margin: 0; padding: 0 6px 0 0; display: flex; flex-direction: column; gap: 12px; max-height: calc(var(--review-ranking-row-height) * 5 + 48px); overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--review-line) transparent; }
+.review-media-ranking--music { --review-ranking-row-height: 36px; }
+.review-media-ranking:focus-visible { outline: 2px solid var(--review-accent); outline-offset: 4px; border-radius: 4px; }
+.review-media-ranking li { display: flex; flex-shrink: 0; align-items: center; gap: 9px; min-height: var(--review-ranking-row-height); }
+.review-track-rank { color: var(--review-muted); flex: 0 0 18px; text-align: right; font-size: .72rem; }
+.review-media-ranking a { display: flex; align-items: center; gap: 11px; min-width: 0; flex: 1; }
+.review-media-ranking a > span:last-child { font-size: .73rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.review-media-ranking a:hover { color: var(--review-accent); }
+.review-track-cover { display: flex; align-items: center; justify-content: center; position: relative; flex: 0 0 32px; width: 32px; height: 44px; overflow: hidden; border-radius: 4px; background: var(--review-surface); }
+.review-track-cover img { display: block; width: 100%; max-width: none; height: auto; }
+.review-media-ranking--music .review-track-cover { display: block; flex-basis: 36px; width: 36px; height: 36px; }
+.review-media-ranking--music .review-track-cover img { width: 179%; height: 100%; object-fit: cover; margin-left: -39.5%; }
+.review-media-ranking li > strong { font-size: .75rem; font-weight: 500; white-space: nowrap; }
+.review-wrap .review-play-song { display: inline-flex; flex: 0 0 26px; align-items: center; justify-content: center; width: 26px; height: 26px; padding: 5px; border-radius: 4px; background: transparent; color: var(--review-muted); opacity: 0; transition: opacity .15s, color .15s, background .15s; }
+.review-play-song svg { width: 16px; height: 16px; fill: currentColor; stroke: none; }
+.review-media-ranking li:hover .review-play-song,
+.review-media-ranking li:focus-within .review-play-song { opacity: 1; }
+.review-wrap .review-play-song:not(:disabled):hover,
+.review-wrap .review-play-song:focus-visible { color: var(--review-accent); background: var(--review-paper); }
 
 @keyframes review-cover-arrive { from { opacity: 0; translate: 0 14px; } to { opacity: 1; translate: 0 0; } }
 
@@ -179,6 +192,7 @@
   .review-collage { height: 260px; }
   .review-hero-cover { width: 30%; }
   .review-wrap { --review-columns: 6; }
+  .review-ranking-panels { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   #review-completed-grid:not(.is-ready) > :nth-child(n+13) { display: none; }
   .review-completed-scroll:has(#review-completed-grid:not(.is-ready) > :nth-child(13)) ~ .review-show-more--responsive { display: block; }
 }
@@ -197,7 +211,6 @@
   .review-grid { row-gap: 23px; }
   .review-months { gap: 3px; }
   .review-months button { padding: 7px 8px; }
-  .review-stat-panels { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 600px) {
   .review-wrap { padding: 77px 18px 32px; }
@@ -232,18 +245,20 @@
   .review-months button { font-size: .69rem; padding: 7px 8px; }
   .review-months button span { display: none; }
   .review-stat-cards { gap: 10px; }
-  .review-stat { flex-basis: 150px; max-width: none; min-height: 126px; padding: 17px 15px; }
+  .review-stat { min-height: 126px; padding: 17px 15px; }
   .review-stat-label { font-size: .68rem; }
   .review-stat > strong { font-size: 25px; margin-top: 12px; }
   .review-stat-detail { font-size: .59rem; line-height: 1.4; }
-  .review-stat-panels { grid-template-columns: 1fr; gap: 0; margin-top: 20px; }
+  .review-media-mix-panel { margin-top: 20px; }
+  .review-ranking-panels { grid-template-columns: 1fr; }
   .review-panel { padding: 22px 0; }
   .review-mix-row { grid-template-columns: 80px 1fr 30px; }
-  .review-progress-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px 12px; }
-  .review-progress-metrics strong { font-size: 1.4rem; }
+  .review-progress-metrics { gap: 20px 12px; }
   .review-progress-metrics span { font-size: .63rem; }
-  .review-panel-note { font-size: .6rem; }
 }
 @media (prefers-reduced-motion: reduce) {
   .review-wrap *, .review-wrap *::before, .review-wrap *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+@media (hover: none) {
+  .review-wrap .review-play-song { opacity: 1; }
 }
