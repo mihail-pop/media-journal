@@ -44,6 +44,8 @@ CHILD_IDENTITIES = {
     'core.mediaitemactivity': ('event_id',),
     'core.musicplay': ('event_id',),
     'core.calendarevent': ('item', 'date_added'),
+    # Source names, avatars and enabled states can change without making a new source.
+    'core.newschannel': ('media_type', 'channel_id'),
 }
 
 

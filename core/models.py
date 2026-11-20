@@ -272,6 +272,25 @@ class CollectionItem(models.Model):
     def __str__(self):
         return f"{self.collection.title} - {self.item.title} (Pos: {self.position})"
 
+class NewsChannel(models.Model):
+    """A user-added YouTube source for one media category."""
+
+    media_type = models.CharField(max_length=10, choices=MediaItem.MEDIA_TYPES)
+    channel_id = models.CharField(max_length=24)
+    name = models.CharField(max_length=200)
+    url = models.URLField(max_length=500)
+    enabled = models.BooleanField(default=True)
+    avatar_url = models.URLField(max_length=1000, blank=True, default='')
+
+    class Meta:
+        constraints: ClassVar[list[models.UniqueConstraint]] = [
+            models.UniqueConstraint(fields=('media_type', 'channel_id'), name='unique_news_channel_per_media'),
+        ]
+
+    def __str__(self):
+        return f"{self.name} ({self.get_media_type_display()})"
+
+
 class NavItem(models.Model):
     CATEGORY_CHOICES: ClassVar[list[tuple[str, str]]] = [
         ("home", "Home"),
@@ -288,6 +307,7 @@ class NavItem(models.Model):
         ("calendar", "Calendar"),
         ("discover", "Discover"),
         ("community", "Community"),
+        ("news", "News"),
     ]
 
     name = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
@@ -320,6 +340,8 @@ def default_favorite_sections_order():
 
 
 class AppSettings(models.Model):
+    # Only disabled built-in sources live here; their definitions stay in code.
+    news_disabled_channels = models.JSONField(default=dict, blank=True)
     list_card_overlay_settings = models.JSONField(default=default_list_card_overlay_settings, blank=True)
 
     def get_list_card_overlay_settings(self):

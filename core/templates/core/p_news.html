@@ -1,0 +1,80 @@
+{% extends 'core/g_base.html' %}
+{% load static %}
+
+{% block head %}
+{{ block.super }}
+<title>News - Media Journal</title>
+<link rel="stylesheet" href="{% static 'core/css/p_discover.css' %}">
+<link rel="stylesheet" href="{% static 'core/css/p_news.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="separator-bar" aria-hidden="true"></div>
+<div class="list-page-container news-page" id="news-page"
+     data-api-url="{% url 'news_api' %}" data-channels-url="{% url 'news_channels' %}"
+     data-selected-type="{{ selected_type }}" data-selected-sort="{{ selected_sort }}"
+     data-selected-order="{{ selected_order }}">
+  <button type="button" class="sidebar-toggle-btn" id="news-sidebar-toggle"
+          aria-label="News filters" aria-controls="news-sidebar" aria-expanded="false">☰</button>
+
+  <aside class="sidebar news-sidebar" id="news-sidebar" aria-label="News filters">
+    <input type="text" id="search-input" placeholder="Search" aria-label="Search videos" autocomplete="off">
+    <h3>Type</h3>
+    <div class="type-filter filter-group" role="group" aria-label="Media type">
+      {% for media in ordered_types %}
+      <button type="button" class="filter-btn type-btn{% if media.data_type == selected_type %} active{% endif %}"
+              data-type="{{ media.data_type }}" aria-pressed="{% if media.data_type == selected_type %}true{% else %}false{% endif %}">{{ media.label }}</button>
+      {% endfor %}
+    </div>
+
+    <h3>Sort By</h3>
+    <div class="news-sort-controls">
+      <div class="custom-select-wrapper news-sort-wrapper" id="news-sort-wrapper">
+        <button type="button" class="custom-select-trigger news-sort-select" id="news-sort-select"
+                aria-haspopup="listbox" aria-expanded="false" aria-controls="news-sort-options">{% if selected_sort == 'date' %}Upload Date{% else %}Views{% endif %}</button>
+        <div class="custom-options" id="news-sort-options" role="listbox" aria-label="Sort videos">
+          <button type="button" class="custom-option" data-sort="views" role="option" aria-selected="{% if selected_sort == 'views' %}true{% else %}false{% endif %}">Views</button>
+          <button type="button" class="custom-option" data-sort="date" role="option" aria-selected="{% if selected_sort == 'date' %}true{% else %}false{% endif %}">Upload Date</button>
+        </div>
+      </div>
+      <button type="button" id="news-sort-order" class="news-sort-order" data-order="{{ selected_order|default:'desc' }}"
+              aria-label="Sort {% if selected_order == 'asc' %}ascending{% else %}descending{% endif %}"></button>
+    </div>
+
+    <details class="news-sources" id="news-sources">
+      <summary>Channels</summary>
+      <div class="news-channel-list" id="news-channel-list"></div>
+      <form class="news-channel-form" id="news-channel-form">
+        <input type="url" id="news-channel-url" aria-label="YouTube channel URL" placeholder="Channel URL" autocomplete="off" required maxlength="500">
+        <button type="submit" class="news-small-button">Add</button>
+      </form>
+      <p id="news-source-feedback" class="news-source-feedback" role="status" hidden></p>
+    </details>
+  </aside>
+
+  <section class="list-content news-content" aria-label="Videos">
+    <p id="news-warning" class="news-warning" role="status" hidden></p>
+    <div id="news-status" class="news-status" role="status" aria-live="polite" hidden>
+      <p id="news-status-title"></p>
+      <p id="news-status-detail" hidden></p>
+      <button type="button" class="news-small-button" id="news-retry" hidden>Try again</button>
+    </div>
+    <div class="news-grid" id="news-videos" aria-busy="false"></div>
+    <noscript><p class="news-noscript">Enable JavaScript to view videos.</p></noscript>
+  </section>
+
+  <section class="news-delete-panel" id="news-delete-panel" role="dialog" aria-labelledby="news-delete-title" hidden>
+    <h3 id="news-delete-title">Are you sure?</h3>
+    <p id="news-delete-message"></p>
+    <div class="news-delete-actions">
+      <button type="button" id="news-delete-cancel">Cancel</button>
+      <button type="button" id="news-delete-confirm">Delete</button>
+    </div>
+  </section>
+</div>
+{% endblock %}
+
+{% block script %}
+{{ block.super }}
+<script src="{% static 'core/js/p_news.js' %}"></script>
+{% endblock %}

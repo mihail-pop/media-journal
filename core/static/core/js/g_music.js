@@ -17,11 +17,33 @@ let pendingMusicPopoutState = null;
 let musicControlsVisibility = null;
 let nextMusicPlayIsFresh = false;
 let nextMusicSessionIsFresh = false;
+const musicPlaybackKindKey = 'music_player_kind';
+const musicPlaylistRequestKey = 'music_player_playlist_request';
+let musicPlaylistGeneration = 0;
+let musicPlaybackKind = localStorage.getItem(musicPlaybackKindKey) === 'news' ? 'news' : 'music';
 const musicPlayTracking = window.createMusicPlayTracker?.({
     getPlayer: () => isMusicPlayerReady ? musicPlayer : null,
     getCookie,
     isOwner: () => localStorage.getItem('music_player_active_tab') === String(tabId),
 });
+
+function invalidateMusicPlaylistLoad(shared = true) {
+    musicPlaylistGeneration++;
+    // A separate tab/pop-out can start another queue without changing its mode.
+    if (shared) localStorage.setItem(musicPlaylistRequestKey, `${tabId}:${musicPlaylistGeneration}`);
+}
+
+function setMusicPlaybackKind(kind, preserveRequest = false) {
+    invalidateMusicPlaylistLoad(!preserveRequest);
+    musicPlaybackKind = kind === 'news' ? 'news' : 'music';
+    localStorage.setItem(musicPlaybackKindKey, musicPlaybackKind);
+}
+
+function playbackHistoryKeys() {
+    return musicPlaybackKind === 'news'
+        ? ['news_player_history', 'news_player_history_index']
+        : ['music_player_history', 'music_player_history_index'];
+}
 
 function musicPopoutWindowFeatures() {
     let width = 640;
@@ -68,7 +90,7 @@ window.prepareMusicPlayerWindow = function(force = false) {
     const popup = window.open('/music/player/', 'media-journal-music-player', musicPopoutWindowFeatures());
     if (!popup) {
         if (!force) localStorage.setItem(musicPopoutModeKey, 'false');
-        alert('Allow pop-ups for Media Journal to open the music player. The player will stay in this page.');
+        alert('Allow pop-ups for Media Journal to open the player. The player will stay in this page.');
         return;
     }
     localStorage.setItem(musicPopoutModeKey, 'true');
@@ -98,7 +120,9 @@ function musicPlayerSnapshot(videoId, time = 0, paused = false) {
         history: sessionHistory, historyIndex,
         played: playedSongs, sequential: isSequentialMode,
         videoId, time, paused, mode: localStorage.getItem('musicPlayerEnabled'),
-        tracking: musicPlayTracking?.snapshot() || null,
+        kind: musicPlaybackKind,
+        playlistRequest: localStorage.getItem(musicPlaylistRequestKey),
+        tracking: musicPlaybackKind === 'music' ? musicPlayTracking?.snapshot() || null : null,
         newPlay: nextMusicPlayIsFresh, newSession: nextMusicSessionIsFresh,
     };
 }
@@ -165,6 +189,7 @@ window.addEventListener('message', event => {
 
 function receiveMusicPopoutState(state) {
     if (!state || !Array.isArray(state.playlist) || !state.playlist.length || !state.videoId) return;
+    if (state.playlistRequest && state.playlistRequest !== localStorage.getItem(musicPlaylistRequestKey)) return;
     pendingMusicPopoutState = state;
     loadYouTubeAPI();
     if (window.YT && window.YT.Player) restoreMusicPopoutState();
@@ -174,6 +199,11 @@ function restoreMusicPopoutState() {
     const state = pendingMusicPopoutState;
     if (!state) return;
     pendingMusicPopoutState = null;
+    if (state.playlistRequest && state.playlistRequest !== localStorage.getItem(musicPlaylistRequestKey)) return;
+    const incomingKind = state.kind === 'news' ? 'news' : 'music';
+    if (musicPlaybackKind === 'music' && incomingKind === 'news') musicPlayTracking?.close();
+    // A handoff continues the same queue intent; only invalidate local work.
+    setMusicPlaybackKind(incomingKind, true);
     musicPlaylist = state.playlist;
     musicCurrentIndex = state.index;
     sessionHistory = state.history || [];
@@ -181,9 +211,9 @@ function restoreMusicPopoutState() {
     playedSongs = state.played || [];
     isSequentialMode = state.sequential;
     localStorage.setItem('musicPlayerEnabled', state.mode || 'list');
-    musicPlayTracking?.restore(state.tracking);
-    nextMusicPlayIsFresh = !!state.newPlay;
-    nextMusicSessionIsFresh = !!state.newSession;
+    musicPlayTracking?.restore(musicPlaybackKind === 'music' ? state.tracking : null);
+    nextMusicPlayIsFresh = musicPlaybackKind === 'music' && !!state.newPlay;
+    nextMusicSessionIsFresh = musicPlaybackKind === 'music' && !!state.newSession;
     saveHistory();
     claimMusicPlayer();
     createPlayer(state.videoId, state.time, state.paused);
@@ -215,16 +245,25 @@ const iconHeart = (isFav) => {
     }
 };
 
-window.startCustomPlaylist = function(playlist, startIndex) {
+function startPlayerPlaylist(playlist, startIndex, kind) {
+    if (!Array.isArray(playlist) || !playlist.length) return false;
+    startIndex = Number.isInteger(startIndex) ? Math.max(0, Math.min(startIndex, playlist.length - 1)) : 0;
     musicPlayTracking?.suspend();
-    nextMusicSessionIsFresh = !localStorage.getItem('musicPlayerEnabled')
-        || (!isMusicPlayerReady && !isMusicPopoutOpen());
-    nextMusicPlayIsFresh = true;
+    const previousKind = musicPlaybackKind;
+    if (previousKind === 'music' && kind === 'news') musicPlayTracking?.close();
+    setMusicPlaybackKind(kind);
+    if (kind === 'news') musicPlayTracking?.restore(null);
+    nextMusicSessionIsFresh = kind === 'music' && (previousKind !== 'music'
+        || !localStorage.getItem('musicPlayerEnabled') || (!isMusicPlayerReady && !isMusicPopoutOpen()));
+    nextMusicPlayIsFresh = kind === 'music';
     window.prepareMusicPlayerWindow();
-    sessionHistory = [];
-    historyIndex = -1;
+    sessionHistory = kind === 'news' ? [...playlist] : [];
+    historyIndex = kind === 'news' ? startIndex : -1;
     localStorage.removeItem('music_player_history');
     localStorage.removeItem('music_player_history_index');
+    localStorage.removeItem('news_player_history');
+    localStorage.removeItem('news_player_history_index');
+    if (kind === 'news') saveHistory();
 
     musicPlaylist = playlist;
     musicCurrentIndex = startIndex;
@@ -234,14 +273,16 @@ window.startCustomPlaylist = function(playlist, startIndex) {
     localStorage.setItem('musicPlayerEnabled', 'list');
     localStorage.setItem('music_player_playlist', JSON.stringify(playlist));
     localStorage.setItem('music_player_index', startIndex);
+    localStorage.setItem('music_player_video', playlist[startIndex].video_id);
+    localStorage.setItem('music_player_time', '0');
     claimMusicPlayer();
     
     const toggle = document.getElementById('music-player-toggle');
-    if (toggle) toggle.checked = true;
+    if (toggle) toggle.checked = kind === 'music';
 
     if (!isMusicPopout && isMusicPopoutOpen()) {
         createPlayer(musicPlaylist[musicCurrentIndex].video_id, 0);
-        return;
+        return true;
     }
     
     loadYouTubeAPI();
@@ -252,6 +293,31 @@ window.startCustomPlaylist = function(playlist, startIndex) {
         }
         createPlayer(musicPlaylist[musicCurrentIndex].video_id, 0);
     }
+    return true;
+}
+
+window.startCustomPlaylist = function(playlist, startIndex) {
+    return startPlayerPlaylist(playlist, startIndex, 'music');
+};
+
+window.startNewsPlayback = function(videos, startIndex = 0) {
+    if (!Array.isArray(videos) || !videos.length) return false;
+    const chosenVideo = videos[startIndex]?.id;
+    const seen = new Set();
+    const playlist = [];
+    for (const video of videos) {
+        const videoId = video?.id;
+        if (typeof videoId !== 'string' || !/^[A-Za-z0-9_-]{11}$/.test(videoId) || seen.has(videoId)) continue;
+        seen.add(videoId);
+        playlist.push({
+            kind: 'news', video_id: videoId, item_id: null, source_id: null, is_favorite: false,
+            title: typeof video.title === 'string' ? video.title : `Video ${videoId}`,
+            channel: typeof video.channel === 'string' ? video.channel : '',
+            thumbnail_url: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+        });
+    }
+    const index = Math.max(0, playlist.findIndex(video => video.video_id === chosenVideo));
+    return startPlayerPlaylist(playlist, index, 'news');
 };
 
 function getCookie(name) {
@@ -291,13 +357,15 @@ function initMusicPlayer() {
     return;
   }
   if (isMusicPopout) return;
+  musicPlaybackKind = localStorage.getItem(musicPlaybackKindKey) === 'news' ? 'news' : 'music';
   const savedMode = localStorage.getItem('musicPlayerEnabled');
   const toggle = document.getElementById('music-player-toggle');
   
   if (toggle) {
     const currentMode = toggle.dataset.mode;
     // Ensure the toggle is checked if we are explicitly playing a list AND we are on the music.html page ('filtered')
-    toggle.checked = (savedMode === currentMode) || (savedMode === 'list' && currentMode === 'filtered');
+    toggle.checked = musicPlaybackKind === 'music'
+        && ((savedMode === currentMode) || (savedMode === 'list' && currentMode === 'filtered'));
   }
   
   if (savedMode) {
@@ -314,9 +382,22 @@ function initMusicPlayer() {
 }
 
 function loadPlaylist() {
+  setMusicPlaybackKind(localStorage.getItem(musicPlaybackKindKey));
+  const generation = musicPlaylistGeneration;
+  const requestId = localStorage.getItem(musicPlaylistRequestKey);
+  const requestedKind = musicPlaybackKind;
   const savedMode = localStorage.getItem('musicPlayerEnabled');
   const lastVideo = localStorage.getItem('music_player_video');
   const lastTime = parseFloat(localStorage.getItem('music_player_time')) || 0;
+  const isCurrentRequest = () => generation === musicPlaylistGeneration
+      && requestId === localStorage.getItem(musicPlaylistRequestKey)
+      && requestedKind === musicPlaybackKind
+      && requestedKind === (localStorage.getItem(musicPlaybackKindKey) === 'news' ? 'news' : 'music')
+      && savedMode === localStorage.getItem('musicPlayerEnabled');
+  if (musicPlaybackKind === 'news' && savedMode !== 'list') {
+      closePlayer();
+      return;
+  }
   
   if (savedMode === 'list') {
       try {
@@ -333,14 +414,23 @@ function loadPlaylist() {
               if (musicCurrentIndex >= musicPlaylist.length) musicCurrentIndex = 0;
               playedSongs = [musicPlaylist[musicCurrentIndex].video_id];
               
-              createPlayer(lastVideo || musicPlaylist[musicCurrentIndex].video_id, lastTime);
+              const videoId = musicPlaybackKind === 'news'
+                  ? musicPlaylist[musicCurrentIndex].video_id
+                  : lastVideo || musicPlaylist[musicCurrentIndex].video_id;
+              createPlayer(videoId, lastVideo === videoId ? lastTime : 0);
               return;
           }
       } catch(e) {}
+      // A missing news queue must never turn into a random music playlist.
+      if (musicPlaybackKind === 'news') {
+          closePlayer();
+          return;
+      }
   }
 
   if (savedMode === 'filtered' && window.getFilteredMusicPlaylist) {
       window.getFilteredMusicPlaylist().then(playlist => {
+          if (!isCurrentRequest()) return;
           if (playlist && playlist.length > 0) {
               musicPlaylist = shuffleArray(playlist);
               musicCurrentIndex = 0;
@@ -364,6 +454,7 @@ function loadPlaylist() {
               localStorage.removeItem('musicPlayerEnabled');
           }
       }).catch(e => {
+          if (!isCurrentRequest()) return;
           console.error(e);
           alert("Error generating playlist.");
       });
@@ -380,6 +471,7 @@ function loadPlaylist() {
   fetch(`/api/favorite-music-videos/?mode=${savedMode}&status=${status}`)
     .then(res => res.json())
     .then(data => {
+      if (!isCurrentRequest()) return;
       if (data.videos && data.videos.length > 0) {
         musicPlaylist = shuffleArray(data.videos);
         playedSongs = [];
@@ -394,6 +486,8 @@ function loadPlaylist() {
           createPlayer(musicPlaylist[musicCurrentIndex].video_id, 0);
         }
       }
+    }).catch(error => {
+      if (isCurrentRequest()) console.error('Unable to load music playlist', error);
     });
 }
 
@@ -412,8 +506,9 @@ function createPlayer(videoId, startTime = 0, startPaused = false) {
   
   // Intercept the request to play the correct video if navigating directly from a page reload with history
   try {
-      const storedHist = JSON.parse(localStorage.getItem('music_player_history'));
-      const storedIdx = parseInt(localStorage.getItem('music_player_history_index'));
+      const [historyKey, indexKey] = playbackHistoryKeys();
+      const storedHist = JSON.parse(localStorage.getItem(historyKey));
+      const storedIdx = parseInt(localStorage.getItem(indexKey));
       if (storedHist && storedHist.length > 0 && !isNaN(storedIdx)) {
           sessionHistory = storedHist;
           historyIndex = storedIdx;
@@ -434,8 +529,8 @@ function createPlayer(videoId, startTime = 0, startPaused = false) {
   
   // Initialize Session History if starting fresh
   if (sessionHistory.length === 0) {
-      sessionHistory = [currentData];
-      historyIndex = 0;
+      sessionHistory = musicPlaybackKind === 'news' ? [...musicPlaylist] : [currentData];
+      historyIndex = musicPlaybackKind === 'news' ? musicCurrentIndex : 0;
       saveHistory();
   }
 
@@ -452,6 +547,9 @@ function createPlayer(videoId, startTime = 0, startPaused = false) {
   
   const isFavorite = currentData.is_favorite;
   const sourceId = currentData.source_id;
+  const isNews = musicPlaybackKind === 'news';
+  const detailsUrl = isNews ? `https://www.youtube.com/watch?v=${actualVideoToPlay}` : `/musicbrainz/music/${sourceId}/`;
+  if (isMusicPopout) document.title = isNews ? 'Media Journal - Video Player' : 'Media Journal - Music Player';
   
   container.innerHTML = `
     <style>
@@ -617,9 +715,9 @@ function createPlayer(videoId, startTime = 0, startPaused = false) {
        <div id="mp-left">
           <div id="mp-controls">
              <div class="mp-ctrl-group">
-                <button id="mp-heart" class="mp-btn" title="Favorite" data-item-id="${currentData.item_id}" data-favorite="${isFavorite}">${iconHeart(isFavorite)}</button>
-                <a id="mp-info" href="/musicbrainz/music/${sourceId}/" class="mp-btn" title="Details">${iconInfo}</a>
-                <button id="mp-toggle-hist" class="mp-btn" title="Toggle History">${iconHistory}</button>
+                <button id="mp-heart" class="mp-btn" title="Favorite" data-item-id="${isNews ? '' : currentData.item_id}" data-favorite="${isFavorite}"${isNews ? ' style="display:none"' : ''}>${iconHeart(isFavorite)}</button>
+                <a id="mp-info" href="${detailsUrl}" class="mp-btn" title="${isNews ? 'Watch on YouTube' : 'Details'}"${isNews ? ' target="_blank" rel="noopener noreferrer"' : ''}>${iconInfo}</a>
+                <button id="mp-toggle-hist" class="mp-btn" title="${isNews ? 'Toggle Queue' : 'Toggle History'}">${iconHistory}</button>
              </div>
              <div class="mp-ctrl-group mp-ctrl-center">
                 <button id="mp-prev" class="mp-btn" title="Previous">${iconPrev}</button>
@@ -653,8 +751,10 @@ function createPlayer(videoId, startTime = 0, startPaused = false) {
   bindMusicPlayerDragging(container);
   musicControlsVisibility = bindMusicControlsVisibility(container);
 
-  if (nextMusicSessionIsFresh) musicPlayTracking?.startSession({ fresh: true });
-  musicPlayTracking?.begin(currentData, { fresh: nextMusicPlayIsFresh });
+  if (!isNews) {
+      if (nextMusicSessionIsFresh) musicPlayTracking?.startSession({ fresh: true });
+      musicPlayTracking?.begin(currentData, { fresh: nextMusicPlayIsFresh });
+  }
   nextMusicPlayIsFresh = false;
   nextMusicSessionIsFresh = false;
   
@@ -672,7 +772,7 @@ function createPlayer(videoId, startTime = 0, startPaused = false) {
         if (e.target !== musicPlayer) return;
         isMusicPlayerReady = true;
         if (!startPaused) e.target.playVideo();
-        musicPlayTracking?.stateChange(e.target.getPlayerState());
+        if (musicPlaybackKind === 'music') musicPlayTracking?.stateChange(e.target.getPlayerState());
         musicControlsVisibility?.refresh();
       },
       onStateChange: onPlayerStateChange
@@ -928,8 +1028,9 @@ function updateContainerSize() {
 }
 
 function saveHistory() {
-    localStorage.setItem('music_player_history', JSON.stringify(sessionHistory));
-    localStorage.setItem('music_player_history_index', historyIndex.toString());
+    const [historyKey, indexKey] = playbackHistoryKeys();
+    localStorage.setItem(historyKey, JSON.stringify(sessionHistory));
+    localStorage.setItem(indexKey, historyIndex.toString());
 }
 
 function bindPlayerEvents() {
@@ -961,6 +1062,9 @@ function bindPlayerEvents() {
     });
 
     document.getElementById('mp-info').addEventListener('click', event => {
+        // News has no local media details page. Its external link can open
+        // normally without redirecting the app/opener away from Media Journal.
+        if (musicPlaybackKind === 'news') return;
         if (isMusicPopout) {
             event.preventDefault();
             if (window.opener && !window.opener.closed) {
@@ -989,6 +1093,7 @@ function bindPlayerEvents() {
     });
     
     document.getElementById('mp-heart').addEventListener('click', function() {
+        if (musicPlaybackKind === 'news') return;
         const itemId = this.dataset.itemId;
         const isFav = this.dataset.favorite === 'true';
         if (!itemId) return;
@@ -1022,19 +1127,23 @@ function bindPlayerEvents() {
 }
 
 function clearMusicPlaybackState() {
+    invalidateMusicPlaylistLoad();
     for (const key of [
         'musicPlayerEnabled', 'music_player_playlist', 'music_player_index',
         'music_player_video', 'music_player_time', 'music_player_active_tab',
         'music_player_history', 'music_player_history_index', musicPopoutCommandKey,
+        'news_player_history', 'news_player_history_index', musicPlaybackKindKey, musicPlaylistRequestKey,
     ]) {
         localStorage.removeItem(key);
     }
     sessionHistory = [];
     historyIndex = -1;
+    musicPlaybackKind = 'music';
 }
 
 function closePlayer() {
-    musicPlayTracking?.close();
+    if (musicPlaybackKind === 'music') musicPlayTracking?.close();
+    else musicPlayTracking?.restore(null);
     nextMusicPlayIsFresh = false;
     nextMusicSessionIsFresh = false;
     setMusicPlayerScrollLock(false);
@@ -1058,15 +1167,18 @@ function renderHistoryList() {
     sessionHistory.forEach((item, index) => {
         const div = document.createElement('div');
         div.className = 'history-item' + (index === historyIndex ? ' active' : '');
-        const titleText = item.title || ('Track ' + item.video_id); 
-        
-        div.innerHTML = `
-            <div style="width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--mp-history-font-size, 13px); line-height: 1.5; color: inherit;" title="${titleText}">
-                ${titleText}
-            </div>
-        `;
+        const titleText = item.title || ((musicPlaybackKind === 'news' ? 'Video ' : 'Track ') + item.video_id);
+        const label = document.createElement('div');
+        label.style.cssText = 'width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--mp-history-font-size, 13px);line-height:1.5;color:inherit';
+        label.title = titleText;
+        label.textContent = titleText;
+        div.appendChild(label);
         div.addEventListener('click', () => {
             historyIndex = index;
+            if (musicPlaybackKind === 'news') {
+                musicCurrentIndex = index;
+                localStorage.setItem('music_player_index', index);
+            }
             saveHistory();
             playVideoInternal(sessionHistory[historyIndex]);
         });
@@ -1081,20 +1193,30 @@ function renderHistoryList() {
 
 function playVideoInternal(videoObj) {
     if (musicPlayer && isMusicPlayerReady) {
-        musicPlayTracking?.begin(videoObj, { fresh: true });
+        if (musicPlaybackKind === 'music') musicPlayTracking?.begin(videoObj, { fresh: true });
         musicPlayer.loadVideoById(videoObj.video_id);
         localStorage.setItem('music_player_video', videoObj.video_id);
         localStorage.setItem('music_player_time', '0');
         
         const heartBtn = document.getElementById('mp-heart');
         if (heartBtn) {
-          heartBtn.dataset.itemId = videoObj.item_id;
+          heartBtn.style.display = musicPlaybackKind === 'news' ? 'none' : '';
+          heartBtn.dataset.itemId = musicPlaybackKind === 'news' ? '' : videoObj.item_id;
           heartBtn.dataset.favorite = videoObj.is_favorite;
           heartBtn.innerHTML = iconHeart(videoObj.is_favorite);
         }
         const infoLink = document.getElementById('mp-info');
-        if (infoLink && videoObj.source_id) {
-          infoLink.href = `/musicbrainz/music/${videoObj.source_id}/`;
+        if (infoLink) {
+          const isNews = musicPlaybackKind === 'news';
+          infoLink.href = isNews ? `https://www.youtube.com/watch?v=${videoObj.video_id}` : `/musicbrainz/music/${videoObj.source_id}/`;
+          infoLink.title = isNews ? 'Watch on YouTube' : 'Details';
+          if (isNews) {
+              infoLink.target = '_blank';
+              infoLink.rel = 'noopener noreferrer';
+          } else {
+              infoLink.removeAttribute('target');
+              infoLink.removeAttribute('rel');
+          }
         }
         
         renderHistoryList();
@@ -1103,7 +1225,7 @@ function playVideoInternal(videoObj) {
 
 function onPlayerStateChange(event) {
   if (event.target && event.target !== musicPlayer) return;
-  musicPlayTracking?.stateChange(event.data);
+  if (musicPlaybackKind === 'music') musicPlayTracking?.stateChange(event.data);
   musicControlsVisibility?.refresh();
   const ppBtn = document.getElementById('mp-playpause');
   if (ppBtn) {
@@ -1138,6 +1260,10 @@ function onPlayerStateChange(event) {
 }
 
 function playPrev() {
+    if (musicPlaybackKind === 'news') {
+        playNewsQueueItem(musicCurrentIndex - 1);
+        return;
+    }
     if (historyIndex > 0) {
         historyIndex--;
         saveHistory();
@@ -1146,6 +1272,10 @@ function playPrev() {
 }
 
 function playNext() {
+  if (musicPlaybackKind === 'news') {
+      playNewsQueueItem(musicCurrentIndex + 1);
+      return;
+  }
   if (historyIndex < sessionHistory.length - 1) {
       historyIndex++;
       saveHistory();
@@ -1180,6 +1310,17 @@ function playNext() {
   playVideoInternal(nextVideo);
 }
 
+function playNewsQueueItem(index) {
+    if (!musicPlaylist.length || !musicPlayer || !isMusicPlayerReady) return;
+    musicCurrentIndex = ((index % musicPlaylist.length) + musicPlaylist.length) % musicPlaylist.length;
+    // News history is a fixed queue, rather than an ever-growing listening log.
+    sessionHistory = [...musicPlaylist];
+    historyIndex = musicCurrentIndex;
+    localStorage.setItem('music_player_index', musicCurrentIndex);
+    saveHistory();
+    playVideoInternal(musicPlaylist[musicCurrentIndex]);
+}
+
 function shuffleArray(array) {
   const arr = [...array];
   for (let i = arr.length - 1; i > 0; i--) {
@@ -1196,7 +1337,8 @@ window.addEventListener('pagehide', () => {
     const owner = JSON.parse(localStorage.getItem(musicPopoutOwnerKey) || 'null');
     // Returning to the page releases ownership before closing this window.
     if (owner && owner.id === tabId) {
-      musicPlayTracking?.close();
+      if (musicPlaybackKind === 'music') musicPlayTracking?.close();
+      else musicPlayTracking?.restore(null);
       localStorage.removeItem(musicPopoutOwnerKey);
       clearMusicPlaybackState();
     } else {
@@ -1205,7 +1347,8 @@ window.addEventListener('pagehide', () => {
     return;
   }
   musicPlayTracking?.suspend();
-  if (musicPlayer && isMusicPlayerReady && typeof musicPlayer.getCurrentTime === 'function' && localStorage.getItem('musicPlayerEnabled')) {
+  if (musicPlayer && isMusicPlayerReady && typeof musicPlayer.getCurrentTime === 'function'
+      && localStorage.getItem('musicPlayerEnabled') && localStorage.getItem('music_player_active_tab') === String(tabId)) {
     try {
       const time = musicPlayer.getCurrentTime();
       const videoId = musicPlaylist[musicCurrentIndex].video_id;
@@ -1250,14 +1393,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const toggle = document.getElementById('music-player-toggle');
   if (toggle) {
     const savedMode = localStorage.getItem('musicPlayerEnabled');
-    toggle.checked = savedMode === toggle.dataset.mode || (savedMode === 'list' && toggle.dataset.mode === 'filtered');
+    toggle.checked = musicPlaybackKind === 'music'
+        && (savedMode === toggle.dataset.mode || (savedMode === 'list' && toggle.dataset.mode === 'filtered'));
     toggle.addEventListener('change', function() {
+      invalidateMusicPlaylistLoad();
       localStorage.removeItem('music_player_playlist');
       localStorage.removeItem('music_player_index');
       const enabled = this.checked;
       const mode = this.dataset.mode;
       
       if (enabled) {
+        musicPlayTracking?.suspend();
+        setMusicPlaybackKind('music');
         const wasPlaying = isMusicPlayerReady || isMusicPopoutOpen();
         window.prepareMusicPlayerWindow();
         const oldMode = localStorage.getItem('musicPlayerEnabled');
@@ -1271,6 +1418,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // Fresh start: wipe local history
         localStorage.removeItem('music_player_history');
         localStorage.removeItem('music_player_history_index');
+        localStorage.removeItem('news_player_history');
+        localStorage.removeItem('news_player_history_index');
         sessionHistory = [];
         historyIndex = -1;
         
@@ -1279,7 +1428,7 @@ document.addEventListener('DOMContentLoaded', () => {
         loadYouTubeAPI();
       } else {
         if (!isMusicPopout && isMusicPopoutOpen()) sendMusicPopoutCommand('stop');
-        else musicPlayTracking?.close();
+        else if (musicPlaybackKind === 'music') musicPlayTracking?.close();
         nextMusicPlayIsFresh = false;
         nextMusicSessionIsFresh = false;
         localStorage.removeItem('musicPlayerEnabled');
@@ -1347,11 +1496,13 @@ document.addEventListener('DOMContentLoaded', () => {
       hideEmbeddedMusicPlayer();
     }
     if (isMusicPopout) return;
-    if (e.key === 'musicPlayerEnabled') {
+    if (e.key === 'musicPlayerEnabled' || e.key === musicPlaybackKindKey) {
       if (toggle) {
-        toggle.checked = e.newValue === toggle.dataset.mode || (e.newValue === 'list' && toggle.dataset.mode === 'filtered');
+        const storedMode = localStorage.getItem('musicPlayerEnabled');
+        toggle.checked = localStorage.getItem(musicPlaybackKindKey) !== 'news'
+            && (storedMode === toggle.dataset.mode || (storedMode === 'list' && toggle.dataset.mode === 'filtered'));
       }
-      if (!localStorage.getItem('musicPlayerEnabled')) {
+      if (e.key === 'musicPlayerEnabled' && !localStorage.getItem('musicPlayerEnabled')) {
         hideEmbeddedMusicPlayer();
         return;
       }
@@ -1365,7 +1516,10 @@ document.addEventListener('DOMContentLoaded', () => {
           try {
             const time = musicPlayer.getCurrentTime();
             const videoId = musicPlaylist[musicCurrentIndex]?.video_id;
-            if (videoId) {
+            // A newly chosen queue may already belong to the other tab. Only
+            // transfer this time if it is still resuming the same video/kind.
+            if (videoId && localStorage.getItem('music_player_video') === videoId
+                && (localStorage.getItem(musicPlaybackKindKey) === 'news' ? 'news' : 'music') === musicPlaybackKind) {
               localStorage.setItem('music_player_time', time);
               localStorage.setItem('music_player_video', videoId);
             }
