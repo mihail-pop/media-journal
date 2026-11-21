@@ -20,9 +20,9 @@ from core.services.p_news import (
 @never_cache
 def news(request):
     ordered_types = get_ordered_types()
-    media_type = request.GET.get('type', ordered_types[0]['data_type'])
+    media_type = request.GET.get('type', 'movie')
     if media_type not in NEWS_CHANNELS:
-        media_type = ordered_types[0]['data_type']
+        media_type = 'movie'
     sort = request.GET.get('sort', 'views')
     if sort not in NEWS_SORTS:
         sort = 'views'

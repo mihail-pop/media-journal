@@ -30,11 +30,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const portrait = window.matchMedia('(orientation: portrait)');
   const compactNumber = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
   const wholeNumber = new Intl.NumberFormat('en');
-  const defaultType = page.dataset.selectedType;
+  const defaultType = 'movie';
+  const sortPreferenceKey = 'news-sort-preference';
 
-  let selectedType = defaultType;
+  let selectedType = types.has(page.dataset.selectedType) ? page.dataset.selectedType : defaultType;
   let selectedSort = page.dataset.selectedSort === 'date' ? 'date' : 'views';
   let selectedOrder = page.dataset.selectedOrder === 'asc' ? 'asc' : 'desc';
+  try {
+    const saved = JSON.parse(localStorage.getItem(sortPreferenceKey));
+    const params = new URLSearchParams(window.location.search);
+    if (!params.has('sort') && ['views', 'date'].includes(saved?.sort)) selectedSort = saved.sort;
+    if (!params.has('order') && ['asc', 'desc'].includes(saved?.order)) selectedOrder = saved.order;
+  } catch { /* Keep the defaults when browser storage is unavailable. */ }
   let requestNumber = 0;
   let pendingRequest = null;
   let channelRevision = 0;
@@ -405,10 +412,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function changeSelection(type, sort, order, pushHistory = true) {
     const typeChanged = type !== selectedType;
+    const sortChanged = sort !== selectedSort || order !== selectedOrder;
     if (!typeChanged && sort === selectedSort && order === selectedOrder) return;
     selectedType = type;
     selectedSort = sort;
     selectedOrder = order;
+    if (sortChanged) {
+      try {
+        localStorage.setItem(sortPreferenceKey, JSON.stringify({ sort, order }));
+      } catch { /* Sorting still works without browser storage. */ }
+    }
     if (pushHistory) updateUrl(true);
     closeSort();
     updateSelection();

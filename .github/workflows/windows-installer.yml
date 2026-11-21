@@ -1,0 +1,59 @@
+name: Windows installer
+
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare the pinned portable compiler
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $tools = Join-Path $env:GITHUB_WORKSPACE 'build\windows-tools'
+          New-Item -ItemType Directory -Force -Path $tools | Out-Null
+          $setup = Join-Path $tools 'innosetup-6.7.4.exe'
+          Invoke-WebRequest -Uri 'https://github.com/jrsoftware/issrc/releases/download/is-6_7_4/innosetup-6.7.4.exe' -OutFile $setup
+          if ((Get-FileHash -Algorithm SHA256 -LiteralPath $setup).Hash -ne 'a549929319f9120716677c685535ca4671e4b937b5fdc87e2585f32d8eb30e8c') {
+            throw 'Inno Setup checksum mismatch.'
+          }
+          $portable = Join-Path $tools 'inno'
+          $process = Start-Process -FilePath $setup -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/CURRENTUSER', '/PORTABLE=1', "/DIR=`"$portable`"") -Wait -PassThru -WindowStyle Hidden
+          if ($process.ExitCode -ne 0) { throw 'Could not prepare the portable Inno Setup compiler.' }
+
+      - name: Build Setup.exe
+        shell: pwsh
+        run: |
+          $version = '1.0.0'
+          if ($env:GITHUB_REF_TYPE -eq 'tag' -and $env:GITHUB_REF_NAME -match '^v?(\d+\.\d+\.\d+)$') {
+            $version = $Matches[1]
+          }
+          ./installer/windows/build.ps1 -Version $version
+
+      - name: Keep the installer and checksum
+        uses: actions/upload-artifact@v4
+        with:
+          name: MediaJournal-Windows-Setup
+          path: |
+            dist/windows/MediaJournalSetup.exe
+            dist/windows/MediaJournalSetup.exe.sha256
+          if-no-files-found: error
+
+      - name: Attach to the published release
+        if: github.event_name == 'release' && !github.event.release.prerelease
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          gh release upload "$env:RELEASE_TAG" dist/windows/MediaJournalSetup.exe dist/windows/MediaJournalSetup.exe.sha256 --clobber

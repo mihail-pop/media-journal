@@ -5,6 +5,10 @@ __pycache__/
 .env
 *.log
 
+# Generated Windows installers and downloaded build tools
+/build/
+/dist/
+
 site/
 /staticfiles/
 .vscode/

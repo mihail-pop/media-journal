@@ -13,6 +13,9 @@ __pycache__/
 site/
 .git/
 .github/
+installer/
+build/
+dist/
 .vscode/
 .venv/
 venv/
