@@ -87,71 +87,90 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Check favorite status
+    // Resolve favorite state before allowing any destructive action.
     const favForm = document.getElementById('favorite-form');
     let favoriteStatusReady = false;
     let favoriteSaving = false;
+
+    function updateFavoriteControls() {
+        updateAssignmentVisibility();
+        if (typeof updateRefreshButton === 'function') updateRefreshButton();
+        if (typeof updateUploadButton === 'function') updateUploadButton();
+        const refresh = document.getElementById('refresh-person-btn');
+        const upload = document.getElementById('upload-person-image-btn');
+        const edit = document.getElementById('edit-person-btn');
+        if (refresh) refresh.disabled = favoriteSaving || isRefreshing;
+        if (upload) upload.disabled = favoriteSaving || isUploading;
+        if (edit) edit.disabled = favoriteSaving;
+    }
+
     if (favForm) {
         const personName = favForm.dataset.personName;
         const personType = favForm.dataset.personType;
         const checkbox = favForm.querySelector('input[name="favorite"]');
-        
+        checkbox.disabled = true;
         fetch(`/api/check_favorite_person/?name=${encodeURIComponent(personName)}&type=${personType}&person_id=${encodeURIComponent(favForm.dataset.personId || '')}&source=${encodeURIComponent(favForm.dataset.personSource)}`)
-            .then(res => res.json())
-            .then(result => {
+            .then(async response => {
+                const result = await response.json();
+                if (!response.ok || typeof result.is_favorited !== 'boolean') throw new Error('Unable to check favorite status. Reload the page to try again.');
                 checkbox.checked = result.is_favorited;
                 favoriteStatusReady = true;
-                updateAssignmentVisibility();
-                updateRefreshButton();
-                updateUploadButton();
+                checkbox.disabled = false;
+                updateFavoriteControls();
                 favForm.parentElement.classList.add('loaded');
             })
-            .catch(() => {
-                checkbox.checked = false;
+            .catch(error => {
                 favoriteStatusReady = false;
-                updateAssignmentVisibility();
+                updateFavoriteControls();
                 favForm.parentElement.classList.add('loaded');
+                showNotification(error.message, 'warning');
             });
-        
-        // Toggle favorite
-        checkbox.addEventListener('change', function() {
-            favoriteSaving = true;
-            updateAssignmentVisibility();
-            const personImage = favForm.dataset.personImage;
-            const personId = favForm.dataset.personId;
-            
-            const requestData = { name: personName, image_url: personImage, type: personType, source: favForm.dataset.personSource };
-            if (personId) {
-                requestData.person_id = personId;
-            }
-            
-            fetch('/api/toggle_favorite_person/', {
+
+        async function saveFavorite(enabled) {
+            const response = await fetch('/api/toggle_favorite_person/', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCookie('csrftoken'),
-                },
-                body: JSON.stringify(requestData),
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.status === 'added' || data.status === 'removed') {
-                    checkbox.checked = data.status === 'added';
-                    favoriteStatusReady = true;
-                } else {
-                    checkbox.checked = !checkbox.checked;
-                }
-            })
-            .catch(() => {
-                checkbox.checked = !checkbox.checked;
-            })
-            .finally(() => {
-                favoriteSaving = false;
-                updateAssignmentVisibility();
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+                body: JSON.stringify({
+                    name: personName, image_url: favForm.dataset.personImage, type: personType,
+                    source: favForm.dataset.personSource, person_id: favForm.dataset.personId,
+                    favorite: enabled,
+                }),
             });
+            const data = await response.json();
+            if (!response.ok || data.status !== (enabled ? 'added' : 'removed')) throw new Error(data.error || 'Unable to update this favorite. Please try again.');
+            checkbox.checked = data.status === 'added';
+            favoriteStatusReady = true;
+        }
+
+        checkbox.addEventListener('change', async () => {
+            if (!favoriteStatusReady || favoriteSaving) return;
+            const enabled = checkbox.checked;
+            // Keep the heart selected until deletion is explicitly confirmed and succeeds.
+            checkbox.checked = !enabled;
+            favoriteSaving = true;
+            checkbox.disabled = true;
+            updateFavoriteControls();
+            try {
+                if (enabled) {
+                    await saveFavorite(true);
+                } else if (await window.confirmPersonRemoval(personType, () => saveFavorite(false))) {
+                    if (favForm.dataset.personSource === 'custom' || String(favForm.dataset.personId).startsWith('custom_')) {
+                        window.location.assign(`/favorites/?section=${personType === 'character' ? 'Characters' : 'People'}`);
+                    } else {
+                        // Clear the deleted local assignments while keeping the API person open.
+                        location.reload();
+                    }
+                }
+            } catch (error) {
+                showNotification(error.message || 'Unable to update this favorite.', 'warning');
+            } finally {
+                favoriteSaving = false;
+                checkbox.disabled = !favoriteStatusReady;
+                updateFavoriteControls();
+            }
         });
     }
-    
+
     // Refresh person data
     const refreshBtn = document.getElementById('refresh-person-btn');
     if (refreshBtn) {
@@ -347,7 +366,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const editForm = document.getElementById('edit-person-form');
     const editCloseIcons = [
         document.getElementById('edit-person-close-icon'),
-        document.getElementById('edit-person-close-btn'),
         editOverlay
     ];
 
@@ -433,215 +451,199 @@ document.addEventListener('DOMContentLoaded', function() {
     // Assign Media & Edit Role Logic
     // -----------------------------------------
     
-    const firstSectionHeader = document.querySelector('.related-media-section .section-title-wrapper');
+    const firstSectionHeader = document.querySelector('.main-colored-section .section-title-wrapper');
     const assignContainer = document.getElementById('assign-media-container');
     const assignWrapper = document.getElementById('assign-search-wrapper');
     const showAssignBtn = document.getElementById('show-assign-search-btn');
-    const favRefreshWrapper = document.querySelector('.favorite-refresh-wrapper');
-    const mainDetailContainer = document.querySelector('.main-colored-section .detail-container');
-    
-    if (assignContainer && showAssignBtn && assignWrapper) {
-        if (firstSectionHeader) {
-            // Normal behavior: Keep both inside the section header
-            firstSectionHeader.appendChild(assignContainer);
-            assignContainer.style.display = 'flex';
-        } else {
-            // Custom Person fallback: Split them up!
-            
-            // 1. Move the + button to the left column (under the poster)
-            if (favRefreshWrapper) {
-                favRefreshWrapper.appendChild(showAssignBtn);
-                showAssignBtn.style.display = 'flex';
-            }
-            
-            // 2. Move the search bar to the main container (centered)
-            if (mainDetailContainer) {
-                mainDetailContainer.prepend(assignWrapper);
-                assignWrapper.classList.add('assign-search-standalone');
-                assignWrapper.style.position = 'relative';
-                assignWrapper.style.justifyContent = 'center';
-                assignWrapper.style.marginTop = '2rem';
-                assignWrapper.style.marginBottom = '2rem';
-                assignWrapper.style.width = '100%';
-            }
-            
-            // Hide the original container
-            assignContainer.style.display = 'none';
-        }
-    }
-
-    function updateAssignmentVisibility() {
-        if (!showAssignBtn || !assignWrapper) return;
-        const saved = favoriteStatusReady && !favoriteSaving &&
-            favForm?.querySelector('input[name="favorite"]')?.checked;
-        if (!saved) {
-            showAssignBtn.style.display = 'none';
-            assignWrapper.style.display = 'none';
-        } else if (assignWrapper.style.display !== 'flex') {
-            showAssignBtn.style.display = 'flex';
-        }
-    }
-    updateAssignmentVisibility();
-
-    if (assignWrapper?.classList.contains('assign-search-standalone')) {
-        const searchInner = assignWrapper.querySelector('.assign-search-inner');
-        const lastButton = assignWrapper.querySelector('#cancel-assign-btn');
-        const alignStandalonePanels = () => {
-            const wrapperRect = assignWrapper.getBoundingClientRect();
-            const inputRect = searchInner.getBoundingClientRect();
-            const endRect = lastButton.getBoundingClientRect();
-            assignWrapper.style.setProperty('--assign-panel-left', `${inputRect.left - wrapperRect.left}px`);
-            assignWrapper.style.setProperty('--assign-panel-width', `${endRect.right - inputRect.left}px`);
-        };
-        const standaloneObserver = new ResizeObserver(alignStandalonePanels);
-        standaloneObserver.observe(assignWrapper);
-        standaloneObserver.observe(searchInner);
-        standaloneObserver.observe(lastButton);
-    }
-
     const assignInput = document.getElementById('assign-search-input');
     const assignDropdown = document.getElementById('assign-dropdown');
     const assignTagsContainer = document.getElementById('assign-tags');
     const confirmAssignBtn = document.getElementById('confirm-assign-btn');
     const cancelAssignBtn = document.getElementById('cancel-assign-btn');
-    
-    let selectedMediaIds = new Map(); // Maps ID -> Title
+    const selectedMediaIds = new Map();
     let searchTimeout = null;
+    let searchController = null;
+    let assignmentOpen = false;
+    let assignmentSaving = false;
+
+    if (firstSectionHeader && assignContainer) firstSectionHeader.appendChild(assignContainer);
+
+    function canAssignMedia() {
+        return favoriteStatusReady && !favoriteSaving && !!favForm?.querySelector('input[name="favorite"]')?.checked;
+    }
+
+    function cancelAssignmentSearch() {
+        clearTimeout(searchTimeout);
+        searchController?.abort();
+        searchController = null;
+        assignDropdown.style.display = 'none';
+    }
+
+    function updateAssignmentVisibility() {
+        if (!assignContainer || !assignWrapper || !showAssignBtn) return;
+        const available = canAssignMedia();
+        assignContainer.style.display = available ? 'flex' : 'none';
+        assignWrapper.style.display = available && assignmentOpen ? 'flex' : 'none';
+        showAssignBtn.style.display = available && !assignmentOpen ? 'flex' : 'none';
+        showAssignBtn.disabled = assignmentSaving;
+        assignInput.disabled = assignmentSaving;
+        cancelAssignBtn.disabled = assignmentSaving;
+        confirmAssignBtn.disabled = assignmentSaving || selectedMediaIds.size === 0;
+        if (!available) cancelAssignmentSearch();
+    }
+    updateAssignmentVisibility();
+
+    function renderAssignTags() {
+        assignTagsContainer.replaceChildren();
+        selectedMediaIds.forEach((title, id) => {
+            const tag = document.createElement('div');
+            tag.className = 'assign-tag';
+            tag.appendChild(document.createTextNode(title));
+            const remove = document.createElement('span');
+            remove.textContent = '✕';
+            remove.title = 'Remove selection';
+            remove.addEventListener('click', event => {
+                event.stopPropagation();
+                if (assignmentSaving) return;
+                selectedMediaIds.delete(id);
+                renderAssignTags();
+                const result = assignDropdown.querySelector(`[data-item-id="${id}"]`);
+                result?.classList.remove('selected');
+                result?.querySelector('.selected-x')?.remove();
+            });
+            tag.appendChild(remove);
+            assignTagsContainer.appendChild(tag);
+        });
+        confirmAssignBtn.disabled = assignmentSaving || selectedMediaIds.size === 0;
+    }
 
     if (showAssignBtn) {
         showAssignBtn.addEventListener('click', () => {
-            if (!favoriteStatusReady || favoriteSaving || !favForm?.querySelector('input[name="favorite"]')?.checked) return;
-            showAssignBtn.style.display = 'none';
-            assignWrapper.style.display = 'flex';
+            if (!canAssignMedia() || assignmentSaving) return;
+            assignmentOpen = true;
+            updateAssignmentVisibility();
             assignInput.focus();
         });
-        
         cancelAssignBtn.addEventListener('click', () => {
-            assignWrapper.style.display = 'none';
-            showAssignBtn.style.display = 'flex';
+            if (assignmentSaving) return;
+            assignmentOpen = false;
+            cancelAssignmentSearch();
             assignInput.value = '';
-            assignDropdown.style.display = 'none';
             selectedMediaIds.clear();
             renderAssignTags();
+            updateAssignmentVisibility();
+            showAssignBtn.focus({ preventScroll: true });
         });
 
-        // Search logic
-        assignInput.addEventListener('input', (e) => {
-            clearTimeout(searchTimeout);
-            const query = e.target.value.trim();
-            if (!query) {
-                assignDropdown.style.display = 'none';
-                return;
-            }
-            
-            const favForm = document.getElementById('favorite-form');
-            const pId = favForm ? favForm.dataset.personId : '';
-            const pType = favForm ? favForm.dataset.personType : '';
-            
-            searchTimeout = setTimeout(() => {
-                fetch(`/api/person/search_media/?q=${encodeURIComponent(query)}&person_id=${encodeURIComponent(pId)}&person_type=${encodeURIComponent(pType)}&source=${encodeURIComponent(favForm.dataset.personSource)}`)
-                .then(res => res.json())
-                .then(data => {
-                    assignDropdown.innerHTML = '';
-                    if (data.results.length === 0) {
-                        assignDropdown.innerHTML = '<div class="assign-search-item" style="justify-content: center; cursor: default;">No results found in library.</div>';
-                    } else {
-                        data.results.forEach(item => {
-                            const div = document.createElement('div');
-                            div.dataset.itemId = item.id;
-                            
-                            const updateUI = () => {
-                                const isSelected = selectedMediaIds.has(item.id);
-                                div.className = `assign-search-item ${isSelected ? 'selected' : ''}`;
-                                div.innerHTML = `
-                                    <img src="${item.cover}" alt="cover">
-                                    <div style="flex: 1;">
-                                        <div style="font-weight: 600;">${item.title}</div>
-                                        <div style="font-size: 0.8rem; color: #8596a5;">${item.type} ${item.year ? '• ' + item.year : ''}</div>
-                                    </div>
-                                    ${isSelected ? '<span class="selected-x">✕</span>' : ''}
-                                `;
-                            };
-                            
-                            // Initialize item appearance
-                            updateUI();
-                            
-                            div.addEventListener('click', (e) => {
-                                e.stopPropagation(); // Prevent the document click listener from firing
-                                if (selectedMediaIds.has(item.id)) {
-                                    // Deselect if already selected
-                                    selectedMediaIds.delete(item.id);
-                                } else {
-                                    // Select
-                                    selectedMediaIds.set(item.id, item.title);
-                                }
-                                renderAssignTags();
-                                updateUI();
-                                assignInput.focus();
-                            });
-                            assignDropdown.appendChild(div);
-                        });
+        assignInput.addEventListener('input', () => {
+            cancelAssignmentSearch();
+            const query = assignInput.value.trim();
+            if (!query || !canAssignMedia() || !assignmentOpen) return;
+            const controller = new AbortController();
+            searchController = controller;
+            searchTimeout = setTimeout(async () => {
+                try {
+                    const params = new URLSearchParams({ q: query, person_id: favForm.dataset.personId,
+                        person_type: favForm.dataset.personType, source: favForm.dataset.personSource });
+                    const response = await fetch(`/api/person/search_media/?${params}`, { signal: controller.signal });
+                    const data = await response.json();
+                    if (!response.ok || !Array.isArray(data.results)) throw new Error(data.error || 'Unable to search your library.');
+                    if (searchController !== controller || !assignmentOpen || !canAssignMedia()) return;
+                    assignDropdown.replaceChildren();
+                    if (!data.results.length) {
+                        const empty = document.createElement('div');
+                        empty.className = 'assign-search-item';
+                        empty.style.justifyContent = 'center';
+                        empty.style.cursor = 'default';
+                        empty.textContent = 'No results found in library.';
+                        assignDropdown.appendChild(empty);
                     }
+                    data.results.forEach(item => {
+                        const result = document.createElement('div');
+                        result.dataset.itemId = item.id;
+                        result.dataset.mediaType = item.media_type;
+                        const coverFrame = document.createElement('span');
+                        coverFrame.className = 'assign-search-cover';
+                        const cover = document.createElement('img');
+                        cover.src = item.cover;
+                        cover.alt = 'Cover';
+                        coverFrame.appendChild(cover);
+                        const text = document.createElement('div');
+                        text.style.flex = '1';
+                        const title = document.createElement('div');
+                        title.style.fontWeight = '600';
+                        title.textContent = item.title;
+                        const subtitle = document.createElement('div');
+                        subtitle.style.fontSize = '0.8em';
+                        subtitle.style.color = 'var(--text-secondary)';
+                        subtitle.textContent = `${item.type}${item.year ? ' • ' + item.year : ''}`;
+                        text.append(title, subtitle);
+                        result.append(coverFrame, text);
+                        function updateSelection() {
+                            result.className = `assign-search-item${selectedMediaIds.has(item.id) ? ' selected' : ''}`;
+                            result.querySelector('.selected-x')?.remove();
+                            if (selectedMediaIds.has(item.id)) {
+                                const selected = document.createElement('span');
+                                selected.className = 'selected-x';
+                                selected.textContent = '✕';
+                                result.appendChild(selected);
+                            }
+                        }
+                        updateSelection();
+                        result.addEventListener('click', event => {
+                            event.stopPropagation();
+                            if (assignmentSaving) return;
+                            if (selectedMediaIds.has(item.id)) selectedMediaIds.delete(item.id);
+                            else selectedMediaIds.set(item.id, item.title);
+                            renderAssignTags();
+                            updateSelection();
+                            assignInput.focus();
+                        });
+                        assignDropdown.appendChild(result);
+                    });
                     assignDropdown.style.display = 'block';
-                });
+                } catch (error) {
+                    if (error.name !== 'AbortError' && searchController === controller) showNotification(error.message, 'warning');
+                }
             }, 300);
         });
-
-        // Close dropdown when clicking outside
-        document.addEventListener('click', (e) => {
-            if (assignWrapper && !assignWrapper.contains(e.target)) {
-                assignDropdown.style.display = 'none';
+        assignInput.addEventListener('keydown', event => {
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                cancelAssignBtn.click();
+            } else if (event.key === 'Enter' && selectedMediaIds.size) {
+                event.preventDefault();
+                confirmAssignBtn.click();
             }
         });
+        document.addEventListener('click', event => {
+            if (!assignWrapper.contains(event.target)) cancelAssignmentSearch();
+        });
 
-        function renderAssignTags() {
-            assignTagsContainer.innerHTML = '';
-            selectedMediaIds.forEach((title, id) => {
-                const tag = document.createElement('div');
-                tag.className = 'assign-tag';
-                tag.innerHTML = `${title} <span>✕</span>`;
-                tag.querySelector('span').addEventListener('click', (e) => {
-                    e.stopPropagation(); // Prevent the document click listener from firing
-                    selectedMediaIds.delete(id);
-                    renderAssignTags();
-                    
-                    // Manually un-highlight the dropdown item if it's currently rendered in search
-                    const div = document.querySelector(`.assign-search-item[data-item-id="${id}"]`);
-                    if (div) {
-                        div.classList.remove('selected');
-                        const xSpan = div.querySelector('.selected-x');
-                        if (xSpan) xSpan.remove();
-                    }
+        confirmAssignBtn.addEventListener('click', async () => {
+            if (!canAssignMedia() || !selectedMediaIds.size || assignmentSaving) return;
+            assignmentSaving = true;
+            cancelAssignmentSearch();
+            updateAssignmentVisibility();
+            let saved = false;
+            try {
+                const response = await fetch('/api/person/assign_media/', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+                    body: JSON.stringify({ person_id: favForm.dataset.personId, person_type: favForm.dataset.personType,
+                        source: favForm.dataset.personSource, media_ids: Array.from(selectedMediaIds.keys()) }),
                 });
-                assignTagsContainer.appendChild(tag);
-            });
-        }
-
-        // Save Assignment
-        confirmAssignBtn.addEventListener('click', () => {
-            if (selectedMediaIds.size === 0 || confirmAssignBtn.disabled) return;
-            confirmAssignBtn.disabled = true;
-
-            const favForm = document.getElementById('favorite-form');
-            const personId = favForm.dataset.personId;
-            const personType = favForm.dataset.personType;
-            
-            fetch('/api/person/assign_media/', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
-                body: JSON.stringify({ person_id: personId, person_type: personType, source: favForm.dataset.personSource, media_ids: Array.from(selectedMediaIds.keys()) })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    sessionStorage.setItem('personRefreshSuccess', '1');
-                    location.reload();
-                } else {
-                    showNotification(data.error, "warning");
+                const data = await response.json();
+                if (!response.ok || !data.success) throw new Error(data.error || 'Unable to assign media. Please try again.');
+                saved = true;
+                location.reload();
+            } catch (error) {
+                showNotification(error.message, 'warning');
+            } finally {
+                if (!saved) {
+                    assignmentSaving = false;
+                    updateAssignmentVisibility();
                 }
-            })
-            .catch(() => showNotification('Unable to assign media. Please try again.', 'warning'))
-            .finally(() => { confirmAssignBtn.disabled = false; });
+            }
         });
     }
 
@@ -668,7 +670,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const roleInput = document.getElementById('edit-role-input');
     const roleLinkIdInput = document.getElementById('edit-role-link-id');
     const saveRoleBtn = document.getElementById('save-role-btn');
-    const closeRoleBtn = document.getElementById('close-role-modal-btn');
     const closeRoleIcon = document.getElementById('close-role-modal-icon');
 
     function closeRoleModal() {
@@ -690,7 +691,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    [closeRoleBtn, closeRoleIcon, roleOverlay].forEach(el => {
+    [closeRoleIcon, roleOverlay].forEach(el => {
         if(el) el.addEventListener('click', closeRoleModal);
     });
 

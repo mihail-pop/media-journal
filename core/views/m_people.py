@@ -62,6 +62,9 @@ def toggle_favorite_person_view(request):
     image_url = data.get("image_url")
     person_type = data.get("type")
     person_id = data.get("person_id")  # New parameter for ID
+    desired_favorite = data.get("favorite")
+    if "favorite" in data and not isinstance(desired_favorite, bool):
+        return JsonResponse({"error": "Invalid favorite choice."}, status=400)
 
     # Check if already favorited
     try:
@@ -70,10 +73,14 @@ def toggle_favorite_person_view(request):
         return JsonResponse({'error': str(error)}, status=400)
     existing = favorite_person_queryset(person_type, person_id, source, name).first()
     if existing:
+        if desired_favorite is True:
+            return JsonResponse({"status": "added"})
         # Delete favorite and reorder positions
         delete_favorite_person_and_reorder(existing.id)
         return JsonResponse({"status": "removed"})
     else:
+        if desired_favorite is False:
+            return JsonResponse({"status": "removed"})
         save_favorite_actor_character(name, image_url, person_type, person_id, source=source)
         return JsonResponse({"status": "added"})
 

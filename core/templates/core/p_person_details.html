@@ -81,7 +81,7 @@
     
     <!-- The Search UI Wrapper (Moved dynamically via JS to the first header) -->
     <div id="assign-media-container" class="assign-media-container" style="display: none;">
-      <button class="add-custom-person-btn" id="show-assign-search-btn" title="Assign Media from Library">
+      <button type="button" class="j-icon-btn" id="show-assign-search-btn" title="Assign Media from Library" aria-label="Assign Media from Library">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
       </button>
       
@@ -91,13 +91,17 @@
           <input type="text" id="assign-search-input" placeholder="Search library..." autocomplete="off">
         </div>
         <div id="assign-dropdown" class="assign-search-dropdown"></div>
-        <button class="pc-btn pc-save-btn assign-btn-small" id="confirm-assign-btn">Add</button>
-        <button class="pc-btn pc-cancel assign-btn-small" id="cancel-assign-btn">X</button>
+        <button type="button" class="j-icon-btn" id="cancel-assign-btn" title="Cancel" aria-label="Cancel">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+        <button type="button" class="j-icon-btn" id="confirm-assign-btn" title="Add selected media" aria-label="Add selected media" disabled>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        </button>
       </div>
     </div>
     
     <!-- Assigned Media (In Your Journal) section -->
-    {% if person_data.assigned_media %}
+    {% if person_data.assigned_media or not person_data.known_for and not person_data.related_media and not person_data.media_appearances and not person_data.voice_actors and not person_data.directed and not person_data.produced and not person_data.crew_credits %}
     <section class="related-media-section" id="journal-entries-section">
       <div class="section-title-wrapper">
         <h2>In Your Journal</h2>
@@ -343,7 +347,6 @@
         </div>
       </div>
       <div class="pc-modal-buttons">
-        <button type="button" id="edit-person-close-btn" class="pc-btn pc-cancel">Cancel</button>
         <button type="submit" class="pc-btn pc-save-btn">Save</button>
       </div>
     </form>
@@ -359,7 +362,6 @@
     <input type="hidden" id="edit-role-link-id">
     <input type="text" id="edit-role-input" class="pc-title-input" placeholder="Role (e.g. Director, Main Character)" style="width:100%; margin-bottom: 2rem; text-align: center; font-size: 1.2rem;">
     <div class="pc-modal-buttons" style="justify-content: center; margin-top:0;">
-      <button type="button" class="pc-btn pc-cancel" id="close-role-modal-btn">Cancel</button>
       <button type="button" class="pc-btn pc-save-btn" id="save-role-btn">Save</button>
     </div>
   </div>
@@ -370,5 +372,6 @@
 
 {% block script %}
   {{ block.super }}
+  <script src="{% static 'core/js/g_person_confirmation.js' %}"></script>
   <script src="{% static 'core/js/p_person_details.js' %}"></script>
 {% endblock %}

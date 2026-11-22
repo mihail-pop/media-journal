@@ -191,6 +191,7 @@ def search_local_media(request):
                 'title': i.title, 
                 'cover': i.cover_url or "/static/core/img/placeholder.png", 
                 'year': year,
+                'media_type': i.media_type,
                 'type': i.get_media_type_display()
             })
         return JsonResponse({'results': results})

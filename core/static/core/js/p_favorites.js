@@ -308,6 +308,28 @@ document.addEventListener('DOMContentLoaded', () => {
     searchTimer = setTimeout(() => searchFavorites(revision), 300);
   });
 
+  function removeFavoriteCard(card) {
+    if (card) {
+        card.style.pointerEvents = 'none'; // Prevent further clicks
+        setTimeout(() => {
+            card.style.transition = 'all 0.3s ease';
+            card.style.opacity = '0';
+            card.style.transform = 'scale(0.8)';
+            setTimeout(() => {
+                const section = card.closest('.favorite-section');
+                card.remove();
+                if (currentSearch && section && !section.querySelector('.card') && section.dataset.hasMore === 'false') {
+                    section.hidden = true;
+                    if (sections.every(item => item.hidden)) {
+                        searchStatus.textContent = 'No favorites found.';
+                        searchStatus.hidden = false;
+                    }
+                }
+            }, 300);
+        }, 300); // Delay to show the unchecked heart state
+    }
+  }
+
   // Queue for sequential execution of favorite toggles to prevent race conditions
   let favoriteQueue = Promise.resolve();
 
@@ -320,28 +342,33 @@ document.addEventListener('DOMContentLoaded', () => {
         const id = label.dataset.id;
         const isChecked = checkbox.checked;
 
-        // Only handle unfavoriting (unchecking)
+        // People/characters are deleted from the library, so confirm before changing the card.
+        if (!isChecked && type === 'person') {
+            checkbox.checked = true;
+            checkbox.disabled = true;
+            const personType = label.dataset.slug === 'characters' ? 'character' : 'actor';
+            window.confirmPersonRemoval(personType, async () => {
+                const removal = favoriteQueue.then(async () => {
+                    const response = await fetch(`/api/delete_favorite_person/${id}/`, {
+                        method: 'POST', headers: { 'X-CSRFToken': getCookie('csrftoken') },
+                    });
+                    const data = await response.json();
+                    if (!response.ok || !data.success) throw new Error(data.error || 'Unable to delete this favorite. Please try again.');
+                });
+                favoriteQueue = removal.catch(() => {});
+                await removal;
+            }).then(removed => {
+                checkbox.disabled = false;
+                if (!removed) return;
+                checkbox.checked = false;
+                removeFavoriteCard(card);
+            });
+            return;
+        }
+
+        // Media unfavoriting keeps the existing behavior.
         if (!isChecked) {
-            // Visual removal with delay
-            if (card) {
-                card.style.pointerEvents = 'none'; // Prevent further clicks
-                setTimeout(() => {
-                    card.style.transition = 'all 0.3s ease';
-                    card.style.opacity = '0';
-                    card.style.transform = 'scale(0.8)';
-                    setTimeout(() => {
-                        const section = card.closest('.favorite-section');
-                        card.remove();
-                        if (currentSearch && section && !section.querySelector('.card') && section.dataset.hasMore === 'false') {
-                            section.hidden = true;
-                            if (sections.every(item => item.hidden)) {
-                                searchStatus.textContent = 'No favorites found.';
-                                searchStatus.hidden = false;
-                            }
-                        }
-                    }, 300);
-                }, 300); // Delay to show the unchecked heart state
-            }
+            removeFavoriteCard(card);
 
             // Queue the API request
             favoriteQueue = favoriteQueue.then(async () => {
@@ -354,11 +381,6 @@ document.addEventListener('DOMContentLoaded', () => {
                                 "X-CSRFToken": getCookie("csrftoken"),
                             },
                             body: JSON.stringify({ favorite: false }),
-                        });
-                    } else if (type === 'person') {
-                        await fetch(`/api/delete_favorite_person/${id}/`, {
-                            method: 'POST',
-                            headers: { 'X-CSRFToken': getCookie('csrftoken') },
                         });
                     }
                 } catch (error) {
@@ -414,7 +436,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const cpOverlay = document.getElementById('custom-person-overlay');
   const cpForm = document.getElementById('custom-person-form');
   const cpCloseIcons = [
-    document.getElementById('custom-person-close-btn'),
     document.getElementById('custom-person-close-icon'),
     cpOverlay
   ];
