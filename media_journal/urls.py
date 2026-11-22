@@ -71,6 +71,7 @@ urlpatterns = [
     path("api/check_in_list/", views.check_in_list, name="check_in_list"),
     path("community/", views.community, name="community"),
     path('community/posts/', views.posts_api, name='community_posts_api'),
+    path('community/posts/<str:post_id>/like/', views.post_like, name='community_post_like'),
     path('history/', views.history, name='history'),
     path('api/history/', views.history_api, name='history_api'),
     path('get-item/<int:item_id>/', views.get_item, name='get_item'),

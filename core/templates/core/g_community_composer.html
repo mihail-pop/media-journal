@@ -1,0 +1,42 @@
+<div class="composer-toolbar">
+  <div class="composer-tabs" role="tablist" aria-label="Editor mode">
+    <button type="button" class="composer-tab active" data-tab="write" role="tab" aria-selected="true">Write</button>
+    <button type="button" class="composer-tab" data-tab="preview" role="tab" aria-selected="false">Preview</button>
+  </div>
+  <div class="composer-tools">
+    <button type="button" class="composer-icon" data-tool="image" title="Insert image" aria-label="Insert image" aria-expanded="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+    </button>
+    <button type="button" class="composer-icon" data-tool="link" title="Insert link" aria-label="Insert link" aria-expanded="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7 .5l3-3a5 5 0 0 0-7-7l-1.7 1.7M14 11a5 5 0 0 0-7-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>
+    </button>
+    <div class="composer-media-search" hidden>
+      <input type="search" class="composer-search-input" placeholder="Search library..." aria-label="Search your media library" autocomplete="off">
+      <div class="composer-search-results" hidden></div>
+    </div>
+    <button type="button" class="composer-icon" data-tool="media" title="Insert media" aria-label="Insert media" aria-expanded="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+  </div>
+</div>
+<div class="composer-panel" data-panel="image" hidden>
+  <p>Upload an image to <a href="https://imgur.com" target="_blank" rel="noopener noreferrer">Imgur</a> and paste its link here.</p>
+  <div class="composer-field-row"><input type="url" data-field="image-url" placeholder="Image URL" aria-label="Image URL"><button type="button" class="composer-insert" data-insert="image">Insert</button></div>
+</div>
+<div class="composer-panel" data-panel="link" hidden>
+  <div class="composer-field-row"><input type="text" data-field="link-text" placeholder="Text" aria-label="Link text"><input type="url" data-field="link-url" placeholder="URL" aria-label="Link URL"><button type="button" class="composer-insert" data-insert="link">Insert</button></div>
+</div>
+<div class="composer-editor">
+  <textarea class="composer-text" placeholder="Write anything..." aria-label="Post text" maxlength="2200"></textarea>
+  <div class="composer-preview" hidden></div>
+</div>
+<p class="composer-error" role="alert" hidden></p>
+<div class="composer-actions">
+  <div class="composer-emoji">
+    <button type="button" class="composer-icon emoji-trigger" title="Add an emoji" aria-label="Add an emoji" aria-expanded="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 14s1 3 4 3 4-3 4-3M8 9h.01M16 9h.01"/></svg>
+    </button>
+    <div class="emoji-picker" role="dialog" aria-label="Choose an emoji" hidden></div>
+  </div>
+  <button type="button" class="composer-send">Post</button>
+</div>

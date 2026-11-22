@@ -432,6 +432,8 @@ class AppSettings(models.Model):
     )
 
     username = models.CharField(max_length=50, blank=True, null=True)
+    # One Community identity for every browser using this installation.
+    community_id = models.UUIDField(default=uuid.uuid4, editable=False)
     cal_sync_ongoing = models.BooleanField(default=True)
     cal_sync_planned = models.BooleanField(default=False)
 

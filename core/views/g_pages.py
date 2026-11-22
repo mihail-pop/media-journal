@@ -3,6 +3,7 @@ from datetime import date, datetime, time, timedelta
 from collections import defaultdict
 
 from django.apps import apps
+from django.conf import settings as django_settings
 from django.urls import reverse
 from django.utils import timezone
 from django.db.models import Case, Count, IntegerField, Prefetch, Q, Sum, When
@@ -1083,13 +1084,11 @@ def discover_view(request):
 
 @ensure_csrf_cookie
 def community(request):
-    firebase_url = (
-        "https://media-journal-6c8cf-default-rtdb.europe-west1.firebasedatabase.app"
-    )
+    firebase_url = django_settings.FIREBASE_URL
 
     # Get only the fields we need for posting
     raw_items = MediaItem.objects.values(
-        "id", "title", "media_type", "source", "provider_ids", "status"
+        "id", "title", "media_type", "source", "provider_ids", "status", "cover_url", "release_date"
     ).order_by("title")
     
     items = []
@@ -1103,10 +1102,8 @@ def community(request):
             source_id = str(list(provider_ids.values())[0])
             
         # Exclude custom user-created media items
-        if not source_id.startswith("custom_"):
+        if source_id and source != 'custom' and not source_id.startswith("custom_"):
             items.append(item)
-
-    media_types = dict(MediaItem.MEDIA_TYPES)
 
     # Get theme mode
     AppSettings = apps.get_model("core", "AppSettings")
@@ -1119,7 +1116,6 @@ def community(request):
         {
             "firebase_url": firebase_url,
             "items": list(items),
-            "media_types": media_types,
             "theme_mode": theme_mode,
             "username": settings.username if settings and settings.username else "",
         },
