@@ -1,0 +1,35 @@
+/* Match the app's notification panels without changing collection/card layouts. */
+.collection-feedback,
+.collection-delete-panel {
+    position: fixed;
+    top: 4rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10020;
+    width: max-content;
+    max-width: min(32rem, calc(100% - 2rem));
+    padding: 12px 24px;
+    border-radius: 6px;
+    background: #bd3038;
+    color: white;
+    text-align: center;
+    font-size: 1rem;
+    font-weight: 500;
+    box-sizing: border-box;
+}
+.collection-delete-panel[hidden] { display: none; }
+.collection-delete-panel h3 { margin: 0 0 0.5rem; color: inherit; font-size: 1.1em; }
+.collection-delete-panel p { margin: 0 0 0.75rem; line-height: 1.4; }
+.collection-delete-actions { display: flex; justify-content: center; gap: 0.5rem; }
+.collection-delete-actions button { padding: 0.45rem 0.75rem; border: none; border-radius: 4px; background: rgba(255, 255, 255, 0.16); color: white; font: inherit; cursor: pointer; }
+.collection-delete-actions button:hover { background: rgba(255, 255, 255, 0.28); }
+#confirm-collection-delete { background: white; color: #a3232b; }
+.collection-delete-actions button:disabled { opacity: 0.5; cursor: default; }
+@media (pointer: coarse) {
+    #toggle-sort-btn,
+    #toggle-reorder-btn { display: none; }
+}
+@media (orientation: portrait) {
+    .collection-feedback,
+    .collection-delete-panel { top: 5rem; width: 90%; max-width: 90%; padding: 20px 40px; border-radius: 12px; font-size: 2.5rem; }
+}

@@ -4,7 +4,7 @@ from datetime import date, datetime, timedelta
 from django.conf import settings
 from django.http import JsonResponse
 from django.urls import reverse
-from django.db.models import F, Case, When, Value, IntegerField, Prefetch
+from django.db.models import F, Case, When, Value, IntegerField, Prefetch, Count
 from django.db.models.functions import Lower
 from django.views.decorators.http import require_GET
 from django.utils import timezone
@@ -1577,20 +1577,28 @@ def discover_api(request):
 
 @require_GET
 def collection_items_api(request, collection_id):
-    page = int(request.GET.get("page", 1))
+    try:
+        page = max(1, int(request.GET.get('page', 1)))
+    except ValueError:
+        return JsonResponse({'error': 'Invalid page.'}, status=400)
     sort_by = request.GET.get("sort_by", "custom")
     sort_order = request.GET.get("sort_order", "desc")
     page_size = 50
     
     # Get items in the collection
-    qs = CollectionItem.objects.filter(collection_id=collection_id).select_related('item')
+    qs = CollectionItem.objects.filter(collection_id=collection_id).select_related('item').only(
+        'id', 'item_id', 'collection_id', 'position', 'date_added',
+        'item__id', 'item__title', 'item__media_type', 'item__cover_url',
+        'item__banner_url', 'item__personal_rating', 'item__date_added',
+        'item__release_date', 'item__source', 'item__provider_ids',
+    )
     search = normalize_search_text(request.GET.get('search', '').strip())
     if search:
         matching_ids = []
         for link_id, title, creators in qs.values_list('id', 'item__title', 'item__creators'):
             target = normalize_search_text(title)
             if isinstance(creators, list):
-                target += ' ' + normalize_search_text(' '.join(creators))
+                target += ' ' + normalize_search_text(' '.join(map(str, creators)))
             elif isinstance(creators, str):
                 target += ' ' + normalize_search_text(creators)
             if search in target:
@@ -1626,7 +1634,7 @@ def collection_items_api(request, collection_id):
     else: # custom
         order_fields.extend(["position", "-date_added"])
         
-    qs = qs.order_by(*order_fields)
+    qs = qs.order_by(*order_fields, 'pk')
     
     start = (page - 1) * page_size
     end = start + page_size
@@ -1673,9 +1681,12 @@ def collection_items_api(request, collection_id):
 @require_GET
 def collections_api(request):
     if request.GET.get('options') == 'true':
-        return JsonResponse({"items": list(Collection.objects.values('id', 'title'))})
+        return JsonResponse({"items": list(Collection.objects.order_by('position', '-date_created', 'pk').values('id', 'title'))})
 
-    page = int(request.GET.get("page", 1))
+    try:
+        page = max(1, int(request.GET.get('page', 1)))
+    except ValueError:
+        return JsonResponse({'error': 'Invalid page.'}, status=400)
     page_size = 30
     start = (page - 1) * page_size
     end = start + page_size
@@ -1683,9 +1694,12 @@ def collections_api(request):
     # Fetch collections and force it to order the items inside by their custom position!
     prefetch = Prefetch(
         'collectionitem_set',
-        queryset=CollectionItem.objects.select_related('item').order_by('position')
+        queryset=CollectionItem.objects.select_related('item').only(
+            'id', 'collection_id', 'item_id', 'item__id', 'item__cover_url', 'item__media_type',
+        ).order_by('position', '-date_added', 'pk')[:5],
+        to_attr='preview_items',
     )
-    qs = Collection.objects.all().prefetch_related(prefetch).order_by('position', '-date_created')
+    qs = Collection.objects.all().order_by('position', '-date_created', 'pk')
     search = normalize_search_text(request.GET.get('search', '').strip())
     if search:
         matching_ids = [col_id for col_id, title in qs.values_list('id', 'title')
@@ -1696,22 +1710,20 @@ def collections_api(request):
     has_more = total > end
 
     collections_data =[]
-    for col in qs[start:end]:
+    for col in qs.annotate(item_count=Count('items')).prefetch_related(prefetch)[start:end]:
             # Fetch up to 5 covers with their URLs and media_types
             covers = []
-            for ci in col.collectionitem_set.all():
+            for ci in col.preview_items:
                 covers.append({
                     "url": ci.item.cover_url or "/static/core/img/placeholder.png",
                     "media_type": ci.item.media_type
                 })
-                if len(covers) == 5:
-                    break
             
             collections_data.append({
                 "id": col.id,
                 "title": col.title,
                 "description": col.description or "",
-                "item_count": col.items.count(),
+                "item_count": col.item_count,
                 "covers": covers,
             })
 

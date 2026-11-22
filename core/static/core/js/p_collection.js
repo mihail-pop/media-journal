@@ -1,4 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
+    const { request, notify, orderSaver, getCookie } = window.collectionUI;
 
     let currentSort = "custom";
     let currentSortOrder = "desc";
@@ -8,8 +9,15 @@ document.addEventListener("DOMContentLoaded", () => {
     let currentPage = 1;
     let hasMore = true;
     let isLoading = false;
+    let loadFailed = false;
+    let mutationBusy = false;
+    let editController = new AbortController();
 
     window.openEditModal = function(element) {
+        if (mutationBusy) return;
+        editController.abort();
+        editController = new AbortController();
+        const controller = editController;
         const itemId = element.dataset.id;
         const coverUrl = element.dataset.coverUrl;
         const bannerUrl = element.dataset.bannerUrl;
@@ -35,22 +43,22 @@ document.addEventListener("DOMContentLoaded", () => {
         const form = document.getElementById("edit-form");
         if (!form) return console.error("Edit form not found");
 
-        fetch(`/get-item/${itemId}/?_t=${Date.now()}`)
-            .then(res => res.json())
+        request(`/get-item/${itemId}/?_t=${Date.now()}`, { signal: controller.signal })
             .then(data => {
-                if (!data.success) return alert("Failed to load item");
+                if (controller !== editController) return;
                 if (window.populateEditForm) window.populateEditForm(form, data.item);
                 modal.classList.remove("modal-hidden");
                 overlay.classList.remove("modal-hidden");
             })
             .catch(err => {
+                if (err.name === 'AbortError') return;
                 console.error("Fetch error:", err);
-                alert("Failed to load item");
+                notify(err.message);
             });
     };
 
     window.replaceHistoryItem = function(updatedItem) {
-        loadCollectionItems(1, true); // Refresh from start
+        return loadCollectionItems(1, true, { preserveLoaded: true, updatedId: updatedItem.id });
     };
 
     const colId = window.COLLECTION_ID;
@@ -93,6 +101,14 @@ document.addEventListener("DOMContentLoaded", () => {
     let collectionSearchTimer;
     let requestRevision = 0;
     let requestController = new AbortController();
+    let addController = new AbortController();
+    let addRevision = 0;
+    const touchPointer = window.matchMedia('(pointer: coarse)');
+    const reorderSave = orderSaver(`/api/collection/${colId}/reorder/`, error => {
+        setReorderMode(false);
+        notify(error.message);
+        loadCollectionItems(1, true, { preserveLoaded: true });
+    });
 
     collectionSearch.addEventListener('input', () => {
         const query = collectionSearch.value.trim();
@@ -117,10 +133,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Infinite scroll for main grid
     window.addEventListener('scroll', () => {
-        if (isLoading || searchPending || !hasMore) return;
+        if (isLoading || searchPending || mutationBusy || draggedEl || (!hasMore && !loadFailed)) return;
         const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
         if (scrollTop + window.innerHeight >= document.documentElement.scrollHeight - 500) {
-            loadCollectionItems(currentPage + 1);
+            loadCollectionItems(loadFailed ? 1 : currentPage + 1, loadFailed);
         }
     });
 
@@ -197,20 +213,31 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         card.innerHTML = `
-            <a href="${item.url || '#'}" class="card-link" ${isAddModal ? 'draggable="false"' : ''}>
+            <a class="card-link" ${isAddModal ? 'draggable="false"' : ''}>
                 <div class="card-image">
-                    <img src="${item.cover_url}" alt="${item.title}" loading="lazy" draggable="false">
+                    <img loading="lazy" draggable="false">
                     ${sortValueHtml}
                     ${selectCircleHtml}
                     ${editBtnHtml}
                 </div>
             </a>
             <div style="display: flex; flex-direction: column; justify-content: center;">
-                <div class="card-title" title="${item.title}">${item.title}</div>
+                <div class="card-title"></div>
             </div>
         `;
+        card.querySelector('.card-link').href = item.url || '#';
+        const image = card.querySelector('img');
+        image.src = item.cover_url;
+        image.alt = item.title;
+        const titleElement = card.querySelector('.card-title');
+        titleElement.textContent = item.title;
+        titleElement.title = item.title;
 
         card.addEventListener('click', (e) => {
+            if (mutationBusy || (!isAddModal && (isLoading || searchPending || loadFailed) && (isDeleteMode || isReorderMode))) {
+                e.preventDefault();
+                return;
+            }
             if (e.target.classList.contains('edit-card-btn')) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -247,11 +274,27 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
         
-        card.dataset.signature = JSON.stringify(item);
+        card.dataset.signature = JSON.stringify([item, currentSort]);
         return card;
     }
 
-    async function loadCollectionItems(page = 1, reset = false) {
+    function syncCardModes(card) {
+        card.classList.toggle('draggable-mode', isReorderMode);
+        if (isReorderMode) card.setAttribute('draggable', 'true');
+        else card.removeAttribute('draggable');
+        let circle = card.querySelector('.select-circle');
+        if (isDeleteMode) {
+            if (!circle) {
+                circle = document.createElement('div');
+                circle.className = 'select-circle';
+                card.querySelector('.card-image').appendChild(circle);
+            }
+            circle.classList.toggle('selected', selectedForDelete.has(card.dataset.id));
+        } else circle?.remove();
+    }
+
+    async function loadCollectionItems(page = 1, reset = false, { preserveLoaded = false, updatedId = null } = {}) {
+        const lastPage = preserveLoaded ? currentPage : (reset ? 1 : page);
         if (reset) {
             clearTimeout(collectionSearchTimer);
             requestController.abort();
@@ -260,63 +303,66 @@ document.addEventListener("DOMContentLoaded", () => {
         } else if (isLoading || searchPending || !hasMore) return;
         const revision = requestRevision;
         isLoading = true;
+        reorderBtn.disabled = true;
         const requestedPage = reset ? 1 : page;
 
         try {
-            const params = new URLSearchParams({ page: requestedPage, sort_by: currentSort, sort_order: currentSortOrder, search: currentSearch });
-            const res = await fetch(`/api/collection/${colId}/items/?${params}`, { signal: requestController.signal });
-            if (!res.ok) throw new Error('Unable to load collection items');
-            const data = await res.json();
+            await reorderSave.flush();
             if (revision !== requestRevision) return;
+            const newItems = [];
+            let data;
+            for (let nextPage = requestedPage; nextPage <= lastPage; nextPage++) {
+                const params = new URLSearchParams({ page: nextPage, sort_by: currentSort, sort_order: currentSortOrder, search: currentSearch });
+                data = await request(`/api/collection/${colId}/items/?${params}`, { signal: requestController.signal });
+                if (revision !== requestRevision) return;
+                newItems.push(...data.items);
+                if (!data.has_more) break;
+            }
             
             hasMore = data.has_more;
-            currentPage = requestedPage;
-            const newItems = data.items || [];
+            currentPage = data.page;
+            // Anchor at render time so scrolling during a request is respected.
+            const anchor = preserveLoaded ? [...grid.children].find(card =>
+                card.dataset.id !== String(updatedId) && card.getBoundingClientRect().top >= 0 &&
+                card.getBoundingClientRect().top < window.innerHeight) : null;
+            const anchorId = anchor?.dataset.id;
+            const anchorTop = anchor?.getBoundingClientRect().top;
             collectionItems = reset ? newItems : collectionItems.concat(newItems);
             const existingCards = new Map(reset ? [...grid.children].map(card => [card.dataset.id, card]) : []);
             const retained = new Set();
             
             newItems.forEach((item, index) => {
                 const existing = existingCards.get(String(item.id));
-                if (existing?.dataset.signature === JSON.stringify(item)) {
-                    retained.add(existing);
-                    const before = grid.children[index] || null;
-                    if (existing !== before) grid.insertBefore(existing, before);
-                    return;
-                }
-                const card = createCardElement(item, false);
+                const card = existing?.dataset.signature === JSON.stringify([item, currentSort]) ? existing : createCardElement(item, false);
                 retained.add(card);
-                
-                if (isReorderMode) {
-                    card.classList.add("draggable-mode");
-                    card.setAttribute("draggable", "true");
+                syncCardModes(card);
+                if (reset) {
+                    const before = grid.children[index] || null;
+                    if (card !== before) grid.insertBefore(card, before);
                 }
-                
-                if (isDeleteMode) {
-                    const circle = document.createElement("div");
-                    circle.className = "select-circle";
-                    const imgContainer = card.querySelector('.card-image');
-                    if (imgContainer) {
-                        imgContainer.appendChild(circle);
-                    } else {
-                        card.prepend(circle);
-                    }
-                }
-                
-                if (reset) grid.insertBefore(card, grid.children[index] || null);
                 else grid.appendChild(card);
             });
             existingCards.forEach(card => { if (!retained.has(card)) card.remove(); });
-            searchPending = false;
-            reorderBtn.disabled = Boolean(currentSearch);
+            loadFailed = false;
+            if (anchorId) {
+                const retainedAnchor = [...grid.children].find(card => card.dataset.id === anchorId);
+                if (retainedAnchor) window.scrollBy({ top: retainedAnchor.getBoundingClientRect().top - anchorTop, behavior: 'instant' });
+            }
 
             noItemsMsg.textContent = currentSearch ? 'No matching items found.' : 'This collection is empty.';
             noItemsMsg.style.display = collectionItems.length === 0 ? "block" : "none";
         } catch (err) {
             if (revision !== requestRevision || err.name === 'AbortError') return;
             console.error(err);
+            loadFailed = true;
+            setReorderMode(false);
+            notify(err.message);
         } finally {
-            if (revision === requestRevision) isLoading = false;
+            if (revision === requestRevision) {
+                isLoading = false;
+                searchPending = false;
+                reorderBtn.disabled = Boolean(currentSearch) || loadFailed || mutationBusy;
+            }
         }
     }
 
@@ -362,6 +408,9 @@ document.addEventListener("DOMContentLoaded", () => {
     sortOptions.forEach(option => {
         option.addEventListener("click", (e) => {
             e.stopPropagation();
+            if (mutationBusy) return;
+            setReorderMode(false);
+            if (isDeleteMode) toggleDeleteMode();
             const selectedSort = option.dataset.sort;
             
             if (currentSort === selectedSort) {
@@ -388,6 +437,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (sortOrderBtn) {
         sortOrderBtn.addEventListener("click", () => {
+            if (mutationBusy) return;
+            setReorderMode(false);
+            if (isDeleteMode) toggleDeleteMode();
             currentSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
             updateSortUI();
             loadCollectionItems(1, true);
@@ -408,6 +460,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // ADD ITEMS (MODAL & SEARCH) LOGIC
     // =====================================
     addBtn.addEventListener("click", () => {
+        if (mutationBusy) return;
         if (isReorderMode) toggleReorderMode();
         if (isDeleteMode) toggleDeleteMode();
 
@@ -418,10 +471,16 @@ document.addEventListener("DOMContentLoaded", () => {
         performLocalSearch();
     });
 
-    closeAddModal.addEventListener("click", () => addModal.classList.add("modal-hidden"));
+    function closeAdd() {
+        if (mutationBusy) return;
+        invalidateAddSearch();
+        addModal.classList.add('modal-hidden');
+    }
+    closeAddModal.addEventListener("click", closeAdd);
 
     typeFilters.forEach(btn => {
         btn.addEventListener("click", (e) => {
+            if (mutationBusy) return;
             typeFilters.forEach(b => b.classList.remove("active"));
             e.target.classList.add("active");
             searchType = e.target.dataset.type;
@@ -430,35 +489,54 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     searchInput.addEventListener("input", () => {
-        clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(performLocalSearch, 300);
+        invalidateAddSearch();
+        searchTimeout = setTimeout(() => performLocalSearch(), 300);
     });
 
+    function invalidateAddSearch() {
+        clearTimeout(searchTimeout);
+        addController.abort();
+        addRevision++;
+        addIsLoading = false;
+        addGrid.inert = true;
+    }
+
     async function performLocalSearch(page = 1) {
-        if (addIsLoading || (!addHasMore && page !== 1)) return;
+        if (addModal.classList.contains('modal-hidden')) return;
+        if (page === 1) {
+            invalidateAddSearch();
+            addController = new AbortController();
+        } else if (addIsLoading || addGrid.inert || !addHasMore) return;
+        const revision = addRevision;
         
         addIsLoading = true;
-        addCurrentPage = page;
         const query = searchInput.value;
         
         if (page === 1) {
-            addGrid.innerHTML = "";
+            addGrid.replaceChildren();
+            addGrid.scrollTop = 0;
             addHasMore = true;
         }
         
         try {
-            const res = await fetch(`/api/collection/${colId}/search-local/?q=${encodeURIComponent(query)}&type=${searchType}&page=${page}`);
-            const data = await res.json();
+            const data = await request(`/api/collection/${colId}/search-local/?q=${encodeURIComponent(query)}&type=${searchType}&page=${page}`, { signal: addController.signal });
+            if (revision !== addRevision) return;
             
             addHasMore = data.has_more;
+            addCurrentPage = data.page;
             
             data.items.forEach(item => {
                 addGrid.appendChild(createCardElement(item, true));
             });
         } catch (err) {
+            if (revision !== addRevision || err.name === 'AbortError') return;
             console.error(err);
+            notify(err.message);
         } finally {
-            addIsLoading = false;
+            if (revision === addRevision) {
+                addIsLoading = false;
+                addGrid.inert = false;
+            }
         }
     }
 
@@ -474,21 +552,37 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     confirmAddBtn.addEventListener("click", async () => {
-        if (selectedForAdd.size === 0) return;
+        if (selectedForAdd.size === 0 || mutationBusy) return;
+        setMutationBusy(true);
+        let added = false;
         
         try {
-            await fetch(`/api/collection/${colId}/add/`, {
+            await reorderSave.flush();
+            await request(`/api/collection/${colId}/add/`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json", "X-CSRFToken": getCookie("csrftoken") },
                 body: JSON.stringify({ item_ids: Array.from(selectedForAdd) })
             });
             
-            addModal.classList.add("modal-hidden");
-            loadCollectionItems(1, true); 
+            added = true;
         } catch (err) {
             console.error(err);
+            notify(err.message);
+        } finally {
+            setMutationBusy(false);
+        }
+        if (added) {
+            closeAdd();
+            loadCollectionItems(1, true, { preserveLoaded: true });
         }
     });
+
+    function setMutationBusy(busy) {
+        mutationBusy = busy;
+        [addBtn, deleteBtn, confirmAddBtn, confirmDeleteBtn, cancelDeleteBtn, closeAddModal,
+            searchInput, collectionSearch, sortOrderBtn, ...typeFilters].forEach(control => { control.disabled = busy; });
+        reorderBtn.disabled = busy || isLoading || searchPending || Boolean(currentSearch) || loadFailed;
+    }
 
     // =====================================
     // DELETE MODE LOGIC
@@ -499,7 +593,8 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     function toggleDeleteMode() {
-        if (isReorderMode) toggleReorderMode();
+        if (mutationBusy) return;
+        setReorderMode(false);
 
         isDeleteMode = !isDeleteMode;
         selectedForDelete.clear();
@@ -510,24 +605,13 @@ document.addEventListener("DOMContentLoaded", () => {
             deleteBtn.classList.add("active-state");
             floatingBar.classList.remove("hidden");
             
-            document.querySelectorAll("#card-view .card").forEach(card => {
-                const circle = document.createElement("div");
-                circle.className = "select-circle";
-                const imgContainer = card.querySelector('.card-image');
-                
-                if (imgContainer) {
-                    imgContainer.appendChild(circle);
-                } else {
-                    card.prepend(circle);
-                }
-            });
         } else {
             document.body.classList.remove('delete-mode');
             deleteBtn.classList.remove("active-state");
             floatingBar.classList.add("hidden");
             
-            document.querySelectorAll("#card-view .select-circle").forEach(el => el.remove());
         }
+        [...grid.children].forEach(syncCardModes);
     }
 
     function updateDeleteCount() {
@@ -535,19 +619,28 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     confirmDeleteBtn.addEventListener("click", async () => {
-        if (selectedForDelete.size === 0) return;
+        if (selectedForDelete.size === 0 || mutationBusy) return;
+        setMutationBusy(true);
+        let removed = false;
 
         try {
-            await fetch(`/api/collection/${colId}/remove/`, {
+            await reorderSave.flush();
+            await request(`/api/collection/${colId}/remove/`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json", "X-CSRFToken": getCookie("csrftoken") },
                 body: JSON.stringify({ item_ids: Array.from(selectedForDelete) })
             });
             
-            toggleDeleteMode();
-            loadCollectionItems(1, true);
+            removed = true;
         } catch(err) {
             console.error(err);
+            notify(err.message);
+        } finally {
+            setMutationBusy(false);
+        }
+        if (removed) {
+            toggleDeleteMode();
+            loadCollectionItems(1, true, { preserveLoaded: true });
         }
     });
 
@@ -557,20 +650,34 @@ document.addEventListener("DOMContentLoaded", () => {
     reorderBtn.addEventListener("click", toggleReorderMode);
 
     async function toggleReorderMode() {
-        if (!isReorderMode && (currentSearch || searchPending)) return;
+        if (mutationBusy) return;
+        if (isReorderMode) {
+            setReorderMode(false);
+            return;
+        }
+        if (currentSearch || searchPending || isLoading || loadFailed || touchPointer.matches) return;
         if (isDeleteMode) toggleDeleteMode();
 
         let needsReload = false;
-        if (!isReorderMode && currentSort !== 'custom') {
+        if (currentSort !== 'custom') {
             currentSort = 'custom';
             updateSortUI();
             needsReload = true;
         }
 
-        isReorderMode = !isReorderMode;
-        
         if (needsReload) {
             await loadCollectionItems(1, true);
+        }
+        if (currentSort !== 'custom' || currentSearch || searchPending || isLoading || loadFailed || touchPointer.matches) return;
+        setReorderMode(true);
+    }
+
+    function setReorderMode(enabled) {
+        isReorderMode = enabled;
+        if (!enabled) {
+            document.body.classList.remove('drag-active');
+            if (draggedEl) draggedEl.classList.remove('dragging');
+            draggedEl = null;
         }
 
         if (isReorderMode) {
@@ -581,22 +688,15 @@ document.addEventListener("DOMContentLoaded", () => {
             reorderBtn.classList.remove("active-state");
         }
 
-        document.querySelectorAll("#card-view .card").forEach(card => {
-            if (isReorderMode) {
-                card.classList.add("draggable-mode");
-                card.setAttribute("draggable", "true");
-            } else {
-                card.classList.remove("draggable-mode");
-                card.removeAttribute("draggable");
-            }
-        });
+        [...grid.children].forEach(syncCardModes);
     }
+    touchPointer.addEventListener('change', () => { if (touchPointer.matches) setReorderMode(false); });
 
     let draggedEl = null;
 
     grid.addEventListener('dragstart', (e) => {
-        if (currentSearch || searchPending) { e.preventDefault(); return; }
-        if (!isReorderMode) return;
+        if (currentSearch || searchPending || isLoading || loadFailed || mutationBusy) { e.preventDefault(); return; }
+        if (!isReorderMode || currentSort !== 'custom') return;
         
         // Disable native drag on touch screens
         if (window.matchMedia('(pointer: coarse)').matches) {
@@ -612,7 +712,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 const rect = draggedEl.getBoundingClientRect();
                 e.dataTransfer.setDragImage(draggedEl, rect.width / 2, rect.height / 2);
             }
-            setTimeout(() => draggedEl.classList.add('dragging'), 0);
+            const started = draggedEl;
+            setTimeout(() => { if (draggedEl === started) started.classList.add('dragging'); }, 0);
         }
     });
 
@@ -629,8 +730,9 @@ document.addEventListener("DOMContentLoaded", () => {
         e.preventDefault();
         
         const afterEl = getDragAfterElement(grid, e.clientX, e.clientY);
+        if (afterEl === draggedEl.nextElementSibling) return;
         if (afterEl == null) {
-            grid.appendChild(draggedEl);
+            if (grid.lastElementChild !== draggedEl) grid.appendChild(draggedEl);
         } else {
             grid.insertBefore(draggedEl, afterEl);
         }
@@ -649,34 +751,10 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    async function saveReorder() {
-        if (!isReorderMode || currentSearch || searchPending) return;
+    function saveReorder() {
+        if (!isReorderMode || currentSort !== 'custom' || currentSearch || searchPending) return;
         const order = [...grid.querySelectorAll(".card")].map(c => parseInt(c.dataset.id));
         
-        try {
-            await fetch(`/api/collection/${colId}/reorder/`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json", "X-CSRFToken": getCookie("csrftoken") },
-                body: JSON.stringify({ order })
-            });
-        } catch (err) {
-            console.error(err);
-        }
-    }
-
-    // Utility for CSRF token
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
+        return reorderSave.save(order);
     }
 });

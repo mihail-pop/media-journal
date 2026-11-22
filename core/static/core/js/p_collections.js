@@ -1,4 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
+    const { request, notify, orderSaver, getCookie } = window.collectionUI;
 
     const grid = document.getElementById("collections-grid");
     const loadingIndicator = document.getElementById("loading-indicator");
@@ -16,6 +17,19 @@ document.addEventListener("DOMContentLoaded", () => {
     const descInput = document.getElementById("col-desc");
     const closeBtn = document.getElementById("close-modal-btn");
     const deleteBtn = document.getElementById("delete-col-btn");
+    const deletePanel = document.getElementById('collection-delete-panel');
+    const cancelDelete = document.getElementById('cancel-collection-delete');
+    const confirmDelete = document.getElementById('confirm-collection-delete');
+    const touchPointer = window.matchMedia('(pointer: coarse)');
+    let modalBusy = false;
+    let loadFailed = false;
+    const reorderSave = orderSaver('/api/collections/reorder/', error => {
+        isSortMode = false;
+        sortBtn.classList.remove('active-sort');
+        updateDraggableState();
+        notify(error.message);
+        loadCollections(1, { preserveLoaded: true });
+    });
   
     // State
     let currentPage = 1;
@@ -55,7 +69,8 @@ document.addEventListener("DOMContentLoaded", () => {
     // ==========================================
     // API AND RENDERING
     // ==========================================
-    async function loadCollections(page = 1) {
+    async function loadCollections(page = 1, { preserveLoaded = false } = {}) {
+        const lastPage = preserveLoaded ? currentPage : page;
         if (page === 1) {
             clearTimeout(searchTimer);
             requestController.abort();
@@ -64,22 +79,29 @@ document.addEventListener("DOMContentLoaded", () => {
         } else if (isLoading || searchPending || !hasMore) return;
         const revision = requestRevision;
         isLoading = true;
+        sortBtn.disabled = true;
         
         if (page !== 1) {
             loadingIndicator.style.display = 'block';
         }
         
         try {
-            const params = new URLSearchParams({ page, search: currentSearch });
-            const response = await fetch(`/api/collections/?${params}`, { signal: requestController.signal });
-            if (!response.ok) throw new Error('Unable to load collections');
-            const data = await response.json();
+            await reorderSave.flush();
             if (revision !== requestRevision) return;
+            const newCollections = [];
+            let data;
+            for (let nextPage = page; nextPage <= lastPage; nextPage++) {
+                const params = new URLSearchParams({ page: nextPage, search: currentSearch });
+                data = await request(`/api/collections/?${params}`, { signal: requestController.signal });
+                if (revision !== requestRevision) return;
+                newCollections.push(...data.items);
+                if (!data.has_more) break;
+            }
             
             if (page === 1) {
-                allCollections = data.items ||[];
+                allCollections = newCollections;
             } else {
-                allCollections = [...allCollections, ...(data.items || [])];
+                allCollections = [...allCollections, ...newCollections];
             }
             
             hasMore = data.has_more;
@@ -88,7 +110,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (page === 1) {
                 const cards = new Map([...grid.children].map(card => [card.dataset.id, card]));
                 const retained = new Set();
-                data.items.forEach((col, index) => {
+                newCollections.forEach((col, index) => {
                     const existing = cards.get(String(col.id));
                     const card = existing?.dataset.signature === JSON.stringify(col) ? existing : createCard(col);
                     retained.add(card);
@@ -96,9 +118,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     if (card !== before) grid.insertBefore(card, before);
                 });
                 cards.forEach(card => { if (!retained.has(card)) card.remove(); });
-            } else data.items.forEach(col => grid.appendChild(createCard(col)));
-            searchPending = false;
-            sortBtn.disabled = Boolean(currentSearch);
+            } else newCollections.forEach(col => grid.appendChild(createCard(col)));
+            loadFailed = false;
             
             noItemsMsg.style.display = allCollections.length === 0 ? "block" : "none";
             updateDraggableState();
@@ -106,9 +127,19 @@ document.addEventListener("DOMContentLoaded", () => {
         } catch (error) {
             if (revision !== requestRevision || error.name === 'AbortError') return;
             console.error('Error loading collections:', error);
+            loadFailed = true;
+            isSortMode = false;
+            sortBtn.classList.remove('active-sort');
+            if (draggedElement) draggedElement.classList.remove('dragging');
+            draggedElement = null;
+            document.body.classList.remove('drag-active');
+            updateDraggableState();
+            notify(error.message);
         } finally {
             if (revision === requestRevision) {
                 isLoading = false;
+                searchPending = false;
+                sortBtn.disabled = Boolean(currentSearch) || loadFailed;
                 loadingIndicator.style.display = 'none';
             }
         }
@@ -116,38 +147,40 @@ document.addEventListener("DOMContentLoaded", () => {
   
     function createCard(col) {
         const a = document.createElement("a");
-        // We will make the detail page URL next, but for now we set it like this:
         a.href = `/collection/${col.id}/`; 
         a.className = "collection-card";
         a.dataset.id = col.id;
         a.dataset.signature = JSON.stringify(col);
         
-        // Generate the 5-image fan
-        const coversHtml = col.covers.map((cover, idx) => {
-            return `
-                <div class="stack-item pos-${idx}" data-media-type="${cover.media_type}">
-                    <img src="${cover.url}" alt="cover">
-                </div>
-            `;
-        }).join("");
-        
-        const fallbackHtml = col.covers.length === 0 
-            ? `<div class="stack-item pos-0 glass-card"></div>` 
-            : "";
-        
-        const stackClass = `cover-stack items-${col.covers.length}`;
-  
         a.innerHTML = `
             <button class="edit-col-btn" title="Edit Collection">⋯</button>
-            <div class="${stackClass}">
-                ${coversHtml}
-                ${fallbackHtml}
-            </div>
+            <div class="cover-stack"></div>
             <div class="col-info">
-                <h3 class="col-title" title="${col.title}">${col.title}</h3>
-                <p class="col-count">${col.item_count} item${col.item_count !== 1 ? 's' : ''}</p>
+                <h3 class="col-title"></h3>
+                <p class="col-count"></p>
             </div>
         `;
+        const stack = a.querySelector('.cover-stack');
+        stack.classList.add(`items-${col.covers.length}`);
+        col.covers.forEach((cover, index) => {
+            const layer = document.createElement('div');
+            layer.className = `stack-item pos-${index}`;
+            layer.dataset.mediaType = cover.media_type;
+            const image = document.createElement('img');
+            image.src = cover.url;
+            image.alt = 'cover';
+            layer.appendChild(image);
+            stack.appendChild(layer);
+        });
+        if (!col.covers.length) {
+            const placeholder = document.createElement('div');
+            placeholder.className = 'stack-item pos-0 glass-card';
+            stack.appendChild(placeholder);
+        }
+        const title = a.querySelector('.col-title');
+        title.textContent = col.title;
+        title.title = col.title;
+        a.querySelector('.col-count').textContent = `${col.item_count} item${col.item_count !== 1 ? 's' : ''}`;
   
         // Attach Edit Button listener
         const editBtn = a.querySelector('.edit-col-btn');
@@ -162,9 +195,9 @@ document.addEventListener("DOMContentLoaded", () => {
   
     // Infinite Scroll
     window.addEventListener('scroll', () => {
-        if (isLoading || !hasMore || isSortMode) return;
+        if (isLoading || searchPending || isSortMode || (!hasMore && !loadFailed)) return;
         if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 500) {
-            loadCollections(currentPage + 1);
+            loadCollections(loadFailed ? 1 : currentPage + 1);
         }
     });
   
@@ -180,6 +213,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   
     function openModal(col = null) {
+        if (modalBusy || !deletePanel.hidden) return;
         if (col) {
             modalTitle.textContent = "Edit Collection";
             idInput.value = col.id;
@@ -196,12 +230,18 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   
     function closeModal() {
+        if (modalBusy || !deletePanel.hidden) return;
         modalOverlay.classList.add("modal-hidden");
         form.reset();
     }
   
     form.addEventListener("submit", async (e) => {
         e.preventDefault();
+        if (modalBusy || !deletePanel.hidden) return;
+        if (!titleInput.value.trim()) {
+            titleInput.focus();
+            return;
+        }
         
         const payload = {
             id: idInput.value || null,
@@ -209,8 +249,11 @@ document.addEventListener("DOMContentLoaded", () => {
             description: descInput.value,
         };
   
+        setModalBusy(true);
+        let saved = false;
         try {
-            const res = await fetch("/api/collections/save/", {
+            await reorderSave.flush();
+            await request("/api/collections/save/", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -218,36 +261,72 @@ document.addEventListener("DOMContentLoaded", () => {
                 },
                 body: JSON.stringify(payload)
             });
-            const data = await res.json();
-            
-            if (data.success) {
-                closeModal();
-                // Reload page to reflect changes instantly
-                loadCollections(1);
-            } else {
-                alert("Error saving collection.");
-            }
+            saved = true;
         } catch (err) {
-            console.error(err);
+            notify(err.message);
+        } finally {
+            setModalBusy(false);
+        }
+        if (saved) {
+            closeModal();
+            loadCollections(1, { preserveLoaded: true });
         }
     });
-  
-    deleteBtn.addEventListener("click", async () => {
-        
-        
+
+    function setModalBusy(busy) {
+        modalBusy = busy;
+        form.querySelectorAll('input, textarea, button').forEach(control => { control.disabled = busy; });
+        cancelDelete.disabled = busy;
+        confirmDelete.disabled = busy;
+    }
+
+    deleteBtn.addEventListener('click', () => {
+        if (modalBusy || !idInput.value) return;
+        deletePanel.hidden = false;
+        modalOverlay.inert = true;
+        cancelDelete.focus();
+    });
+    function closeDeletePanel(restoreFocus = true) {
+        if (modalBusy) return;
+        deletePanel.hidden = true;
+        modalOverlay.inert = false;
+        if (restoreFocus) deleteBtn.focus();
+    }
+    cancelDelete.addEventListener('click', () => closeDeletePanel());
+    document.addEventListener('click', event => {
+        if (!deletePanel.hidden && !deletePanel.contains(event.target)) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+        }
+    }, true);
+    document.addEventListener('keydown', event => {
+        if (deletePanel.hidden) return;
+        if (event.key === 'Escape') closeDeletePanel();
+        if (event.key === 'Tab') {
+            event.preventDefault();
+            (document.activeElement === cancelDelete ? confirmDelete : cancelDelete).focus();
+        }
+    });
+    confirmDelete.addEventListener("click", async () => {
+        if (modalBusy || deletePanel.hidden) return;
+        setModalBusy(true);
+        let deleted = false;
         try {
-            const res = await fetch(`/api/collections/delete/${idInput.value}/`, {
+            await reorderSave.flush();
+            await request(`/api/collections/delete/${idInput.value}/`, {
                 method: "DELETE",
                 headers: {"X-CSRFToken": getCookie("csrftoken")}
             });
-            const data = await res.json();
-            
-            if (data.success) {
-                closeModal();
-                loadCollections(1);
-            }
+            deleted = true;
         } catch (err) {
-            console.error(err);
+            notify(err.message);
+        } finally {
+            setModalBusy(false);
+        }
+        if (deleted) {
+            closeDeletePanel(false);
+            closeModal();
+            loadCollections(1, { preserveLoaded: true });
         }
     });
   
@@ -255,9 +334,15 @@ document.addEventListener("DOMContentLoaded", () => {
     // DRAG AND DROP LOGIC (NATIVE)
     // ==========================================
     sortBtn.addEventListener("click", () => {
-        if (currentSearch || searchPending) return;
+        if (currentSearch || searchPending || isLoading || loadFailed || touchPointer.matches) return;
         isSortMode = !isSortMode;
         sortBtn.classList.toggle("active-sort", isSortMode);
+        updateDraggableState();
+    });
+    touchPointer.addEventListener('change', () => {
+        if (!touchPointer.matches) return;
+        isSortMode = false;
+        sortBtn.classList.remove('active-sort');
         updateDraggableState();
     });
   
@@ -280,7 +365,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let draggedElement = null;
 
     grid.addEventListener('dragstart', (e) => {
-        if (currentSearch || searchPending) { e.preventDefault(); return; }
+        if (currentSearch || searchPending || isLoading || loadFailed) { e.preventDefault(); return; }
         if (!isSortMode) return;
         
         // Disable native drag on touch screens
@@ -297,7 +382,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 const rect = draggedElement.getBoundingClientRect();
                 e.dataTransfer.setDragImage(draggedElement, rect.width / 2, rect.height / 2);
             }
-            setTimeout(() => draggedElement.classList.add('dragging'), 0);
+            const started = draggedElement;
+            setTimeout(() => { if (draggedElement === started) started.classList.add('dragging'); }, 0);
         }
     });
 
@@ -341,37 +427,10 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
   
-    async function saveOrder() {
+    function saveOrder() {
         if (!isSortMode || currentSearch || searchPending) return;
         const currentOrder = [...grid.querySelectorAll(".collection-card")].map(c => c.dataset.id);
         
-        try {
-            await fetch("/api/collections/reorder/", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRFToken": getCookie("csrftoken")
-                },
-                body: JSON.stringify({ order: currentOrder })
-            });
-        } catch (err) {
-            console.error("Failed to save reorder", err);
-        }
-    }
-  
-    // Utility for CSRF token
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
+        return reorderSave.save(currentOrder);
     }
 });
