@@ -1,6 +1,6 @@
 ## Setup for Windows
 
-You can also use the [Installer for Windows](https://github.com/mihail-pop/media-journal/releases/latest/download/MediaJournalSetup.exe).
+For Windows 11, you can also use the [Windows Installer](https://github.com/mihail-pop/media-journal/releases/latest/download/MediaJournalSetup.exe).
 
 1. Download [Python 3.13.0](https://www.python.org/downloads/release/python-3130/).  
     During installation check the option:

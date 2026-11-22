@@ -16,51 +16,194 @@ document.addEventListener("DOMContentLoaded", function () {
 
   if (activityContainer && upcomingContainer) {
     const savedActView = document.documentElement.dataset.homeActivityView || "activity";
-    
-    function triggerHomeSync() {
-        fetch('/api/calendar/sync/', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
-            body: JSON.stringify({}) // Empty body uses backend DB preferences!
-        }).then(res => res.json()).then(data => {
-            // ONLY refresh the DOM if the API actually synced/found updates
-            if (data.synced_count > 0) {
-                // Refresh only Upcoming; keep the fully rendered initial page.
-                return fetch(upcomingContainer.dataset.refreshUrl)
-                    .then(response => {
-                        if (!response.ok) throw new Error('Unable to refresh Upcoming');
-                        return response.text();
-                    })
-                    .then(html => {
-                        const parser = new DOMParser();
-                        const doc = parser.parseFromString(html, 'text/html');
-                        
-                        // Swap the Tiles Container
-                        const newTiles = doc.querySelector('.upcoming-tiles-container');
-                        const oldTiles = document.querySelector('.upcoming-tiles-container');
-                        if (newTiles && oldTiles) {
-                            oldTiles.innerHTML = newTiles.innerHTML;
-                        }
+    let syncRequest = null;
+    let refreshRequest = null;
+    let refreshController = null;
+    let clockTimer = null;
+    let initialSyncTimer = null;
+    let syncRetryTimer = null;
+    let initialSyncPending = savedActView === "upcoming";
+    let upcomingWasShown = false;
+    let upcomingExpanded = false;
+    let pageActive = true;
+    let hiddenAt = 0;
+    let clockOffset = 0;
+    let calendarUtcOffset = 0;
+    let calendarToday = "";
+    let nextMidnight = Infinity;
+    let nextRefreshAttempt = 0;
 
-                        // Refresh the list and its controls together, including when
-                        // syncing changes whether a Show More button is needed.
-                        const newList = doc.querySelector('.recent-activity');
-                        const oldList = upcomingContainer.querySelector('.recent-activity');
-                        if (newList && oldList) {
-                            oldList.innerHTML = newList.innerHTML;
-                        }
+    function upcomingIsVisible() {
+      return pageActive && !document.hidden && document.documentElement.dataset.homeActivityView === "upcoming";
+    }
 
-                        // Re-attach the tooltips to the newly injected elements
-                        attachPillTooltips();
-                        
-                        // Recentering today's tile
-                        centerTodayTile();
-                    });
-            }
-        }).catch(error => {
-            // Leave the currently displayed content in place if syncing fails.
-            console.warn('Unable to update Upcoming releases:', error);
+    function readUpcomingClock() {
+      const metadata = upcomingContainer.querySelector('.upcoming-tiles-wrapper');
+      if (!metadata) return;
+      const serverNow = Date.parse(metadata.dataset.calendarNow);
+      const midnight = Date.parse(metadata.dataset.calendarMidnight);
+      if (Number.isFinite(serverNow)) clockOffset = serverNow - Date.now();
+      const offset = metadata.dataset.calendarNow?.match(/([+-])(\d{2}):(\d{2})$/);
+      calendarUtcOffset = offset ? (Number(offset[2]) * 60 + Number(offset[3])) * 60000 * (offset[1] === '-' ? -1 : 1) : 0;
+      calendarToday = metadata.dataset.calendarToday || "";
+      nextMidnight = Number.isFinite(midnight) ? midnight : Infinity;
+    }
+
+    function countWithUnit(count, unit) {
+      return `${count} ${unit}${count === 1 ? '' : 's'}`;
+    }
+
+    function allDayCountdown(dateString) {
+      const days = Math.round((Date.parse(`${dateString}T00:00:00Z`) - Date.parse(`${calendarToday}T00:00:00Z`)) / 86400000);
+      if (!Number.isFinite(days)) return null;
+      if (days <= 0) return 'Today';
+      const target = dateString.split('-').map(Number);
+      const today = calendarToday.split('-').map(Number);
+      const months = (target[0] - today[0]) * 12 + target[1] - today[1] - (target[2] < today[2] ? 1 : 0);
+      if (months >= 12) return `in ${countWithUnit(Math.floor(months / 12), 'year')}`;
+      if (months >= 1) return `in ${countWithUnit(months, 'month')}`;
+      if (days >= 7) return `in ${countWithUnit(Math.floor(days / 7), 'week')}`;
+      return `in ${countWithUnit(days, 'day')}`;
+    }
+
+    function updateUpcomingTimes() {
+      const now = Date.now() + clockOffset;
+      const calendarNow = new Date(now + calendarUtcOffset);
+      let elapsedEvent = false;
+      upcomingContainer.querySelectorAll('[data-event-datetime]').forEach(label => {
+        if (label.dataset.allDay === 'true') {
+          const text = allDayCountdown(label.dataset.eventDate);
+          if (text && label.textContent !== text) label.textContent = text;
+          return;
+        }
+        const deadline = Date.parse(label.dataset.eventDatetime);
+        if (!Number.isFinite(deadline)) return;
+        const remaining = (deadline - now) / 1000;
+        if (remaining <= 0) {
+          const text = `Now${label.dataset.timeSuffix || ''}`;
+          if (label.textContent !== text) label.textContent = text;
+          elapsedEvent = true;
+          return;
+        }
+        const seconds = Math.max(1, Math.floor(remaining));
+        // Match Django's calendar-month/year labels rather than assuming every
+        // month has 30 days. The timestamp itself still controls precise expiry.
+        const targetWallTime = new Date(`${label.dataset.eventDatetime.slice(0, 19)}Z`);
+        let months = (targetWallTime.getUTCFullYear() - calendarNow.getUTCFullYear()) * 12 + targetWallTime.getUTCMonth() - calendarNow.getUTCMonth();
+        const targetDay = targetWallTime.getUTCDate();
+        const todayDay = calendarNow.getUTCDate();
+        const targetSeconds = targetWallTime.getUTCHours() * 3600 + targetWallTime.getUTCMinutes() * 60 + targetWallTime.getUTCSeconds();
+        const currentSeconds = calendarNow.getUTCHours() * 3600 + calendarNow.getUTCMinutes() * 60 + calendarNow.getUTCSeconds();
+        if (targetDay < todayDay || (targetDay === todayDay && targetSeconds < currentSeconds)) months -= 1;
+        let duration;
+        if (months >= 12) duration = countWithUnit(Math.floor(months / 12), 'year');
+        else if (months >= 1) duration = countWithUnit(months, 'month');
+        else {
+          const units = [['week', 604800], ['day', 86400], ['hour', 3600], ['minute', 60], ['second', 1]];
+          const [unit, size] = units.find(([, value]) => seconds >= value);
+          duration = countWithUnit(Math.floor(seconds / size), unit);
+        }
+        const text = `in ${duration}${label.dataset.timeSuffix || ''}`;
+        if (label.textContent !== text) label.textContent = text;
+      });
+      // These refreshes read the saved schedule only; they never trigger API sync.
+      if ((now >= nextMidnight || elapsedEvent) && Date.now() >= nextRefreshAttempt) {
+        nextRefreshAttempt = Date.now() + 30000;
+        refreshUpcoming().catch(reportUpcomingError);
+      }
+    }
+
+    function reportUpcomingError(error) {
+      if (error.name !== 'AbortError') console.warn('Unable to update Upcoming releases:', error);
+    }
+
+    function restoreUpcomingExpansion() {
+      upcomingContainer.querySelectorAll('#upcoming-activity-list li:nth-child(n+3)').forEach(item => {
+        item.classList.toggle('upcoming-activity-hidden', !upcomingExpanded);
+      });
+      const button = upcomingContainer.querySelector('#toggle-upcoming-btn');
+      if (button) {
+        button.dataset.state = upcomingExpanded ? 'less' : 'more';
+        button.textContent = upcomingExpanded ? 'Show Less' : 'Show More';
+      }
+    }
+
+    function refreshUpcoming() {
+      if (refreshRequest) return refreshRequest;
+      refreshController = new AbortController();
+      refreshRequest = fetch(upcomingContainer.dataset.refreshUrl, { cache: 'no-store', signal: refreshController.signal })
+        .then(response => {
+          if (!response.ok) throw new Error('Unable to refresh Upcoming');
+          return response.text();
+        })
+        .then(html => {
+          if (!pageActive) return;
+          const doc = new DOMParser().parseFromString(html, 'text/html');
+          const newTiles = doc.querySelector('.upcoming-tiles-container');
+          const oldTiles = upcomingContainer.querySelector('.upcoming-tiles-container');
+          const newList = doc.querySelector('.recent-activity');
+          const oldList = upcomingContainer.querySelector('.recent-activity');
+          const newMetadata = doc.querySelector('.upcoming-tiles-wrapper');
+          const oldMetadata = upcomingContainer.querySelector('.upcoming-tiles-wrapper');
+          if (!newTiles || !oldTiles || !newList || !oldList || !newMetadata || !oldMetadata) {
+            throw new Error('Upcoming response did not contain the schedule');
+          }
+          const scrollLeft = oldTiles.scrollLeft;
+          oldTiles.innerHTML = newTiles.innerHTML;
+          oldTiles.scrollLeft = scrollLeft;
+          oldList.innerHTML = newList.innerHTML;
+          Object.assign(oldMetadata.dataset, newMetadata.dataset);
+          restoreUpcomingExpansion();
+          tooltip.style.display = 'none';
+          attachPillTooltips();
+          readUpcomingClock();
+          nextRefreshAttempt = 0;
+          if (upcomingIsVisible()) updateUpcomingTimes();
+        })
+        .finally(() => {
+          refreshRequest = null;
+          refreshController = null;
         });
+      return refreshRequest;
+    }
+
+    function triggerHomeSync(allowRetry = true) {
+      if (syncRequest) return syncRequest;
+      initialSyncPending = false;
+      clearTimeout(initialSyncTimer);
+      clearTimeout(syncRetryTimer);
+      syncRequest = fetch('/api/calendar/sync/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+        body: JSON.stringify({}) // Empty body uses backend DB preferences.
+      }).then(async response => {
+        const data = await response.json();
+        if (!response.ok || data.success !== true) throw new Error(data.error || 'Calendar synchronization failed');
+        if (data.changed || data.synced_count > 0) await refreshUpcoming();
+        if (data.failed_count > 0) console.warn('Some Upcoming releases could not be synchronized.');
+        if (data.in_progress && allowRetry && upcomingIsVisible()) {
+          // Another page is syncing. Retry once without creating a polling loop.
+          syncRetryTimer = setTimeout(() => triggerHomeSync(false), 5000);
+        }
+      }).catch(reportUpcomingError).finally(() => { syncRequest = null; });
+      return syncRequest;
+    }
+
+    function stopUpcomingTimers() {
+      clearTimeout(clockTimer);
+      clearTimeout(initialSyncTimer);
+      clearTimeout(syncRetryTimer);
+      clockTimer = initialSyncTimer = syncRetryTimer = null;
+    }
+
+    function startUpcomingClock() {
+      clearTimeout(clockTimer);
+      if (!upcomingIsVisible()) return;
+      updateUpcomingTimes();
+      clockTimer = setTimeout(startUpcomingClock, 1000);
+      if (initialSyncPending && !initialSyncTimer) {
+        initialSyncTimer = setTimeout(() => triggerHomeSync(), 300);
+      }
     }
 
     // Toggle to Upcoming
@@ -68,7 +211,9 @@ document.addEventListener("DOMContentLoaded", function () {
       btn.addEventListener('click', () => {
         document.documentElement.dataset.homeActivityView = 'upcoming';
         saveDashboardChoice("homeDashboardActivityView", "upcoming");
-        centerTodayTile();
+        if (!upcomingWasShown) centerTodayTile();
+        upcomingWasShown = true;
+        startUpcomingClock();
         triggerHomeSync();
       });
     });
@@ -78,13 +223,46 @@ document.addEventListener("DOMContentLoaded", function () {
       btn.addEventListener('click', () => {
         document.documentElement.dataset.homeActivityView = 'activity';
         saveDashboardChoice("homeDashboardActivityView", "activity");
+        stopUpcomingTimers();
       });
     });
 
+    upcomingContainer.addEventListener('click', event => {
+      if (!event.target.closest('#toggle-upcoming-btn')) return;
+      upcomingExpanded = !upcomingExpanded;
+      restoreUpcomingExpansion();
+    });
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        hiddenAt = Date.now();
+        stopUpcomingTimers();
+      } else if (upcomingIsVisible()) {
+        if (hiddenAt && Date.now() - hiddenAt >= 60000) refreshUpcoming().catch(reportUpcomingError);
+        startUpcomingClock();
+      }
+    });
+    window.addEventListener('pagehide', () => {
+      pageActive = false;
+      hiddenAt = Date.now();
+      stopUpcomingTimers();
+      refreshController?.abort();
+    });
+    window.addEventListener('pageshow', event => {
+      if (!event.persisted) return;
+      pageActive = true;
+      if (upcomingIsVisible()) {
+        refreshUpcoming().catch(reportUpcomingError);
+        startUpcomingClock();
+      }
+    });
+
+    readUpcomingClock();
     // Center the today tile on load if upcoming is active
     if (savedActView === "upcoming") {
-        centerTodayTile();
-        setTimeout(triggerHomeSync, 300); // trigger slightly after load
+      centerTodayTile();
+      upcomingWasShown = true;
+      startUpcomingClock();
     }
   }
 
@@ -308,24 +486,6 @@ toggleBtn?.addEventListener("click", () => {
 advancedBtn?.addEventListener("click", () => {
   window.location.href = "/history/";
 });
-
-// Upcoming List toggle
-document.getElementById("upcoming-view-container")?.addEventListener("click", (event) => {
-  const upcomingToggleBtn = event.target.closest("#toggle-upcoming-btn");
-  if (!upcomingToggleBtn) return;
-  // Dynamically query items > 2 at the exact moment of click
-  const itemsToToggle = document.querySelectorAll("#upcoming-activity-list li:nth-child(n+3)");
-  if (upcomingToggleBtn.dataset.state === "more") {
-    itemsToToggle.forEach(el => el.classList.remove("upcoming-activity-hidden"));
-    upcomingToggleBtn.textContent = "Show Less";
-    upcomingToggleBtn.dataset.state = "less";
-  } else {
-    itemsToToggle.forEach(el => el.classList.add("upcoming-activity-hidden"));
-    upcomingToggleBtn.textContent = "Show More";
-    upcomingToggleBtn.dataset.state = "more";
-  }
-});
-
 
 // --- SHARDING MIGRATION LOGIC ---
 document.body.addEventListener('click', function(e) {

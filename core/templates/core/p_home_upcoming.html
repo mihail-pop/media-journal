@@ -1,4 +1,4 @@
-<div class="upcoming-tiles-wrapper">
+<div class="upcoming-tiles-wrapper" data-calendar-today="{{ upcoming_today }}" data-calendar-now="{{ upcoming_now }}" data-calendar-midnight="{{ upcoming_midnight }}">
     <div class="upcoming-tiles-container">
         {% for tile in upcoming_tiles %}
     <a href="/calendar/?date={{ tile.date_str }}" class="upcoming-tile {% if tile.is_today %}today-tile{% endif %}" id="tile-{{ tile.date_str }}">
@@ -32,7 +32,7 @@
       <li class="{% if forloop.counter > 2 %}upcoming-activity-hidden{% endif %}">
         <a href="{{ entry.url }}" class="activity-entry">
           <span class="activity-left">{{ entry.message_main }}</span>
-          <span class="activity-right">{{ entry.message_time }}</span>
+          <span class="activity-right" data-event-datetime="{{ entry.datetime }}" data-event-date="{{ entry.date_str }}" data-all-day="{{ entry.all_day|yesno:'true,false' }}" data-time-suffix="{{ entry.time_suffix }}">{{ entry.message_time }}</span>
           <div class="activity-thumbnail" data-media-type="{{ entry.media_type }}">
             <img src="{{ entry.cover_url }}" alt="">
           </div>

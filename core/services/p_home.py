@@ -10,22 +10,29 @@ from django.utils import timezone
 from django.utils.timesince import timeuntil
 
 from core.models import CalendarEvent, MediaItem
+from core.services.g_calendar_dates import (
+    all_day_datetime,
+    calendar_iso_datetime,
+    calendar_now,
+    display_calendar_datetime,
+    is_all_day_event,
+)
 from core.services.m_anime_manga import update_anilist_anime_manga
 from core.services.m_movies_tvshows import update_tmdb_seasons
 
 
 def get_home_upcoming():
     """Build the same Upcoming content for the initial page and later refreshes."""
-    now = timezone.now()
+    now = calendar_now()
     today_date = now.date()
     cal_start_date = today_date - timedelta(days=7)
     cal_end_date = today_date + timedelta(days=7)
 
     calendar_events = CalendarEvent.objects.filter(
-        date__date__gte=cal_start_date,
-        date__date__lte=cal_end_date
+        date__gte=all_day_datetime(cal_start_date),
+        date__lt=all_day_datetime(cal_end_date + timedelta(days=1)),
     ).select_related('item').only(
-        'date', 'title', 'item__title', 'item__media_type', 'item__cover_url',
+        'date', 'title', 'is_custom', 'item__title', 'item__media_type', 'item__cover_url',
         'item__source', 'item__provider_ids',
     ).order_by('date')
 
@@ -33,7 +40,7 @@ def get_home_upcoming():
     for e in calendar_events:
         if e.title == "__API_SYNC__":
             continue
-        events_by_date[e.date.date()].append(e)
+        events_by_date[display_calendar_datetime(e.date).date()].append(e)
 
     upcoming_tiles = []
     for i in range(15):
@@ -45,9 +52,10 @@ def get_home_upcoming():
 
         day_events = []
         for e in events_by_date.get(d, []):
+            event_date = display_calendar_datetime(e.date)
             time_str = ""
-            if e.date.strftime("%H:%M") != "00:00":
-                time_str = e.date.strftime("%H:%M")
+            if not is_all_day_event(e):
+                time_str = event_date.strftime("%H:%M")
 
             day_events.append({
                 "title": e.item.title,
@@ -66,14 +74,18 @@ def get_home_upcoming():
         })
 
     future_events = CalendarEvent.objects.filter(
-        date__gte=now
+        date__gte=all_day_datetime(today_date),
     ).exclude(title="__API_SYNC__").select_related('item').only(
-        'date', 'title', 'item__title', 'item__media_type', 'item__cover_url',
+        'date', 'title', 'is_custom', 'item__title', 'item__media_type', 'item__cover_url',
         'item__source', 'item__provider_ids',
-    ).order_by('date')[:12]
+    ).order_by('date', 'id')
 
     upcoming_list = []
-    for e in future_events:
+    for e in future_events.iterator(chunk_size=50):
+        event_date = display_calendar_datetime(e.date)
+        all_day = is_all_day_event(e)
+        if not all_day and event_date < now:
+            continue
         url = "#"
         if e.item.source == "tmdb" and e.item.media_type in ["movie", "tv"]:
             if "_s" in str(e.item.source_id):
@@ -91,11 +103,13 @@ def get_home_upcoming():
         elif e.item.source == "musicbrainz" and e.item.media_type == "music":
             url = reverse("musicbrainz_detail", args=[e.item.source_id])
 
-        seconds_until = max(1, int((e.date - now).total_seconds()))
-        if seconds_until < 60:
+        seconds_until = max(1, int((event_date - now).total_seconds()))
+        if all_day:
+            time_until = timeuntil(event_date, all_day_datetime(today_date)).split(',')[0]
+        elif seconds_until < 60:
             time_until = f"{seconds_until} second{'s' if seconds_until != 1 else ''}"
         else:
-            time_until = timeuntil(e.date, now).split(',')[0]
+            time_until = timeuntil(event_date, now).split(',')[0]
 
         if e.title and e.title not in ["Global Release", "Release Date", "Game Release"]:
             action = f"{e.item.title} {e.title}"
@@ -103,18 +117,30 @@ def get_home_upcoming():
             action = f"{e.item.title}"
 
         time_str_list = ""
-        if e.date.strftime("%H:%M") != "00:00":
-            time_str_list = f" ({e.date.strftime('%H:%M')})"
+        if not all_day:
+            time_str_list = f" ({event_date.strftime('%H:%M')})"
 
         upcoming_list.append({
             "message_main": action,
-            "message_time": f"in {time_until}{time_str_list}",
+            "message_time": "Today" if all_day and event_date.date() == today_date else f"in {time_until}{time_str_list}",
+            "date_str": event_date.date().isoformat(),
+            "datetime": calendar_iso_datetime(e.date),
+            "all_day": all_day,
+            "time_suffix": time_str_list,
             "media_type": e.item.media_type,
             "cover_url": e.item.cover_url or "/static/core/img/placeholder.png",
             "url": url,
         })
+        if len(upcoming_list) == 12:
+            break
 
-    return {"upcoming_tiles": upcoming_tiles, "upcoming_list": upcoming_list}
+    return {
+        "upcoming_tiles": upcoming_tiles,
+        "upcoming_list": upcoming_list,
+        "upcoming_today": today_date.isoformat(),
+        "upcoming_now": calendar_iso_datetime(now),
+        "upcoming_midnight": calendar_iso_datetime(all_day_datetime(today_date + timedelta(days=1))),
+    }
 
 
 _started_tmdb = False

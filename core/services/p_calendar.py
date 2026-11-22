@@ -1,220 +1,428 @@
-import datetime
-from django.conf import settings
-from django.utils import timezone
-import requests
 import concurrent.futures
+import datetime
+import re
+import threading
+import time
+from collections import OrderedDict, defaultdict
+from email.utils import parsedate_to_datetime
+
+import requests
+from django.db import transaction
 
 from core.models import APIKey, CalendarEvent
+from core.services.g_calendar_dates import (
+    all_day_datetime,
+    calendar_now,
+    normalize_calendar_datetime,
+)
 from core.services.m_games import get_igdb_token
 
-def _normalize_dt(dt_obj):
-    """Helper to convert timezone-aware datetimes to naive if USE_TZ is False."""
-    if not settings.USE_TZ and timezone.is_aware(dt_obj):
-        return timezone.make_naive(dt_obj)
-    return dt_obj
+
+# Home and Calendar share this lock; network workers never write to SQLite.
+SYNC_LOCK = threading.Lock()
+_RETRY_SECONDS = 15 * 60
+_MAX_RETRIES = 10000
+_retry_lock = threading.Lock()
+_retry_until = OrderedDict()
+_provider_retry_until = {}
+_provider_last_request = {}
+_TV_EPISODES = re.compile(r"^Episodes? (\d+(?:-\d+)?(?:,\s*\d+(?:-\d+)?)*) \(S(\d+)\)$")
+_ANIME_EPISODE = re.compile(r"^Episode \d+$")
+
+
+class _RequestFailure(Exception):
+    pass
+
+
+class _ProviderDeferred(_RequestFailure):
+    pass
+
+
+def retry_sync_allowed(item_id, now=None):
+    """Avoid repeating a failed request on every Home/Calendar visit."""
+    current = now.timestamp() if now is not None else time.time()
+    with _retry_lock:
+        until = _retry_until.get(item_id, 0)
+        if until <= current:
+            _retry_until.pop(item_id, None)
+            return True
+        return False
+
+
+def _remember_failure(items, provider=None):
+    now = time.time()
+    with _retry_lock:
+        until = max(now + _RETRY_SECONDS, _provider_retry_until.get(provider, 0))
+        for item in items:
+            _retry_until[item.pk] = until
+            _retry_until.move_to_end(item.pk)
+        while len(_retry_until) > _MAX_RETRIES:
+            _retry_until.popitem(last=False)
+
+
+def _failed(result, items, error, provider=None):
+    items = list(items)
+    result['skipped_count' if isinstance(error, _ProviderDeferred) else 'failed_count'] += len(items)
+    _remember_failure(items, provider)
+    if not isinstance(error, _ProviderDeferred):
+        print(f"Calendar {provider or 'item'} synchronization failed: {error}")
+
+
+def _request_json(provider, method, url, *, interval=0, **kwargs):
+    now = time.time()
+    with _retry_lock:
+        if _provider_retry_until.get(provider, 0) > now:
+            raise _ProviderDeferred(f"{provider} requests are temporarily paused.")
+        wait = max(0, interval - (now - _provider_last_request.get(provider, 0)))
+    if wait:
+        time.sleep(wait)
+    with _retry_lock:
+        if _provider_retry_until.get(provider, 0) > time.time():
+            raise _ProviderDeferred(f"{provider} requests are temporarily paused.")
+        _provider_last_request[provider] = time.time()
+    try:
+        response = getattr(requests, method)(url, timeout=10, **kwargs)
+    except requests.RequestException as error:
+        raise _RequestFailure('The request timed out or could not connect.') from error
+    if response.status_code == 429:
+        retry_after = response.headers.get('Retry-After', '')
+        try:
+            seconds = float(retry_after)
+        except (TypeError, ValueError):
+            try:
+                seconds = parsedate_to_datetime(retry_after).timestamp() - time.time()
+            except (TypeError, ValueError, OverflowError):
+                seconds = 60
+        with _retry_lock:
+            _provider_retry_until[provider] = time.time() + max(1, seconds)
+        raise _RequestFailure('The provider rate limit was reached; remaining requests are deferred.')
+    if response.status_code != 200:
+        raise _RequestFailure(f"The provider returned HTTP {response.status_code}.")
+    try:
+        return response.json()
+    except (TypeError, ValueError) as error:
+        raise _RequestFailure('The provider returned an invalid response.') from error
+
 
 def cleanup_old_events():
-    """Deletes all events (API and Custom) older than 90 days, except the tracker."""
-    current_utc = datetime.datetime.now(datetime.timezone.utc)
-    cutoff = current_utc - datetime.timedelta(days=90)
-    db_cutoff = _normalize_dt(cutoff)
-    CalendarEvent.objects.filter(date__lt=db_cutoff).exclude(title="__API_SYNC__").delete()
+    """Preserve the existing 90-day retention for API and custom events."""
+    cutoff = calendar_now() - datetime.timedelta(days=90)
+    deleted, _ = CalendarEvent.objects.filter(date__lt=cutoff).exclude(title="__API_SYNC__").delete()
+    return bool(deleted)
+
 
 def sync_items_with_apis(items):
-    # Run the 3-month cleanup every time a sync happens
-    cleanup_old_events()
-
-    tmdb_movies = []
-    tmdb_tv = []
-    anilist_items = []
-    igdb_items = []
-
+    result = {'synced_count': 0, 'failed_count': 0, 'skipped_count': 0,
+              'changed': cleanup_old_events()}
+    groups = defaultdict(list)
     for item in items:
-        # Skip custom user-created items
-        if str(item.source_id).startswith("custom_"):
+        if str(item.source_id or '').startswith('custom_'):
+            result['skipped_count'] += 1
+        elif item.source == 'tmdb' and item.media_type in ('movie', 'tv'):
+            groups[item.media_type].append(item)
+        elif item.source in ('anilist', 'mal') and item.media_type in ('anime', 'manga'):
+            groups['anilist'].append(item)
+        elif item.source == 'igdb' and item.media_type == 'game':
+            groups['igdb'].append(item)
+        else:
+            result['skipped_count'] += 1
+    _sync_tmdb_movies(groups['movie'], result)
+    _sync_tmdb_tv(groups['tv'], result)
+    _sync_anilist(groups['anilist'], result)
+    _sync_igdb(groups['igdb'], result)
+    return result
+
+
+def _complete(item, result, apply_events, provider):
+    try:
+        with transaction.atomic():
+            changed = apply_events()
+            item.calendar_last_sync = calendar_now()
+            item.save(update_fields=['calendar_last_sync'])
+    except Exception as error:
+        _failed(result, [item], error, provider)
+        return
+    with _retry_lock:
+        _retry_until.pop(item.pk, None)
+    result['synced_count'] += 1
+    result['changed'] = result['changed'] or changed
+
+
+def _api_events(item):
+    return CalendarEvent.objects.filter(item=item, is_custom=False).exclude(title="__API_SYNC__")
+
+
+def _recent_date(date):
+    if date is not None and date >= calendar_now() - datetime.timedelta(days=90):
+        return date
+    return None
+
+
+def _update_release(item, title, date, *, notify=False):
+    """An existing row survives a date change, preserving its notification toggle."""
+    existing = list(_api_events(item).filter(title=title).order_by('id'))
+    date = _recent_date(date)
+    if date is None:
+        if existing:
+            _api_events(item).filter(pk__in=[event.pk for event in existing]).delete()
+        return bool(existing)
+    if not existing:
+        CalendarEvent.objects.create(item=item, title=title, date=date,
+                                     is_custom=False, notify=notify)
+        return True
+    primary = next((event for event in existing if event.date == date), existing[0])
+    fields = []
+    if primary.date != date:
+        primary.date = date
+        primary.notified = False
+        fields.extend(['date', 'notified'])
+    if any(event.notify for event in existing) and not primary.notify:
+        primary.notify = True
+        fields.append('notify')
+    if fields:
+        primary.save(update_fields=fields)
+    duplicates = [event.pk for event in existing if event.pk != primary.pk]
+    if duplicates:
+        _api_events(item).filter(pk__in=duplicates).delete()
+    return bool(fields or duplicates)
+
+
+def _tmdb_key(items, result):
+    try:
+        key = APIKey.objects.get(name='tmdb').key_1
+    except APIKey.DoesNotExist:
+        key = None
+    if not key:
+        result['skipped_count'] += len(items)
+    return key
+
+
+def _sync_tmdb_movies(items, result):
+    if not items:
+        return
+    api_key = _tmdb_key(items, result)
+    if not api_key:
+        return
+
+    def fetch(item):
+        try:
+            data = _request_json('tmdb', 'get',
+                f"https://api.themoviedb.org/3/movie/{item.source_id}", params={'api_key': api_key})
+            if not isinstance(data, dict) or 'release_date' not in data:
+                raise _RequestFailure('The movie response is incomplete.')
+            release = data.get('release_date')
+            date = all_day_datetime(datetime.date.fromisoformat(release)) if release else None
+            return item, date, None
+        except Exception as error:
+            return item, None, error
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+        responses = list(executor.map(fetch, items))
+    for item, date, error in responses:
+        if error is not None:
+            _failed(result, [item], error, 'tmdb')
+        else:
+            _complete(item, result, lambda: _update_release(item, 'Global Release', date), 'tmdb')
+
+
+def _parse_tv_episodes(title):
+    match = _TV_EPISODES.fullmatch(title or '')
+    if not match:
+        return None
+    episodes = set()
+    for part in match[1].split(','):
+        ends = part.strip().split('-')
+        first, last = int(ends[0]), int(ends[-1])
+        if last < first or last - first > 10000:
+            return None
+        episodes.update(range(first, last + 1))
+    return int(match[2]), episodes
+
+
+def _tv_episode_title(season, episodes):
+    numbers = sorted(episodes)
+    if len(numbers) == 1:
+        return f"Episode {numbers[0]} (S{season})"
+    ranges = []
+    first = last = numbers[0]
+    for number in numbers[1:]:
+        if number == last + 1:
+            last = number
+        else:
+            ranges.append(str(first) if first == last else f"{first}-{last}")
+            first = last = number
+    ranges.append(str(first) if first == last else f"{first}-{last}")
+    return f"Episodes {', '.join(ranges)} (S{season})"
+
+
+def _reconcile_tv(item, seasons, selected_season):
+    existing = list(_api_events(item).order_by('date', 'id'))
+    parsed = [(event, _parse_tv_episodes(event.title)) for event in existing]
+    parsed = [(event, identity) for event, identity in parsed if identity is not None]
+    default_notify = existing[-1].notify if existing else False
+    desired = defaultdict(set)
+    for season, episodes in seasons.items():
+        for episode in episodes:
+            air_date = episode.get('air_date')
+            if not air_date:
+                continue
+            date = _recent_date(all_day_datetime(datetime.date.fromisoformat(air_date)))
+            if date is not None:
+                desired[season, date].add(int(episode['episode_number']))
+
+    used = set()
+    changed = False
+    for (season, date), episodes in sorted(desired.items(), key=lambda entry: (entry[0][1], entry[0][0])):
+        title = _tv_episode_title(season, episodes)
+        # Original overlap is also used when a grouped event splits into rows on
+        # different days: each new row inherits its old notification preference.
+        overlap = [(event, identity) for event, identity in parsed
+                   if identity[0] == season and identity[1] & episodes]
+        candidates = [(event, identity) for event, identity in overlap if event.pk not in used]
+        candidates.sort(key=lambda candidate: (
+            candidate[1][1] != episodes,
+            candidate[0].date != date,
+            -len(candidate[1][1] & episodes), candidate[0].pk))
+        notify = any(event.notify for event, _ in overlap) if overlap else default_notify
+        if not candidates:
+            CalendarEvent.objects.create(item=item, date=date, title=title,
+                                         is_custom=False, notify=notify)
+            changed = True
             continue
+        event, identity = candidates[0]
+        used.add(event.pk)
+        fields = []
+        if event.date != date:
+            event.date = date
+            fields.append('date')
+        if event.title != title:
+            event.title = title
+            fields.append('title')
+        if fields and event.notified:
+            event.notified = False
+            fields.append('notified')
+        if event.notify != notify:
+            event.notify = notify
+            fields.append('notify')
+        if fields:
+            event.save(update_fields=fields)
+            changed = True
+    # Reconcile future predictions and duplicate/moved episode rows only after
+    # complete season responses. Missing historical episodes remain available.
+    desired_numbers = defaultdict(set)
+    for (season, _), episodes in desired.items():
+        desired_numbers[season].update(episodes)
+    now = calendar_now()
+    obsolete = [event.pk for event, identity in parsed if event.pk not in used and (
+        (identity[0] in seasons and
+         (event.date > now or identity[1] & desired_numbers[identity[0]])) or
+        # These came from the old bug that attached other seasons to this entry.
+        (selected_season is not None and identity[0] != selected_season)
+    )]
+    if obsolete:
+        _api_events(item).filter(pk__in=obsolete).delete()
+        changed = True
+    return changed
 
-        source = item.source
-        media_type = item.media_type
 
-        if source == "tmdb":
-            if media_type == "movie":
-                tmdb_movies.append(item)
-            elif media_type == "tv":
-                tmdb_tv.append(item)
-        elif source in ["anilist", "mal"]:
-            anilist_items.append(item)
-        elif source == "igdb":
-            igdb_items.append(item)
-    
-    _sync_tmdb_movies(tmdb_movies)
-    _sync_tmdb_tv(tmdb_tv)
-    _sync_anilist(anilist_items)
-    _sync_igdb(igdb_items)
-
-def _mark_as_synced(item):
-    item.calendar_last_sync = timezone.now()
-    item.save(update_fields=['calendar_last_sync'])
-
-def _sync_tmdb_movies(items):
-    if not items: 
+def _sync_tmdb_tv(items, result):
+    if not items:
         return
-    try:
-        api_key = APIKey.objects.get(name="tmdb").key_1
-    except APIKey.DoesNotExist:
+    api_key = _tmdb_key(items, result)
+    if not api_key:
         return
-
-    # 1. Only do network requests in the fast threads
-    def fetch_movie(item):
-        try:
-            resp = requests.get(f"https://api.themoviedb.org/3/movie/{item.source_id}", params={"api_key": api_key}, timeout=5)
-            if resp.status_code == 200:
-                data = resp.json()
-                release_date_str = data.get("release_date")
-                if release_date_str:
-                    release_dt = datetime.datetime.strptime(release_date_str, "%Y-%m-%d").replace(tzinfo=datetime.timezone.utc)
-                    return (item, release_dt)
-        except Exception as e:
-            print(f"Error fetching TMDB movie {item.title}: {e}")
-        return (item, None)
-
-    # Launch threads to grab all the data super fast
-    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
-        results = list(executor.map(fetch_movie, items))
-
-    # 2. Save to database sequentially on the main thread to prevent SQLite locking
-    current_utc = datetime.datetime.now(datetime.timezone.utc)
-    three_months_ago = current_utc - datetime.timedelta(days=90)
-
-    for item, release_dt in results:
-        if release_dt and release_dt >= three_months_ago:
-            db_date = _normalize_dt(release_dt)
-            CalendarEvent.objects.update_or_create(
-                item=item, 
-                title="Global Release", 
-                is_custom=False,
-                defaults={'date': db_date}
-            )
-        _mark_as_synced(item)
-
-def _sync_tmdb_tv(items):
-    if not items: 
-        return
-    try:
-        api_key = APIKey.objects.get(name="tmdb").key_1
-    except APIKey.DoesNotExist:
-        return
-
-    # 1. Only do network requests in the fast threads
-    def fetch_tv(item):
-        try:
-            is_season = "_s" in str(item.source_id)
-            base_id = str(item.source_id).split("_s")[0] if is_season else item.source_id
-                
-            resp = requests.get(f"https://api.themoviedb.org/3/tv/{base_id}", params={"api_key": api_key}, timeout=5)
-            if resp.status_code != 200:
-                return (item, None)
-                
-            data = resp.json()
-            seasons_to_fetch = set()
-            
-            # Find out which seasons are currently active
-            if data.get("last_episode_to_air"):
-                seasons_to_fetch.add(data["last_episode_to_air"]["season_number"])
-            if data.get("next_episode_to_air"):
-                seasons_to_fetch.add(data["next_episode_to_air"]["season_number"])
-            
-            # Fetch full episode lists for those seasons and group by date
-            episodes_by_date_season = {}
-            for s_num in seasons_to_fetch:
-                s_resp = requests.get(f"https://api.themoviedb.org/3/tv/{base_id}/season/{s_num}", params={"api_key": api_key}, timeout=5)
-                if s_resp.status_code == 200:
-                    s_data = s_resp.json()
-                    for ep in s_data.get("episodes", []):
-                        ad = ep.get("air_date")
-                        if ad:
-                            key = (ad, s_num)
-                            if key not in episodes_by_date_season:
-                                episodes_by_date_season[key] = []
-                            episodes_by_date_season[key].append(ep)
-                            
-            return (item, episodes_by_date_season)
-        except Exception as e:
-            print(f"Error fetching TMDB TV {item.title}: {e}")
-        return (item, None)
-
-    # Launch threads
-    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
-        results = list(executor.map(fetch_tv, items))
-
-    # 2. Save to database sequentially on the main thread
-    current_utc = datetime.datetime.now(datetime.timezone.utc)
-    three_months_ago = current_utc - datetime.timedelta(days=90)
-
-    for item, episodes_by_date_season in results:
-        if episodes_by_date_season:
-            # Smart Notifications: Inherit notify state from the most recent episode
-            latest_event = CalendarEvent.objects.filter(item=item, is_custom=False).exclude(title="__API_SYNC__").order_by('-date').first()
-            auto_notify = latest_event.notify if latest_event else False
-
-            for (air_date_str, s_num), eps in episodes_by_date_season.items():
-                air_dt = datetime.datetime.strptime(air_date_str, "%Y-%m-%d").replace(tzinfo=datetime.timezone.utc)
-                
-                if air_dt >= three_months_ago:
-                    db_date = _normalize_dt(air_dt)
-                    
-                    # Sort the episodes for this specific date by episode number
-                    eps = sorted(eps, key=lambda x: x.get("episode_number", 0))
-                    
-                    # Create a consolidated title (e.g. "Episode 4" OR "Episodes 4-6")
-                    if len(eps) == 1:
-                        title_str = f"Episode {eps[0].get('episode_number')} (S{s_num})"
-                    else:
-                        first_ep = eps[0]
-                        last_ep = eps[-1]
-                        title_str = f"Episodes {first_ep.get('episode_number')}-{last_ep.get('episode_number')} (S{s_num})"
-                        
-                    # Find any existing events for this exact item and date
-                    existing_events = list(CalendarEvent.objects.filter(
-                        item=item, date=db_date, is_custom=False
-                    ).exclude(title="__API_SYNC__"))
-                    
-                    if existing_events:
-                        # Update the title of the primary event if it changed
-                        ev = existing_events[0]
-                        if ev.title != title_str:
-                            ev.title = title_str
-                            ev.save(update_fields=['title'])
-                        
-                        # If the old logic created duplicates on this exact date, delete them
-                        if len(existing_events) > 1:
-                            for dup in existing_events[1:]:
-                                dup.delete()
-                    else:
-                        CalendarEvent.objects.create(
-                            item=item,
-                            date=db_date,
-                            title=title_str,
-                            is_custom=False,
-                            notify=auto_notify
-                        )
-        _mark_as_synced(item)
-
-def _sync_anilist(items):
-    if not items: 
-        return
-    
-    item_map = {}
-    ids_to_fetch = []
+    known_seasons = {}
     for item in items:
-        a_id = item.provider_ids.get("anilist")
-        if a_id:
-            ids_to_fetch.append(int(a_id))
-            item_map[int(a_id)] = item
-    
-    if not ids_to_fetch:
-        return
+        known_seasons[item.pk] = {
+            identity[0] for event in _api_events(item)
+            if (identity := _parse_tv_episodes(event.title)) is not None
+        }
 
+    def fetch(item):
+        try:
+            match = re.fullmatch(r"(\d+)(?:_s(\d+))?", str(item.source_id or ''))
+            if not match:
+                raise _RequestFailure('The saved TV identifier is invalid.')
+            base_id = match[1]
+            selected = int(match[2]) if match[2] is not None else None
+            if selected is not None:
+                season_numbers = {selected}
+            else:
+                data = _request_json('tmdb', 'get', f"https://api.themoviedb.org/3/tv/{base_id}",
+                                     params={'api_key': api_key})
+                if not isinstance(data, dict) or 'seasons' not in data:
+                    raise _RequestFailure('The TV response is incomplete.')
+                season_numbers = set(known_seasons[item.pk])
+                for name in ('last_episode_to_air', 'next_episode_to_air'):
+                    episode = data.get(name)
+                    if episode is not None:
+                        season_numbers.add(int(episode['season_number']))
+            seasons = {}
+            for number in sorted(season_numbers):
+                data = _request_json('tmdb', 'get',
+                    f"https://api.themoviedb.org/3/tv/{base_id}/season/{number}",
+                    params={'api_key': api_key})
+                if not isinstance(data, dict) or not isinstance(data.get('episodes'), list):
+                    raise _RequestFailure('The season response is incomplete.')
+                seasons[number] = data['episodes']
+            return item, seasons, selected, None
+        except Exception as error:
+            return item, None, None, error
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+        responses = list(executor.map(fetch, items))
+    for item, seasons, selected, error in responses:
+        if error is not None:
+            _failed(result, [item], error, 'tmdb')
+        else:
+            _complete(item, result, lambda: _reconcile_tv(item, seasons, selected), 'tmdb')
+
+
+def _provider_batches(items, provider, result):
+    mapped = defaultdict(list)
+    for item in items:
+        value = item.provider_ids.get('anilist') if provider == 'anilist' else item.source_id
+        try:
+            identifier = int(value)
+            if identifier <= 0:
+                raise ValueError
+        except (TypeError, ValueError):
+            result['skipped_count'] += 1
+            continue
+        mapped[identifier].append(item)
+    identifiers = list(mapped)
+    for offset in range(0, len(identifiers), 50):
+        yield identifiers[offset:offset + 50], mapped
+
+
+def _reconcile_anilist(item, media):
+    existing = list(_api_events(item).order_by('date', 'id'))
+    notify = existing[-1].notify if existing else False
+    next_episode = media.get('nextAiringEpisode')
+    keep_title = None
+    if next_episode is not None:
+        date = normalize_calendar_datetime(datetime.datetime.fromtimestamp(
+            next_episode['airingAt'], tz=datetime.timezone.utc))
+        keep_title = f"Episode {int(next_episode['episode'])}"
+        changed = _update_release(item, keep_title, date, notify=notify)
+    else:
+        start = media.get('startDate') or {}
+        date = (all_day_datetime(datetime.date(start['year'], start['month'], start['day']))
+                if all(start.get(part) for part in ('year', 'month', 'day')) else None)
+        changed = _update_release(item, 'Release Date', date)
+    # Keep past episode history. This still fetches only the next airing, not a
+    # historical episode schedule, while removing obsolete future predictions.
+    obsolete = [event.pk for event in existing if event.date > calendar_now() and
+                event.title != keep_title and
+                (_ANIME_EPISODE.fullmatch(event.title or '') or
+                 (keep_title is not None and event.title == 'Release Date'))]
+    if obsolete:
+        _api_events(item).filter(pk__in=obsolete).delete()
+        changed = True
+    return changed
+
+
+def _sync_anilist(items, result):
     query = """
     query ($ids: [Int]) {
       Page(perPage: 50) {
@@ -226,111 +434,77 @@ def _sync_anilist(items):
       }
     }
     """
-    
-    try:
-        resp = requests.post("https://graphql.anilist.co", json={"query": query, "variables": {"ids": ids_to_fetch}}, timeout=10)
-        if resp.status_code == 200:
-            media_list = resp.json().get("data", {}).get("Page", {}).get("media", [])
-            for m in media_list:
-                item = item_map.get(m["id"])
-                if not item: 
-                    continue
-                
-                current_utc = datetime.datetime.now(datetime.timezone.utc)
-                three_months_ago = current_utc - datetime.timedelta(days=90)
-                
-                # Smart Notifications
-                latest_event = CalendarEvent.objects.filter(item=item, is_custom=False).exclude(title="__API_SYNC__").order_by('-date').first()
-                auto_notify = latest_event.notify if latest_event else False
-                
-                next_ep = m.get("nextAiringEpisode")
-                if next_ep:
-                    air_dt = datetime.datetime.fromtimestamp(next_ep["airingAt"], tz=datetime.timezone.utc)
-                    db_date = _normalize_dt(air_dt)
-                    
-                    ev, created = CalendarEvent.objects.get_or_create(
-                        item=item, 
-                        title=f"Episode {next_ep['episode']}", 
-                        is_custom=False,
-                        defaults={'date': db_date, 'notify': auto_notify}
-                    )
-                    if not created and ev.date != db_date:
-                        ev.date = db_date
-                        ev.save(update_fields=['date'])
-                else:
-                    start = m.get("startDate")
-                    if start and start.get("year") and start.get("month") and start.get("day"):
-                        start_dt = datetime.datetime(start["year"], start["month"], start["day"], tzinfo=datetime.timezone.utc)
-                        if start_dt >= three_months_ago:
-                            db_date = _normalize_dt(start_dt)
-                            CalendarEvent.objects.update_or_create(
-                                item=item, 
-                                title="Release Date", 
-                                is_custom=False,
-                                defaults={'date': db_date}
-                            )
-                
-                _mark_as_synced(item)
-    except Exception as e:
-        print(f"Error syncing AniList: {e}")
-
-def _sync_igdb(items):
-    if not items: 
-        return
-    token = get_igdb_token()
-    if not token: 
-        return
-
-    try:
-        igdb_keys = APIKey.objects.get(name="igdb")
-    except APIKey.DoesNotExist:
-        return
-
-    item_map = {}
-    ids_to_fetch = []
-    for item in items:
+    for identifiers, mapped in _provider_batches(items, 'anilist', result):
+        batch = [item for identifier in identifiers for item in mapped[identifier]]
         try:
-            igdb_id = int(item.source_id)
-            ids_to_fetch.append(str(igdb_id))
-            item_map[igdb_id] = item
-        except Exception:
-            pass
+            data = _request_json('anilist', 'post', 'https://graphql.anilist.co', interval=2.1,
+                                 json={'query': query, 'variables': {'ids': identifiers}})
+            if not isinstance(data, dict) or data.get('errors'):
+                raise _RequestFailure('AniList returned query errors.')
+            media = data.get('data', {}).get('Page', {}).get('media')
+            if not isinstance(media, list):
+                raise _RequestFailure('The AniList response is incomplete.')
+            found = {int(entry['id']): entry for entry in media}
+        except Exception as error:
+            _failed(result, batch, error, 'anilist')
+            continue
+        for identifier in identifiers:
+            for item in mapped[identifier]:
+                if identifier not in found:
+                    _failed(result, [item], _RequestFailure('AniList did not return this item.'), 'anilist')
+                else:
+                    _complete(item, result,
+                              lambda: _reconcile_anilist(item, found[identifier]), 'anilist')
 
-    if not ids_to_fetch: 
+
+class _TokenHTTP:
+    @staticmethod
+    def post(url, **kwargs):
+        # The shared token helper accepts a transport but has no own timeout.
+        kwargs.setdefault('timeout', 10)
+        return requests.post(url, **kwargs)
+
+
+def _sync_igdb(items, result):
+    if not items:
         return
-
-    id_str = ",".join(ids_to_fetch)
-    query = f"fields id, first_release_date; where id = ({id_str}); limit 50;"
-
-    headers = {
-        "Client-ID": igdb_keys.key_1,
-        "Authorization": f"Bearer {token}",
-    }
-
     try:
-        resp = requests.post("https://api.igdb.com/v4/games", headers=headers, data=query, timeout=10)
-        if resp.status_code == 200:
-            games = resp.json()
-            for g in games:
-                item = item_map.get(g["id"])
-                if not item: 
+        keys = APIKey.objects.get(name='igdb')
+    except APIKey.DoesNotExist:
+        keys = None
+    if keys is None or not keys.key_1 or not keys.key_2:
+        result['skipped_count'] += len(items)
+        return
+    try:
+        token = get_igdb_token(http=_TokenHTTP())
+        if not token:
+            raise _RequestFailure('IGDB authorization failed.')
+    except Exception as error:
+        _failed(result, items, error, 'igdb')
+        return
+    headers = {'Client-ID': keys.key_1, 'Authorization': f'Bearer {token}'}
+    for identifiers, mapped in _provider_batches(items, 'igdb', result):
+        batch = [item for identifier in identifiers for item in mapped[identifier]]
+        query = f"fields id, first_release_date; where id = ({','.join(map(str, identifiers))}); limit 50;"
+        try:
+            games = _request_json('igdb', 'post', 'https://api.igdb.com/v4/games', interval=0.3,
+                                  headers=headers, data=query)
+            if not isinstance(games, list):
+                raise _RequestFailure('The IGDB response is incomplete.')
+            found = {int(game['id']): game for game in games}
+        except Exception as error:
+            _failed(result, batch, error, 'igdb')
+            continue
+        for identifier in identifiers:
+            for item in mapped[identifier]:
+                if identifier not in found:
+                    _failed(result, [item], _RequestFailure('IGDB did not return this item.'), 'igdb')
                     continue
-                
-                release_ts = g.get("first_release_date")
-                if release_ts:
-                    release_dt = datetime.datetime.fromtimestamp(release_ts, tz=datetime.timezone.utc)
-                    current_utc = datetime.datetime.now(datetime.timezone.utc)
-                    three_months_ago = current_utc - datetime.timedelta(days=90)
-                    
-                    if release_dt >= three_months_ago:
-                        db_date = _normalize_dt(release_dt)
-                        CalendarEvent.objects.update_or_create(
-                            item=item, 
-                            title="Game Release", 
-                            is_custom=False,
-                            defaults={'date': db_date}
-                        )
-                
-                _mark_as_synced(item)
-    except Exception as e:
-        print(f"Error syncing IGDB: {e}")
+
+                def apply():
+                    timestamp = found[identifier].get('first_release_date')
+                    date = (all_day_datetime(datetime.datetime.fromtimestamp(
+                        timestamp, tz=datetime.timezone.utc).date()) if timestamp else None)
+                    return _update_release(item, 'Game Release', date)
+
+                _complete(item, result, apply, 'igdb')

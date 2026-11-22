@@ -38,4 +38,4 @@ You can run Media Journal either with Docker or natively on your personal PC or 
   <a href="https://mihail-pop.github.io/media-journal/setup/linux/"><strong>Linux Setup</strong></a>
 </p>
 
-Or you can use the [Windows Installer](https://github.com/mihail-pop/media-journal/releases/latest/download/MediaJournalSetup.exe)
+For Windows 11 you can also use the [Windows Installer](https://github.com/mihail-pop/media-journal/releases/latest/download/MediaJournalSetup.exe)

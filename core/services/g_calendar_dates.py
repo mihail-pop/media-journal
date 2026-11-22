@@ -1,0 +1,54 @@
+"""Calendar dates share Django's clock without changing global date settings."""
+
+import datetime
+
+from django.conf import settings
+from django.utils import timezone
+
+
+def calendar_now():
+    value = timezone.now()
+    return timezone.localtime(value) if timezone.is_aware(value) else value
+
+
+def normalize_calendar_datetime(value):
+    if timezone.is_aware(value):
+        if settings.USE_TZ:
+            return value
+        # With USE_TZ=False, timezone.now() uses the process's local clock.
+        # In particular, Windows may have a different local zone from TIME_ZONE.
+        return value.astimezone().replace(tzinfo=None)
+    if settings.USE_TZ:
+        return timezone.make_aware(value)
+    return value
+
+
+def all_day_datetime(value):
+    if isinstance(value, datetime.datetime):
+        value = value.date()
+    return normalize_calendar_datetime(datetime.datetime.combine(value, datetime.time.min))
+
+
+def display_calendar_datetime(value):
+    value = normalize_calendar_datetime(value)
+    return timezone.localtime(value) if timezone.is_aware(value) else value
+
+
+def calendar_iso_datetime(value):
+    value = display_calendar_datetime(value)
+    if timezone.is_naive(value):
+        value = value.astimezone()
+    return value.isoformat()
+
+
+def is_all_day_event(event):
+    if not event.is_custom:
+        source = event.item.source
+        if source == 'tmdb' and event.item.media_type in ('movie', 'tv'):
+            return True
+        if source == 'igdb' and event.item.media_type == 'game':
+            return True
+        if source in ('anilist', 'mal') and event.title == 'Release Date':
+            return True
+    # Custom events without a time have always been stored at midnight.
+    return display_calendar_datetime(event.date).time().replace(tzinfo=None) == datetime.time.min
