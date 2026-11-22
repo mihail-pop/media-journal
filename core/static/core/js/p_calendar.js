@@ -37,6 +37,45 @@ document.addEventListener("DOMContentLoaded", function () {
     const dayDetailsSection = document.getElementById("day-details-section");
     const dayEventsGrid = document.getElementById("day-events-grid");
     const selectedDateDisplay = document.getElementById("selected-date-display");
+    const calendarWrapper = document.querySelector('.calendar-wrapper');
+    const agendaContainer = document.getElementById('calendar-agenda');
+    const monthViewButton = document.getElementById('month-view-btn');
+    const agendaViewButton = document.getElementById('agenda-view-btn');
+    const exportCalendarButton = document.getElementById('export-calendar-btn');
+    const exportDayButton = document.getElementById('export-day-btn');
+    let exporting = false;
+
+    async function downloadExport(event) {
+        event.preventDefault();
+        if (exporting) return;
+        exporting = true;
+        const button = event.currentTarget;
+        button.setAttribute('aria-busy', 'true');
+        try {
+            const response = await fetch(button.href, { cache: 'no-store' });
+            if (!response.ok) {
+                const data = await responseJSON(response, 'Could not export these releases.');
+                throw new Error(data.error || 'Could not export these releases.');
+            }
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            const download = document.createElement('a');
+            download.href = url;
+            download.download = response.headers.get('Content-Disposition')?.match(/filename="([^"]+)"/)?.[1] || 'Media Journal - Releases.ics';
+            document.body.appendChild(download);
+            download.click();
+            download.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        } catch (error) {
+            showStatus(error.message || 'Could not export these releases.');
+        } finally {
+            exporting = false;
+            button.removeAttribute('aria-busy');
+        }
+    }
+
+    exportCalendarButton.addEventListener('click', downloadExport);
+    exportDayButton.addEventListener('click', downloadExport);
 
     let pageIsActive = true;
     let eventsRequest = null;
@@ -110,6 +149,8 @@ document.addEventListener("DOMContentLoaded", function () {
     let currentMonth = currentDate.getMonth();
     let currentYear = currentDate.getFullYear();
     let selectedDateStr = null;
+    let viewMode = document.documentElement.dataset.calendarView === 'agenda' ? 'agenda' : 'month';
+    let agendaStart = calendarDateKey(currentDate);
 
     // Check if a specific date was passed from the home page
     const urlParams = new URLSearchParams(window.location.search);
@@ -119,15 +160,95 @@ document.addEventListener("DOMContentLoaded", function () {
         selectedDateStr = passedDate;
         currentMonth = passedObj.getMonth();
         currentYear = passedObj.getFullYear();
+        agendaStart = passedDate;
     }
     let eventsCache = {}; // Keys: 'YYYY-MM-DD', Values: Array of events
 
     const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
+    function addDays(dateString, amount) {
+        const date = parseCalendarDate(dateString);
+        date.setDate(date.getDate() + amount);
+        return calendarDateKey(date);
+    }
+
+    function mediaTypes() {
+        return window.CalendarMediaFilter?.getTypes() || ['movie', 'tv', 'anime', 'manga', 'game', 'book', 'music'];
+    }
+
+    function visibleRange() {
+        if (viewMode === 'agenda') return { start: agendaStart, end: addDays(agendaStart, 30) };
+        return {
+            start: calendarDateKey(localDate(currentYear, currentMonth, 1)),
+            end: calendarDateKey(localDate(currentYear, currentMonth + 1, 1))
+        };
+    }
+
+    function mediaParameter() {
+        return mediaTypes().join(',') || '-';
+    }
+
+    function eventParameters() {
+        const params = new URLSearchParams({ media_types: mediaParameter() });
+        if (viewMode === 'agenda') {
+            const range = visibleRange();
+            params.set('start', range.start);
+            params.set('end', range.end);
+        } else {
+            params.set('year', currentYear);
+            params.set('month', currentMonth + 1);
+        }
+        return params;
+    }
+
+    function updateExportLinks() {
+        const range = visibleRange();
+        exportCalendarButton.textContent = viewMode === 'agenda' ? 'Export Agenda' : 'Export Month';
+        exportCalendarButton.href = '/api/calendar/export/?' + new URLSearchParams({ ...range, media_types: mediaParameter() });
+        if (selectedDateStr) {
+            exportDayButton.href = '/api/calendar/export/?' + new URLSearchParams({ start: selectedDateStr, end: addDays(selectedDateStr, 1), media_types: mediaParameter() });
+        }
+    }
+
+    function selectDate(dateString) {
+        selectedDateStr = dateString;
+        document.querySelectorAll('.calendar-day').forEach(cell => cell.classList.toggle('selected', cell.dataset.date === dateString));
+        updateExportLinks();
+        if (viewMode === 'month') renderDayDetails(dateString);
+    }
+
+    function goToDate(dateString) {
+        const date = parseCalendarDate(dateString);
+        if (!date) return;
+        currentYear = date.getFullYear();
+        currentMonth = date.getMonth();
+        selectedDateStr = dateString;
+        agendaStart = dateString;
+        renderCalendar();
+    }
+
+    function changeView(mode) {
+        if (mode === viewMode) return;
+        viewMode = mode;
+        document.documentElement.dataset.calendarView = mode;
+        try { localStorage.setItem('calendarView', mode); } catch (_) { }
+        if (mode === 'agenda') agendaStart = selectedDateStr || calendarDateKey(new Date());
+        else {
+            const start = parseCalendarDate(agendaStart);
+            currentYear = start.getFullYear();
+            currentMonth = start.getMonth();
+        }
+        renderCalendar();
+    }
+
     function initCalendar() {
         renderCalendar();
         
         document.getElementById("prev-month").addEventListener("click", () => {
+            if (viewMode === 'agenda') {
+                goToDate(addDays(agendaStart, -30));
+                return;
+            }
             if (currentYear === 1 && currentMonth === 0) return;
             currentMonth--;
             if (currentMonth < 0) { currentMonth = 11; currentYear--; }
@@ -135,6 +256,10 @@ document.addEventListener("DOMContentLoaded", function () {
         });
 
         document.getElementById("next-month").addEventListener("click", () => {
+            if (viewMode === 'agenda') {
+                goToDate(addDays(agendaStart, 30));
+                return;
+            }
             if (currentYear === 9999 && currentMonth === 11) return;
             currentMonth++;
             if (currentMonth > 11) { currentMonth = 0; currentYear++; }
@@ -142,25 +267,26 @@ document.addEventListener("DOMContentLoaded", function () {
         });
 
         document.getElementById("today-btn").addEventListener("click", () => {
-            const now = new Date();
-            currentMonth = now.getMonth();
-            currentYear = now.getFullYear();
-            renderCalendar();
+            goToDate(calendarDateKey(new Date()));
         });
+        monthViewButton.addEventListener('click', () => changeView('month'));
+        agendaViewButton.addEventListener('click', () => changeView('agenda'));
+        window.CalendarMediaFilter?.attach(document.querySelector('.calendar-media-filter'));
+        document.addEventListener('calendar-media-filter-change', () => renderCalendar());
     }
 
-    async function fetchEvents(year, month) {
-        // month is 0-indexed in JS, but 1-indexed in Python
-        if (!pageIsActive || year !== currentYear || month !== currentMonth) return;
+    async function fetchEvents() {
+        if (!pageIsActive) return;
+        const parameters = eventParameters().toString();
         const requestNumber = ++eventsRequestNumber;
         if (eventsRequest) eventsRequest.abort();
         const request = new AbortController();
         eventsRequest = request;
         try {
-            const res = await fetch(`/api/calendar/events/?year=${year}&month=${month + 1}`, { signal: request.signal });
+            const res = await fetch(`/api/calendar/events/?${parameters}`, { signal: request.signal });
             const data = await responseJSON(res, 'Could not load calendar events.');
             if (!data.success || !Array.isArray(data.events)) throw new Error(data.error || 'Could not load calendar events.');
-            if (pageIsActive && requestNumber === eventsRequestNumber && year === currentYear && month === currentMonth) {
+            if (pageIsActive && requestNumber === eventsRequestNumber && parameters === eventParameters().toString()) {
                 const nextEvents = {};
                 data.events.forEach(ev => {
                     // Extract YYYY-MM-DD from ISO datetime
@@ -170,8 +296,11 @@ document.addEventListener("DOMContentLoaded", function () {
                 });
                 eventsCache = nextEvents;
                 eventsReady = true;
-                populateEvents();
-                if (selectedDateStr) renderDayDetails(selectedDateStr);
+                if (viewMode === 'agenda') renderAgenda();
+                else {
+                    populateEvents();
+                    if (selectedDateStr) renderDayDetails(selectedDateStr);
+                }
                 return true;
             }
         } catch (e) {
@@ -188,6 +317,23 @@ document.addEventListener("DOMContentLoaded", function () {
         cleanupTickers();
         eventsCache = {};
         eventsReady = false;
+        const isAgenda = viewMode === 'agenda';
+        calendarWrapper.classList.toggle('hidden', isAgenda);
+        agendaContainer.classList.toggle('hidden', !isAgenda);
+        monthViewButton.setAttribute('aria-pressed', String(!isAgenda));
+        agendaViewButton.setAttribute('aria-pressed', String(isAgenda));
+        document.getElementById('prev-month').setAttribute('aria-label', isAgenda ? 'Previous 30 days' : 'Previous month');
+        document.getElementById('next-month').setAttribute('aria-label', isAgenda ? 'Next 30 days' : 'Next month');
+        updateExportLinks();
+        if (isAgenda) {
+            dayDetailsSection.classList.add('hidden');
+            agendaContainer.innerHTML = '';
+            const start = parseCalendarDate(agendaStart);
+            const end = parseCalendarDate(addDays(agendaStart, 29));
+            monthYearDisplay.textContent = `${start.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })} – ${end.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}`;
+            fetchEvents();
+            return;
+        }
         const selected = parseCalendarDate(selectedDateStr);
         if (selected && (selected.getFullYear() !== currentYear || selected.getMonth() !== currentMonth)) {
             clearDayDetails();
@@ -248,10 +394,7 @@ document.addEventListener("DOMContentLoaded", function () {
         `;
 
         cell.addEventListener("click", () => {
-            document.querySelectorAll(".calendar-day").forEach(c => c.classList.remove("selected"));
-            cell.classList.add("selected");
-            selectedDateStr = dateStr;
-            renderDayDetails(dateStr);
+            selectDate(dateStr);
         });
 
         calendarGrid.appendChild(cell);
@@ -413,14 +556,43 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!eventsReady) return;
         const events = eventsCache[dateStr] || [];
         
+        renderEventCards(dayEventsGrid, events);
+    }
+
+    function renderAgenda() {
+        agendaContainer.innerHTML = '';
+        if (!eventsReady) return;
+        const days = Object.keys(eventsCache).sort();
+        if (!days.length) {
+            agendaContainer.innerHTML = '<p class="calendar-empty">No releases in this date range.</p>';
+            return;
+        }
+        days.forEach(dateString => {
+            const section = document.createElement('section');
+            section.className = 'agenda-day';
+            if (dateString === calendarDateKey(new Date())) section.classList.add('is-today');
+            const heading = document.createElement('h3');
+            heading.className = 'agenda-date';
+            heading.textContent = parseCalendarDate(dateString).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+            const cards = document.createElement('div');
+            cards.className = 'day-events-grid';
+            section.append(heading, cards);
+            agendaContainer.appendChild(section);
+            renderEventCards(cards, eventsCache[dateString]);
+        });
+    }
+
+    function renderEventCards(container, events) {
+        container.innerHTML = '';
         if (events.length === 0) {
-            dayEventsGrid.innerHTML = `<p style="color:var(--text-secondary)">No items tracked for this date.</p>`;
+            container.innerHTML = `<p style="color:var(--text-secondary)">No items tracked for this date.</p>`;
             return;
         }
 
         events.forEach(ev => {
             const card = document.createElement("div");
             card.className = "event-card";
+            card.dataset.mediaType = ev.media_type;
             
             // Format time if available
             let timeString = "";
@@ -459,14 +631,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
             card.innerHTML = `
                 <a href="${escapeHTML(targetUrl)}" class="event-card-link">
-                    <img src="${escapeHTML(imageUrl(ev.cover_url))}" alt="Cover">
+                    <span class="event-cover"><img src="${escapeHTML(imageUrl(ev.cover_url))}" alt="Cover" loading="lazy" decoding="async"></span>
                     <div class="event-card-info">
                         <div class="event-card-title">${escapeHTML(titleStr)}</div>
                         <div class="event-card-desc">${escapeHTML(subtitle)}</div>
                         ${timeString ? `<div class="event-card-time">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: text-bottom; margin-right: 4px;">
-                                <circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>
-                            </svg>${escapeHTML(timeString)}
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path>
+                            </svg><span>${escapeHTML(timeString)}</span>
                         </div>` : ""}
                         ${ev.notes ? `<div class="event-card-notes" title="${escapeHTML(ev.notes)}">"${escapeHTML(ev.notes)}"</div>` : ""}
                     </div>
@@ -478,7 +650,9 @@ document.addEventListener("DOMContentLoaded", function () {
                             <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
                         </svg>
                     </button>
-                    ${ev.is_custom ? `<button class="event-action-btn delete-btn" data-id="${escapeHTML(ev.id)}" data-group="${escapeHTML(ev.recurring_group || '')}" title="Delete Entry">
+                    ${ev.is_custom ? `<button type="button" class="event-action-btn edit-event-btn" data-id="${escapeHTML(ev.id)}" title="Edit Event" aria-label="Edit Event">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 3 5 5-12 12-6 1 1-6L16 3Z"></path><path d="m14 5 5 5"></path></svg>
+                    </button><button class="event-action-btn delete-btn" data-id="${escapeHTML(ev.id)}" data-group="${escapeHTML(ev.recurring_group || '')}" title="Delete Entry">
                         <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
                             <line x1="19" y1="5" x2="5" y2="19"></line>
                             <line x1="5" y1="5" x2="19" y2="19"></line>
@@ -486,11 +660,19 @@ document.addEventListener("DOMContentLoaded", function () {
                     </button>` : ""}
                 </div>
             `;
-            dayEventsGrid.appendChild(card);
+            container.appendChild(card);
+        });
+
+        container.querySelectorAll('.edit-event-btn').forEach(button => {
+            button.addEventListener('click', event => {
+                event.stopPropagation();
+                const entry = events.find(value => String(value.id) === button.dataset.id);
+                if (entry) openEditModal(entry);
+            });
         });
 
         // Add Notification Toggle Listeners
-        dayEventsGrid.querySelectorAll(".notify-btn").forEach(btn => {
+        container.querySelectorAll(".notify-btn").forEach(btn => {
             btn.addEventListener("click", async (e) => {
                 e.stopPropagation();
                 if (btn.disabled) return;
@@ -520,7 +702,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
 
         // Add Delete Listeners for Custom Modals
-        dayEventsGrid.querySelectorAll(".delete-btn").forEach(btn => {
+        container.querySelectorAll(".delete-btn").forEach(btn => {
             btn.addEventListener("click", (e) => {
                 e.stopPropagation(); // Prevents clicking the link underneath
                 const id = btn.dataset.id;
@@ -604,6 +786,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const searchResults = document.getElementById("event-search-results");
     let formVersion = 0;
     let customSavePending = false;
+    let editEventId = null;
     let searchTimeout = null;
     let searchRequest = null;
     let searchRequestNumber = 0;
@@ -617,17 +800,17 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     
     openBtn.addEventListener("click", () => {
+        closeModal();
         modal.classList.remove("modal-hidden");
         overlay.classList.remove("modal-hidden");
         enableScrollLock(); // Lock scroll
         // Pre-fill date with currently selected date if exists
-        if (selectedDateStr) {
-            document.getElementById("event-date").value = selectedDateStr;
-        }
+        document.getElementById("event-date").value = selectedDateStr || (viewMode === 'agenda' ? agendaStart : calendarDateKey(new Date()));
     });
 
     const closeModal = () => {
         formVersion++;
+        editEventId = null;
         cancelSearch();
         modal.classList.add("modal-hidden");
         overlay.classList.add("modal-hidden");
@@ -637,6 +820,11 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("custom-event-form").reset();
         document.getElementById("event-item-id").value = "";
         document.getElementById("recurring-options").classList.add("hidden");
+        document.getElementById('create-recurring-toggle').classList.remove('hidden');
+        document.getElementById('edit-future-options').classList.add('hidden');
+        document.getElementById('clear-selected-item').classList.remove('hidden');
+        document.getElementById('custom-event-modal-title').textContent = 'Add Custom Release';
+        document.getElementById('save-custom-event-btn').textContent = 'Save';
         searchInput.setCustomValidity(""); // Clear custom validation errors
         
         // Reset Search UI
@@ -707,6 +895,26 @@ document.addEventListener("DOMContentLoaded", function () {
         searchInput.value = "";
     }
 
+    function openEditModal(event) {
+        if (!event.is_custom) return;
+        closeModal();
+        editEventId = String(event.id);
+        selectItem({ id: event.item_id, title: event.title, cover_url: event.cover_url });
+        document.getElementById('clear-selected-item').classList.add('hidden');
+        document.getElementById('create-recurring-toggle').classList.add('hidden');
+        document.getElementById('custom-event-modal-title').textContent = 'Edit Custom Release';
+        document.getElementById('save-custom-event-btn').textContent = 'Save Changes';
+        document.getElementById('event-date').value = event.date.split('T')[0];
+        document.getElementById('event-time').value = event.all_day ? '' : event.date.split('T')[1].slice(0, 5);
+        document.getElementById('event-title').value = event.event_title || '';
+        document.getElementById('event-notes').value = event.notes || '';
+        document.getElementById('event-notify').checked = Boolean(event.notify);
+        document.getElementById('edit-future-options').classList.toggle('hidden', !event.recurring_group || event.recurring_group === 'null');
+        modal.classList.remove('modal-hidden');
+        overlay.classList.remove('modal-hidden');
+        enableScrollLock();
+    }
+
     document.getElementById("clear-selected-item").addEventListener("click", () => {
         document.getElementById("event-item-id").value = "";
         document.getElementById("selected-item-preview").classList.add("hidden");
@@ -745,13 +953,15 @@ document.addEventListener("DOMContentLoaded", function () {
             repeats: document.getElementById("event-is-recurring").checked ? document.getElementById("event-repeats").value : 1,
             interval_days: document.getElementById("event-interval").value
         };
+        if (editEventId) payload.apply_to_future = document.getElementById('event-apply-future').checked;
 
         const version = formVersion;
+        const savingEventId = editEventId;
         const saveButton = document.getElementById('save-custom-event-btn');
         customSavePending = true;
         saveButton.disabled = true;
         try {
-            const response = await fetch('/api/calendar/add/', {
+            const response = await fetch(savingEventId ? `/api/calendar/edit/${encodeURIComponent(savingEventId)}/` : '/api/calendar/add/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -761,8 +971,12 @@ document.addEventListener("DOMContentLoaded", function () {
             });
             const data = await responseJSON(response, 'Could not save this event.');
             if (!data.success) throw new Error(data.error || 'Could not save this event.');
-            if (version === formVersion) closeModal();
-            fetchEvents(currentYear, currentMonth);
+            if (version === formVersion) {
+                closeModal();
+                goToDate(date);
+            } else {
+                fetchEvents();
+            }
         } catch (error) {
             if (pageIsActive) alert('Failed to save: ' + error.message);
         } finally {
@@ -793,10 +1007,11 @@ document.addEventListener("DOMContentLoaded", function () {
     const syncBtn = document.getElementById('auto-sync-btn');
     let syncRunning = false;
     let activeSyncForce = false;
+    let syncVisible = false;
     let pendingSync = null;
 
     function updateSyncButton() {
-        syncBtn.classList.toggle('is-syncing', syncRunning || pendingSync !== null);
+        syncBtn.classList.toggle('is-syncing', syncVisible);
         syncBtn.style.pointerEvents = activeSyncForce || (pendingSync && pendingSync.force) ? 'none' : 'auto';
     }
 
@@ -834,9 +1049,22 @@ document.addEventListener("DOMContentLoaded", function () {
                 const payload = pendingSync;
                 pendingSync = null;
                 activeSyncForce = payload.force;
-                updateSyncButton();
-                showStatus(payload.force ? 'Syncing APIs...' : 'Auto-syncing...', 0);
                 try {
+                    let announce = payload.force;
+                    if (!payload.force) {
+                        const planResponse = await fetch('/api/calendar/sync-plan/', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+                            body: JSON.stringify(payload)
+                        });
+                        const plan = await responseJSON(planResponse, 'Could not check the calendar sync status.');
+                        if (!plan.success) throw new Error(plan.error || 'Could not check the calendar sync status.');
+                        announce = plan.will_sync === true && !plan.in_progress;
+                    }
+                    if (!pageIsActive) break;
+                    syncVisible = announce;
+                    updateSyncButton();
+                    if (announce) showStatus(payload.force ? 'Syncing APIs...' : 'Auto-syncing...', 0);
                     const response = await fetch('/api/calendar/sync/', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
@@ -845,33 +1073,38 @@ document.addEventListener("DOMContentLoaded", function () {
                     const data = await responseJSON(response, 'Could not sync the calendar. Try again.');
                     if (!data.success) throw new Error(data.error || 'Could not sync the calendar. Try again.');
                     if (data.in_progress) {
-                        message = 'Another sync is already running. Try again shortly.';
-                        // The other page owns the sync. Refresh the local events
-                        // once without starting another sync or polling forever.
+                        if (payload.force) message = 'Another sync is already running. Try again shortly.';
                         clearTimeout(contentionRefreshTimer);
-                        contentionRefreshTimer = setTimeout(() => fetchEvents(currentYear, currentMonth), 5000);
+                        contentionRefreshTimer = setTimeout(() => fetchEvents(), 5000);
                         continue;
                     }
+                    const attempted = Number(data.attempted_count) || 0;
                     const failed = Number(data.failed_count) || 0;
                     const skipped = Number(data.skipped_count) || 0;
-                    if (failed) {
-                        message = `Sync finished; ${failed} item${failed === 1 ? '' : 's'} could not be checked. Try again later.`;
-                    } else if (skipped) {
-                        message = `Sync complete. ${skipped} item${skipped === 1 ? '' : 's'} skipped.`;
-                    } else {
-                        message = 'Sync Complete!';
+                    if (payload.force || attempted > 0) {
+                        if (failed) message = `Sync finished; ${failed} item${failed === 1 ? '' : 's'} could not be checked. Try again later.`;
+                        else if (skipped) message = `Sync complete. ${skipped} item${skipped === 1 ? '' : 's'} skipped.`;
+                        else message = 'Sync Complete!';
+                    } else if (announce) {
+                        // Another request may have completed between the plan and
+                        // this request. Keep a no-work auto-sync visually quiet.
+                        document.getElementById('sync-status-msg').classList.remove('visible');
                     }
                     if (data.changed || data.synced_count > 0 || payload.force) {
-                        const refreshed = await fetchEvents(currentYear, currentMonth);
+                        const refreshed = await fetchEvents();
                         if (refreshed === false) message = 'Sync finished, but calendar events could not be reloaded.';
                     }
                 } catch (error) {
                     message = error.message || 'Could not sync the calendar. Try again.';
+                } finally {
+                    syncVisible = false;
+                    updateSyncButton();
                 }
             }
         } finally {
             syncRunning = false;
             activeSyncForce = false;
+            syncVisible = false;
             updateSyncButton();
             if (message) showStatus(message, message === 'Sync Complete!' ? 2500 : 6000);
         }

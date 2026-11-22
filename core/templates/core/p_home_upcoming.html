@@ -1,4 +1,4 @@
-<div class="upcoming-tiles-wrapper" data-calendar-today="{{ upcoming_today }}" data-calendar-now="{{ upcoming_now }}" data-calendar-midnight="{{ upcoming_midnight }}">
+<div class="upcoming-tiles-wrapper" data-calendar-today="{{ upcoming_today }}" data-calendar-now="{{ upcoming_now }}" data-calendar-midnight="{{ upcoming_midnight }}" data-calendar-media-types="{{ upcoming_media_types }}">
     <div class="upcoming-tiles-container">
         {% for tile in upcoming_tiles %}
     <a href="/calendar/?date={{ tile.date_str }}" class="upcoming-tile {% if tile.is_today %}today-tile{% endif %}" id="tile-{{ tile.date_str }}">
@@ -41,10 +41,10 @@
     {% endfor %}
   </ul>
 
-  {% if upcoming_list|length > 2 %}
-    <div class="show-more-activity-wrapper">
-      <a href="/calendar/" id="advanced-upcoming-btn" class="advanced-btn">Calendar</a>
+  <div class="show-more-activity-wrapper">
+    <a href="/calendar/" id="advanced-upcoming-btn" class="advanced-btn">Calendar</a>
+    {% if upcoming_list|length > 2 %}
       <button id="toggle-upcoming-btn" class="toggle-btn" data-state="more">Show More</button>
-    </div>
-  {% endif %}
+    {% endif %}
+  </div>
 </div>

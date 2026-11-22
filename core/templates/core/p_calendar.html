@@ -5,6 +5,11 @@
 {{ block.super }}
 <title>Calendar - Media Journal</title>
 <link rel="stylesheet" href="{% static 'core/css/p_calendar.css' %}">
+<link rel="stylesheet" href="{% static 'core/css/g_calendar_filters.css' %}">
+<script>
+try { document.documentElement.dataset.calendarView = localStorage.getItem('calendarView') === 'agenda' ? 'agenda' : 'month'; }
+catch (_) { document.documentElement.dataset.calendarView = 'month'; }
+</script>
 {% endblock %}
 
 {% block content %}
@@ -19,8 +24,14 @@
             <h2 id="month-year-display">Loading...</h2>
             <button id="next-month" class="cal-nav-btn">❯</button>
             <button id="today-btn" class="cal-action-btn">Today</button>
+            <div class="calendar-view-switch" role="group" aria-label="Calendar view">
+                <button type="button" id="month-view-btn" class="calendar-view-btn" aria-pressed="true">Month</button>
+                <button type="button" id="agenda-view-btn" class="calendar-view-btn" aria-pressed="false">Agenda</button>
+            </div>
+            {% include 'core/g_calendar_media_filter.html' %}
         </div>
         <div class="calendar-actions">
+            <a id="export-calendar-btn" class="cal-action-btn calendar-export-btn" href="/api/calendar/export/" title="Export the current selection as an .ics calendar file">Export Month</a>
             <div class="sync-group">
                 <!-- Non-blocking Sync Notification -->
                 <span id="sync-status-msg" class="sync-msg"></span>
@@ -62,9 +73,14 @@
         </div>
     </div>
 
+    <div id="calendar-agenda" class="calendar-agenda hidden"></div>
+
     <!-- Day Details Section (Swaps data when you click a day) -->
     <div id="day-details-section" class="day-details-section hidden">
-        <h3 id="selected-date-display">Events</h3>
+        <div class="day-details-heading">
+            <h3 id="selected-date-display">Events</h3>
+            <a id="export-day-btn" class="cal-action-btn calendar-export-btn" href="/api/calendar/export/" title="Export the selected day as an .ics calendar file">Export Day</a>
+        </div>
         <div id="day-events-grid" class="day-events-grid">
             <!-- Populated by JS -->
         </div>
@@ -75,7 +91,7 @@
 <div id="custom-event-modal" class="modal-hidden">
     <form id="custom-event-form" class="modal-content">
         <div class="modal-header">
-            <h2>Add Custom Release</h2>
+            <h2 id="custom-event-modal-title">Add Custom Release</h2>
             <button type="button" class="close-modal-btn" id="close-custom-modal">×</button>
         </div>
         <div class="modal-body">
@@ -115,11 +131,16 @@
                         <input type="checkbox" id="event-notify">
                         <label for="event-notify" style="margin-bottom: 0;">Notify</label>
                     </div>
-                    <div style="display: flex; align-items: center; gap: 8px;">
+                    <div id="create-recurring-toggle" style="display: flex; align-items: center; gap: 8px;">
                         <input type="checkbox" id="event-is-recurring">
                         <label for="event-is-recurring" style="margin-bottom: 0;">Recurring Event</label>
                     </div>
                 </div>
+            </div>
+
+            <div id="edit-future-options" class="form-group checkbox-group hidden">
+                <input type="checkbox" id="event-apply-future">
+                <label for="event-apply-future" title="Apply these changes to this event and later events in the series.">This and following events</label>
             </div>
 
             <div id="recurring-options" class="form-row hidden">
@@ -166,5 +187,6 @@
 
 {% block script %}
 {{ block.super }}
+<script src="{% static 'core/js/g_calendar_filters.js' %}"></script>
 <script src="{% static 'core/js/p_calendar.js' %}"></script>
 {% endblock %}

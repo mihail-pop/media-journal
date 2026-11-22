@@ -1,0 +1,82 @@
+.calendar-media-filter {
+    position: relative;
+    display: inline-flex;
+    flex: 0 0 auto;
+    font: inherit;
+    color: var(--text-primary);
+}
+.calendar-media-filter.is-open { z-index: 40; }
+.calendar-media-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .85rem;
+    min-height: 2.35rem;
+    padding: .45rem .85rem;
+    border: 0;
+    border-radius: .65rem;
+    background: var(--bg-filter, var(--bg-secondary, var(--bg-tertiary)));
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+    transition: background-color .15s;
+}
+.calendar-media-toggle:hover,
+.calendar-media-filter.is-open .calendar-media-toggle {
+    background: color-mix(in srgb, var(--text-primary) 12%, var(--bg-filter, var(--bg-primary)));
+}
+.calendar-media-filter.has-filter .calendar-media-label { font-weight: 600; }
+.calendar-media-arrow { flex: 0 0 auto; transition: transform .18s ease; }
+.calendar-media-filter.is-open .calendar-media-arrow { transform: rotate(180deg); }
+.calendar-media-options {
+    position: absolute;
+    top: calc(100% + .3rem);
+    right: 0;
+    z-index: 50;
+    width: 13rem;
+    max-width: calc(100vw - 2rem);
+    padding: .35rem;
+    border-radius: .7rem;
+    background: var(--bg-filter, var(--bg-secondary, var(--bg-tertiary)));
+    box-shadow: 0 .25rem 1rem rgba(0, 0, 0, .22);
+}
+.calendar-media-options[hidden] { display: none; }
+.calendar-media-filter-actions { display: flex; gap: .25rem; padding: .1rem .2rem .35rem; }
+.calendar-media-filter-actions button {
+    flex: 1;
+    border: 0;
+    border-radius: .4rem;
+    padding: .35rem .5rem;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: .85em;
+    cursor: pointer;
+}
+.calendar-media-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .8rem;
+    width: 100%;
+    border: 0;
+    border-radius: .4rem;
+    padding: .5rem .65rem;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+.calendar-media-option:hover,
+.calendar-media-filter-actions button:hover {
+    background: color-mix(in srgb, var(--text-primary) 12%, transparent);
+}
+.calendar-media-check { visibility: hidden; font-size: .9em; }
+.calendar-media-option.is-selected .calendar-media-check { visibility: visible; }
+.calendar-media-toggle:focus-visible,
+.calendar-media-options button:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+@media (max-width: 600px) {
+    .calendar-media-toggle { min-height: 2.6rem; font-size: .9rem; }
+    .calendar-media-option { padding-block: .65rem; }
+}

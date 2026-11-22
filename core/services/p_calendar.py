@@ -68,7 +68,7 @@ def _failed(result, items, error, provider=None):
         print(f"Calendar {provider or 'item'} synchronization failed: {error}")
 
 
-def _request_json(provider, method, url, *, interval=0, **kwargs):
+def _request_json(provider, method, url, *, interval=0, result=None, **kwargs):
     now = time.time()
     with _retry_lock:
         if _provider_retry_until.get(provider, 0) > now:
@@ -80,6 +80,8 @@ def _request_json(provider, method, url, *, interval=0, **kwargs):
         if _provider_retry_until.get(provider, 0) > time.time():
             raise _ProviderDeferred(f"{provider} requests are temporarily paused.")
         _provider_last_request[provider] = time.time()
+        if result is not None:
+            result['attempted_count'] += 1
     try:
         response = getattr(requests, method)(url, timeout=10, **kwargs)
     except requests.RequestException as error:
@@ -112,7 +114,7 @@ def cleanup_old_events():
 
 
 def sync_items_with_apis(items):
-    result = {'synced_count': 0, 'failed_count': 0, 'skipped_count': 0,
+    result = {'synced_count': 0, 'failed_count': 0, 'skipped_count': 0, 'attempted_count': 0,
               'changed': cleanup_old_events()}
     groups = defaultdict(list)
     for item in items:
@@ -131,6 +133,31 @@ def sync_items_with_apis(items):
     _sync_anilist(groups['anilist'], result)
     _sync_igdb(groups['igdb'], result)
     return result
+
+
+def calendar_sync_can_request(items):
+    """Read-only preflight for quiet automatic sync feedback."""
+    if not items:
+        return False
+    keys = {entry.name: (entry.key_1, entry.key_2)
+            for entry in APIKey.objects.filter(name__in=('tmdb', 'igdb'))}
+    with _retry_lock:
+        paused = {provider for provider, until in _provider_retry_until.items() if until > time.time()}
+    for item in items:
+        provider = 'anilist' if item.source in ('anilist', 'mal') else item.source
+        if provider in paused or str(item.source_id or '').startswith('custom_'):
+            continue
+        identifier = item.provider_ids.get('anilist') if provider == 'anilist' else item.source_id
+        if provider == 'tmdb':
+            if keys.get('tmdb', ('', ''))[0] and re.fullmatch(r'\d+(?:_s\d+)?', str(identifier or '')):
+                return True
+        elif provider == 'anilist':
+            if str(identifier or '').isdigit() and int(identifier) > 0:
+                return True
+        elif provider == 'igdb':
+            if all(keys.get('igdb', ('', ''))) and str(identifier or '').isdigit() and int(identifier) > 0:
+                return True
+    return False
 
 
 def _complete(item, result, apply_events, provider):
@@ -207,7 +234,7 @@ def _sync_tmdb_movies(items, result):
     def fetch(item):
         try:
             data = _request_json('tmdb', 'get',
-                f"https://api.themoviedb.org/3/movie/{item.source_id}", params={'api_key': api_key})
+                f"https://api.themoviedb.org/3/movie/{item.source_id}", params={'api_key': api_key}, result=result)
             if not isinstance(data, dict) or 'release_date' not in data:
                 raise _RequestFailure('The movie response is incomplete.')
             release = data.get('release_date')
@@ -349,7 +376,7 @@ def _sync_tmdb_tv(items, result):
                 season_numbers = {selected}
             else:
                 data = _request_json('tmdb', 'get', f"https://api.themoviedb.org/3/tv/{base_id}",
-                                     params={'api_key': api_key})
+                                     params={'api_key': api_key}, result=result)
                 if not isinstance(data, dict) or 'seasons' not in data:
                     raise _RequestFailure('The TV response is incomplete.')
                 season_numbers = set(known_seasons[item.pk])
@@ -361,7 +388,7 @@ def _sync_tmdb_tv(items, result):
             for number in sorted(season_numbers):
                 data = _request_json('tmdb', 'get',
                     f"https://api.themoviedb.org/3/tv/{base_id}/season/{number}",
-                    params={'api_key': api_key})
+                    params={'api_key': api_key}, result=result)
                 if not isinstance(data, dict) or not isinstance(data.get('episodes'), list):
                     raise _RequestFailure('The season response is incomplete.')
                 seasons[number] = data['episodes']
@@ -438,7 +465,7 @@ def _sync_anilist(items, result):
         batch = [item for identifier in identifiers for item in mapped[identifier]]
         try:
             data = _request_json('anilist', 'post', 'https://graphql.anilist.co', interval=2.1,
-                                 json={'query': query, 'variables': {'ids': identifiers}})
+                                 json={'query': query, 'variables': {'ids': identifiers}}, result=result)
             if not isinstance(data, dict) or data.get('errors'):
                 raise _RequestFailure('AniList returned query errors.')
             media = data.get('data', {}).get('Page', {}).get('media')
@@ -458,9 +485,14 @@ def _sync_anilist(items, result):
 
 
 class _TokenHTTP:
-    @staticmethod
-    def post(url, **kwargs):
+    def __init__(self, result=None):
+        self.result = result
+
+    def post(self, url, **kwargs):
         # The shared token helper accepts a transport but has no own timeout.
+        if self.result is not None:
+            with _retry_lock:
+                self.result['attempted_count'] += 1
         kwargs.setdefault('timeout', 10)
         return requests.post(url, **kwargs)
 
@@ -476,7 +508,7 @@ def _sync_igdb(items, result):
         result['skipped_count'] += len(items)
         return
     try:
-        token = get_igdb_token(http=_TokenHTTP())
+        token = get_igdb_token(http=_TokenHTTP(result))
         if not token:
             raise _RequestFailure('IGDB authorization failed.')
     except Exception as error:
@@ -488,7 +520,7 @@ def _sync_igdb(items, result):
         query = f"fields id, first_release_date; where id = ({','.join(map(str, identifiers))}); limit 50;"
         try:
             games = _request_json('igdb', 'post', 'https://api.igdb.com/v4/games', interval=0.3,
-                                  headers=headers, data=query)
+                                  headers=headers, data=query, result=result)
             if not isinstance(games, list):
                 raise _RequestFailure('The IGDB response is incomplete.')
             found = {int(game['id']): game for game in games}

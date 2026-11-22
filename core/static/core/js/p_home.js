@@ -19,6 +19,9 @@ document.addEventListener("DOMContentLoaded", function () {
     let syncRequest = null;
     let refreshRequest = null;
     let refreshController = null;
+    let refreshRequestKey = null;
+    let refreshRequestNumber = 0;
+    let renderedMediaKey = '';
     let clockTimer = null;
     let initialSyncTimer = null;
     let syncRetryTimer = null;
@@ -32,6 +35,11 @@ document.addEventListener("DOMContentLoaded", function () {
     let calendarToday = "";
     let nextMidnight = Infinity;
     let nextRefreshAttempt = 0;
+
+    function currentMediaKey() {
+      const types = window.CalendarMediaFilter?.getTypes();
+      return types ? types.join(',') || '-' : renderedMediaKey || 'movie,tv,anime,manga,game,book,music';
+    }
 
     function upcomingIsVisible() {
       return pageActive && !document.hidden && document.documentElement.dataset.homeActivityView === "upcoming";
@@ -47,6 +55,7 @@ document.addEventListener("DOMContentLoaded", function () {
       calendarUtcOffset = offset ? (Number(offset[2]) * 60 + Number(offset[3])) * 60000 * (offset[1] === '-' ? -1 : 1) : 0;
       calendarToday = metadata.dataset.calendarToday || "";
       nextMidnight = Number.isFinite(midnight) ? midnight : Infinity;
+      renderedMediaKey = metadata.dataset.calendarMediaTypes || 'movie,tv,anime,manga,game,book,music';
     }
 
     function countWithUnit(count, unit) {
@@ -128,16 +137,23 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     }
 
-    function refreshUpcoming() {
-      if (refreshRequest) return refreshRequest;
-      refreshController = new AbortController();
-      refreshRequest = fetch(upcomingContainer.dataset.refreshUrl, { cache: 'no-store', signal: refreshController.signal })
+    function refreshUpcoming(replace = false) {
+      const mediaKey = currentMediaKey();
+      if (refreshRequest && refreshRequestKey === mediaKey && !replace) return refreshRequest;
+      refreshController?.abort();
+      const controller = new AbortController();
+      const requestNumber = ++refreshRequestNumber;
+      const url = new URL(upcomingContainer.dataset.refreshUrl, window.location.href);
+      url.searchParams.set('media_types', mediaKey);
+      refreshController = controller;
+      refreshRequestKey = mediaKey;
+      const request = fetch(url, { cache: 'no-store', signal: controller.signal })
         .then(response => {
           if (!response.ok) throw new Error('Unable to refresh Upcoming');
           return response.text();
         })
         .then(html => {
-          if (!pageActive) return;
+          if (!pageActive || requestNumber !== refreshRequestNumber || mediaKey !== currentMediaKey()) return;
           const doc = new DOMParser().parseFromString(html, 'text/html');
           const newTiles = doc.querySelector('.upcoming-tiles-container');
           const oldTiles = upcomingContainer.querySelector('.upcoming-tiles-container');
@@ -161,9 +177,13 @@ document.addEventListener("DOMContentLoaded", function () {
           if (upcomingIsVisible()) updateUpcomingTimes();
         })
         .finally(() => {
-          refreshRequest = null;
-          refreshController = null;
+          if (refreshRequest === request) {
+            refreshRequest = null;
+            refreshController = null;
+            refreshRequestKey = null;
+          }
         });
+      refreshRequest = request;
       return refreshRequest;
     }
 
@@ -213,6 +233,7 @@ document.addEventListener("DOMContentLoaded", function () {
         saveDashboardChoice("homeDashboardActivityView", "upcoming");
         if (!upcomingWasShown) centerTodayTile();
         upcomingWasShown = true;
+        if (renderedMediaKey !== currentMediaKey()) refreshUpcoming(true).catch(reportUpcomingError);
         startUpcomingClock();
         triggerHomeSync();
       });
@@ -233,6 +254,11 @@ document.addEventListener("DOMContentLoaded", function () {
       restoreUpcomingExpansion();
     });
 
+    document.addEventListener('calendar-media-filter-change', () => {
+      // Changing a filter only reads the saved schedule. It never syncs APIs.
+      if (upcomingIsVisible()) refreshUpcoming(true).catch(reportUpcomingError);
+    });
+
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
         hiddenAt = Date.now();
@@ -246,18 +272,22 @@ document.addEventListener("DOMContentLoaded", function () {
       pageActive = false;
       hiddenAt = Date.now();
       stopUpcomingTimers();
+      refreshRequestNumber++;
       refreshController?.abort();
     });
     window.addEventListener('pageshow', event => {
       if (!event.persisted) return;
       pageActive = true;
       if (upcomingIsVisible()) {
-        refreshUpcoming().catch(reportUpcomingError);
+        refreshUpcoming(true).catch(reportUpcomingError);
         startUpcomingClock();
       }
     });
 
     readUpcomingClock();
+    if (upcomingIsVisible() && renderedMediaKey !== currentMediaKey()) {
+      refreshUpcoming(true).catch(reportUpcomingError);
+    }
     // Center the today tile on load if upcoming is active
     if (savedActView === "upcoming") {
       centerTodayTile();

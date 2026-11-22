@@ -22,6 +22,7 @@ from core.services.p_home import (
     start_tmdb_background_loop,
     start_anilist_background_loop,
 )
+from core.services.g_calendar_dates import parse_media_types, media_filter_label
 from core.services.m_people import fetch_actor_data, fetch_character_data, resolve_person_identity
 from core.services.g_utils import get_ordered_types
 from core.services.p_year_review import year_review_calendar
@@ -62,7 +63,8 @@ def web_manifest(request):
 @require_GET
 def home_upcoming(request):
     # This fragment needs no navigation/settings context or other Home queries.
-    return HttpResponse(render_to_string("core/p_home_upcoming.html", get_home_upcoming()))
+    media_types = parse_media_types(request.GET.get('media_types', request.COOKIES.get('calendar_media_types')))
+    return HttpResponse(render_to_string("core/p_home_upcoming.html", get_home_upcoming(media_types)))
 
 
 @ensure_csrf_cookie
@@ -214,7 +216,7 @@ def home(request):
 
     columns = [activity_data[i : i + 7] for i in range(0, len(activity_data), 7)]
 
-    upcoming_context = get_home_upcoming()
+    upcoming_context = get_home_upcoming(parse_media_types(request.COOKIES.get('calendar_media_types')))
 
     notifications = MediaItem.objects.filter(notification=True).only(
         "title", "media_type", "source", "provider_ids",
@@ -1139,6 +1141,7 @@ def calendar_page(request):
             "theme_mode": theme_mode,
             "cal_sync_ongoing": settings.cal_sync_ongoing if settings else True,
             "cal_sync_planned": settings.cal_sync_planned if settings else False,
+            "calendar_filter_label": media_filter_label(parse_media_types(request.COOKIES.get('calendar_media_types'))),
         }
     )
 

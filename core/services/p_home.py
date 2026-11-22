@@ -16,13 +16,18 @@ from core.services.g_calendar_dates import (
     calendar_now,
     display_calendar_datetime,
     is_all_day_event,
+    parse_media_types,
+    media_filter_label,
 )
 from core.services.m_anime_manga import update_anilist_anime_manga
 from core.services.m_movies_tvshows import update_tmdb_seasons
 
 
-def get_home_upcoming():
+def get_home_upcoming(media_types=None):
     """Build the same Upcoming content for the initial page and later refreshes."""
+    if media_types is not None and not isinstance(media_types, str):
+        media_types = ','.join(media_types) if media_types else '-'
+    selected_types = parse_media_types(media_types)
     now = calendar_now()
     today_date = now.date()
     cal_start_date = today_date - timedelta(days=7)
@@ -31,6 +36,7 @@ def get_home_upcoming():
     calendar_events = CalendarEvent.objects.filter(
         date__gte=all_day_datetime(cal_start_date),
         date__lt=all_day_datetime(cal_end_date + timedelta(days=1)),
+        item__media_type__in=selected_types,
     ).select_related('item').only(
         'date', 'title', 'is_custom', 'item__title', 'item__media_type', 'item__cover_url',
         'item__source', 'item__provider_ids',
@@ -75,6 +81,7 @@ def get_home_upcoming():
 
     future_events = CalendarEvent.objects.filter(
         date__gte=all_day_datetime(today_date),
+        item__media_type__in=selected_types,
     ).exclude(title="__API_SYNC__").select_related('item').only(
         'date', 'title', 'is_custom', 'item__title', 'item__media_type', 'item__cover_url',
         'item__source', 'item__provider_ids',
@@ -140,6 +147,8 @@ def get_home_upcoming():
         "upcoming_today": today_date.isoformat(),
         "upcoming_now": calendar_iso_datetime(now),
         "upcoming_midnight": calendar_iso_datetime(all_day_datetime(today_date + timedelta(days=1))),
+        "upcoming_media_types": ','.join(selected_types) if selected_types else '-',
+        "calendar_filter_label": media_filter_label(selected_types),
     }
 
 
