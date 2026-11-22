@@ -81,10 +81,12 @@ document.addEventListener("DOMContentLoaded", () => {
     movie: '/api/tmdb_search/', tv: '/api/tmdb_search/',
     anime: '/api/anilist_search/', manga: '/api/anilist_search/',
     game: '/api/igdb_search/', book: '/api/openlib_search/', music: '/api/musicbrainz_search/',
+    person: '/api/actor_search/', character: '/api/character_search/',
   };
-  const aliases = { movies: 'movie', tvshows: 'tv', games: 'game', books: 'book' };
+  const aliases = { movies: 'movie', tvshows: 'tv', games: 'game', books: 'book', actor: 'person' };
   const normalizeType = value => aliases[value] || value;
-  const pageMediaType = [document.body.dataset.pageType, document.body.dataset.mediaType]
+  const pageMediaType = [document.body.dataset.pageType, document.body.dataset.mediaType,
+    document.getElementById('favorite-form')?.dataset.personType]
     .map(normalizeType).find(type => Object.hasOwn(apiEndpoints, type));
   let selectedType = availableTypes.has(pageMediaType) ? pageMediaType : optionButtons[0]?.dataset.type;
   try {
@@ -187,16 +189,20 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!response.ok) throw new Error('Network error');
       const data = await response.json();
       if (revision !== searchRevision) return;
-      if (!data.results?.length) {
+      // Person/character searches return a list; media searches wrap it in results.
+      const results = Array.isArray(data) ? data : data.results;
+      if (!results?.length) {
         showSearchMessage('No results found');
         return;
       }
       const grid = document.createElement('div');
       grid.className = 'search-card-grid';
-      data.results.forEach(item => {
+      results.forEach(item => {
         const title = item.title || item.name || 'Untitled';
         let poster = '/static/core/img/placeholder.png';
-        if ((type === 'movie' || type === 'tv') && item.poster_path) {
+        if ((type === 'person' || type === 'character') && item.image) {
+          poster = item.image;
+        } else if ((type === 'movie' || type === 'tv') && item.poster_path) {
           poster = `https://image.tmdb.org/t/p/w200${item.poster_path}`;
         } else if (item.poster_path) poster = item.poster_path;
         const prefix = item.source || ({ game: 'igdb', book: 'openlib', music: 'musicbrainz', anime: 'anilist', manga: 'anilist' }[type] || 'tmdb');
@@ -204,7 +210,9 @@ document.addEventListener("DOMContentLoaded", () => {
         card.className = 'search-card';
         const link = document.createElement('a');
         link.className = 'card-link';
-        link.href = `/${prefix}/${type}/${item.id}`;
+        link.href = type === 'person' ? `/person/tmdb/${encodeURIComponent(item.id)}/`
+          : type === 'character' ? `/character/${encodeURIComponent(item.id)}/`
+          : `/${prefix}/${type}/${item.id}`;
         const image = document.createElement('img');
         image.src = poster;
         image.alt = title;
@@ -224,8 +232,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const frame = document.createElement('div');
       frame.className = 'search-results-frame';
       if (type !== 'music') {
-        frame.dataset.resultCount = data.results.length;
-        frame.style.setProperty('--search-result-columns', Math.min(6, data.results.length));
+        frame.dataset.resultCount = results.length;
+        frame.style.setProperty('--search-result-columns', Math.min(6, results.length));
       }
       frame.appendChild(grid);
       resultsContainer.replaceChildren(frame);

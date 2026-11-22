@@ -323,9 +323,13 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Spoiler click handler
     document.addEventListener('click', function(e) {
-        if (e.target.classList.contains('spoiler')) {
-            e.target.classList.toggle('revealed');
-        }
+        const hiddenSpoiler = e.target.closest('.spoiler:not(.revealed)');
+        const spoiler = hiddenSpoiler || e.target.closest('.spoiler');
+        if (!spoiler) return;
+        // Hidden links reveal the text first; revealed links navigate normally.
+        if (!hiddenSpoiler && e.target.closest('a')) return;
+        e.preventDefault();
+        spoiler.classList.toggle('revealed');
     });
     
     // Keyboard shortcuts

@@ -386,7 +386,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const actions = element('div', 'post-reactions');
     const like = element('button', 'post-like');
     like.type = 'button';
-    like.title = 'Like post';
     like.setAttribute('aria-label', 'Like post');
     like.innerHTML = heartIcon;
     const likes = element('span', 'reaction-count');
@@ -404,8 +403,7 @@ document.addEventListener('DOMContentLoaded', () => {
       likes.textContent = count(post.likes) || '';
       like.classList.toggle('is-liked', liked);
       like.setAttribute('aria-pressed', String(liked));
-      like.title = liked ? 'Unlike post' : 'Like post';
-      like.setAttribute('aria-label', like.title);
+      like.setAttribute('aria-label', liked ? 'Unlike post' : 'Like post');
     }
     async function saveLike(wanted, legacy = false) {
       const result = await jsonRequest(`/community/posts/${encodeURIComponent(id)}/like/`, {
@@ -442,7 +440,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const commentsButton = element('button', 'post-comments-toggle');
     commentsButton.type = 'button';
     commentsButton.innerHTML = commentIcon;
-    commentsButton.title = 'Comments';
     commentsButton.setAttribute('aria-label', 'Comments');
     const commentsCount = element('span', 'reaction-count');
     commentsButton.appendChild(commentsCount);

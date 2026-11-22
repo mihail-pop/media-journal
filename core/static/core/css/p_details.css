@@ -389,6 +389,10 @@ body[data-media-type="music"] .poster {
   color: var(--text-secondary);
 }
 
+.overview:hover a {
+  color: var(--special-color-hover);
+}
+
 
 
 .read-more-btn {
@@ -2411,6 +2415,10 @@ body[data-page-type="person-detail"] .overview {
   margin-top: 0;
 }
 
+body[data-page-type="person-detail"] .text-info:has(.overview:hover) .release-date {
+  color: var(--text-secondary);
+}
+
 .favorite-refresh-wrapper {
   margin-top: 0.6rem;
   display: flex;
@@ -2842,6 +2850,17 @@ body:not([data-theme="light"]):not([data-theme="pink"]):not([data-theme="cake"])
 .spoiler.revealed {
   background-color: transparent;
   color: inherit;
+}
+
+/* Description links stay hidden until their surrounding spoiler is revealed. */
+.overview .spoiler {
+  transition: background-color 0.2s;
+}
+
+.overview .spoiler:not(.revealed),
+.overview .spoiler:not(.revealed) * {
+  color: transparent;
+  text-shadow: none;
 }
 
 .media-title {

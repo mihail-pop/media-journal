@@ -21,6 +21,9 @@ def nav_items(request):
         "search_media_types": [
             {"data_type": media_types[item.name], "label": item.display_name}
             for item in items if item.name in media_types
+        ] + [
+            {"data_type": "person", "label": "People"},
+            {"data_type": "character", "label": "Characters"},
         ],
         "live_search_settings": settings.get_live_search_settings() if settings else default_live_search_settings(),
         "journal_rating_mode": settings.rating_mode if settings else "faces",
