@@ -1,0 +1,52 @@
+              <!-- Existing Notes -->
+              {% if journal.notes %}
+              <div class="journal-entry-card notes-card">
+                <div class="entry-header">
+                  <div class="entry-meta">
+                    <span class="entry-meta-pill type-pill">Notes</span>
+                  </div>
+                  <button class="entry-edit-btn" onclick="editJournalEntry('notes')" title="Edit Notes">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                  </button>
+                </div>
+                <div class="entry-content formatted-content">{{ journal.notes|linebreaksbr }}</div>
+              </div>
+              {% endif %}
+
+              <!-- Logs -->
+              {% for log in journal.logs %}
+              <div class="journal-entry-card log-card" data-id="{{ log.id }}">
+                <div class="entry-header">
+                  <div class="entry-meta">
+                    <span class="entry-meta-pill type-pill">{{ log.title|default:"Log" }}</span>
+                    
+                    <span class="entry-meta-pill date-pill">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                      {{ log.activity_date|date:"d M Y" }}
+                    </span>
+                    
+                    {% if log.progress_start != None %}
+                      <span class="entry-meta-pill progress-pill">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                        <span class="unit-label" data-unit="{{ log.progress_unit }}" data-end="{{ log.progress_end|default_if_none:'' }}"></span> {{ log.progress_start }}{% if log.progress_end != None %} - {{ log.progress_end }}{% endif %}
+                      </span>
+                    {% endif %}
+                    
+                    {% if log.score %}
+                      <span class="entry-meta-pill score-pill"><span class="entry-score" data-score="{{ log.score }}"></span></span>
+                    {% endif %}
+                  </div>
+                  <div class="entry-actions">
+                    <button class="entry-edit-btn delete-btn" onclick="openDeleteLogModal({{ log.id }})" title="Delete Log">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    </button>
+                    <button class="entry-edit-btn" onclick="editJournalEntry('logs', {{ log.id }})" title="Edit Log">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                    </button>
+                  </div>
+                </div>
+                <div class="entry-content formatted-content {% if log.is_spoiler %}log-spoiler-blur{% endif %}" {% if log.is_spoiler %}onclick="this.classList.remove('log-spoiler-blur');" title="Click to reveal spoiler"{% endif %}>
+                  {{ log.content|linebreaksbr }}
+                </div>
+              </div>
+              {% endfor %}

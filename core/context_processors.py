@@ -23,6 +23,7 @@ def nav_items(request):
             for item in items if item.name in media_types
         ],
         "live_search_settings": settings.get_live_search_settings() if settings else default_live_search_settings(),
+        "journal_rating_mode": settings.rating_mode if settings else "faces",
         "show_banner_notes": settings.show_banner_notes if settings else True,
         "allow_adult_content": settings.allow_adult_content if settings else True,
         "list_card_overlay_settings": settings.get_list_card_overlay_settings() if settings else default_list_card_overlay_settings(),

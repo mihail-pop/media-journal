@@ -11,6 +11,7 @@ from django.utils import timezone
 
 from core.models import MediaItem, FavoritePerson, Collection, CollectionItem
 from core.services.g_utils import normalize_search_text
+from core.services.g_journal import serialize_log
 from core.services.g_collections import collection_entry_data, collection_preview
 from core.services.g_api import get_game_screenshots_data, serialize_game_screenshot
 from core.services.m_games import get_igdb_discover
@@ -27,6 +28,15 @@ _LIST_ITEM_FIELDS = (
     "banner_url", "notes", "source", "provider_ids", "repeats", "date_added",
     "release_date",
 )
+
+def _include_list_logs(request):
+    # Keep the previous response for other callers; list views request this explicitly.
+    return request.GET.get('include_logs', '1') == '1'
+
+
+def _list_journal_prefetch(request):
+    return ('logs',) if _include_list_logs(request) else ()
+
 
 @require_GET
 def movies_api(request):
@@ -104,7 +114,7 @@ def movies_api(request):
             default=F("total_main"),
             output_field=IntegerField(),
         )
-    ).prefetch_related('logs')
+    ).prefetch_related(*_list_journal_prefetch(request))
 
     # Apply sorting
     order_fields = ["status_order"]
@@ -136,19 +146,7 @@ def movies_api(request):
 
     items_data = []
     for item in items:
-        logs_data = []
-        for log in item.logs.all():
-            logs_data.append({
-                "id": log.id,
-                "title": log.title or "Log",
-                "content": log.content,
-                "activity_date": log.activity_date.strftime("%d %b %Y"),
-                "score": log.score,
-                "is_spoiler": log.is_spoiler,
-                "progress_unit": log.progress_unit,
-                "progress_start": log.progress_start,
-                "progress_end": log.progress_end
-            })
+        logs_data = [serialize_log(log) for log in item.logs.all()] if _include_list_logs(request) else None
 
         items_data.append(
             {
@@ -281,7 +279,7 @@ def tvshows_api(request):
             default=F("total_secondary"),
             output_field=IntegerField(),
         ),
-    ).prefetch_related('logs')
+    ).prefetch_related(*_list_journal_prefetch(request))
 
     # Apply sorting
     order_fields = ["status_order"]
@@ -316,19 +314,7 @@ def tvshows_api(request):
 
     items_data = []
     for item in items:
-        logs_data = []
-        for log in item.logs.all():
-            logs_data.append({
-                "id": log.id,
-                "title": log.title or "Log",
-                "content": log.content,
-                "activity_date": log.activity_date.strftime("%d %b %Y"),
-                "score": log.score,
-                "is_spoiler": log.is_spoiler,
-                "progress_unit": log.progress_unit,
-                "progress_start": log.progress_start,
-                "progress_end": log.progress_end
-            })
+        logs_data = [serialize_log(log) for log in item.logs.all()] if _include_list_logs(request) else None
 
         items_data.append(
             {
@@ -450,7 +436,7 @@ def anime_api(request):
             default=F("total_main"),
             output_field=IntegerField(),
         ),
-    ).prefetch_related('logs')
+    ).prefetch_related(*_list_journal_prefetch(request))
 
     # Apply sorting
     order_fields = ["status_order"]
@@ -482,19 +468,7 @@ def anime_api(request):
 
     items_data = []
     for item in items:
-        logs_data = []
-        for log in item.logs.all():
-            logs_data.append({
-                "id": log.id,
-                "title": log.title or "Log",
-                "content": log.content,
-                "activity_date": log.activity_date.strftime("%d %b %Y"),
-                "score": log.score,
-                "is_spoiler": log.is_spoiler,
-                "progress_unit": log.progress_unit,
-                "progress_start": log.progress_start,
-                "progress_end": log.progress_end
-            })
+        logs_data = [serialize_log(log) for log in item.logs.all()] if _include_list_logs(request) else None
 
         items_data.append(
             {
@@ -622,7 +596,7 @@ def manga_api(request):
             default=F("total_secondary"),
             output_field=IntegerField(),
         ),
-    ).prefetch_related('logs')
+    ).prefetch_related(*_list_journal_prefetch(request))
 
     # Apply sorting
     order_fields = ["status_order"]
@@ -657,19 +631,7 @@ def manga_api(request):
 
     items_data = []
     for item in items:
-        logs_data = []
-        for log in item.logs.all():
-            logs_data.append({
-                "id": log.id,
-                "title": log.title or "Log",
-                "content": log.content,
-                "activity_date": log.activity_date.strftime("%d %b %Y"),
-                "score": log.score,
-                "is_spoiler": log.is_spoiler,
-                "progress_unit": log.progress_unit,
-                "progress_start": log.progress_start,
-                "progress_end": log.progress_end
-            })
+        logs_data = [serialize_log(log) for log in item.logs.all()] if _include_list_logs(request) else None
 
         items_data.append(
             {
@@ -786,7 +748,7 @@ def games_api(request):
 
     queryset = queryset.annotate(
         status_order=status_ordering, rating_order=rating_ordering
-    ).prefetch_related('logs')
+    ).prefetch_related(*_list_journal_prefetch(request))
 
     # Apply sorting
     order_fields = ["status_order"]
@@ -818,19 +780,7 @@ def games_api(request):
 
     items_data = []
     for item in items:
-        logs_data = []
-        for log in item.logs.all():
-            logs_data.append({
-                "id": log.id,
-                "title": log.title or "Log",
-                "content": log.content,
-                "activity_date": log.activity_date.strftime("%d %b %Y"),
-                "score": log.score,
-                "is_spoiler": log.is_spoiler,
-                "progress_unit": log.progress_unit,
-                "progress_start": log.progress_start,
-                "progress_end": log.progress_end
-            })
+        logs_data = [serialize_log(log) for log in item.logs.all()] if _include_list_logs(request) else None
 
         items_data.append(
             {
@@ -943,7 +893,7 @@ def music_api(request):
 
     queryset = queryset.annotate(
         status_order=status_ordering, rating_order=rating_ordering
-    ).prefetch_related('logs', 'music_videos')
+    ).prefetch_related(*_list_journal_prefetch(request), 'music_videos')
 
     # Apply sorting
     order_fields = ["status_order"]
@@ -972,19 +922,7 @@ def music_api(request):
 
     items_data = []
     for item in items:
-        logs_data = []
-        for log in item.logs.all():
-            logs_data.append({
-                "id": log.id,
-                "title": log.title or "Log",
-                "content": log.content,
-                "activity_date": log.activity_date.strftime("%d %b %Y"),
-                "score": log.score,
-                "is_spoiler": log.is_spoiler,
-                "progress_unit": log.progress_unit,
-                "progress_start": log.progress_start,
-                "progress_end": log.progress_end
-            })
+        logs_data = [serialize_log(log) for log in item.logs.all()] if _include_list_logs(request) else None
 
         items_data.append(
             {
@@ -1108,7 +1046,7 @@ def books_api(request):
             default=F("total_main"),
             output_field=IntegerField(),
         ),
-    ).prefetch_related('logs')
+    ).prefetch_related(*_list_journal_prefetch(request))
 
     # Apply sorting
     order_fields = ["status_order"]
@@ -1140,19 +1078,7 @@ def books_api(request):
 
     items_data = []
     for item in items:
-        logs_data = []
-        for log in item.logs.all():
-            logs_data.append({
-                "id": log.id,
-                "title": log.title or "Log",
-                "content": log.content,
-                "activity_date": log.activity_date.strftime("%d %b %Y"),
-                "score": log.score,
-                "is_spoiler": log.is_spoiler,
-                "progress_unit": log.progress_unit,
-                "progress_start": log.progress_start,
-                "progress_end": log.progress_end
-            })
+        logs_data = [serialize_log(log) for log in item.logs.all()] if _include_list_logs(request) else None
 
         items_data.append(
             {

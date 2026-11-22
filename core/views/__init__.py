@@ -27,3 +27,5 @@ from .p_collections import *  # noqa: F403
 from .p_collection import *  # noqa: F403
 from .p_year_review import year_review, year_review_image
 from .p_news import news, news_api, news_channels
+
+from .g_journal import journal_entries, list_journals, manage_journal_log

@@ -64,6 +64,40 @@ document.addEventListener("DOMContentLoaded", function () {
   let listRequestController = null;
   let hasMore = true;
   let allItems = [];
+  const pendingJournals = new Map();
+
+  function ensureListJournals() {
+    const missing = allItems.filter(item => !Array.isArray(item.logs) && !pendingJournals.has(String(item.id)));
+    for (let start = 0; start < missing.length; start += 100) {
+      const batch = missing.slice(start, start + 100);
+      batch.forEach(item => pendingJournals.set(String(item.id), item));
+      const params = new URLSearchParams({ ids: batch.map(item => item.id).join(',') });
+      fetch(`/api/list-journals/?${params}`)
+        .then(async response => {
+          if (!response.ok) throw new Error('Unable to load journals.');
+          const data = await response.json();
+          if (!data.journals) throw new Error('Invalid journal response.');
+          batch.forEach(item => {
+            // An edit or filter change may have replaced the item during this request.
+            if (!allItems.includes(item)) return;
+            item.logs = data.journals[String(item.id)] || [];
+            if (currentView !== 'detailed_list') return;
+            const journal = detailedListView.querySelector(`.list-row[data-id="${item.id}"] .detailed-journal-container`);
+            if (!journal) return;
+            // Append just the logs, preserving any expanded/revealed note and the covers.
+            const template = document.createElement('template');
+            template.innerHTML = getDetailedJournalHtml({ ...item, notes: '' });
+            journal.append(...template.content.firstElementChild.childNodes);
+          });
+          batch.forEach(item => pendingJournals.delete(String(item.id)));
+          if (currentView === 'detailed_list') ensureListJournals();
+        })
+        .catch(error => {
+          batch.forEach(item => pendingJournals.delete(String(item.id)));
+          console.error('Error loading journals:', error);
+        });
+    }
+  }
   let ratingMode = 'faces';
   let listCacheVersion = sessionStorage.getItem(`cacheVersion_${mediaType}`) || "";
 
@@ -189,6 +223,7 @@ const statusLabelsMap = {
         sort_by: currentSort,
         sort_order: currentSortOrder
       });
+      params.set('include_logs', currentView === 'detailed_list' ? '1' : '0');
       if (currentGenres.length > 0) params.set('genres', currentGenres.join(','));
       if (currentCollections.length > 0) params.set('collections', currentCollections.map(c => c.id).join(','));
       params.set('filter_mode', currentFilterMode);
@@ -265,6 +300,7 @@ const statusLabelsMap = {
   }
 
   function renderItems() {
+    if (currentView === 'detailed_list') ensureListJournals();
     const isCardView = currentView === 'card';
     const isDetailedView = currentView === 'detailed_list';
 
@@ -450,10 +486,15 @@ const statusLabelsMap = {
     return card;
   }
 
+function escapeJournalMeta(value) {
+  return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
 function parseJournalContent(html) {
   if(!html) return '';
   let text = html
-    .replace(/</g, '&lt;').replace(/>/g, '&gt;') // sanitize
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') // sanitize
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.*?)\*/g, '<em>$1</em>')
     .replace(/\|\|(.*?)\|\|/g, '<span class="spoiler">$1</span>')
@@ -484,22 +525,22 @@ function getDetailedJournalHtml(item) {
             const spoilerClass = log.is_spoiler ? 'log-spoiler-blur' : '';
             
             // Build pills
-            let pillsHtml = `<span class="entry-meta-pill type-pill">${log.title || 'Log'}</span>`;
-            pillsHtml += `<span class="entry-meta-pill date-pill"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg> ${log.activity_date}</span>`;
+            let pillsHtml = `<span class="entry-meta-pill type-pill">${escapeJournalMeta(log.title || 'Log')}</span>`;
+            pillsHtml += `<span class="entry-meta-pill date-pill"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg> ${escapeJournalMeta(log.activity_date)}</span>`;
             
             if (log.progress_start !== null && log.progress_start !== undefined && log.progress_start !== "") {
                 let unit = log.progress_unit || 'Unit';
                 unit = unit.charAt(0).toUpperCase() + unit.slice(1);
                 if (log.progress_end !== null && log.progress_end !== undefined && log.progress_end !== '') {
                     if (!unit.endsWith('s')) unit += 's';
-                    pillsHtml += `<span class="entry-meta-pill progress-pill"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg> ${unit} ${log.progress_start} - ${log.progress_end}</span>`;
+                    pillsHtml += `<span class="entry-meta-pill progress-pill"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg> ${escapeJournalMeta(unit)} ${escapeJournalMeta(log.progress_start)} - ${escapeJournalMeta(log.progress_end)}</span>`;
                 } else {
-                    pillsHtml += `<span class="entry-meta-pill progress-pill"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg> ${unit} ${log.progress_start}</span>`;
+                    pillsHtml += `<span class="entry-meta-pill progress-pill"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg> ${escapeJournalMeta(unit)} ${escapeJournalMeta(log.progress_start)}</span>`;
                 }
             }
             
             if (log.score) {
-                pillsHtml += `<span class="entry-meta-pill score-pill"><span class="entry-score" data-score="${log.score}">${getRatingHtml(log.score)}</span></span>`;
+                pillsHtml += `<span class="entry-meta-pill score-pill"><span class="entry-score" data-score="${escapeJournalMeta(log.score)}">${getRatingHtml(log.score)}</span></span>`;
             }
 
             html += `

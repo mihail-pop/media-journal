@@ -15,7 +15,7 @@ from django.db import transaction
 from django.db.models import Max, F
 from django.views.decorators.http import require_GET, require_POST
 
-from core.models import MediaItem, Collection, CollectionItem, MediaItemLog, AppSettings
+from core.models import MediaItem, Collection, CollectionItem, AppSettings
 from core.services.g_activity import item_activity_state, record_item_activity
 from core.services.g_utils import display_to_rating, rating_to_display, rating_from_edit, get_sharded_path
 from core.services.m_books import save_openlib_item
@@ -1014,60 +1014,3 @@ def favorite_music_videos(request):
         return JsonResponse({"videos": videos})
     except Exception as e:
         return JsonResponse({"videos": [], "error": str(e)})
-
-@ensure_csrf_cookie
-@require_POST
-def manage_journal_log(request):
-    try:
-        data = json.loads(request.body)
-        action = data.get("action")
-        item_id = data.get("item_id")
-        log_id = data.get("log_id")
-
-        if action == "delete":
-            if log_id:
-                MediaItemLog.objects.filter(id=log_id, item_id=item_id).delete()
-            return JsonResponse({"success": True})
-        
-        elif action == "save":
-            if log_id:
-                log = MediaItemLog.objects.get(id=log_id, item_id=item_id)
-            else:
-                log = MediaItemLog(item_id=item_id)
-            
-            log.title = data.get("title")
-            log.content = data.get("content", "")
-            
-            activity_date_str = data.get("activity_date")
-            if activity_date_str:
-                try:
-                    # Append time to the date so it stores correctly as datetime without timezone issues
-                    parsed_date = dt.datetime.strptime(activity_date_str, "%Y-%m-%d").date()
-                    now_time = dt.datetime.now().time()
-                    log.activity_date = dt.datetime.combine(parsed_date, now_time)
-                except ValueError:
-                    pass
-                    
-            # Handle empty strings converting to None securely
-            if "score" in data:
-                try:
-                    app_settings = AppSettings.objects.first()
-                    r_mode = app_settings.rating_mode if app_settings else "faces"
-                    log.score = rating_from_edit(data["score"], r_mode, log.score)
-                except (ValueError, TypeError):
-                    log.score = None
-            
-            log.is_spoiler = data.get("is_spoiler", False)
-            log.progress_unit = data.get("progress_unit")
-            
-            p_start = data.get("progress_start")
-            log.progress_start = int(p_start) if p_start else None
-            
-            p_end = data.get("progress_end")
-            log.progress_end = int(p_end) if p_end else None
-            
-            log.save()
-            return JsonResponse({"success": True})
-            
-    except Exception as e:
-        return JsonResponse({"success": False, "error": str(e)})

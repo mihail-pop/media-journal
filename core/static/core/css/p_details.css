@@ -179,13 +179,6 @@ body {
   margin: 0;
 }
 
-body.screenshot-scroll-locked {
-  position: fixed;
-  top: var(--screenshot-scroll-top);
-  left: var(--screenshot-scroll-left);
-  width: 100%;
-}
-
 a {
   color: var(--special-color);
   text-decoration: none;
@@ -1744,7 +1737,7 @@ img.poster[src*="placeholder"] {
 .screenshots-header-buttons {
   display: flex;
   align-items: center;
-  gap: 1em;
+  gap: 0.8rem;
 }
 
 .screenshots-header {
@@ -2074,12 +2067,17 @@ img.poster[src*="placeholder"] {
 }
 
 .inline-form button {
-  background: none;
-  border: 1px solid var(--border-color);
-  color: var(--text-overview);
-  padding: 0.4em 1em;
+  background: var(--bg-tertiary);
+  border: none;
+  color: var(--text-primary);
+  height: 38px;
+  padding: 0.4rem 1rem;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   font-size: 1rem;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
   transition: background-color 0.2s ease;
 }
@@ -3075,23 +3073,26 @@ body:not([data-theme="light"]):not([data-theme="pink"]):not([data-theme="cake"])
 .d-custom-select-wrapper select {
   appearance: none;
   -webkit-appearance: none;
-  padding-right: 2.2rem !important;
+  padding-right: 1.8rem !important;
   cursor: pointer;
 }
 
 .d-custom-select-wrapper .select-arrow {
   position: absolute;
   right: 0.7rem;
-  width: 16px;
-  height: 16px;
+  top: 50%;
+  width: 0;
+  height: 0;
+  border-left: 0.34rem solid transparent;
+  border-right: 0.34rem solid transparent;
+  border-top: 0.46rem solid var(--text-primary);
+  transform: translateY(-50%);
   pointer-events: none;
   transition: transform 0.3s ease;
-  color: var(--text-overview);
 }
 
-.d-custom-select-wrapper select:focus ~ .select-arrow {
-  transform: rotate(180deg);
-  color: var(--special-color);
+.d-custom-select-wrapper:has(.custom-options.open) .select-arrow {
+  transform: translateY(-50%) rotate(180deg);
 }
 
 /* Custom Dropdown Options */
@@ -3136,6 +3137,46 @@ body:not([data-theme="light"]):not([data-theme="pink"]):not([data-theme="cake"])
   display: flex;
   align-items: center;
   gap: 0.8rem;
+  flex-wrap: wrap;
+  max-width: 100%;
+}
+
+.journal-section[data-has-entries="false"] .journal-controls {
+  display: none;
+}
+
+#j-search {
+  width: 12rem;
+  min-width: 0;
+  height: 38px;
+  box-sizing: border-box;
+}
+
+#j-search::-webkit-search-cancel-button {
+  display: none;
+}
+
+.journal-editing:not([hidden]) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  color: var(--text-secondary);
+}
+
+.journal-editing .j-btn-cancel {
+  padding: 0.35rem 0.75rem;
+}
+
+.journal-error {
+  color: var(--text-primary);
+  margin: 1rem 0 0;
+}
+
+.journal-saving .composer-active {
+  pointer-events: none;
 }
 
 .j-icon-btn {
@@ -3157,10 +3198,34 @@ body:not([data-theme="light"]):not([data-theme="pink"]):not([data-theme="cake"])
   color: var(--text-title);
 }
 
+#j-order-toggle {
+  position: relative;
+}
+
+#j-order-toggle::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  border-left: 0.42rem solid transparent;
+  border-right: 0.42rem solid transparent;
+}
+
+#j-order-toggle[data-order="asc"]::before {
+  border-bottom: 0.56rem solid var(--text-primary);
+}
+
+#j-order-toggle[data-order="desc"]::before {
+  border-top: 0.56rem solid var(--text-primary);
+}
+
 .j-select {
   background: var(--bg-tertiary);
   border: 0px solid var(--border-color);
   color: var(--text-primary);
+  height: 38px;
+  box-sizing: border-box;
   border-radius: 6px;
   padding: 0.55rem 1rem;
   font-size: 1rem;
@@ -3242,6 +3307,11 @@ body:not([data-theme="light"]):not([data-theme="pink"]):not([data-theme="cake"])
   border-radius: 12px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
+  margin-top: 0;
+}
+
+/* Keep the cards' own spacing intact; separate the composer only when entries exist. */
+.journal-section:has(.journal-entries-list > .journal-entry-card) .journal-composer {
   margin-top: 1.5rem;
 }
 
@@ -4030,6 +4100,7 @@ select.single-unit ~ .select-arrow {
 
   .music-control-btn,
   .music-add-form input { height: 70px; }
+  .screenshots-header-buttons button { height: 100px; }
   .music-control-btn { width: 70px; }
 
   .music-play-btn,
@@ -4405,12 +4476,35 @@ select.single-unit ~ .select-arrow {
     height: 100px;
     font-size: 2.5rem;
   }
+  #j-search {
+    flex: 1 1 12rem;
+    height: 100px;
+  }
+  .journal-editing, .journal-error {
+    font-size: 2rem;
+  }
   .j-icon-btn {
     width: 100px;
   }
-  .j-icon-btn svg, .select-arrow {
+  #j-order-toggle::before {
+    border-left-width: 0.95rem;
+    border-right-width: 0.95rem;
+  }
+  #j-order-toggle[data-order="asc"]::before {
+    border-bottom-width: 1.4rem;
+  }
+  #j-order-toggle[data-order="desc"]::before {
+    border-top-width: 1.4rem;
+  }
+  .j-icon-btn svg {
     width: 60px !important;
     height: 60px !important;
+  }
+  .d-custom-select-wrapper .select-arrow {
+    right: 1.4rem;
+    border-left-width: 0.8rem;
+    border-right-width: 0.8rem;
+    border-top-width: 1.2rem;
   }
 
   
@@ -4445,7 +4539,7 @@ select.single-unit ~ .select-arrow {
   }
 
   .d-custom-select-wrapper select {
-    padding-right: 4.5rem !important;
+    padding-right: 3.8rem !important;
   }
 
   /* --- JOURNAL COMPOSER (Form) --- */

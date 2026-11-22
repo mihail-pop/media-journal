@@ -1,0 +1,117 @@
+{% load journal_tags %}
+{% journal_data item as journal %}
+<section class="journal-section" data-has-entries="{{ journal.has_entries|yesno:'true,false' }}" data-rating-mode="{{ journal_rating_mode }}" data-season-entry="{{ journal_is_season|yesno:'true,false' }}">
+  {{ item.notes|default_if_none:''|json_script:"raw-notes-data" }}
+  {{ journal.log_data|json_script:"journal-log-data" }}
+  <div class="journal-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+    <h2 style="margin: 0;">Journal</h2>
+
+    <div class="journal-controls">
+      <input type="search" id="j-search" class="j-select" placeholder="Search" aria-label="Search this journal">
+      <button id="j-view-toggle" class="j-icon-btn" title="Toggle View">
+        <!-- SVG injected by JS -->
+      </button>
+
+      <div class="d-custom-select-wrapper">
+        <select id="j-sort-select" class="j-select">
+          <option value="activity_date">Activity Date</option>
+          <option value="title">Title</option>
+          <option value="score">Score</option>
+        </select>
+        <span class="select-arrow" aria-hidden="true"></span>
+      </div>
+
+      <button type="button" id="j-order-toggle" class="j-icon-btn" data-order="desc" title="Sort descending" aria-label="Sort descending"></button>
+    </div>
+  </div>
+
+  <div id="journal-entries-list" class="journal-entries-list">
+    <script>try { if (localStorage.getItem('journalView') === 'grid') document.currentScript.parentElement.classList.add('grid-view'); } catch (_) {}</script>
+    {% include "core/g_journal_entries.html" %}
+  </div>
+
+  <div id="j-show-more-wrapper" data-page="1" data-has-more="{{ journal.has_more|yesno:'true,false' }}" data-remaining="{{ journal.remaining }}" style="{% if not journal.has_more %}display: none;{% endif %} text-align: center; margin-bottom: 1.5rem;">
+    <button id="j-show-more-btn" class="j-btn-cancel" style="border: 1px solid var(--border-color);">Show More ({{ journal.remaining }})</button>
+  </div>
+
+  <!-- Sleek Unified Composer -->
+  <div class="journal-composer collapsed" id="journal-composer">
+     <div class="composer-placeholder" onclick="expandComposer()">
+        <span>Start writing...</span>
+     </div>
+
+     <div class="composer-active">
+        <div class="composer-tabs">
+           <div class="tab-group left">
+             <button class="j-tab-btn active" data-tab="write" onclick="setComposerTab('write')">Write</button>
+             <button class="j-tab-btn" data-tab="preview" onclick="setComposerTab('preview')">Preview</button>
+           </div>
+           <div class="tab-group right">
+             <button class="j-tab-btn {% if not item.notes %}active{% endif %}" data-mode="notes" onclick="setComposerMode('notes')">Notes</button>
+             <button class="j-tab-btn {% if item.notes %}active{% endif %}" data-mode="logs" onclick="setComposerMode('logs')">Logs</button>
+           </div>
+        </div>
+
+        <div id="journal-editing" class="journal-editing" hidden>
+          <span id="journal-editing-label"></span>
+          <button type="button" class="j-btn-cancel" onclick="startNewJournalLog()">New Log</button>
+        </div>
+        <div class="composer-editor-area">
+           <div class="composer-toolbar" id="composer-toolbar">
+              <button type="button" onclick="formatText('**', '**')" title="Bold"><b>B</b></button>
+              <button type="button" onclick="formatText('*', '*')" title="Italic"><i>I</i></button>
+              <button type="button" onclick="formatText('[center]', '[/center]')" title="Center">≡</button>
+              <button type="button" onclick="formatText('> ', '')" title="Quote">”</button>
+              <button type="button" onclick="formatText('||', '||')" title="Inline Spoiler">Spoiler</button>
+           </div>
+           <textarea id="journal-textarea" placeholder="Write in your journal..."></textarea>
+           <div id="journal-preview" class="formatted-content" style="display: none;"></div>
+        </div>
+
+        <div class="composer-log-fields" id="log-extra-fields" style="{% if not item.notes %}display: none;{% endif %}">
+            <input type="text" id="log-title" placeholder="Title" maxlength="255">
+            <input type="date" id="log-date" value="{% now 'Y-m-d' %}">
+            <div class="progress-group">
+               <div class="d-custom-select-wrapper">
+                 <select id="log-progress-unit">
+                   <!-- Populated by JS -->
+                 </select>
+                 <span class="select-arrow" aria-hidden="true"></span>
+               </div>
+               <input type="number" id="log-progress-start" placeholder="Start" min="0" step="1">
+               <input type="number" id="log-progress-end" placeholder="End" min="0" step="1">
+            </div>
+
+            <div class="log-score-wrapper">
+                <input type="hidden" id="log-score" value="">
+                <div id="log-rating-faces" class="rating-faces" style="display: none;">
+                    <button type="button" data-value="1" class="face face-bad" title="Bad"></button>
+                    <button type="button" data-value="50" class="face face-neutral" title="Neutral"></button>
+                    <button type="button" data-value="100" class="face face-good" title="Good"></button>
+                </div>
+                <div id="log-dynamic-rating"></div>
+            </div>
+
+            <label class="spoiler-toggle-btn">
+                <input type="checkbox" id="log-spoiler" style="display:none;">
+                <span>Spoiler</span>
+            </label>
+        </div>
+
+        <p id="journal-error" class="journal-error" role="alert" hidden></p>
+        <div class="composer-actions">
+           <button class="j-btn-cancel" onclick="collapseComposer()">Cancel</button>
+           <button class="j-btn-save" id="j-btn-save" onclick="saveJournalEntry()">Save</button>
+        </div>
+     </div>
+  </div>
+
+  <div id="delete-log-modal" class="screenshot-delete-panel" role="dialog" aria-labelledby="delete-log-title" aria-describedby="delete-log-message" hidden>
+    <h3 id="delete-log-title">Are you sure?</h3>
+    <p id="delete-log-message">Deleting this log. It cannot be undone.</p>
+    <div class="screenshot-delete-actions">
+      <button type="button" onclick="closeDeleteLogModal()">Cancel</button>
+      <button type="button" class="screenshot-delete-confirm" id="confirm-delete-log-btn">Delete</button>
+    </div>
+  </div>
+</section>
