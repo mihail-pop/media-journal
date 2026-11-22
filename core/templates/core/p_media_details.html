@@ -208,66 +208,79 @@
         <!-- MUSIC -->
         {% if section.id == 'music' %}
           {% if media_type == 'music' %}
-          <section class="trailer-section music-section">
+          <section class="trailer-section music-section" data-title="{{ title }}" data-favorite="{{ item.favorite|yesno:'true,false' }}">
             <div class="music-header">
               <h2>Music</h2>
               <div class="music-controls">
-                <label class="music-control-btn">
-                  <input type="checkbox" id="music-autoplay-toggle">
+                <label class="music-control-btn" title="Autoplay" aria-label="Autoplay">
+                  <input type="checkbox" id="music-autoplay-toggle" aria-label="Autoplay">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <polygon points="5 3 19 12 5 21 5 3"></polygon>
                   </svg>
-                  <span>Autoplay</span>
                 </label>
-                <label class="music-control-btn">
-                  <input type="checkbox" id="music-hide-toggle">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                <button type="button" id="music-size-toggle" class="music-control-btn" title="Toggle size" aria-label="Toggle size" aria-pressed="false">
+                  <svg viewBox="3 3 18 18" fill="currentColor" aria-hidden="true">
+                    <path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"></path>
                   </svg>
-                  <span>Hide</span>
-                </label>
+                </button>
                 {% if in_my_list %}
-                <button id="music-add-btn" class="music-control-btn">
+                <form id="music-add-form" class="music-add-form" hidden>
+                  <input type="text" id="music-youtube-url" placeholder="Enter YouTube URL" aria-label="YouTube URL" autocomplete="off" required>
+                  <button type="button" id="music-cancel-btn" class="music-control-btn" title="Cancel" aria-label="Cancel">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="6" y1="18" x2="18" y2="6"></line></svg>
+                  </button>
+                  <button type="submit" id="music-save-btn" class="music-control-btn" title="Save video" aria-label="Save video">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>
+                  </button>
+                </form>
+                <button type="button" id="music-add-btn" class="music-control-btn" title="Add video" aria-label="Add video">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="12" y1="5" x2="12" y2="19"></line>
                     <line x1="5" y1="12" x2="19" y2="12"></line>
                   </svg>
-                  <span>Add</span>
                 </button>
                 {% endif %}
               </div>
             </div>
-            <div id="music-add-form" class="music-add-form" style="display:none;">
-              <input type="text" id="music-youtube-url" placeholder="Enter YouTube URL">
-              <button id="music-save-btn">Save</button>
-              <button id="music-cancel-btn">Cancel</button>
-            </div>
             <div id="music-videos-container" class="trailer-grid">
+              <script>
+                try {
+                  document.currentScript.parentElement.classList.toggle('small', localStorage.getItem('musicVideoSize') === 'small');
+                } catch (_) {}
+              </script>
               {% if youtube_links %}
               {% for link in youtube_links %}
                 {% if 'youtube.com/watch?v=' in link.url %}
-                  <div class="music-video-wrapper" data-position="{{ link.position }}">
+                  <div class="music-video-wrapper" data-position="{{ link.position }}" data-video-record-id="{{ link.id|default:'' }}" data-url="{{ link.url }}">
                     <iframe
-                      src="https://www.youtube.com/embed/{{ link.url|slice:'32:' }}"
+                      src="https://www.youtube.com/embed/{{ link.url|slice:'32:' }}?enablejsapi=1"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                       allowfullscreen
                       referrerpolicy="origin-when-cross-origin"
                     ></iframe>
-                    {% if in_my_list %}
                     <div class="music-video-controls">
-                      <button class="music-delete-btn" data-position="{{ link.position }}" title="Delete Video">✕</button>
-                      <button class="music-cover-btn" data-position="{{ link.position }}" title="Set thumbnail as banner and poster">
+                      <button type="button" class="music-play-btn" title="Play in music player" aria-label="Play in music player">
+                        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"></path></svg>
+                      </button>
+                      {% if in_my_list %}
+                      <button type="button" class="music-delete-btn" data-position="{{ link.position }}" title="Delete video" aria-label="Delete video">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="6" y1="18" x2="18" y2="6"></line></svg>
+                      </button>
+                      <button type="button" class="music-cover-btn" data-position="{{ link.position }}" title="Set thumbnail as banner and poster" aria-label="Set thumbnail as banner and poster">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="pointer-events: none;">
                           <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
                           <circle cx="8.5" cy="8.5" r="1.5"></circle>
                           <polyline points="21 15 16 10 5 21"></polyline>
                         </svg>
                       </button>
-                      <button class="music-up-btn" data-position="{{ link.position }}" title="Move Up">▲</button>
-                      <button class="music-down-btn" data-position="{{ link.position }}" title="Move Down">▼</button>
+                      <button type="button" class="music-up-btn" data-position="{{ link.position }}" title="Move up" aria-label="Move up">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 15 6-6 6 6"></path></svg>
+                      </button>
+                      <button type="button" class="music-down-btn" data-position="{{ link.position }}" title="Move down" aria-label="Move down">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
+                      </button>
+                      {% endif %}
                     </div>
-                    {% endif %}
                   </div>
                 {% endif %}
               {% endfor %}

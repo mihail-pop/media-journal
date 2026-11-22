@@ -1922,303 +1922,259 @@ swapBtn?.addEventListener('click', () => {
   });
 
   // Music section controls
-  const musicAutoplayToggle = document.getElementById('music-autoplay-toggle');
-  const musicHideToggle = document.getElementById('music-hide-toggle');
-  const musicAddBtn = document.getElementById('music-add-btn');
-  const musicAddForm = document.getElementById('music-add-form');
-  const musicSaveBtn = document.getElementById('music-save-btn');
-  const musicCancelBtn = document.getElementById('music-cancel-btn');
-  const musicVideosContainer = document.getElementById('music-videos-container');
-
-  function updateMusicControlVisibility() {
-    if (!musicVideosContainer) return;
-    const wrappers = musicVideosContainer.querySelectorAll('.music-video-wrapper');
-    wrappers.forEach((wrapper, index) => {
-      const upBtn = wrapper.querySelector('.music-up-btn');
-      const downBtn = wrapper.querySelector('.music-down-btn');
-      
-      if (upBtn) {
-        upBtn.style.display = index === 0 ? 'none' : '';
-      }
-      
-      if (downBtn) {
-        downBtn.style.display = index === wrappers.length - 1 ? 'none' : '';
-      }
-    });
-  }
-
-  updateMusicControlVisibility();
-
-  // Load saved preferences
-  if (musicAutoplayToggle) {
-    const autoplayEnabled = localStorage.getItem('musicAutoplay') === 'true';
-    musicAutoplayToggle.checked = autoplayEnabled;
-    updateAutoplay(autoplayEnabled);
-
-    musicAutoplayToggle.addEventListener('change', function() {
-      const enabled = this.checked;
-      localStorage.setItem('musicAutoplay', enabled);
-      updateAutoplay(enabled);
-    });
-  }
-
-  if (musicHideToggle) {
-    const hideEnabled = localStorage.getItem('musicHide') === 'true';
-    musicHideToggle.checked = hideEnabled;
-    if (hideEnabled && musicVideosContainer) {
-      musicVideosContainer.style.display = 'none';
-    }
-
-    musicHideToggle.addEventListener('change', function() {
-      const enabled = this.checked;
-      localStorage.setItem('musicHide', enabled);
-      if (musicVideosContainer) {
-        musicVideosContainer.style.display = enabled ? 'none' : '';
-      }
-    });
-  }
-
-  function updateAutoplay(enabled) {
-    if (!musicVideosContainer) return;
-    const iframes = musicVideosContainer.querySelectorAll('iframe');
-    iframes.forEach((iframe, index) => {
-      const src = iframe.src;
-      if (index === 0) {
-        if (enabled && !src.includes('autoplay=1')) {
-          iframe.src = src + (src.includes('?') ? '&' : '?') + 'autoplay=1';
-        } else if (!enabled && src.includes('autoplay=1')) {
-          iframe.src = src.replace(/[?&]autoplay=1/, '');
-        }
-      }
-    });
-  }
-
-  // Add video functionality
-  if (musicAddBtn) {
-    musicAddBtn.addEventListener('click', function() {
-      musicAddForm.style.display = 'flex';
-      document.getElementById('music-youtube-url').focus();
-    });
-  }
-
-  if (musicCancelBtn) {
-    musicCancelBtn.addEventListener('click', function() {
-      musicAddForm.style.display = 'none';
-      document.getElementById('music-youtube-url').value = '';
-    });
-  }
-
-  if (musicSaveBtn) {
-    musicSaveBtn.addEventListener('click', function() {
-      const url = document.getElementById('music-youtube-url').value.trim();
-      if (!url) return;
-
-      const sourceId = document.body.dataset.sourceId;
-      
-      fetch('/api/add-music-video/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': getCookie('csrftoken'),
-        },
-        body: JSON.stringify({ source_id: sourceId, url: url }),
-      })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          sessionStorage.setItem('refreshSuccess', '1');
-          location.reload();
-        } else {
-          alert(data.error || 'Failed to add video');
-        }
-      })
-      .catch(() => alert('Error adding video'));
-    });
-  }
-
-  // Reorder and set cover functionality
-  if (musicVideosContainer) {
-    musicVideosContainer.addEventListener('click', function(e) {
-      const sourceId = document.body.dataset.sourceId;
-      
-      // Set as cover
-      if (e.target.classList.contains('music-cover-btn')) {
-        const position = parseInt(e.target.dataset.position);
-        
-        fetch('/api/set-video-as-cover/', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken'),
-          },
-          body: JSON.stringify({ source_id: sourceId, position: position }),
-        })
-        .then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            sessionStorage.setItem('refreshSuccess', '1');
-            location.reload();
-          } else {
-            alert(data.error || 'Failed to set poster');
-          }
-        })
-        .catch(() => alert('Error setting poster'));
-      }
-      
-      // Move up
-      if (e.target.classList.contains('music-up-btn')) {
-        const position = parseInt(e.target.dataset.position);
-        if (position <= 1) return;
-        
-        const wrappers = Array.from(musicVideosContainer.querySelectorAll('.music-video-wrapper'));
-        const currentOrder = wrappers.map(w => parseInt(w.dataset.position));
-        
-        // Swap positions
-        const currentIdx = currentOrder.indexOf(position);
-        const prevPos = currentOrder[currentIdx - 1];
-        currentOrder[currentIdx] = prevPos;
-        currentOrder[currentIdx - 1] = position;
-        
-        fetch('/api/reorder-music-videos/', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken'),
-          },
-          body: JSON.stringify({ source_id: sourceId, order: currentOrder }),
-        })
-        .then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            location.reload();
-          } else {
-            alert(data.error || 'Failed to reorder');
-          }
-        })
-        .catch(() => alert('Error reordering'));
-      }
-      
-      // Move down
-      if (e.target.classList.contains('music-down-btn')) {
-        const position = parseInt(e.target.dataset.position);
-        const wrappers = Array.from(musicVideosContainer.querySelectorAll('.music-video-wrapper'));
-        if (position >= wrappers.length) return;
-        
-        const currentOrder = wrappers.map(w => parseInt(w.dataset.position));
-        
-        // Swap positions
-        const currentIdx = currentOrder.indexOf(position);
-        const nextPos = currentOrder[currentIdx + 1];
-        currentOrder[currentIdx] = nextPos;
-        currentOrder[currentIdx + 1] = position;
-        
-        fetch('/api/reorder-music-videos/', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken'),
-          },
-          body: JSON.stringify({ source_id: sourceId, order: currentOrder }),
-        })
-        .then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            location.reload();
-          } else {
-            alert(data.error || 'Failed to reorder');
-          }
-        })
-        .catch(() => alert('Error reordering'));
-      }
-    });
-  }
-  
-  let musicDeleteConfirm = false;
-  let isDeletingMusic = false;
-  let musicDeleteTimeout = null;
-
-  function handleDeleteMusicVideo(btn) {
-    if (isDeletingMusic || btn.disabled) return;
-  
-    const position = parseInt(btn.dataset.position);
+  (() => {
+    const section = document.querySelector('.music-section');
+    const container = document.getElementById('music-videos-container');
+    if (!section || !container) return;
+    const autoplay = document.getElementById('music-autoplay-toggle');
+    const sizeButton = document.getElementById('music-size-toggle');
+    const addButton = document.getElementById('music-add-btn');
+    const form = document.getElementById('music-add-form');
+    const input = document.getElementById('music-youtube-url');
+    const cancelButton = document.getElementById('music-cancel-btn');
     const sourceId = document.body.dataset.sourceId;
-  
-    if (!musicDeleteConfirm) {
-      btn.classList.add('delete-confirm');
-      btn.title = "Are you sure?";
-      musicDeleteConfirm = true;
-  
-      if (musicDeleteTimeout) clearTimeout(musicDeleteTimeout);
-  
-      musicDeleteTimeout = setTimeout(() => {
-        if (!isDeletingMusic) {
-          musicDeleteConfirm = false;
-          const allDeleteBtns = document.querySelectorAll(".music-delete-btn");
-          allDeleteBtns.forEach(b => {
-            b.classList.remove('delete-confirm');
-            b.title = "Delete Video";
-          });
+    let busy = false;
+    let deletePanel = null;
+    let deleteTarget = null;
+    let deleteFocus = null;
+
+    function youtubeId(value) {
+      try {
+        const url = new URL(value.includes('://') ? value : 'https://' + value);
+        const host = url.hostname.toLowerCase().replace(/^www\./, '');
+        let id = '';
+        if (host === 'youtu.be') id = url.pathname.split('/')[1];
+        else if (['youtube.com', 'm.youtube.com', 'music.youtube.com', 'youtube-nocookie.com'].includes(host)) {
+          id = url.searchParams.get('v') || (/^\/(?:embed|shorts|live)\//.test(url.pathname) ? url.pathname.split('/')[2] : '');
         }
-      }, 2000);
-    } else {
-      if (musicDeleteTimeout) {
-        clearTimeout(musicDeleteTimeout);
-        musicDeleteTimeout = null;
-      }
-      isDeletingMusic = true;
-      const allDeleteBtns = document.querySelectorAll(".music-delete-btn");
-      allDeleteBtns.forEach(b => {
-        b.disabled = true;
-        b.style.opacity = "0.5";
-        b.style.cursor = "wait";
+        return /^[A-Za-z0-9_-]{11}$/.test(id || '') ? id : null;
+      } catch (_) { return null; }
+    }
+
+    function wrappers() {
+      return [...container.querySelectorAll('.music-video-wrapper')];
+    }
+
+    function updateControls() {
+      section.querySelectorAll('button, input').forEach(control => { control.disabled = busy || !!deletePanel; });
+      wrappers().forEach((wrapper, index, all) => {
+        const up = wrapper.querySelector('.music-up-btn');
+        const down = wrapper.querySelector('.music-down-btn');
+        if (up) up.hidden = index === 0;
+        if (down) down.hidden = index === all.length - 1;
+        const play = wrapper.querySelector('.music-play-btn');
+        if (play && !youtubeId(wrapper.dataset.url || '')) play.disabled = true;
       });
-  
-      fetch('/api/delete-music-video/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': getCookie('csrftoken'),
-        },
-        body: JSON.stringify({ source_id: sourceId, position: position }),
-      })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          sessionStorage.setItem('refreshSuccess', '1');
-          location.reload();
-        } else {
-          alert(data.error || 'Failed to delete video');
-          resetDeleteState();
-        }
-      })
-      .catch(() => {
-        alert('Error deleting video');
-        resetDeleteState();
+      deletePanel?.querySelectorAll('button').forEach(button => { button.disabled = busy; });
+      const confirm = deletePanel?.querySelector('.screenshot-delete-confirm');
+      if (confirm) confirm.textContent = busy ? 'Deleting…' : 'Delete';
+    }
+
+    function remember(key, value) {
+      try { localStorage.setItem(key, value); } catch (_) {}
+    }
+
+    function updateSizeIcon() {
+      const small = container.classList.contains('small');
+      sizeButton.setAttribute('aria-pressed', String(small));
+      // Use the same expand/collapse symbols as the music player's fullscreen control.
+      sizeButton.querySelector('path').setAttribute('d', small
+        ? 'M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z'
+        : 'M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z');
+    }
+    updateSizeIcon();
+    sizeButton.addEventListener('click', () => {
+      const small = container.classList.toggle('small');
+      updateSizeIcon();
+      remember('musicVideoSize', small ? 'small' : 'large');
+    });
+
+    function updateAutoplay(enabled) {
+      wrappers().forEach((wrapper, index) => {
+        const iframe = wrapper.querySelector('iframe');
+        const id = youtubeId(wrapper.dataset.url || '');
+        if (!iframe || !id) return;
+        const url = new URL(iframe.src);
+        url.pathname = '/embed/' + id;
+        url.searchParams.set('enablejsapi', '1');
+        if (enabled && index === 0) url.searchParams.set('autoplay', '1');
+        else url.searchParams.delete('autoplay');
+        if (iframe.src !== url.href) iframe.src = url.href;
       });
     }
-  }
 
-  function resetDeleteState() {
-    isDeletingMusic = false;
-    musicDeleteConfirm = false;
-    const allDeleteBtns = document.querySelectorAll(".music-delete-btn");
-    allDeleteBtns.forEach(b => {
-      b.disabled = false;
-      b.classList.remove('delete-confirm');
-      b.title = "Delete Video";
-      b.style.opacity = "";
-      b.style.cursor = "";
+    try {
+      autoplay.checked = localStorage.getItem('musicAutoplay') === 'true';
+      localStorage.removeItem('musicHide');
+    } catch (_) {}
+    updateAutoplay(autoplay.checked);
+    autoplay.addEventListener('change', () => {
+      remember('musicAutoplay', String(autoplay.checked));
+      updateAutoplay(autoplay.checked);
     });
-  }
-  
-  // Delete video functionality
-  if (musicVideosContainer) {
-    musicVideosContainer.addEventListener('click', function(e) {
-      if (e.target.classList.contains('music-delete-btn')) {
-        handleDeleteMusicVideo(e.target);
+
+    function closeForm() {
+      if (busy || !form) return;
+      form.hidden = true;
+      input.value = '';
+      addButton.hidden = false;
+      addButton.focus({ preventScroll: true });
+    }
+    addButton?.addEventListener('click', () => {
+      if (busy || deletePanel) return;
+      addButton.hidden = true;
+      form.hidden = false;
+      input.focus({ preventScroll: true });
+    });
+    cancelButton?.addEventListener('click', closeForm);
+    input?.addEventListener('keydown', event => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
+        closeForm();
       }
     });
-  }
+
+    async function mutate(endpoint, payload, announce = true) {
+      if (busy) return false;
+      busy = true;
+      updateControls();
+      let succeeded = false;
+      try {
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+          body: JSON.stringify({ source_id: sourceId, ...payload }),
+        });
+        const data = await response.json().catch(() => null);
+        if (!response.ok || !data?.success) throw new Error(data?.error || 'The change could not be saved. Please try again.');
+        succeeded = true;
+        if (announce) {
+          try { sessionStorage.setItem('refreshSuccess', '1'); } catch (_) {}
+        }
+        location.reload();
+        return true;
+      } catch (error) {
+        const message = error.message || 'The change could not be saved. Please try again.';
+        if (deletePanel) deletePanel.querySelector('.music-delete-message').textContent = message;
+        else showNotification(message, 'warning', 5000);
+        return false;
+      } finally {
+        if (!succeeded) {
+          busy = false;
+          updateControls();
+        }
+      }
+    }
+
+    form?.addEventListener('submit', event => {
+      event.preventDefault();
+      if (busy) return;
+      const id = youtubeId(input.value.trim());
+      if (!id) {
+        showNotification('Enter a valid YouTube video URL.', 'warning', 5000);
+        input.focus();
+        return;
+      }
+      mutate('/api/add-music-video/', { url: 'https://www.youtube.com/watch?v=' + id });
+    });
+
+    function closeDelete() {
+      if (busy || !deletePanel) return;
+      deletePanel.remove();
+      deletePanel = null;
+      deleteTarget = null;
+      updateControls();
+      deleteFocus?.focus({ preventScroll: true });
+      deleteFocus = null;
+    }
+
+    function confirmDeletion(button, wrapper) {
+      if (busy || deletePanel) return;
+      deleteTarget = {
+        video_id: Number(wrapper.dataset.videoRecordId),
+        position: Number(wrapper.dataset.position),
+      };
+      deleteFocus = button;
+      // Reuse the screenshot notification styling, with separate music-only state.
+      deletePanel = document.createElement('section');
+      deletePanel.className = 'screenshot-delete-panel music-delete-panel';
+      deletePanel.setAttribute('role', 'dialog');
+      deletePanel.setAttribute('aria-labelledby', 'music-delete-title');
+      deletePanel.innerHTML = '<h3 id="music-delete-title">Are you sure?</h3>' +
+        '<p class="music-delete-message" aria-live="polite">Deleting this video. It cannot be undone.</p>' +
+        '<div class="screenshot-delete-actions">' +
+        '<button type="button" class="music-delete-cancel">Cancel</button>' +
+        '<button type="button" class="screenshot-delete-confirm">Delete</button></div>';
+      document.body.appendChild(deletePanel);
+      deletePanel.querySelector('.music-delete-cancel').addEventListener('click', closeDelete);
+      deletePanel.querySelector('.screenshot-delete-confirm').addEventListener('click', () => {
+        if (deleteTarget) mutate('/api/delete-music-video/', deleteTarget);
+      });
+      updateControls();
+      deletePanel.querySelector('.music-delete-cancel').focus({ preventScroll: true });
+    }
+
+    document.addEventListener('keydown', event => {
+      if (!deletePanel) return;
+      event.stopImmediatePropagation();
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeDelete();
+      } else if (event.key === 'Tab') {
+        event.preventDefault();
+        const buttons = [...deletePanel.querySelectorAll('button:not(:disabled)')];
+        if (buttons.length) buttons[(buttons.indexOf(document.activeElement) + 1) % buttons.length].focus();
+      }
+    }, true);
+
+    function playInPlayer(wrapper) {
+      if (typeof window.startCustomPlaylist !== 'function') {
+        showNotification('The music player is unavailable. Please reload the page.', 'warning', 5000);
+        return;
+      }
+      const itemId = Number(document.body.dataset.dbId);
+      const videos = wrappers().filter(video => youtubeId(video.dataset.url || ''));
+      const index = videos.indexOf(wrapper);
+      if (index < 0) return;
+      const playlist = videos.map(video => ({
+        video_id: youtubeId(video.dataset.url),
+        item_id: Number.isSafeInteger(itemId) && itemId > 0 ? itemId : null,
+        source_id: sourceId,
+        is_favorite: section.dataset.favorite === 'true',
+        title: section.dataset.title || '',
+        loop_queue: true,
+      }));
+      // Pause this section's embeds when handing playback to the persistent player.
+      container.querySelectorAll('iframe').forEach(iframe => {
+        iframe.contentWindow?.postMessage(JSON.stringify({ event: 'command', func: 'pauseVideo', args: [] }), new URL(iframe.src).origin);
+      });
+      window.startCustomPlaylist(playlist, index);
+    }
+
+    container.addEventListener('click', event => {
+      const button = event.target.closest('button');
+      const wrapper = button?.closest('.music-video-wrapper');
+      if (!wrapper || button.disabled || busy || deletePanel) return;
+      const position = Number(wrapper.dataset.position);
+      const videoId = Number(wrapper.dataset.videoRecordId);
+      if (button.classList.contains('music-play-btn')) {
+        playInPlayer(wrapper);
+      } else if (button.classList.contains('music-delete-btn')) {
+        confirmDeletion(button, wrapper);
+      } else if (button.classList.contains('music-cover-btn')) {
+        mutate('/api/set-video-as-cover/', { position, video_id: videoId });
+      } else if (button.classList.contains('music-up-btn') || button.classList.contains('music-down-btn')) {
+        const all = wrappers();
+        const index = all.indexOf(wrapper);
+        const other = index + (button.classList.contains('music-up-btn') ? -1 : 1);
+        if (other < 0 || other >= all.length) return;
+        [all[index], all[other]] = [all[other], all[index]];
+        mutate('/api/reorder-music-videos/', { video_ids: all.map(video => Number(video.dataset.videoRecordId)) }, false);
+      }
+    });
+    updateControls();
+  })();
 
 // Keyboard shortcuts
 document.addEventListener('keydown', function(e) {

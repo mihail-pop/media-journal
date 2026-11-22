@@ -7,6 +7,7 @@ from urllib.parse import urlsplit
 import requests
 from django.conf import settings
 from django.http import HttpResponse, JsonResponse
+from django.db import transaction
 from django.core.files.storage import default_storage
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_POST
@@ -393,20 +394,24 @@ def delete_music_video(request):
         data = json.loads(request.body)
         source_id = data.get("source_id")
         position = data.get("position")
+        video_id = data.get('video_id')
 
-        if not source_id or position is None:
+        if not source_id or (video_id is None and position is None):
             return JsonResponse({"success": False, "error": "Missing data"})
 
         item = MediaItem.objects.get(provider_ids__musicbrainz=str(source_id), media_type="music")
 
         from core.models import MusicVideo
-        MusicVideo.objects.filter(item=item, position=position).delete()
-        
-        # Reorder remaining DB objects
-        remaining = list(item.music_videos.all().order_by('position'))
-        for i, video in enumerate(remaining, start=1):
-            video.position = i
-            video.save(update_fields=['position'])
+        with transaction.atomic():
+            selected = MusicVideo.objects.filter(item=item)
+            selected = selected.filter(pk=video_id) if video_id is not None else selected.filter(position=position)
+            deleted, _ = selected.delete()
+            if not deleted:
+                return JsonResponse({'success': False, 'error': 'This video is no longer available. Reload the page.'}, status=404)
+            remaining = list(item.music_videos.only('id', 'position').order_by('position', 'pk'))
+            for i, video in enumerate(remaining, start=1):
+                video.position = i
+            MusicVideo.objects.bulk_update(remaining, ['position'])
 
         return JsonResponse({"success": True})
     except MediaItem.DoesNotExist:
@@ -421,20 +426,22 @@ def reorder_music_videos(request):
     try:
         data = json.loads(request.body)
         source_id = data.get("source_id")
-        new_order = data.get("order")  # List of positions in new order
+        by_id = 'video_ids' in data
+        new_order = data.get('video_ids' if by_id else 'order')
 
-        item = MediaItem.objects.get(provider_ids__musicbrainz=str(source_id))
+        item = MediaItem.objects.only('id').get(provider_ids__musicbrainz=str(source_id), media_type='music')
         
         from core.models import MusicVideo
-        videos = list(item.music_videos.all())
-        
-        # Reorder DB based on new_order list
-        for new_pos, old_pos in enumerate(new_order, start=1):
-            for video in videos:
-                if video.position == old_pos:
-                    video.position = new_pos
-                    video.save(update_fields=['position'])
-                    break
+        videos = list(item.music_videos.only('id', 'position').order_by('position', 'pk'))
+        if not isinstance(new_order, list) or any(type(value) is not int for value in new_order):
+            return JsonResponse({'success': False, 'error': 'Invalid video order.'}, status=400)
+        lookup = {video.pk if by_id else video.position: video for video in videos}
+        if len(new_order) != len(videos) or len(lookup) != len(videos) or set(new_order) != set(lookup):
+            return JsonResponse({'success': False, 'error': 'The videos changed. Reload the page before reordering.'}, status=400)
+        for new_position, key in enumerate(new_order, 1):
+            lookup[key].position = new_position
+        with transaction.atomic():
+            MusicVideo.objects.bulk_update(videos, ['position'])
 
         return JsonResponse({"success": True})
     except Exception as e:
@@ -448,11 +455,12 @@ def set_video_as_cover(request):
         data = json.loads(request.body)
         source_id = data.get("source_id")
         position = data.get("position")
+        video_id = data.get('video_id')
 
         item = MediaItem.objects.get(provider_ids__musicbrainz=str(source_id))
         
         from core.models import MusicVideo
-        video = item.music_videos.filter(position=position).first()
+        video = item.music_videos.filter(pk=video_id).first() if video_id is not None else item.music_videos.filter(position=position).first()
 
         if not video or "youtube.com/watch?v=" not in video.url:
             return JsonResponse({"error": "Video not found"}, status=404)

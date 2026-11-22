@@ -257,13 +257,14 @@ function startPlayerPlaylist(playlist, startIndex, kind) {
         || !localStorage.getItem('musicPlayerEnabled') || (!isMusicPlayerReady && !isMusicPopoutOpen()));
     nextMusicPlayIsFresh = kind === 'music';
     window.prepareMusicPlayerWindow();
-    sessionHistory = kind === 'news' ? [...playlist] : [];
-    historyIndex = kind === 'news' ? startIndex : -1;
+    const fixedQueue = kind === 'news' || playlist[0]?.loop_queue === true;
+    sessionHistory = fixedQueue ? [...playlist] : [];
+    historyIndex = fixedQueue ? startIndex : -1;
     localStorage.removeItem('music_player_history');
     localStorage.removeItem('music_player_history_index');
     localStorage.removeItem('news_player_history');
     localStorage.removeItem('news_player_history_index');
-    if (kind === 'news') saveHistory();
+    if (fixedQueue) saveHistory();
 
     musicPlaylist = playlist;
     musicCurrentIndex = startIndex;
@@ -529,8 +530,8 @@ function createPlayer(videoId, startTime = 0, startPaused = false) {
   
   // Initialize Session History if starting fresh
   if (sessionHistory.length === 0) {
-      sessionHistory = musicPlaybackKind === 'news' ? [...musicPlaylist] : [currentData];
-      historyIndex = musicPlaybackKind === 'news' ? musicCurrentIndex : 0;
+      sessionHistory = hasFixedPlaybackQueue() ? [...musicPlaylist] : [currentData];
+      historyIndex = hasFixedPlaybackQueue() ? musicCurrentIndex : 0;
       saveHistory();
   }
 
@@ -715,7 +716,7 @@ function createPlayer(videoId, startTime = 0, startPaused = false) {
        <div id="mp-left">
           <div id="mp-controls">
              <div class="mp-ctrl-group">
-                <button id="mp-heart" class="mp-btn" title="Favorite" data-item-id="${isNews ? '' : currentData.item_id}" data-favorite="${isFavorite}"${isNews ? ' style="display:none"' : ''}>${iconHeart(isFavorite)}</button>
+                <button id="mp-heart" class="mp-btn" title="Favorite" data-item-id="${isNews ? '' : currentData.item_id || ''}" data-favorite="${isFavorite}"${isNews || !currentData.item_id ? ' style="display:none"' : ''}>${iconHeart(isFavorite)}</button>
                 <a id="mp-info" href="${detailsUrl}" class="mp-btn" title="${isNews ? 'Watch on YouTube' : 'Details'}"${isNews ? ' target="_blank" rel="noopener noreferrer"' : ''}>${iconInfo}</a>
                 <button id="mp-toggle-hist" class="mp-btn" title="${isNews ? 'Toggle Queue' : 'Toggle History'}">${iconHistory}</button>
              </div>
@@ -1110,9 +1111,9 @@ function bindPlayerEvents() {
           if (data.success) {
             this.dataset.favorite = !isFav;
             this.innerHTML = iconHeart(!isFav);
-            const playlistItem = musicPlaylist.find(v => String(v.item_id) === String(itemId));
-            if (playlistItem) {
-              playlistItem.is_favorite = !isFav;
+            const playlistItems = musicPlaylist.filter(v => String(v.item_id) === String(itemId));
+            if (playlistItems.length) {
+              playlistItems.forEach(video => { video.is_favorite = !isFav; });
               if (isSequentialMode) {
                   localStorage.setItem('music_player_playlist', JSON.stringify(musicPlaylist));
               }
@@ -1175,7 +1176,7 @@ function renderHistoryList() {
         div.appendChild(label);
         div.addEventListener('click', () => {
             historyIndex = index;
-            if (musicPlaybackKind === 'news') {
+            if (hasFixedPlaybackQueue()) {
                 musicCurrentIndex = index;
                 localStorage.setItem('music_player_index', index);
             }
@@ -1200,8 +1201,8 @@ function playVideoInternal(videoObj) {
         
         const heartBtn = document.getElementById('mp-heart');
         if (heartBtn) {
-          heartBtn.style.display = musicPlaybackKind === 'news' ? 'none' : '';
-          heartBtn.dataset.itemId = musicPlaybackKind === 'news' ? '' : videoObj.item_id;
+          heartBtn.style.display = musicPlaybackKind === 'news' || !videoObj.item_id ? 'none' : '';
+          heartBtn.dataset.itemId = musicPlaybackKind === 'news' ? '' : videoObj.item_id || '';
           heartBtn.dataset.favorite = videoObj.is_favorite;
           heartBtn.innerHTML = iconHeart(videoObj.is_favorite);
         }
@@ -1259,9 +1260,14 @@ function onPlayerStateChange(event) {
   }
 }
 
+function hasFixedPlaybackQueue() {
+    // Entry video queues loop by position; ordinary music playlists retain their history behavior.
+    return musicPlaybackKind === 'news' || musicPlaylist[0]?.loop_queue === true;
+}
+
 function playPrev() {
-    if (musicPlaybackKind === 'news') {
-        playNewsQueueItem(musicCurrentIndex - 1);
+    if (hasFixedPlaybackQueue()) {
+        playQueueItem(musicCurrentIndex - 1);
         return;
     }
     if (historyIndex > 0) {
@@ -1272,8 +1278,8 @@ function playPrev() {
 }
 
 function playNext() {
-  if (musicPlaybackKind === 'news') {
-      playNewsQueueItem(musicCurrentIndex + 1);
+  if (hasFixedPlaybackQueue()) {
+      playQueueItem(musicCurrentIndex + 1);
       return;
   }
   if (historyIndex < sessionHistory.length - 1) {
@@ -1310,10 +1316,10 @@ function playNext() {
   playVideoInternal(nextVideo);
 }
 
-function playNewsQueueItem(index) {
+function playQueueItem(index) {
     if (!musicPlaylist.length || !musicPlayer || !isMusicPlayerReady) return;
     musicCurrentIndex = ((index % musicPlaylist.length) + musicPlaylist.length) % musicPlaylist.length;
-    // News history is a fixed queue, rather than an ever-growing listening log.
+    // Fixed queues show their entries rather than growing a duplicate history on each loop.
     sessionHistory = [...musicPlaylist];
     historyIndex = musicCurrentIndex;
     localStorage.setItem('music_player_index', musicCurrentIndex);
