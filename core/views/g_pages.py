@@ -25,6 +25,7 @@ from core.services.p_home import (
 from core.services.g_calendar_dates import parse_media_types, media_filter_label
 from core.services.m_people import fetch_actor_data, fetch_character_data, resolve_person_identity
 from core.services.g_utils import get_ordered_types
+from core.services.g_collections import collection_preview
 from core.services.p_year_review import year_review_calendar
 
 logger = logging.getLogger(__name__)
@@ -391,23 +392,18 @@ def home(request):
         }
 
     top_collections_qs = Collection.objects.only("title").order_by(
-        "position", "-date_created",
+        "position", "-date_created", "pk",
     ).prefetch_related(Prefetch(
         "collectionitem_set",
-        queryset=CollectionItem.objects.select_related("item").only(
-            "collection_id", "item_id", "item__cover_url", "item__media_type",
-        ).order_by("position", "-date_added")[:3],
+        queryset=CollectionItem.objects.select_related("item", "person").only(
+            "collection_id", "item_id", "person_id", "item__cover_url", "item__media_type",
+            "person__image_url", "person__type",
+        ).order_by("position", "-date_added", "pk")[:3],
         to_attr="home_preview_items",
     ))[:10]
     home_collections = []
     for col in top_collections_qs:
-        covers = [
-            {
-                "url": entry.item.cover_url or "/static/core/img/placeholder.png",
-                "media_type": entry.item.media_type
-            } 
-            for entry in col.home_preview_items
-        ]
+        covers = [collection_preview(entry) for entry in col.home_preview_items]
         
         home_collections.append({
             "id": col.id,

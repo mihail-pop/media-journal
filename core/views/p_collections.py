@@ -6,7 +6,7 @@ from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_http_methods
 
 from core.models import Collection
-from core.services.g_collections import collection_ids, save_collection_order
+from core.services.g_collections import collection_ids, collection_preview, save_collection_order
 
 
 @require_http_methods(["POST"])
@@ -31,18 +31,16 @@ def save_collection(request):
             max_pos = Collection.objects.aggregate(Max('position'))['position__max'] or 0
             col = Collection.objects.create(title=title, description=description, position=max_pos + 1)
         
-        covers = [
-            {'url': row['item__cover_url'] or '/static/core/img/placeholder.png',
-             'media_type': row['item__media_type']}
-            for row in col.collectionitem_set.order_by('position', '-date_added', 'pk')
-            .values('item__cover_url', 'item__media_type')[:5]
-        ]
+        covers = [collection_preview(entry) for entry in col.collectionitem_set.select_related('item', 'person').only(
+            'id', 'item_id', 'person_id', 'item__id', 'item__cover_url', 'item__media_type',
+            'person__id', 'person__image_url', 'person__type',
+        ).order_by('position', '-date_added', 'pk')[:5]]
         
         return JsonResponse({"success": True, "collection": {
             "id": col.id,
             "title": col.title,
             "description": col.description or "",
-            "item_count": col.items.count(),
+            "item_count": col.collectionitem_set.count(),
             "covers": covers,
         }})
     except (ValueError, TypeError, AttributeError) as e:

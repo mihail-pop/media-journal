@@ -260,7 +260,8 @@ class Collection(models.Model):
 
 class CollectionItem(models.Model):
     collection = models.ForeignKey(Collection, on_delete=models.CASCADE)
-    item = models.ForeignKey(MediaItem, on_delete=models.CASCADE)
+    item = models.ForeignKey(MediaItem, on_delete=models.CASCADE, null=True, blank=True)
+    person = models.ForeignKey(FavoritePerson, on_delete=models.CASCADE, null=True, blank=True)
     
     position = models.PositiveIntegerField(default=1)
     date_added = models.DateTimeField(default=timezone.now)
@@ -268,9 +269,18 @@ class CollectionItem(models.Model):
     class Meta:
         ordering: ClassVar[list[str]] = ['position', '-date_added']
         unique_together = ('collection', 'item') 
+        constraints: ClassVar[list[models.BaseConstraint]] = [
+            models.UniqueConstraint(fields=['collection', 'person'], name='unique_collection_person'),
+            models.CheckConstraint(
+                condition=(models.Q(item__isnull=False, person__isnull=True)
+                           | models.Q(item__isnull=True, person__isnull=False)),
+                name='collection_entry_one_target',
+            ),
+        ]
 
     def __str__(self):
-        return f"{self.collection.title} - {self.item.title} (Pos: {self.position})"
+        title = self.item.title if self.item_id else self.person.name
+        return f"{self.collection.title} - {title} (Pos: {self.position})"
 
 class NewsChannel(models.Model):
     """A user-added YouTube source for one media category."""

@@ -5,12 +5,13 @@ from django.conf import settings
 from django.http import JsonResponse
 from django.urls import reverse
 from django.db.models import F, Case, When, Value, IntegerField, Prefetch, Count
-from django.db.models.functions import Lower
+from django.db.models.functions import Coalesce, Lower
 from django.views.decorators.http import require_GET
 from django.utils import timezone
 
 from core.models import MediaItem, FavoritePerson, Collection, CollectionItem
 from core.services.g_utils import normalize_search_text
+from core.services.g_collections import collection_entry_data, collection_preview
 from core.services.g_api import get_game_screenshots_data, serialize_game_screenshot
 from core.services.m_games import get_igdb_discover
 from core.services.m_anime_manga import get_anilist_discover
@@ -1586,17 +1587,19 @@ def collection_items_api(request, collection_id):
     page_size = 50
     
     # Get items in the collection
-    qs = CollectionItem.objects.filter(collection_id=collection_id).select_related('item').only(
-        'id', 'item_id', 'collection_id', 'position', 'date_added',
+    qs = CollectionItem.objects.filter(collection_id=collection_id).select_related('item', 'person').only(
+        'id', 'item_id', 'person_id', 'collection_id', 'position', 'date_added',
         'item__id', 'item__title', 'item__media_type', 'item__cover_url',
         'item__banner_url', 'item__personal_rating', 'item__date_added',
         'item__release_date', 'item__source', 'item__provider_ids',
+        'person__id', 'person__name', 'person__type', 'person__image_url',
+        'person__person_id', 'person__source', 'person__date_added',
     )
     search = normalize_search_text(request.GET.get('search', '').strip())
     if search:
         matching_ids = []
-        for link_id, title, creators in qs.values_list('id', 'item__title', 'item__creators'):
-            target = normalize_search_text(title)
+        for link_id, title, creators, name in qs.values_list('id', 'item__title', 'item__creators', 'person__name'):
+            target = normalize_search_text(title or name)
             if isinstance(creators, list):
                 target += ' ' + normalize_search_text(' '.join(map(str, creators)))
             elif isinstance(creators, str):
@@ -1607,7 +1610,10 @@ def collection_items_api(request, collection_id):
     
     # Annotate sorting parameters from the underlying item
     qs = qs.annotate(
-        title_lower=Lower('item__title'),
+        title_value=Coalesce('item__title', 'person__name'),
+        title_lower=Lower(Coalesce('item__title', 'person__name')),
+        activity_order=Coalesce('item__date_added', 'person__date_added'),
+        person_order=Case(When(person__isnull=False, then=Value(1)), default=Value(0), output_field=IntegerField()),
         rating_order=Case(
             When(item__personal_rating=None, then=Value(0)),
             default=F("item__personal_rating"),
@@ -1619,18 +1625,20 @@ def collection_items_api(request, collection_id):
     order_fields = []
     if sort_by == "title":
         if sort_order == "asc":
-            order_fields.extend(["title_lower", "item__title"])
+            order_fields.extend(['title_lower', 'title_value'])
         else:
-            order_fields.extend(["-title_lower", "-item__title"])
+            order_fields.extend(['-title_lower', '-title_value'])
     elif sort_by == "rating":
+        order_fields.append('person_order')
         order_fields.append("-rating_order" if sort_order == "desc" else "rating_order")
-        order_fields.extend(["title_lower", "item__title"])
+        order_fields.extend(['title_lower', 'title_value'])
     elif sort_by == "activity_date":
-        order_fields.append("-item__date_added" if sort_order == "desc" else "item__date_added")
-        order_fields.extend(["title_lower", "item__title"])
+        order_fields.append("-activity_order" if sort_order == "desc" else "activity_order")
+        order_fields.extend(['title_lower', 'title_value'])
     elif sort_by == "release_date":
+        order_fields.append('person_order')
         order_fields.append("-item__release_date" if sort_order == "desc" else "item__release_date")
-        order_fields.extend(["title_lower", "item__title"])
+        order_fields.extend(['title_lower', 'title_value'])
     else: # custom
         order_fields.extend(["position", "-date_added"])
         
@@ -1642,39 +1650,7 @@ def collection_items_api(request, collection_id):
     
     has_more = qs.count() > end
     
-    data = []
-    for ci in items:
-        item = ci.item
-        
-        # Generate the detail URL
-        url = "#"
-        if item.media_type in ["movie", "tv"]:
-            if "_s" in str(item.source_id):
-                parts = str(item.source_id).split("_s")
-                url = reverse("tmdb_season_detail", args=[parts[0], parts[1]])
-            else:
-                url = reverse("tmdb_detail", args=[item.media_type, item.source_id])
-        elif item.media_type in ["anime", "manga"]:
-            url = reverse("anilist_detail", args=[item.source, item.media_type, item.source_id])
-        elif item.media_type == "game":
-            url = reverse("igdb_detail", args=[item.source_id])
-        elif item.media_type == "book":
-            url = reverse("openlib_detail", args=[item.source_id])
-        elif item.media_type == "music":
-            url = reverse("musicbrainz_detail", args=[item.source_id])
-
-        data.append({
-            "id": item.id,
-            "title": item.title,
-            "media_type": item.media_type,
-            "cover_url": item.cover_url or "/static/core/img/placeholder.png",
-            "banner_url": item.banner_url,
-            "position": ci.position,
-            "personal_rating": item.personal_rating,
-            "date_added": item.date_added.isoformat() if item.date_added else "",
-            "release_date": item.release_date,
-            "url": url
-        })
+    data = [collection_entry_data(entry) for entry in items]
         
     return JsonResponse({"items": data, "has_more": has_more, "page": page})
 
@@ -1694,8 +1670,9 @@ def collections_api(request):
     # Fetch collections and force it to order the items inside by their custom position!
     prefetch = Prefetch(
         'collectionitem_set',
-        queryset=CollectionItem.objects.select_related('item').only(
-            'id', 'collection_id', 'item_id', 'item__id', 'item__cover_url', 'item__media_type',
+        queryset=CollectionItem.objects.select_related('item', 'person').only(
+            'id', 'collection_id', 'item_id', 'person_id', 'item__id', 'item__cover_url', 'item__media_type',
+            'person__id', 'person__image_url', 'person__type',
         ).order_by('position', '-date_added', 'pk')[:5],
         to_attr='preview_items',
     )
@@ -1710,14 +1687,8 @@ def collections_api(request):
     has_more = total > end
 
     collections_data =[]
-    for col in qs.annotate(item_count=Count('items')).prefetch_related(prefetch)[start:end]:
-            # Fetch up to 5 covers with their URLs and media_types
-            covers = []
-            for ci in col.preview_items:
-                covers.append({
-                    "url": ci.item.cover_url or "/static/core/img/placeholder.png",
-                    "media_type": ci.item.media_type
-                })
+    for col in qs.annotate(item_count=Count('collectionitem')).prefetch_related(prefetch)[start:end]:
+            covers = [collection_preview(entry) for entry in col.preview_items]
             
             collections_data.append({
                 "id": col.id,

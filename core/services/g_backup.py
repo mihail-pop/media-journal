@@ -35,7 +35,8 @@ MANIFEST_FILE = 'backup_manifest.json'
 STAGING_PREFIX = '.media-journal-restore-'
 CHILD_IDENTITIES = {
     'core.collection': ('date_created', 'title'),
-    'core.collectionitem': ('collection', 'item'),
+    # Media and people use separate ID spaces; both nullable targets identify a membership.
+    'core.collectionitem': ('collection', 'item', 'person'),
     'core.mediapersonlink': ('item', 'person', 'media_role'),
     'core.screenshot': ('item', 'url', 'date_added'),
     'core.musicvideo': ('item', 'url', 'date_added'),

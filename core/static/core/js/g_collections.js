@@ -19,7 +19,7 @@ window.collectionUI = (() => {
         setTimeout(() => notice.remove(), 5000);
     }
 
-    function orderSaver(url, onError) {
+    function orderSaver(url, onError, orderField = 'order') {
         let pending = null;
         let running = null;
         return {
@@ -34,7 +34,7 @@ window.collectionUI = (() => {
                             await request(url, {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
-                                body: JSON.stringify({ order: next }),
+                                body: JSON.stringify({ [orderField]: next }),
                             });
                         }
                     })().catch(error => {

@@ -773,6 +773,26 @@ body.drag-active .card-title {
     flex-wrap: wrap;
 }
 
+.collection-picker-bar {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    flex-shrink: 0;
+}
+.collection-picker-bar .type-filters {
+    flex: 1;
+    min-width: 0;
+    padding: 0;
+}
+.collection-picker-bar .type-filters[hidden] { display: none; }
+.collection-picker-groups {
+    display: flex;
+    gap: 0.5rem;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
 .filter-btn {
     flex: 0 1 auto;
     min-width: 20px;
@@ -1070,6 +1090,9 @@ body.drag-active .card-title {
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
     }
+
+    .collection-picker-bar { padding: 2rem; gap: 1.5rem; }
+    .collection-picker-groups { gap: 1.5rem; }
 
     .filter-btn {
         font-size: 2rem;

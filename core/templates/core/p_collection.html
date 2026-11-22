@@ -86,15 +86,26 @@
         
         <input type="text" id="add-search-input" placeholder="Search" autocomplete="off">
         
-        <div class="type-filters">
-            <button class="filter-btn active" data-type="all">All</button>
-            <button class="filter-btn" data-type="movie">Movies</button>
-            <button class="filter-btn" data-type="tv">TV Shows</button>
-            <button class="filter-btn" data-type="anime">Anime</button>
-            <button class="filter-btn" data-type="manga">Manga</button>
-            <button class="filter-btn" data-type="game">Games</button>
-            <button class="filter-btn" data-type="music">Music</button>
-            <button class="filter-btn" data-type="book">Books</button>
+        <div class="collection-picker-bar">
+            <div class="type-filters" data-picker-types="media">
+                <button class="filter-btn active" data-type="all">All</button>
+                <button class="filter-btn" data-type="movie">Movies</button>
+                <button class="filter-btn" data-type="tv">TV Shows</button>
+                <button class="filter-btn" data-type="anime">Anime</button>
+                <button class="filter-btn" data-type="manga">Manga</button>
+                <button class="filter-btn" data-type="game">Games</button>
+                <button class="filter-btn" data-type="music">Music</button>
+                <button class="filter-btn" data-type="book">Books</button>
+            </div>
+            <div class="type-filters" data-picker-types="people" hidden>
+                <button class="filter-btn active" data-type="all">All</button>
+                <button class="filter-btn" data-type="actor">People</button>
+                <button class="filter-btn" data-type="character">Characters</button>
+            </div>
+            <div class="collection-picker-groups" role="group" aria-label="Choose media or people">
+                <button type="button" class="filter-btn active" data-picker-group="media" aria-pressed="true">Media</button>
+                <button type="button" class="filter-btn" data-picker-group="people" aria-pressed="false">People</button>
+            </div>
         </div>
 
         <div id="add-search-results" class="card-grid add-results-grid"></div>
