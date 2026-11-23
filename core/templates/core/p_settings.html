@@ -163,7 +163,7 @@
 <div class="preferences-section nav-buttons-section">
         <div class="section-header-with-labels">
           <span class="order-label">Top</span>
-          <h3>Details Page Sections</h3>
+          <h3>Details Page Overview</h3>
           <span class="order-label">Bottom</span>
         </div>
         <div id="details-sections-form">
@@ -173,7 +173,9 @@
               <span class="details-name">{{ section.name }}</span>
               <div class="details-pills">
                 {% if section.id == 'episodes' %}<span class="details-pill">TV Seasons</span>
-                {% elif section.id == 'trailers' %}<span class="details-pill">All</span>
+                {% elif section.id == 'information' %}<span class="details-pill">Unsaved Items</span>
+                {% elif section.id == 'movie_relations' %}<span class="details-pill">Movies</span>
+                {% elif section.id == 'trailers' %}<span class="details-pill">Unsaved Items</span>
                 {% elif section.id == 'prequels_sequels' %}<span class="details-pill">Anime, Manga</span>
                 {% elif section.id == 'seasons' %}<span class="details-pill">TV Shows</span>
                 {% elif section.id == 'music' %}<span class="details-pill">Music</span>
@@ -181,14 +183,15 @@
                 {% elif section.id == 'cast' %}<span class="details-pill">Movies, TV, Anime, Manga</span>
                 {% elif section.id == 'people' %}<span class="details-pill">All</span>
                 {% elif section.id == 'journal' %}<span class="details-pill">All</span>
-                {% elif section.id == 'recommendations' %}<span class="details-pill">All</span>
+                {% elif section.id == 'recommendations' %}<span class="details-pill">Unsaved Items</span>
                 {% endif %}
               </div>
             </div>
           {% endfor %}
         </div>
         <p style="font-size: 0.9rem; margin-top: 1.5rem; text-align: center;">
-          <b>Click to show/hide • Drag to reorder</b>
+          <b>Click to show/hide • Drag to reorder</b><br>
+          <span>Controls the sections in Overview. Full sections remain available in their tabs.</span>
         </p>
       </div>
 

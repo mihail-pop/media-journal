@@ -55,7 +55,10 @@ class MediaItem(models.Model):
     cast = models.JSONField(blank=True, null=True)        # Movies, TV, Anime, Manga - Actors, Characters / Music - Extra data
     seasons = models.JSONField(blank=True, null=True)     # TV - Seasons
     episodes = models.JSONField(blank=True, null=True)    # Seasons - Episode details
-    related_titles = models.JSONField(blank=True, null=True)  # Anime, Manga - Prequels, Sequels
+    # Movies: collection list. Anime/manga/games: {items: [...], has_extra_relations: bool}.
+    # TV seasons can keep a season_navigation snapshot here without changing show-season data.
+    # Legacy lists remain readable; a missing flag means relation availability is unknown.
+    related_titles = models.JSONField(blank=True, null=True)
     screenshots = models.JSONField(blank=True, null=True) # Games - Screenshots / Music - Youtube Links + Position # Deprecated, will remove after 3 releases.
     genres = models.JSONField(default=list, blank=True)
     creators = models.JSONField(default=list, blank=True) # Movies, TV - Directors / Anime - Studio / Games - Devs / Manga, Books - Authors / Music - Artists
@@ -82,6 +85,16 @@ class MediaItem(models.Model):
 
     def __str__(self):
         return f"{self.title} ({self.media_type})"
+
+    @property
+    def related_entries(self):
+        from core.services.g_relations import related_entries
+        return related_entries(self.related_titles)
+
+    @property
+    def has_extra_relations(self):
+        from core.services.g_relations import extra_relations_available
+        return extra_relations_available(self.related_titles)
     
     @property
     def source_id(self):

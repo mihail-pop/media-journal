@@ -1,0 +1,26 @@
+<section id="overview-trailers" class="details-preview">
+  <div class="details-preview-header">
+    <h2>Trailers</h2>
+    <div class="details-trailer-controls">
+      <button type="button" class="music-control-btn details-trailer-size" title="Toggle size" aria-label="Toggle size" aria-pressed="false">
+        <svg viewBox="3 3 18 18" fill="currentColor" aria-hidden="true"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"></path></svg>
+      </button>
+    </div>
+  </div>
+  <div class="details-trailer-preview-content">
+    <div class="details-trailer-grid">
+      <script>
+        try { document.currentScript.parentElement.classList.toggle('small', localStorage.getItem('trailerSize') === 'small'); } catch (_) {}
+      </script>
+      {% for video in videos|slice:':3' %}
+      <div class="details-trailer-card" data-youtube-id="{{ video.youtube_id }}">
+        <button type="button" class="details-trailer-preview" aria-label="Play {{ video.title|default:'trailer' }}">
+          <img src="https://i.ytimg.com/vi/{{ video.youtube_id }}/hqdefault.jpg" alt="" loading="lazy" decoding="async">
+          <span class="details-trailer-play"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"></path></svg></span>
+        </button>
+        <p class="details-trailer-name{% if not video.title or video.title == video.kind %} details-trailer-name-pending{% endif %}" title="{{ video.title }}"><span class="details-trailer-kind">{{ video.kind|default:'Trailer' }}</span><span class="details-trailer-title">{% if video.title and video.title != video.kind %} {{ video.title }}{% endif %}</span></p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>

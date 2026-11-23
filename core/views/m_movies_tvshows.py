@@ -10,6 +10,7 @@ from django.views.decorators.http import require_GET
 
 from core.models import APIKey, MediaItem
 from core.services.g_utils import adult_content_allowed
+from core.services.g_details_sections import display_date, initial_tmdb_bundle, season_navigation, tmdb_season_bundle
 
 
 @ensure_csrf_cookie
@@ -182,10 +183,10 @@ def tmdb_detail(request, media_type, tmdb_id):
     if media_type == "tv":
         params = {
             "api_key": api_key,
-            "append_to_response": "aggregate_credits,recommendations",
+            "append_to_response": "aggregate_credits,videos,recommendations",
         }
     else:
-        params = {"api_key": api_key, "append_to_response": "credits,recommendations"}
+        params = {"api_key": api_key, "append_to_response": "credits,videos,recommendations"}
     response = ApiClient('tmdb').get(url, params=params)
 
     if response.status_code != 200:
@@ -302,6 +303,7 @@ def tmdb_detail(request, media_type, tmdb_id):
             "genres": data.get("genres", []),
             "cast": cast_data,
             "recommendations": recommendations,
+            "details_bundle": initial_tmdb_bundle(data, media_type),
             "seasons": seasons,
             "page_type": media_type,
             "theme_mode": theme_mode,
@@ -325,6 +327,7 @@ def tmdb_season_detail(request, tmdb_id, season_number):
         # Format episode data for display
         episodes = item.episodes or []
         for episode in episodes:
+            episode['compact_air_date'] = display_date(episode.get('air_date') or '')
             if episode.get("air_date"):
                 try:
                     parsed_date = datetime.datetime.strptime(
@@ -363,29 +366,13 @@ def tmdb_season_detail(request, tmdb_id, season_number):
         except ValueError:
             formatted_release_date = raw_date
 
-        # Get navigation data from main show
-        try:
-            main_show = MediaItem.objects.get(
-                provider_ids__tmdb=str(tmdb_id), media_type="tv"
-            )
-            all_seasons = main_show.seasons or []
-            season_nav = get_season_navigation(all_seasons, int(season_number))
-        except MediaItem.DoesNotExist:
-            # Fallback: fetch seasons from TMDB API
-            try:
-                api_key = APIKey.objects.get(name="tmdb").key_1
-                show_url = f"https://api.themoviedb.org/3/tv/{tmdb_id}"
-                show_params = {"api_key": api_key}
-                # Optional navigation must not hold a saved season page hostage.
-                show_response = ApiClient('tmdb').get(show_url, params=show_params, timeout=(3, 5))
-                if show_response.status_code == 200:
-                    show_data = show_response.json()
-                    all_seasons = show_data.get("seasons", [])
-                    season_nav = get_season_navigation(all_seasons, int(season_number))
-                else:
-                    season_nav = {}
-            except (APIKey.DoesNotExist, Exception):
-                season_nav = {}
+        # Saved Overview stays local. Older standalone seasons can load their
+        # navigation on demand; newly saved/refreshed seasons keep a snapshot.
+        all_seasons = item.related_titles.get('season_navigation') if isinstance(item.related_titles, dict) else None
+        if all_seasons is None:
+            main_show = MediaItem.objects.filter(provider_ids__tmdb=str(tmdb_id), media_type='tv').only('seasons').first()
+            all_seasons = main_show.seasons if main_show else None
+        season_nav = season_navigation(all_seasons, int(season_number)) if all_seasons is not None else {'known': False}
 
         # Get theme mode
         AppSettings = apps.get_model("core", "AppSettings")
@@ -438,12 +425,17 @@ def tmdb_season_detail(request, tmdb_id, season_number):
         )
 
     season_data = season_response.json()
+    require_api_data(isinstance(season_data, dict) and season_data.get('id')
+                     and isinstance(season_data.get('episodes'), list)
+                     and isinstance((season_data.get('aggregate_credits') or {}).get('cast'), list)
+                     and isinstance((season_data.get('aggregate_credits') or {}).get('crew'), list), 'tmdb')
 
     # Get main show details for context
     show_url = f"https://api.themoviedb.org/3/tv/{tmdb_id}"
     show_params = {"api_key": api_key}
     show_response = ApiClient('tmdb').get(show_url, params=show_params)
     show_data = show_response.json() if show_response.status_code == 200 else {}
+    require_api_data(isinstance(show_data, dict) and show_data.get('id') and show_data.get('name'), 'tmdb')
 
     # Format data
     poster_url = (
@@ -497,6 +489,7 @@ def tmdb_season_detail(request, tmdb_id, season_number):
                 "overview": episode.get("overview", ""),
                 "air_date": air_date,
                 "formatted_air_date": formatted_air_date,
+                "compact_air_date": display_date(air_date),
                 "still_path": f"https://image.tmdb.org/t/p/w1280{episode.get('still_path')}"
                 if episode.get("still_path")
                 else None,
@@ -517,7 +510,7 @@ def tmdb_season_detail(request, tmdb_id, season_number):
 
     # Get season navigation data
     all_seasons = show_data.get("seasons", [])
-    season_nav = get_season_navigation(all_seasons, int(season_number))
+    season_nav = season_navigation(all_seasons, int(season_number))
 
     # Get theme mode
     AppSettings = apps.get_model("core", "AppSettings")
@@ -548,55 +541,6 @@ def tmdb_season_detail(request, tmdb_id, season_number):
             "season_nav": season_nav,
             "theme_mode": theme_mode,
             "details_sections_order": details_sections_order,
+            "details_bundle": tmdb_season_bundle(season_data, show_data),
         },
     )
-
-
-def get_season_navigation(seasons, current_season):
-    """Generate navigation data for season detail pages"""
-    nav = {}
-
-    # Sort seasons by season_number, handle specials (season 0)
-    sorted_seasons = sorted(seasons, key=lambda s: s.get("season_number", 0))
-
-    current_index = next(
-        (
-            i
-            for i, s in enumerate(sorted_seasons)
-            if s.get("season_number") == current_season
-        ),
-        None,
-    )
-    if current_index is None:
-        return nav
-
-    # Previous season
-    if current_index > 0:
-        prev_season = sorted_seasons[current_index - 1]
-        nav["prev_season"] = prev_season.get("season_number")
-        nav["prev_name"] = (
-            "Specials"
-            if prev_season.get("season_number") == 0
-            else f"Season {prev_season.get('season_number')}"
-        )
-
-    # Next season
-    if current_index < len(sorted_seasons) - 1:
-        next_season = sorted_seasons[current_index + 1]
-        nav["next_season"] = next_season.get("season_number")
-        nav["next_name"] = (
-            "Specials"
-            if next_season.get("season_number") == 0
-            else f"Season {next_season.get('season_number')}"
-        )
-
-    # Last season (if there are more than 2 seasons ahead)
-    if current_index < len(sorted_seasons) - 2:
-        last_season = sorted_seasons[-1]
-        if (
-            last_season.get("season_number") != 0
-        ):  # Don't show "Last Season" for specials
-            nav["last_season"] = last_season.get("season_number")
-            nav["last_name"] = f"Season {last_season.get('season_number')}"
-
-    return nav

@@ -54,6 +54,32 @@ TMDB_TV_GENRES = {
 }
 
 
+def movie_collection_relations(data, *, http=None, cache_bust=None, existing=None):
+    """Save collection neighbours in the existing related_titles JSON field."""
+    collection = data.get('belongs_to_collection') or {}
+    if not collection.get('id'):
+        return []
+    api_key = APIKey.objects.get(name='tmdb').key_1
+    payload = ApiClient('tmdb', http).get(
+        f'https://api.themoviedb.org/3/collection/{collection["id"]}', params={'api_key': api_key}).json()
+    require_api_data(isinstance(payload, dict) and isinstance(payload.get('parts'), list), 'tmdb')
+    previous = {str(entry.get('id')): entry.get('poster_path') for entry in existing or [] if isinstance(entry, dict)}
+    stamp = cache_bust if cache_bust is not None else int(time.time() * 1000)
+    relations = []
+    for movie in sorted(payload['parts'], key=lambda entry: entry.get('release_date') or ''):
+        identity = movie.get('id')
+        if not identity or str(identity) == str(data.get('id')):
+            continue
+        poster = previous.get(str(identity)) or ''
+        if not poster and movie.get('poster_path'):
+            poster = download_image(f'https://image.tmdb.org/t/p/w342{movie["poster_path"]}',
+                                    f'related/tmdb_movie_{data["id"]}_{identity}_{stamp}.jpg')
+        relations.append({'id': identity, 'title': movie.get('title') or movie.get('name') or '',
+                          'poster_path': poster, 'release_date': movie.get('release_date') or '',
+                          'source': 'tmdb', 'media_type': 'movie', 'relation': 'Collection'})
+    return relations
+
+
 def save_tmdb_item(media_type, tmdb_id, *, http=None, prepare_only=False, initial_status='planned'):
     try:
         api_key = APIKey.objects.get(name="tmdb").key_1
@@ -206,6 +232,7 @@ def save_tmdb_item(media_type, tmdb_id, *, http=None, prepare_only=False, initia
             release_date=data.get("release_date") or data.get("first_air_date") or "",
             cast=cast_data,
             seasons=seasons,
+            **({'related_titles': movie_collection_relations(data, http=http, cache_bust=cache_bust)} if media_type == 'movie' else {}),
             total_main=total_episodes if media_type == "tv" else data.get("runtime"),
             total_secondary=total_seasons if media_type == "tv" else None,
             episode_runtime=tmdb_episode_runtime(data) if media_type == 'tv' else None,
@@ -352,6 +379,10 @@ def save_tmdb_season(tmdb_id, season_number, *, http=None, prepare_only=False, i
             release_date=season_data.get("air_date", ""),
             cast=cast_data,
             episodes=episodes_data,
+            # Retain navigation locally even when only this season is saved.
+            related_titles={'season_navigation': [
+                {'season_number': season['season_number']} for season in show_data.get('seasons', [])
+                if isinstance(season.get('season_number'), int)]},
             total_main=len(episodes_data),
             total_secondary=1,
             episode_runtime=tmdb_season_runtime(season_data, show_data),
@@ -370,240 +401,6 @@ def save_tmdb_season(tmdb_id, season_number, *, http=None, prepare_only=False, i
         raise
     except Exception as e:
         return JsonResponse({"error": f"Failed to save season: {str(e)}"})
-
-
-def get_movie_extra_info(tmdb_id):
-    try:
-        api_key = APIKey.objects.get(name="tmdb").key_1
-    except APIKey.DoesNotExist:
-        raise ApiError('tmdb', 'missing_key')
-
-    base_url = f"https://api.themoviedb.org/3/movie/{tmdb_id}"
-    params = {
-        "api_key": api_key,
-        "append_to_response": "videos,credits,recommendations",
-    }
-
-    try:
-        # Single API call with all data
-        response = ApiClient('tmdb').get(base_url, params=params)
-        if response.status_code != 200:
-            return {}
-
-        data = response.json()
-
-        # Process videos/trailers
-        videos = data.get("videos", {}).get("results", [])
-        trailer_videos = [
-            v
-            for v in videos
-            if v.get("site") == "YouTube"
-            and v.get("type") == "Trailer"
-            and v.get("key")
-        ]
-        teaser_videos = [
-            v
-            for v in videos
-            if v.get("site") == "YouTube" and v.get("type") == "Teaser" and v.get("key")
-        ]
-        combined = trailer_videos + teaser_videos
-        trailers = [
-            {
-                "name": v.get("name"),
-                "type": v.get("type"),
-                "youtube_id": v.get("key"),
-                "url": f"https://www.youtube.com/watch?v={v['key']}",
-            }
-            for v in combined[:3]
-        ]
-
-        # Process crew
-        crew = data.get("credits", {}).get("crew", [])
-        allowed_jobs = ["Director", "Writer", "Screenplay", "Producer", "Art Director"]
-        staff_list = [
-            {
-                "id": c.get("id"),
-                "name": c.get("name"),
-                "job": c.get("job")
-            }
-            for c in crew if c.get("job") in allowed_jobs
-        ]
-
-        # Fetch related movies if part of a collection
-        relations = []
-        collection = data.get("belongs_to_collection")
-        if collection:
-            collection_id = collection.get("id")
-            collection_url = f"https://api.themoviedb.org/3/collection/{collection_id}"
-            collection_resp = ApiClient('tmdb').get(collection_url, params=params)
-            if collection_resp.status_code == 200:
-                items = collection_resp.json().get("parts", [])
-                # Sort by release date
-                items.sort(key=lambda x: x.get("release_date") or "")
-                for item in items:
-                    relations.append(
-                        {
-                            "id": item.get("id"),
-                            "title": item.get("title"),
-                            "release_date": item.get("release_date"),
-                            "poster": f"https://image.tmdb.org/t/p/w342{item.get('poster_path')}"
-                            if item.get("poster_path")
-                            else None,
-                        }
-                    )
-
-        # Process recommendations
-        recs = data.get("recommendations", {}).get("results", [])[:16]
-        recommendations = [
-            {
-                "id": rec["id"],
-                "title": rec.get("title"),
-                "poster_path": rec.get("poster_path"),
-            }
-            for rec in recs
-        ]
-
-        return {
-            "runtime": data.get("runtime"),
-            "genres": [genre["name"] for genre in data.get("genres", [])],
-            "status": data.get("status"),
-            "homepage": data.get("homepage"),
-            "vote_average": round(data.get("vote_average", 0), 1),
-            "trailers": trailers,
-            "staff": staff_list,
-            "relations": relations,
-            "recommendations": recommendations,
-        }
-
-    except ApiError:
-        raise
-    except Exception as e:
-        raise ApiError('tmdb') from e
-
-
-def get_tv_extra_info(tmdb_id):
-    try:
-        api_key = APIKey.objects.get(name="tmdb").key_1
-    except APIKey.DoesNotExist:
-        raise ApiError('tmdb', 'missing_key')
-
-    base_url = f"https://api.themoviedb.org/3/tv/{tmdb_id}"
-    params = {
-        "api_key": api_key,
-        "append_to_response": "videos,credits,recommendations",
-    }
-
-    try:
-        # Single API call with all data
-        response = ApiClient('tmdb').get(base_url, params=params)
-        if response.status_code != 200:
-            return {}
-
-        data = response.json()
-
-        # Handle optional fields safely
-        next_ep_raw = data.get("next_episode_to_air")
-        next_episode_data = {
-            "number": next_ep_raw.get("episode_number"),
-            "date": next_ep_raw.get("air_date"),
-            "season": next_ep_raw.get("season_number")  # Add this line
-        } if next_ep_raw else None
-
-        last_ep_raw = data.get("last_episode_to_air")
-        last_episode_data = {
-            "number": last_ep_raw.get("episode_number"),
-            "date": last_ep_raw.get("air_date"),
-            "season": last_ep_raw.get("season_number")  # And this line
-        } if last_ep_raw else None
-
-        # Process videos/trailers
-        videos = data.get("videos", {}).get("results", [])
-        trailer_videos = [
-            v
-            for v in videos
-            if v.get("site") == "YouTube"
-            and v.get("type") == "Trailer"
-            and v.get("key")
-        ]
-        teaser_videos = [
-            v
-            for v in videos
-            if v.get("site") == "YouTube" and v.get("type") == "Teaser" and v.get("key")
-        ]
-        combined = trailer_videos + teaser_videos
-        trailers = [
-            {
-                "name": v.get("name"),
-                "type": v.get("type"),
-                "youtube_id": v.get("key"),
-                "url": f"https://www.youtube.com/watch?v={v['key']}",
-            }
-            for v in combined[:3]
-        ]
-
-        # Process crew
-        crew = data.get("credits", {}).get("crew", [])
-        allowed_jobs = ["Director", "Writer", "Screenplay", "Producer", "Art Director"]
-        staff_list = [
-            {
-                "id": c.get("id"),
-                "name": c.get("name"),
-                "job": c.get("job")
-            }
-            for c in crew if c.get("job") in allowed_jobs
-        ]
-
-        # Process recommendations
-        recs = data.get("recommendations", {}).get("results", [])[:16]
-        recommendations = [
-            {
-                "id": rec["id"],
-                "title": rec.get("name"),
-                "poster_path": rec.get("poster_path"),
-            }
-            for rec in recs
-        ]
-
-        seasons = data.get("seasons", [])
-        today = datetime.now().date()
-        one_year_ahead = datetime(today.year + 1, today.month, today.day).date()
-        total_episodes = 0
-        
-        for s in seasons:
-            if s.get("season_number") == 0:
-                continue
-            air_date_str = s.get("air_date")
-            if air_date_str:
-                try:
-                    air_date = datetime.strptime(air_date_str, "%Y-%m-%d").date()
-                    if air_date <= one_year_ahead:
-                        total_episodes += s.get("episode_count", 0)
-                except Exception:
-                    pass
-
-        episode_runtime = tmdb_episode_runtime(data)
-
-        homepage_url = data.get("homepage")
-
-        return {
-            "status": data.get("status"),
-            "next_episode_data": next_episode_data,
-            "last_episode_data": last_episode_data,
-            "networks": [n.get("name") for n in data.get("networks", [])],
-            "vote_average": round(data.get("vote_average", 0), 1),
-            "homepage": homepage_url if homepage_url and homepage_url.startswith(('http://', 'https://', '/')) else None,
-            "genres": [genre["name"] for genre in data.get("genres", [])],
-            "trailers": trailers,
-            "staff": staff_list,
-            "recommendations": recommendations,
-            "total_episodes": total_episodes,
-            "episode_runtime": episode_runtime,
-        }
-
-    except ApiError:
-        raise
-    except Exception as e:
-        raise ApiError('tmdb') from e
 
 
 def get_tmdb_discover(media_type, page, query="", sort="popularity.desc", year="", genre="", allow_adult=True):

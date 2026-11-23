@@ -1,4 +1,5 @@
 from core.services.g_api_errors import api_errors
+from core.services.g_details_sections import overview_sections
 import logging
 from datetime import date, datetime, time, timedelta
 from collections import defaultdict
@@ -1229,7 +1230,7 @@ def settings_page(request):
             "activity_date_mode": settings.activity_date_mode,
             "activity_date_modes": activity_date_modes,
             "initial_settings_tab": 'information' if request.GET.get('api_status') == '1' else ('api-keys' if request.GET.get('tab') == 'api-keys' else 'preferences'),
-            "details_sections_order": settings.details_sections_order,
+            "details_sections_order": overview_sections(settings.details_sections_order),
             "favorite_sections_order": settings.get_favorite_sections_order(),
             "share_favorite_sections": favorite_export_options(settings),
             "card_overlay_options": [

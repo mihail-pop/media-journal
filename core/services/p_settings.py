@@ -15,8 +15,9 @@ from django.db import close_old_connections
 from core.models import APIKey, MediaItem
 from core.services.g_backup import BACKUP_LOCK, BackupCancelled, check_cancelled, export_archive, restore_archive
 from core.services.g_runtimes import tmdb_episode_runtime
+from core.services.g_relations import pack_relations, related_entries
 from core.services.m_books import save_openlib_item
-from core.services.m_movies_tvshows import save_tmdb_season
+from core.services.m_movies_tvshows import movie_collection_relations, save_tmdb_season
 
 logger = logging.getLogger(__name__)
 
@@ -273,7 +274,7 @@ def refresh_igdb_item(igdb_id):
       id, name, summary, storyline, 
       cover.url, genres.name, platforms.name, 
       involved_companies.company.name, involved_companies.developer,
-      first_release_date, screenshots.url, artworks.url;
+      first_release_date, screenshots.url, artworks.url, expansions.id, dlcs.id;
     where id = {igdb_id};
     """
 
@@ -315,12 +316,12 @@ def refresh_igdb_item(igdb_id):
         release_date=release_date,
         cast=[],
         seasons=None,
-        related_titles=[],
+        related_titles=pack_relations([], bool(game.get('expansions') or game.get('dlcs'))),
         genres=genres,
         creators=creators,
     )
 
-def refresh_tmdb_item(media_type, tmdb_id, existing_seasons=None, existing_cast=None):
+def refresh_tmdb_item(media_type, tmdb_id, existing_seasons=None, existing_cast=None, existing_related=None):
     import requests
 
     from core.services.g_utils import download_image
@@ -449,6 +450,7 @@ def refresh_tmdb_item(media_type, tmdb_id, existing_seasons=None, existing_cast=
         release_date=data.get("release_date") or data.get("first_air_date") or "",
         cast=cast_data,
         seasons=seasons,
+        **({'related_titles': movie_collection_relations(data, cache_bust=cache_bust, existing=existing_related)} if media_type == 'movie' else {}),
         total_main=total_episodes if media_type == "tv" else data.get("runtime"),
         total_secondary=total_seasons if media_type == "tv" else None,
         episode_runtime=tmdb_episode_runtime(data) if media_type == "tv" else None,
@@ -495,7 +497,7 @@ def refresh_anilist_item(media_type, anilist_id=None, mal_id=None, existing_rela
     existing_related_map = {}
     existing_anilist = set()
     existing_mal = set()
-    for r in (existing_related or[]):
+    for r in related_entries(existing_related):
         r_id = str(r.get("anilist_id") or r.get("mal_id") or "")
         if r_id:
             existing_related_map[r_id] = r.get("poster_path", "")
@@ -550,7 +552,7 @@ def refresh_anilist_item(media_type, anilist_id=None, mal_id=None, existing_rela
         release_date=data["release_date"],
         cast=cast,
         seasons=None,
-        related_titles=related_titles,
+        related_titles=pack_relations(related_titles, data.get('has_extra_relations')),
         total_main=data.get("total_main"),
         total_secondary=data.get("total_secondary"),
         episode_runtime=data.get("episode_runtime") if media_type == "anime" else None,
@@ -687,7 +689,7 @@ class RefreshTask(threading.Thread):
                             tmdb_id, season_number = source_id.split('_s')
                             result = save_tmdb_season(tmdb_id, season_number, prepare_only=True)
                         else:
-                            result = refresh_tmdb_item(media_type, source_id, item.seasons, item.cast)
+                            result = refresh_tmdb_item(media_type, source_id, item.seasons, item.cast, item.related_titles)
                         time.sleep(0.2)
                     elif source in ('mal', 'anilist'):
                         result = refresh_anilist_item(media_type, item.provider_ids.get('anilist'),

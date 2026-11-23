@@ -1,0 +1,22 @@
+{% load details_tags %}
+{% if information.information or information.score %}
+<div class="details-information-surface">
+  {% if information.score %}
+  <div class="details-api-score" data-provider="{{ information.score.provider|lower }}">
+    <span class="details-api-score-provider">{{ information.score.provider }}</span>
+    <span class="details-api-score-value">{{ information.score.value|floatformat:'-1u' }}<small>/{{ information.score.maximum }}</small></span>
+    <meter class="details-api-score-meter" min="0" max="{{ information.score.maximum }}" value="{{ information.score.value|floatformat:'-1u' }}" aria-label="{{ information.score.provider }} score: {{ information.score.value|floatformat:'-1u' }} out of {{ information.score.maximum }}"></meter>
+  </div>
+  {% endif %}
+  <dl class="details-information-list">
+    {% for row in information.information %}
+    {% with values=row|information_values %}
+    <div class="details-information-row{% if values|length > 4 or row.links|length > 3 %} details-information-wide{% endif %}">
+      <dt>{{ row.label }}</dt>
+      <dd>{% if values %}{% for value in values %}<span class="details-information-tag">{{ value }}</span>{% endfor %}{% elif not row.links %}{{ row.value }}{% endif %}{% for link in row.links %}<a href="{{ link.url }}" target="_blank" rel="noopener noreferrer">{{ link.title }}</a>{% endfor %}{% if row.detail %}<span class="details-information-detail">{{ row.detail }}</span>{% endif %}</dd>
+    </div>
+    {% endwith %}
+    {% endfor %}
+  </dl>
+</div>
+{% endif %}

@@ -16,10 +16,7 @@ from django.views.decorators.http import require_GET, require_POST
 from core.models import MediaItem, Screenshot
 from core.services.g_api import serialize_game_screenshot
 from core.services.g_utils import download_image, get_sharded_path
-from core.services.m_games import get_game_extra_info
-from core.services.m_music import get_music_extra_info
-from core.services.m_anime_manga import get_anime_extra_info, get_manga_extra_info
-from core.services.m_movies_tvshows import get_tv_extra_info, get_movie_extra_info
+from core.services.g_details_sections import fetch_sections
 
 
 @ensure_csrf_cookie
@@ -129,46 +126,18 @@ def upload_cover(request):
 
 
 @api_errors(provider_for_request)
+@require_GET
 def get_extra_info(request):
-    media_type = request.GET.get("media_type")
-    item_id = request.GET.get("item_id")
-    source = request.GET.get("source", "mal") # Default to mal for legacy/compatibility
-
-    if not media_type or not item_id:
-        return JsonResponse({"error": "Missing parameters"}, status=400)
-
-    if media_type != "music":
-        try:
-            # We check if it's a valid integer string, but keep it for routing
-            int(item_id)
-        except ValueError:
-            return JsonResponse({"error": "Invalid item_id"}, status=400)
-
-    if media_type == "movie":
-        data = get_movie_extra_info(item_id)
-    elif media_type == "tv":
-        data = get_tv_extra_info(item_id)
-    elif media_type == "anime":
-        # Check source to decide which parameter to use
-        if source == "anilist":
-            data = get_anime_extra_info(media_type, anilist_id=item_id)
-        else:
-            data = get_anime_extra_info(media_type, mal_id=item_id)
-    elif media_type == "manga":
-        # Check source to decide which parameter to use
-        if source == "anilist":
-            data = get_manga_extra_info(media_type, anilist_id=item_id)
-        else:
-            data = get_manga_extra_info(media_type, mal_id=item_id)
-    elif media_type == "game":
-        data = get_game_extra_info(item_id)
-    elif media_type == "music":
-        artist_id = request.GET.get("artist_id", "")
-        album_id = request.GET.get("album_id", "")
-        data = get_music_extra_info(item_id, artist_id, album_id)
-    else:
-        data = {}
-
+    try:
+        page = int(request.GET.get('page', '1'))
+        if not 1 <= page <= 200:
+            raise ValueError('Invalid page.')
+        data = fetch_sections(request.GET.get('media_type'), request.GET.get('item_id'),
+                              request.GET.get('source', 'mal'),
+                              section=request.GET.get('section') or None, page=page,
+                              artist_id=request.GET.get('artist_id', ''), album_id=request.GET.get('album_id', ''))
+    except (ValueError, TypeError) as error:
+        return JsonResponse({'error': str(error) or 'Invalid request.'}, status=400)
     return JsonResponse(data)
 
 

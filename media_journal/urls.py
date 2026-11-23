@@ -109,6 +109,7 @@ urlpatterns = [
     path('notifications/dismiss/<int:item_id>/', views.dismiss_notification, name='dismiss_notification'),
     path('api/character_search/', views.character_search_view, name='character_search'),
     path('api/actor_search/', views.actor_search_view, name='actor_search'),
+    path('api/anilist_staff_search/', views.anilist_staff_search_view, name='anilist_staff_search'),
     path('api/check_favorite_person/', views.check_favorite_person_view, name='check_favorite_person'),
     path('api/toggle_favorite_person/', views.toggle_favorite_person_view, name='toggle_favorite_person'),
     path('api/refresh_favorite_person/', views.refresh_favorite_person_view, name='refresh_favorite_person'),

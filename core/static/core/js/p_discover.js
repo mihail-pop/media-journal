@@ -11,7 +11,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const renderedTmdbItems = new Set();
   
   const cardGrid = document.getElementById('card-view');
-  const loadingDiv = document.getElementById('loading');
 
   const searchInput = document.getElementById('search-input');
   
@@ -304,10 +303,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     isLoading = true;
     
-    // Delay showing loading indicator
-    const loadingTimeout = setTimeout(() => {
-      loadingDiv.style.display = 'block';
-    }, 3000);
     
     if (reset) {
       failedPage = null;
@@ -340,8 +335,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     isLoading = false;
-    clearTimeout(loadingTimeout);
-    loadingDiv.style.display = 'none';
     
 
   }

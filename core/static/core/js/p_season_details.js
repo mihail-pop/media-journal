@@ -56,6 +56,7 @@ let isRefreshing = false;
     })
       .then(res => ApiFeedback.readResponse(res, 'tmdb'))
       .then(() => {
+        if (refreshType === 'all' || refreshType === 'data') window.DetailsSections?.invalidate();
         sessionStorage.setItem('refreshSuccess', '1');
         setTimeout(() => window.location.reload(true));
       })
@@ -200,23 +201,6 @@ document.addEventListener("DOMContentLoaded", function() {
     sessionStorage.removeItem("refreshSuccess");
   }
 
-  // Check favorite status for all cast members
-  const castFavorites = document.querySelectorAll('.cast-favorite');
-  castFavorites.forEach(favorite => {
-    const name = favorite.dataset.name;
-    const type = favorite.dataset.type;
-    const checkbox = favorite.querySelector('input[type="checkbox"]');
-    
-    fetch(`/api/check_favorite_person/?name=${encodeURIComponent(name)}&type=${type}`)
-      .then(res => res.json())
-      .then(result => {
-        checkbox.checked = result.is_favorited;
-      })
-      .catch(() => {
-        checkbox.checked = false;
-      });
-  });
-  
   // Favorite toggle functionality
   const favForm = document.getElementById("favorite-form");
   if (favForm) {
@@ -248,193 +232,50 @@ document.addEventListener("DOMContentLoaded", function() {
     });
   }
   
+  // Keep the existing full episode layout as the default.
+  const episodeList = document.querySelector('.episodes-list');
+  const episodeSize = document.getElementById('episode-size-toggle');
+  let episodeFrame = 0;
+  function updateEpisodeExcerpts() {
+    cancelAnimationFrame(episodeFrame);
+    episodeFrame = requestAnimationFrame(() => {
+      if (episodeList?.classList.contains('small')) return;
+      document.querySelectorAll('.episode-overview-container').forEach(container => {
+        if (container.dataset.expanded) return;
+        const text = container.querySelector('.episode-overview');
+        container.querySelector('.episode-read-more-btn').style.display = text.scrollHeight > text.clientHeight ? '' : 'none';
+      });
+    });
+  }
+  function updateEpisodeSize() {
+    if (!episodeSize || !episodeList) return;
+    const small = episodeList.classList.contains('small');
+    episodeSize.setAttribute('aria-pressed', String(small));
+    episodeSize.querySelector('path').setAttribute('d', small
+      ? 'M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z'
+      : 'M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z');
+    updateEpisodeExcerpts();
+  }
+  episodeSize?.addEventListener('click', () => {
+    episodeList.classList.toggle('small');
+    try { localStorage.setItem('seasonEpisodeSize', episodeList.classList.contains('small') ? 'small' : 'large'); } catch (_) {}
+    updateEpisodeSize();
+  });
+  updateEpisodeSize();
+  window.addEventListener('resize', updateEpisodeExcerpts);
+
   // Episode read more functionality
   document.querySelectorAll('.episode-overview-container').forEach(container => {
     const overview = container.querySelector('.episode-overview');
     const btn = container.querySelector('.episode-read-more-btn');
     
-    // Check if text is actually truncated
-    if (overview.scrollHeight <= overview.clientHeight) {
-      btn.style.display = 'none';
-    }
-    
     btn.addEventListener('click', function(e) {
       e.preventDefault();
+      container.dataset.expanded = 'true';
       overview.style.webkitLineClamp = 'unset';
       overview.style.overflow = 'visible';
       this.style.display = 'none';
     });
-  });
-
-  // Overview read more functionality
-  document.querySelectorAll('.overview-container').forEach(container => {
-    const overview = container.querySelector('.overview');
-    const btn = container.querySelector('.read-more-btn');
-    
-    // Check if text is actually truncated
-    if (overview.scrollHeight <= overview.clientHeight) {
-      btn.style.display = 'none';
-    } else {
-      btn.style.display = 'block';
-    }
-    
-    btn.addEventListener('click', function(e) {
-      e.preventDefault();
-      overview.style.webkitLineClamp = 'unset';
-      overview.style.maxHeight = 'none';
-      overview.style.overflow = 'visible';
-      this.style.display = 'none';
-    });
-  });
-
-  // Person search functionality
-  const searchInput = document.getElementById("person-search-input");
-  const searchToggleBtn = document.getElementById("search-toggle-btn");
-  const resultsContainer = document.getElementById("person-search-results");
-
-  const mediaType = document.body.dataset.mediaType;
-
-  function performSearch() {
-    const query = searchInput.value.trim();
-    if (!query) {
-      resultsContainer.innerHTML = "";
-      return;
-    }
-
-    const endpoint = "/api/actor_search/";
-
-    fetch(`${endpoint}?q=${encodeURIComponent(query)}`)
-      .then((res) => res.json())
-      .then((data) => {
-        resultsContainer.innerHTML = "";
-        if (data.length === 0) {
-          resultsContainer.innerHTML = "<p>No results found.</p>";
-          return;
-        }
-
-        // Check favorite status for each person
-        const personPromises = data.map(person => {
-          return fetch(`/api/check_favorite_person/?name=${encodeURIComponent(person.name)}&type=actor`)
-            .then(res => res.json())
-            .then(result => ({ ...person, isFavorited: result.is_favorited }))
-            .catch(() => ({ ...person, isFavorited: false }));
-        });
-
-        Promise.all(personPromises).then(personsWithStatus => {
-          const fragment = document.createDocumentFragment();
-          personsWithStatus.forEach((person) => {
-            const card = document.createElement("div");
-            card.className = "person-card";
-            
-            card.innerHTML = `
-              ${person.id ? `<a href="/person/tmdb/${person.id}/" class="person-card-link">` : ''}
-                <img src="${person.image || "/static/core/img/placeholder.png"}" alt="${person.name}">
-                <p class="person-name">${person.name}</p>
-              ${person.id ? '</a>' : ''}
-              <label class="person-favorite" data-name="${person.name}" data-img="${person.image}" data-type="actor" data-id="${person.id || ''}">
-                <input type="checkbox" ${person.isFavorited ? 'checked' : ''}>
-                <span class="heart"></span>
-              </label>
-            `;
-            fragment.appendChild(card);
-          });
-          resultsContainer.innerHTML = "";
-          resultsContainer.appendChild(fragment);
-        });
-      })
-      .catch(() => {
-        resultsContainer.innerHTML = "<p>Error fetching data.</p>";
-      });
-  }
-
-  searchToggleBtn?.addEventListener("click", function() {
-    searchInput.classList.remove("hidden");
-    searchInput.focus();
-    searchToggleBtn.style.display = "none";
-  });
-  
-  searchInput?.addEventListener("blur", function() {
-    if (!searchInput.value.trim()) {
-      searchInput.classList.add("hidden");
-      searchToggleBtn.style.display = "flex";
-      resultsContainer.innerHTML = "";
-    }
-  });
-  
-  searchInput?.addEventListener("keyup", (e) => {
-    if (e.key === "Enter") performSearch();
-    else if (e.key === "Escape") {
-      searchInput.blur();
-    }
-  });
-
-  resultsContainer?.addEventListener("change", function (e) {
-    if (e.target.type === "checkbox" && e.target.closest(".person-favorite")) {
-      const checkbox = e.target;
-      const label = checkbox.closest(".person-favorite");
-      const name = label.dataset.name;
-      const image = label.dataset.img;
-      const type = label.dataset.type;
-      const personId = label.dataset.id;
-
-      const requestData = { name, image_url: image, type };
-      if (personId) {
-        requestData.person_id = personId;
-      }
-
-      fetch("/api/toggle_favorite_person/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRFToken": getCookie("csrftoken"),
-        },
-        body: JSON.stringify(requestData),
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          if (!data.status) {
-            checkbox.checked = !checkbox.checked;
-          }
-        })
-        .catch(() => {
-          checkbox.checked = !checkbox.checked;
-        });
-    }
-  });
-
-  // Handle cast member favorites
-  document.addEventListener("change", function (e) {
-    if (e.target.type === "checkbox" && e.target.closest(".cast-favorite")) {
-      const checkbox = e.target;
-      const label = checkbox.closest(".cast-favorite");
-      const name = label.dataset.name;
-      const image = label.dataset.img;
-      const type = label.dataset.type;
-      const personId = label.dataset.id;
-
-      const requestData = { name, image_url: image, type };
-      if (personId) {
-        requestData.person_id = personId;
-      }
-
-      fetch("/api/toggle_favorite_person/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRFToken": getCookie("csrftoken"),
-        },
-        body: JSON.stringify(requestData),
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          if (!data.status) {
-            checkbox.checked = !checkbox.checked;
-          }
-        })
-        .catch(() => {
-          checkbox.checked = !checkbox.checked;
-        });
-    }
   });
 
   // Image modal functionality
@@ -449,6 +290,9 @@ document.addEventListener("DOMContentLoaded", function() {
       modalImage.src = img.src;
       modalImage.alt = img.alt;
       imageModal.style.display = 'block';
+    });
+    container.addEventListener('keydown', event => {
+      if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); container.click(); }
     });
   });
 
@@ -465,211 +309,113 @@ document.addEventListener("DOMContentLoaded", function() {
     }
   });
 
-  // Load More Cast functionality
-  const loadMoreBtn = document.getElementById("load-more-cast");
-  if (loadMoreBtn) {
-    let isLoading = false;
-    let scrollLoadingEnabled = false;
-    let currentPage = parseInt(sessionStorage.getItem('castCurrentPage')) || 1;
-    
-    // Restore loaded cast members if returning from navigation
-    const savedCastData = sessionStorage.getItem('loadedCastData');
-    if (savedCastData && currentPage > 1) {
-      const castData = JSON.parse(savedCastData);
-      const castList = document.querySelector('.cast-list');
-      
-      castData.forEach(member => {
-        const castMember = document.createElement('div');
-        
-        if (member.id) {
-          castMember.innerHTML = `
-            <a href="/person/tmdb/${member.id}/" class="cast-member">
-              <img src="${member.profile_path || '/static/core/img/placeholder.png'}" 
-                   alt="${member.name}" 
-                   data-placeholder="/static/core/img/placeholder.png" 
-                   onerror="this.onerror=null;this.src=this.dataset.placeholder;" />
-              <p class="actor-name">${member.name}</p>
-              <p class="character-name">${member.character}</p>
-              <label class="cast-favorite" data-name="${member.name}" data-img="${member.profile_path || '/static/core/img/placeholder.png'}" data-type="actor" data-id="${member.id || ''}">
-                <input type="checkbox">
-                <span class="heart"></span>
-              </label>
-            </a>
-          `;
-        } else {
-          castMember.innerHTML = `
-            <div class="cast-member">
-              <img src="${member.profile_path || '/static/core/img/placeholder.png'}" 
-                   alt="${member.name}" 
-                   data-placeholder="/static/core/img/placeholder.png" 
-                   onerror="this.onerror=null;this.src=this.dataset.placeholder;" />
-              <p class="actor-name">${member.name}</p>
-              <p class="character-name">${member.character}</p>
-              <label class="cast-favorite" data-name="${member.name}" data-img="${member.profile_path || '/static/core/img/placeholder.png'}" data-type="actor" data-id="">
-                <input type="checkbox">
-                <span class="heart"></span>
-              </label>
-            </div>
-          `;
-        }
-        
-        const newCastMember = castMember.firstElementChild;
-        castList.appendChild(newCastMember);
-        
-        const favorite = newCastMember.querySelector('.cast-favorite');
-        if (favorite) {
-          const name = favorite.dataset.name;
-          const type = favorite.dataset.type;
-          const checkbox = favorite.querySelector('input[type="checkbox"]');
-          
-          fetch(`/api/check_favorite_person/?name=${encodeURIComponent(name)}&type=${type}`)
-            .then(res => res.json())
-            .then(result => {
-              checkbox.checked = result.is_favorited;
-            })
-            .catch(() => {
-              checkbox.checked = false;
-            });
-        }
-      });
-      
-      loadMoreBtn.style.display = 'none';
-      scrollLoadingEnabled = true;
-      
-      // Restore scroll position
-      setTimeout(() => {
-        const savedScrollY = sessionStorage.getItem('castScrollPosition');
-        if (savedScrollY) {
-          window.scrollTo(0, parseInt(savedScrollY));
-        }
-      }, 100);
+  // The main season link navigates directly; hovering reveals nearby seasons.
+  const tabsState = JSON.parse(document.getElementById('details-tabs-state').textContent);
+  const seasonTrigger = document.getElementById('season-navigation-trigger');
+  const seasonMenu = document.getElementById('season-navigation-menu');
+  let navigation = tabsState.season_navigation;
+  let menuOpen = false;
+  let closeTimer;
+  let navigationRequest = null;
+  const canHover = () => window.matchMedia('(hover: hover)').matches;
+
+  function positionSeasonMenu() {
+    if (seasonMenu.hidden) return;
+    const trigger = seasonTrigger.getBoundingClientRect();
+    const menu = seasonMenu.getBoundingClientRect();
+    seasonMenu.style.left = Math.max(8, Math.min(innerWidth - menu.width - 8, trigger.left + (trigger.width - menu.width) / 2)) + 'px';
+    const top = trigger.bottom + menu.height + 4 <= innerHeight ? trigger.bottom + 4 : trigger.top - menu.height - 4;
+    seasonMenu.style.top = Math.max(8, top) + 'px';
+  }
+  function closeSeasonMenu() {
+    clearTimeout(closeTimer);
+    menuOpen = false;
+    seasonMenu.hidden = true;
+    seasonTrigger.setAttribute('aria-expanded', 'false');
+  }
+  function showSeasonMenu() {
+    if (!menuOpen || !seasonMenu.childElementCount) return;
+    seasonMenu.hidden = false;
+    seasonTrigger.setAttribute('aria-expanded', 'true');
+    positionSeasonMenu();
+  }
+  function renderNavigation(value) {
+    if (!value?.known) return;
+    navigation = value;
+    seasonTrigger.hidden = !value.primary;
+    if (!value.primary) { closeSeasonMenu(); return; }
+    seasonTrigger.querySelector('.details-season-label').textContent = value.primary.label;
+    seasonTrigger.href = `/tmdb/season/${tabsState.show_id}/${value.primary.number}/`;
+    seasonTrigger.querySelector('.details-season-arrow').hidden = !value.options.length;
+    if (value.options.length) seasonTrigger.setAttribute('aria-haspopup', 'menu');
+    else seasonTrigger.removeAttribute('aria-haspopup');
+    seasonMenu.replaceChildren();
+    for (const entry of value.options) {
+      const link = document.createElement('a');
+      link.href = `/tmdb/season/${tabsState.show_id}/${entry.number}/`;
+      link.textContent = entry.label;
+      link.setAttribute('role', 'menuitem');
+      seasonMenu.appendChild(link);
     }
-    
-    function loadCastMembers(page) {
-      if (isLoading) return;
-      
-      isLoading = true;
-      const source = loadMoreBtn.dataset.source;
-      const sourceId = loadMoreBtn.dataset.sourceId;
-      const mediaType = loadMoreBtn.dataset.mediaType;
-      
-      fetch(`/api/load-more-cast/?source=${source}&source_id=${sourceId}&media_type=${mediaType}&page=${page}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data.cast && data.cast.length > 0) {
-            const castList = document.querySelector('.cast-list');
-            
-            // Save loaded cast data
-            const existingCastData = JSON.parse(sessionStorage.getItem('loadedCastData') || '[]');
-            const allCastData = [...existingCastData, ...data.cast];
-            sessionStorage.setItem('loadedCastData', JSON.stringify(allCastData));
-            
-            data.cast.forEach(member => {
-              const castMember = document.createElement('div');
-              
-              if (member.id) {
-                castMember.innerHTML = `
-                  <a href="/person/tmdb/${member.id}/" class="cast-member">
-                    <img src="${member.profile_path || '/static/core/img/placeholder.png'}" 
-                         alt="${member.name}" 
-                         data-placeholder="/static/core/img/placeholder.png" 
-                         onerror="this.onerror=null;this.src=this.dataset.placeholder;" />
-                    <p class="actor-name">${member.name}</p>
-                    <p class="character-name">${member.character}</p>
-                    <label class="cast-favorite" data-name="${member.name}" data-img="${member.profile_path || '/static/core/img/placeholder.png'}" data-type="actor" data-id="${member.id || ''}">
-                      <input type="checkbox">
-                      <span class="heart"></span>
-                    </label>
-                  </a>
-                `;
-              } else {
-                castMember.innerHTML = `
-                  <div class="cast-member">
-                    <img src="${member.profile_path || '/static/core/img/placeholder.png'}" 
-                         alt="${member.name}" 
-                         data-placeholder="/static/core/img/placeholder.png" 
-                         onerror="this.onerror=null;this.src=this.dataset.placeholder;" />
-                    <p class="actor-name">${member.name}</p>
-                    <p class="character-name">${member.character}</p>
-                    <label class="cast-favorite" data-name="${member.name}" data-img="${member.profile_path || '/static/core/img/placeholder.png'}" data-type="actor" data-id="">
-                      <input type="checkbox">
-                      <span class="heart"></span>
-                    </label>
-                  </div>
-                `;
-              }
-              
-              const newCastMember = castMember.firstElementChild;
-              castList.appendChild(newCastMember);
-              
-              // Check favorite status for the new cast member
-              const favorite = newCastMember.querySelector('.cast-favorite');
-              if (favorite) {
-                const name = favorite.dataset.name;
-                const type = favorite.dataset.type;
-                const checkbox = favorite.querySelector('input[type="checkbox"]');
-                
-                fetch(`/api/check_favorite_person/?name=${encodeURIComponent(name)}&type=${type}`)
-                  .then(res => res.json())
-                  .then(result => {
-                    checkbox.checked = result.is_favorited;
-                  })
-                  .catch(() => {
-                    checkbox.checked = false;
-                  });
-              }
-            });
-            
-            currentPage++;
-            sessionStorage.setItem('castCurrentPage', currentPage.toString());
-            
-            if (!data.has_more) {
-              scrollLoadingEnabled = false;
-            }
-          } else {
-            scrollLoadingEnabled = false;
-          }
-        })
-        .catch(error => {
-          console.error('Error loading more cast:', error);
-        })
-        .finally(() => {
-          isLoading = false;
-        });
+    if (!value.options.length) closeSeasonMenu();
+    else showSeasonMenu();
+  }
+  async function openSeasonMenu(focus = false) {
+    clearTimeout(closeTimer);
+    if (navigation?.known && !navigation.options.length) return;
+    menuOpen = true;
+    if (!navigation?.known) {
+      try {
+        navigationRequest ||= window.DetailsSections.load();
+        const data = await navigationRequest;
+        renderNavigation(data.season_navigation);
+      } catch (error) {
+        if (!menuOpen) return;
+        ApiFeedback.render(seasonMenu, error, 'tmdb', { retry: () => openSeasonMenu() });
+      } finally { navigationRequest = null; }
     }
-    
-    loadMoreBtn.addEventListener("click", function() {
-      loadCastMembers(currentPage);
-      loadMoreBtn.style.display = 'none';
-      scrollLoadingEnabled = true;
+    showSeasonMenu();
+    if (focus && menuOpen) seasonMenu.querySelector('a')?.focus();
+  }
+  renderNavigation(navigation);
+  document.addEventListener('details-sections-loaded', event => renderNavigation(event.detail.season_navigation));
+  document.addEventListener('details-tab-change', closeSeasonMenu);
+  seasonTrigger.addEventListener('mouseenter', () => { if (canHover()) openSeasonMenu(); });
+  for (const surface of [seasonTrigger, seasonMenu]) {
+    surface.addEventListener('mouseenter', () => clearTimeout(closeTimer));
+    surface.addEventListener('mouseleave', () => { if (canHover()) closeTimer = setTimeout(closeSeasonMenu, 140); });
+    surface.addEventListener('focusout', event => {
+      if (!seasonTrigger.contains(event.relatedTarget) && !seasonMenu.contains(event.relatedTarget)) closeSeasonMenu();
     });
-    
-    // Save scroll position and cast data when navigating away
-    document.addEventListener('click', function(e) {
-      const link = e.target.closest('a[href*="/person/"]');
-      if (link) {
-        sessionStorage.setItem('castScrollPosition', window.scrollY.toString());
-      }
-    });
-    
-    // Scroll loading
-    window.addEventListener('scroll', function() {
-      if (!scrollLoadingEnabled || isLoading) return;
-      
-      if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 1000) {
-        loadCastMembers(currentPage);
-      }
+    surface.addEventListener('keydown', event => {
+      if (event.key === 'Escape') { event.preventDefault(); closeSeasonMenu(); seasonTrigger.focus(); }
     });
   }
-  
-  // Clear cast state when leaving the page (not to person pages)
-  window.addEventListener('pagehide', function() {
-    if (!document.activeElement || !document.activeElement.href || !document.activeElement.href.includes('/person/')) {
-      sessionStorage.removeItem('loadedCastData');
-      sessionStorage.removeItem('castCurrentPage');
-      sessionStorage.removeItem('castScrollPosition');
+  seasonTrigger.addEventListener('click', event => {
+    if (!navigation?.known || !canHover() && navigation.options.length && !menuOpen) {
+      event.preventDefault();
+      openSeasonMenu();
     }
   });
+  seasonTrigger.addEventListener('keydown', event => {
+    if (event.key === 'ArrowDown') { event.preventDefault(); openSeasonMenu(true); }
+  });
+  seasonMenu.addEventListener('keydown', event => {
+    const links = [...seasonMenu.querySelectorAll('a')];
+    const index = links.indexOf(document.activeElement);
+    let next;
+    if (event.key === 'ArrowDown') next = (index + 1) % links.length;
+    else if (event.key === 'ArrowUp') next = (index + links.length - 1) % links.length;
+    else if (event.key === 'Home') next = 0;
+    else if (event.key === 'End') next = links.length - 1;
+    if (next !== undefined && links.length) { event.preventDefault(); links[next].focus(); }
+  });
+  document.addEventListener('pointerdown', event => {
+    if (!seasonTrigger.contains(event.target) && !seasonMenu.contains(event.target)) closeSeasonMenu();
+  });
+  window.addEventListener('resize', positionSeasonMenu);
+  window.addEventListener('scroll', positionSeasonMenu, { passive: true });
+  window.addEventListener('pagehide', () => { closeSeasonMenu(); cancelAnimationFrame(episodeFrame); closeModal(); });
 
   // Keyboard shortcuts
   document.addEventListener('keydown', function(e) {

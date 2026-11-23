@@ -9,6 +9,7 @@ from django.utils import timezone
 from core.models import MediaItem
 from core.services.g_runtimes import positive_runtime
 from core.services.g_utils import apply_initial_item_status, download_image
+from core.services.g_relations import pack_relations
 
 
 def save_anilist_item(media_type, anilist_id=None, mal_id=None, *, http=None, prepare_only=False, initial_status='planned'):
@@ -92,7 +93,7 @@ def save_anilist_item(media_type, anilist_id=None, mal_id=None, *, http=None, pr
             release_date=data["release_date"],
             cast=cast,
             seasons=None,
-            related_titles=related_titles,
+            related_titles=pack_relations(related_titles, data.get('has_extra_relations')),
             total_main=data.get("total_main"),
             total_secondary=data.get("total_secondary"),
             episode_runtime=data.get("episode_runtime") if media_type == "anime" else None,
@@ -112,7 +113,7 @@ def save_anilist_item(media_type, anilist_id=None, mal_id=None, *, http=None, pr
         return JsonResponse({"error": f"Save failed: {str(e)}"})
 
 
-def fetch_anilist_data(media_type, anilist_id=None, mal_id=None, *, http=None):
+def fetch_anilist_data(media_type, anilist_id=None, mal_id=None, *, http=None, include_sections=False):
     # Determine which ID to use for the query
     if anilist_id:
         id_field = "id"
@@ -216,7 +217,12 @@ def fetch_anilist_data(media_type, anilist_id=None, mal_id=None, *, http=None):
     }
     """
 
+    if include_sections:
+        from core.services.g_details_sections import anilist_query, anilist_bundle
+        query = anilist_query(id_field)
     variables = {"id": search_id, "type": media_type.upper()}
+    if include_sections:
+        variables['page'] = 1
 
     headers = {"Content-Type": "application/json"}
 
@@ -393,429 +399,17 @@ def fetch_anilist_data(media_type, anilist_id=None, mal_id=None, *, http=None):
         "banner_url": banner_url,
         "cast": cast,
         "related_titles": related_titles,
+        "has_extra_relations": any(edge.get('relationType') not in ('PREQUEL', 'SEQUEL')
+            and ((edge.get('node') or {}).get('id') or (edge.get('node') or {}).get('idMal'))
+            for edge in (media.get('relations') or {}).get('edges', [])),
         "recommendations": recommendations,
         "total_main": media.get("episodes") or media.get("chapters"),
         "total_secondary": media.get("volumes"),
         "episode_runtime": positive_runtime(media.get("duration")) if media_type == "anime" else None,
         "genres": genres,
         "creators": creators,
+        **({'details_bundle': anilist_bundle(media, media_type)} if include_sections else {}),
     }
-
-
-def get_anime_extra_info(media_type, anilist_id=None, mal_id=None):
-    # Determine which ID field to use for the query
-    if anilist_id:
-        id_field = "id"
-        search_id = int(anilist_id)
-    elif mal_id:
-        id_field = "idMal"
-        search_id = int(mal_id)
-    else:
-        return {}
-
-    query = """
-    query ($id: Int, $type: MediaType) {
-      Media(""" + id_field + """: $id, type: $type) {
-        id
-        idMal
-        title {
-          romaji
-        }
-        status
-        averageScore
-        format
-        episodes
-        duration
-        genres
-        nextAiringEpisode {
-          episode
-          airingAt
-        }
-        studios(isMain: true) {
-          nodes {
-            name
-          }
-        }
-        staff {
-          edges {
-            role
-            node {
-              id
-              name {
-                full
-              }
-            }
-          }
-        }
-        externalLinks {
-          site
-          url
-          language
-        }
-        trailer {
-          id
-          site
-          thumbnail
-        }
-        relations {
-          edges {
-            relationType
-            node {
-              id
-              idMal
-              title {
-                romaji
-                english
-              }
-              type
-              format
-              status
-              coverImage {
-                large
-              }
-            }
-          }
-        }
-        recommendations(sort: RATING_DESC, perPage: 16) {
-          edges {
-            node {
-              mediaRecommendation {
-                id
-                idMal
-                title {
-                  romaji
-                  english
-                }
-                coverImage {
-                  large
-                }
-                type
-              }
-            }
-          }
-        }
-      }
-    }
-    """
-
-    variables = {"id": search_id, "type": media_type.upper()}
-    headers = {"Content-Type": "application/json"}
-
-    try:
-        response = ApiClient('anilist').post(
-            "https://graphql.anilist.co",
-            json={"query": query, "variables": variables},
-            headers=headers,
-        )
-        if response.status_code != 200:
-            return {}
-
-        data = response.json().get("data", {}).get("Media", {})
-        if not data:
-            return {}
-
-        # --- Next Airing Logic ---
-        next_airing = None
-        next_episode = None
-        next_airing_data = data.get("nextAiringEpisode")
-        if next_airing_data and next_airing_data.get("airingAt"):
-            airing_dt = datetime.fromtimestamp(next_airing_data["airingAt"])
-            diff = airing_dt - datetime.now()
-            if diff.total_seconds() > 0:
-                days = diff.days
-                hours, remainder = divmod(diff.seconds, 3600)
-                minutes, _ = divmod(remainder, 60)
-                parts = []
-                if days > 0: 
-                    parts.append(f"{days}d")
-                if hours > 0: 
-                    parts.append(f"{hours}h")
-                parts.append(f"{minutes}m")
-                next_airing = f"{airing_dt.strftime('%A')} ({' '.join(parts)})"
-            else:
-                next_airing = "Aired"
-            next_episode = next_airing_data.get("episode")
-
-        # --- External Links & Staff ---
-        external_links = [
-            {"site": l["site"], "url": l["url"], "language": l.get("language") or ""}
-            for l in data.get("externalLinks", [])  # noqa: E741
-            # Ensure the keys exist
-            if l.get("site") and l.get("url")
-            # Perform security check on the URL
-            and l["url"].startswith(('http://', 'https://', '/'))
-        ]
-        staff_list = [
-            {'id': e['node'].get('id'), 'name': e['node']['name']['full'], 'role': e['role']}
-            for e in data.get("staff", {}).get("edges", [])
-            if e.get("node") and e["node"].get("name") and e.get("role")
-        ]
-
-        # --- Trailers ---
-        trailers = []
-        t_data = data.get("trailer") or {}
-        if t_data and t_data.get("site") == "youtube":
-            trailers.append({
-                "youtube_id": t_data.get("id"),
-                "thumbnail": t_data.get("thumbnail"),
-                "url": f"https://www.youtube.com/watch?v={t_data.get('id')}",
-            })
-
-        # --- Relations (Supporting both IDs) ---
-        relations_list = []
-        for edge in data.get("relations", {}).get("edges", []):
-            node = edge.get("node")
-            if not node or edge.get("relationType") in ["SEQUEL", "PREQUEL"]:
-                continue
-
-            rel_type = edge["relationType"]
-            display_type = "Source" if rel_type == "ADAPTATION" else rel_type.replace("_", " ").title()
-
-            relations_list.append({
-                "relation_type": rel_type,
-                "display_relation_type": display_type,
-                "id": node.get("id"),
-                "mal_id": node.get("idMal"),
-                "title": node["title"].get("english") or node["title"].get("romaji"),
-                "type": node.get("type"),
-                "format": node.get("format"),
-                "status": node.get("status"),
-                "cover": node.get("coverImage", {}).get("large"),
-            })
-
-        # Sort relations
-        relation_order = ["Source", "Prequel", "Sequel", "Adaptation", "Side Story", "Summary", "Spin-Off", "Alternative", "Character", "Other"]
-        relations_list.sort(key=lambda r: relation_order.index(r["display_relation_type"]) if r["display_relation_type"] in relation_order else 999)
-
-        # --- Recommendations (Supporting both IDs) ---
-        recommendations = []
-        for edge in data.get("recommendations", {}).get("edges", []):
-            node = edge.get("node", {}).get("mediaRecommendation")
-            if node:
-                recommendations.append({
-                    "id": node.get("id"),
-                    "mal_id": node.get("idMal"),
-                    "title": node["title"].get("english") or node["title"].get("romaji"),
-                    "poster_path": node.get("coverImage", {}).get("large"),
-                    "media_type": node.get("type", "").lower() if node.get("type") else media_type.lower(),
-                })
-
-        return {
-            "external_links": external_links,
-            "status": data.get("status"),
-            "averageScore": round(data.get("averageScore", 0) / 10, 1) if data.get("averageScore") else None,
-            "format": data.get("format"),
-            "episodes": data.get("episodes"),
-            "duration": data.get("duration"),
-            "genres": data.get("genres", []),
-            "romaji_title": data.get("title", {}).get("romaji"),
-            "studios": [s["name"] for s in data.get("studios", {}).get("nodes", [])],
-            "staff": staff_list,
-            "trailers": trailers,
-            "relations": relations_list,
-            "next_airing": next_airing,
-            "next_episode": next_episode,
-            "recommendations": recommendations,
-        }
-
-    except ApiError:
-        raise
-    except Exception as e:
-        raise ApiError('anilist') from e
-
-
-def get_manga_extra_info(media_type, anilist_id=None, mal_id=None):
-    # Determine which ID field to use for the query
-    if anilist_id:
-        id_field = "id"
-        search_id = int(anilist_id)
-    elif mal_id:
-        id_field = "idMal"
-        search_id = int(mal_id)
-    else:
-        return {}
-
-    query = """
-    query ($id: Int, $type: MediaType) {
-      Media(""" + id_field + """: $id, type: $type) {
-        id
-        idMal
-        title {
-          romaji
-        }
-        status
-        averageScore
-        format
-        chapters
-        volumes
-        genres
-        studios(isMain: true) {
-          nodes {
-            name
-          }
-        }
-        staff {
-          edges {
-            role
-            node {
-              id
-              name {
-                full
-              }
-            }
-          }
-        }
-        externalLinks {
-          site
-          url
-          language
-        }
-        trailer {
-          id
-          site
-          thumbnail
-        }
-        relations {
-          edges {
-            relationType
-            node {
-              id
-              idMal
-              title {
-                english
-                romaji
-              }
-              type
-              format
-              status
-              coverImage {
-                large
-              }
-            }
-          }
-        }
-        recommendations(sort: RATING_DESC, perPage: 16) {
-          edges {
-            node {
-              mediaRecommendation {
-                id
-                idMal
-                title {
-                  romaji
-                  english
-                }
-                coverImage {
-                  large
-                }
-                type
-              }
-            }
-          }
-        }
-      }
-    }
-    """
-
-    variables = {"id": search_id, "type": media_type.upper()}
-    headers = {"Content-Type": "application/json"}
-
-    try:
-        response = ApiClient('anilist').post(
-            "https://graphql.anilist.co",
-            json={"query": query, "variables": variables},
-            headers=headers,
-        )
-        if response.status_code != 200:
-            return {}
-
-        data = response.json().get("data", {}).get("Media", {})
-        if not data:
-            return {}
-
-        # --- External Links ---
-        external_links = [
-            {"site": l["site"], "url": l["url"], "language": l.get("language") or ""}
-            for l in data.get("externalLinks", [])  # noqa: E741
-            if l.get("site") and l.get("url")
-            and l["url"].startswith(('http://', 'https://', '/'))
-        ]
-
-        # --- Staff ---
-        staff_list = [
-            {'id': e['node'].get('id'), 'name': e['node']['name']['full'], 'role': e['role']}
-            for e in data.get("staff", {}).get("edges", [])
-            if e.get("node") and e["node"].get("name") and e.get("role")
-        ]
-
-        # --- Trailers ---
-        trailers = []
-        t_data = data.get("trailer") or {}
-        if t_data and t_data.get("site") == "youtube":
-            trailers.append({
-                "youtube_id": t_data.get("id"),
-                "thumbnail": t_data.get("thumbnail"),
-                "url": f"https://www.youtube.com/watch?v={t_data.get('id')}",
-            })
-
-        # --- Relations (Supporting both IDs) ---
-        relations_list = []
-        for edge in data.get("relations", {}).get("edges", []):
-            node = edge.get("node")
-            if not node or edge.get("relationType") in ["SEQUEL", "PREQUEL"]:
-                continue
-
-            rel_type = edge["relationType"]
-            display_type = "Adaptation" if rel_type == "ADAPTATION" else rel_type.replace("_", " ").title()
-
-            relations_list.append({
-                "relation_type": rel_type,
-                "display_relation_type": display_type,
-                "id": node.get("id"),
-                "mal_id": node.get("idMal"),
-                "title": node["title"].get("english") or node["title"].get("romaji"),
-                "type": node.get("type"),
-                "format": node.get("format"),
-                "status": node.get("status"),
-                "cover": node.get("coverImage", {}).get("large"),
-            })
-
-        # Sort relations
-        relation_order = ["Source", "Prequel", "Sequel", "Adaptation", "Side Story", "Summary", "Spin-Off", "Alternative", "Character", "Other"]
-        relations_list.sort(key=lambda r: relation_order.index(r["display_relation_type"]) if r["display_relation_type"] in relation_order else 999)
-
-        # --- Recommendations (Supporting both IDs) ---
-        recommendations = []
-        for edge in data.get("recommendations", {}).get("edges", []):
-            node = edge.get("node", {}).get("mediaRecommendation")
-            if node:
-                recommendations.append({
-                    "id": node.get("id"),
-                    "mal_id": node.get("idMal"),
-                    "title": node["title"].get("english") or node["title"].get("romaji"),
-                    "poster_path": node.get("coverImage", {}).get("large"),
-                    "media_type": node.get("type", "").lower() if node.get("type") else media_type.lower(),
-                })
-
-        return {
-            "external_links": external_links,
-            "status": data.get("status"),
-            "averageScore": round(data.get("averageScore", 0) / 10, 1) if data.get("averageScore") else None,
-            "format": data.get("format"),
-            "chapters": data.get("chapters"),
-            "volumes": data.get("volumes"),
-            "genres": data.get("genres", []),
-            "romaji_title": data.get("title", {}).get("romaji"),
-            "studios": [s["name"] for s in data.get("studios", {}).get("nodes", [])],
-            "staff": staff_list,
-            "trailers": trailers,
-            "relations": relations_list,
-            "recommendations": recommendations,
-        }
-
-    except ApiError:
-        raise
-    except Exception as e:
-        raise ApiError('anilist') from e
 
 
 def get_anilist_discover(
@@ -1019,7 +613,7 @@ def update_anilist_anime_manga(item: MediaItem):
         item.save()
         return
 
-    existing = item.related_titles or []
+    existing = item.related_entries
     existing_anilist_ids = {str(r["anilist_id"]) for r in existing if r.get("anilist_id")}
     existing_mal_ids = {str(r["mal_id"]) for r in existing if r.get("mal_id")}
 
@@ -1062,8 +656,9 @@ def update_anilist_anime_manga(item: MediaItem):
         print(
             f"[AniList Update] Found {len(new_sequels)} new sequel(s) for {item.title}"
         )
-        item.related_titles = existing + new_sequels
         item.notification = True
+
+    item.related_titles = pack_relations(existing + new_sequels, anilist_data.get('has_extra_relations'))
 
     if item.media_type == "anime" and anilist_data.get("episode_runtime"):
         item.episode_runtime = anilist_data["episode_runtime"]

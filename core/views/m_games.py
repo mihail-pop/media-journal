@@ -15,6 +15,7 @@ from core.models import APIKey, MediaItem
 from core.services.m_games import get_igdb_token
 from core.services.g_api import serialize_game_screenshot
 from core.services.g_utils import adult_content_allowed
+from core.services.g_details_sections import IGDB_FIELDS, initial_igdb_bundle
 
 IGDB_ACCESS_TOKEN = None
 IGDB_TOKEN_EXPIRY = 0
@@ -261,10 +262,7 @@ def igdb_detail(request, igdb_id):
     }
 
     query = f"""
-    fields 
-      id, name, summary, storyline, 
-      cover.url, genres.name, platforms.name, 
-      first_release_date, screenshots.url, similar_games.name, similar_games.cover.url, artworks.url;
+    fields {IGDB_FIELDS};
     where id = {igdb_id};
     """
 
@@ -363,6 +361,7 @@ def igdb_detail(request, igdb_id):
         "recommendations": recommendations,
         "screenshots": initial_screenshots,
         "total_screenshots": total_screenshots,
+        "details_bundle": initial_igdb_bundle(game, headers),
         "genres": genres,
         "platforms": platforms,
         "in_my_list": False,

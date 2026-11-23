@@ -1,20 +1,27 @@
 {% extends "core/g_base.html" %}
 {% load static %}
 {% load custom_filters %}
+{% load details_tags %}
 
-{% block head %}
-  {{ block.super }}
+{% block page_head %}
   <title>{{ title }} - Media Journal</title>
   <link rel="stylesheet" href="{% static 'core/css/p_details.css' %}" />
+  <link rel="stylesheet" href="{% static 'core/css/p_details_tabs.css' %}" />
+  <link rel="stylesheet" href="{% static 'core/css/p_season_details.css' %}" />
   <link rel="stylesheet" href="{% static 'core/css/g_edit_modal.css' %}" />
   <link rel="stylesheet" href="{% static 'core/css/g_metadata_modal.css' %}" />
+  <script src="{% static 'core/js/p_details_overview.js' %}"></script>
 {% endblock %}
 
 {% block content %}
+{% season_details_tabs_state as details_state %}
+{{ details_state|json_script:"details-tabs-state" }}
 <script>
   document.body.dataset.theme = '{{ theme_mode }}';
   document.body.dataset.mediaType = '{{ media_type }}';
   document.body.dataset.itemId = '{{ source_id }}';
+  document.body.dataset.source = '{{ source }}';
+  document.body.dataset.sourceId = '{{ source_id }}';
   document.body.dataset.dbId = '{{ item_id }}';
 </script>
 
@@ -74,26 +81,28 @@
         <h1>{{ title }}</h1>
         <div class="overview-container">
           <p class="overview">{{ overview|safe_html }}</p>
-          <button class="read-more-btn">Read More</button>
+          <button type="button" class="read-more-btn">show more</button>
         </div>
+        <script>window.initializeDetailsOverview?.(document.currentScript.previousElementSibling);</script>
         <p class="release-date">{{ release_date }}</p>
       </div>
       
-      <!-- Season Navigation -->
-      {% if season_nav %}
-      <div class="season-navigation">
-        <a href="/tmdb/tv/{{ tmdb_id }}/" class="nav-btn main-show"><< TV Show</a>
-        {% if season_nav.prev_season is not None %}
-          <a href="/tmdb/season/{{ tmdb_id }}/{{ season_nav.prev_season }}/" class="nav-btn prev">&lt; {{ season_nav.prev_name }}</a>
-        {% endif %}
-        {% if season_nav.next_season is not None %}
-          <a href="/tmdb/season/{{ tmdb_id }}/{{ season_nav.next_season }}/" class="nav-btn next">{{ season_nav.next_name }} &gt;</a>
-        {% endif %}
-        {% if season_nav.last_season is not None %}
-          <a href="/tmdb/season/{{ tmdb_id }}/{{ season_nav.last_season }}/" class="nav-btn last">{{ season_nav.last_name }} &gt;&gt;</a>
-        {% endif %}
+      <div class="details-tabs-shell">
+        <nav class="details-tabs" role="tablist" aria-label="Season sections">
+          {% for tab in details_state.tabs %}
+          <button type="button" class="details-tab{% if tab.id == 'overview' %} is-active{% endif %}"
+                  id="details-tab-{{ tab.id }}" role="tab" data-tab="{{ tab.id }}"
+                  aria-selected="{% if tab.id == 'overview' %}true{% else %}false{% endif %}"
+                  aria-controls="details-panel-{{ tab.id }}" tabindex="{% if tab.id == 'overview' %}0{% else %}-1{% endif %}">{{ tab.label }}</button>
+          {% endfor %}
+          <a class="details-tab details-season-trigger" id="season-navigation-trigger"
+             href="{% if season_nav.primary %}/tmdb/season/{{ tmdb_id }}/{{ season_nav.primary.number }}/{% else %}/tmdb/tv/{{ tmdb_id }}/{% endif %}"
+             aria-haspopup="menu" aria-expanded="false" aria-controls="season-navigation-menu"{% if season_nav.known and not season_nav.primary %} hidden{% endif %}>
+            <span class="details-season-label">{{ season_nav.primary.label|default:'Seasons' }}</span><span class="details-season-arrow" aria-hidden="true"{% if season_nav.known and not season_nav.options %} hidden{% endif %}></span>
+          </a>
+          <a class="details-tab" href="/tmdb/tv/{{ tmdb_id }}/">TV Show</a>
+        </nav>
       </div>
-      {% endif %}
     </div>
   </div>
 </div>
@@ -103,19 +112,34 @@
 
 <div class="main-colored-section">
   <div class="detail-container">
+    <div id="details-panel-overview" class="details-panel" role="tabpanel" aria-labelledby="details-tab-overview">
     
-    {% for section in details_sections_order %}
+    {% for section in details_state.overview_order %}
       {% if section.visible %}
+        {% if section.id == 'information' and details_state.show_overview_information %}
+          <section id="overview-information" class="details-preview">
+            <h2>Information</h2>
+            <div>{% include 'core/g_details_information.html' with information=details_state.preview_information %}</div>
+          </section>
+        {% endif %}
 
         <!-- EPISODES -->
         {% if section.id == 'episodes' %}
           {% if episodes %}
           <section class="episodes-section">
-            <h2>Episodes</h2>
+            <div class="episodes-header">
+              <h2>Episodes</h2>
+              <button type="button" id="episode-size-toggle" class="music-control-btn" title="Resize" aria-label="Resize episodes" aria-pressed="false">
+                <svg viewBox="3 3 18 18" fill="currentColor" aria-hidden="true"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"></path></svg>
+              </button>
+            </div>
             <div class="episodes-list">
+              <script>
+                try { document.currentScript.parentElement.classList.toggle('small', localStorage.getItem('seasonEpisodeSize') === 'small'); } catch (_) {}
+              </script>
               {% for episode in episodes %}
               <div class="episode-card">
-                <div class="episode-image-container">
+                <div class="episode-image-container" role="button" tabindex="0" aria-label="View image for episode {{ episode.episode_number }}">
                   {% if episode.still_path %}
                   <img src="{{ episode.still_path }}" 
                        alt="{{ episode.name }}"
@@ -127,6 +151,10 @@
                   {% endif %}
                   <div class="expand-overlay">
                     <div class="expand-icon">⛶</div>
+                  </div>
+                  <div class="episode-compact-caption">
+                    <p class="episode-compact-title">{{ episode.episode_number }}. {{ episode.name }}</p>
+                    {% if episode.compact_air_date %}<p class="episode-compact-date">{{ episode.compact_air_date }}</p>{% endif %}
                   </div>
                 </div>
                 <div class="episode-info">
@@ -147,40 +175,15 @@
         <!-- CAST & CREW -->
         {% if section.id == 'cast' %}
           {% if cast %}
-          <section class="cast-section">
+          <section class="cast-section" data-details-preview="cast">
             <div class="cast-header">
               <h2>Cast</h2>
               
-              <div class="cast-controls">
-                <div class="search-container">
-                  <button id="search-toggle-btn" class="search-toggle">
-                    <svg class="cast-search-icon" width="24" height="24" viewBox="0 0 512 512" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M505 442.7L405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128
-                               C416 93.1 322.9 0 208 0S0 93.1 0 208s93.1 208 208 208c48.3 0 92.7-16.4 128-44v16.3
-                               c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9 0l28.3-28.3
-                               c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7 0-128-57.2-128-128
-                               0-70.7 57.2-128 128-128 70.7 0 128 57.2 128 128
-                               0 70.7-57.2 128-128 128z"></path>
-                    </svg>
-                  </button>
-                  <input type="text" id="person-search-input" placeholder="Search.." autocomplete="off" class="search-input hidden">
-                </div>
-                
-                {% if cast|length >= 8 %}
-                <button id="load-more-cast" class="load-more-btn" 
-                        data-source="{{ source }}" 
-                        data-source-id="{{ source_id }}" 
-                        data-media-type="{{ media_type }}" 
-                        data-page="1">Load More</button>
-                {% endif %}
-              </div>
             </div>
-
-            <!-- Search results above the cast list -->
-            <div id="person-search-results" class="search-results"></div>
 
             <div class="cast-list">
               {% for member in cast %}
+              <div class="details-section-card">
               {% if member.id %}
                 <a href="/person/tmdb/{{ member.id }}/" class="cast-member">
               {% else %}
@@ -194,15 +197,18 @@
                   <p class="actor-name">{{ member.name }}</p>
                   <p class="character-name">{{ member.character }}</p>
                 </div>
-                <label class="cast-favorite" data-name="{{ member.name }}" data-img="{% if member.is_full_url %}{{ member.profile_path }}{% else %}https://image.tmdb.org/t/p/w185{{ member.profile_path }}{% endif %}" data-type="actor" data-id="{{ member.id|default:'' }}">
-                  <input type="checkbox">
-                  <span class="heart"></span>
-                </label>
               {% if member.id %}
                 </a>
               {% else %}
                 </div>
               {% endif %}
+              {% if member.id %}
+                <label class="cast-favorite details-person-favorite" data-name="{{ member.name }}" data-image="{% if member.is_full_url %}{{ member.profile_path }}{% else %}https://image.tmdb.org/t/p/w185{{ member.profile_path }}{% endif %}" data-type="actor" data-source="tmdb" data-person-id="{{ member.id }}">
+                  <input type="checkbox" aria-label="Favorite {{ member.name }}" disabled>
+                  <span class="heart"></span>
+                </label>
+              {% endif %}
+              </div>
               {% endfor %}
             </div>
           </section>
@@ -253,9 +259,29 @@
 
       {% endif %}
     {% endfor %}
-
+    </div>
+    {% for tab in details_state.tabs %}
+      {% if tab.id != 'overview' %}
+      <section id="details-panel-{{ tab.id }}" class="details-panel details-remote-panel" role="tabpanel" aria-labelledby="details-tab-{{ tab.id }}" hidden>
+        {% if tab.id == 'cast' or tab.id == 'staff' %}
+        <div class="details-panel-tools">
+          <form class="details-person-search" role="search" data-section="{{ tab.id }}">
+            <input type="text" class="details-person-search-input" placeholder="Search.." aria-label="Search people" autocomplete="off" hidden>
+            <button type="button" class="music-control-btn details-search-toggle" aria-label="Search people" aria-expanded="false">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"></circle><path d="m16 16 4.5 4.5" stroke-linecap="round"></path></svg>
+            </button>
+          </form>
+        </div>
+        <div class="details-person-search-results" hidden></div>
+        {% endif %}
+        <div class="details-panel-content"></div>
+      </section>
+      {% endif %}
+    {% endfor %}
   </div>
 </div>
+
+<div id="season-navigation-menu" class="details-season-menu" role="menu" aria-label="Seasons" hidden></div>
 
 <!-- Image Modal -->
 <div id="image-modal" class="image-modal">
@@ -272,6 +298,7 @@
   <script src="{% static 'core/js/g_edit_modal.js' %}"></script>
   <script src="{% static 'core/js/g_metadata_modal.js' %}"></script>
   <script src="{% static 'core/js/p_season_details.js' %}"></script>
+  <script src="{% static 'core/js/p_details_tabs.js' %}"></script>
   <script src="{% static 'core/js/p_details_add_list.js' %}"></script>
   {% if in_my_list %}<script src="{% static 'core/js/p_details_journal.js' %}"></script>{% endif %}
 {% endblock %}

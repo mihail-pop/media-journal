@@ -1,0 +1,223 @@
+/* General details tabs. Cover cards reuse the Overview rules in p_details.css. */
+body {
+  --details-score-bg: var(--bg-primary);
+  --details-score-text: var(--text-title);
+  --details-score-fill: var(--special-color);
+  --details-score-track: var(--bg-tertiary);
+}
+
+.top-colored-section:has(.details-tabs) { display: flex; flex-direction: column; padding-bottom: 1.5rem; }
+.top-colored-section:has(.details-tabs) > .top-content { flex: 1; width: calc(100% - 2rem); }
+.top-colored-section .right-column { align-self: stretch; min-width: 0; }
+.details-tabs-shell {
+  position: relative;
+  align-self: center;
+  width: max-content;
+  max-width: calc(100% - 2rem);
+  flex-shrink: 0;
+  margin: 1.7rem auto 0;
+  transform: translateY(1.5rem);
+}
+/* Curved feet join the tab strip to the main page without covering its buttons. */
+.details-tabs-shell::before, .details-tabs-shell::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  width: 1rem;
+  height: 1rem;
+  pointer-events: none;
+}
+.details-tabs-shell::before {
+  right: 100%;
+  background: radial-gradient(circle at top left, transparent calc(1rem - 0.5px), var(--bg-primary) 1rem);
+}
+.details-tabs-shell::after {
+  left: 100%;
+  background: radial-gradient(circle at top right, transparent calc(1rem - 0.5px), var(--bg-primary) 1rem);
+}
+.details-tabs {
+  display: flex;
+  align-items: stretch;
+  align-self: center;
+  width: max-content;
+  max-width: 100%;
+  flex-shrink: 0;
+  margin: 0;
+  padding: 0;
+  border-radius: 8px 8px 0 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--bg-quaternary) var(--bg-primary);
+  background: var(--bg-primary);
+}
+.details-tab {
+  position: relative;
+  flex: 0 0 auto;
+  padding: 0.95rem 1rem;
+  border: 0;
+  background: transparent;
+  color: var(--text-overview);
+  font: inherit;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 0.18s ease;
+}
+.details-tab:not(:first-child)::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 26%;
+  bottom: 26%;
+  width: 2px;
+  border-radius: 999px;
+  background: var(--text-overview);
+  opacity: 0.35;
+  pointer-events: none;
+}
+.details-tab:hover { background: transparent; color: var(--text-title); }
+.details-tab.is-active { color: var(--text-title); }
+.details-tab:focus-visible { outline: 2px solid var(--special-color); outline-offset: -3px; }
+.details-tabs[aria-busy="true"] .details-tab.is-active { cursor: progress; }
+.details-preview-title { padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.details-preview-title:hover { color: var(--special-color); }
+.details-preview-title:focus-visible { outline: 2px solid var(--special-color); outline-offset: 5px; }
+.details-tab[hidden], .details-panel[hidden], .details-preview[hidden],
+.details-person-search-input[hidden], .details-person-search-results[hidden] { display: none !important; }
+.details-remote-panel { padding: 1.3rem 0 2rem; min-height: 16rem; }
+.details-preview { margin: 1rem 0 2rem; }
+.details-preview > h2, .details-preview-header h2 { margin: 0 0 12px; color: var(--text-title); font-size: 1.3rem; }
+.details-preview-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 12px; }
+.details-preview-header h2 { margin: 0; }
+.details-empty { color: var(--text-overview); font-size: 0.95rem; }
+
+.edit-favorite-wrapper.add-list-actions { width: calc(210px - 0.5rem); }
+
+/* Match the existing Recommendations heading gap throughout Overview. */
+#details-panel-overview .seasons-section > h2,
+#details-panel-overview .rec-block > h2,
+#details-panel-overview .recommendations-section > h2 { margin: 0 0 12px; }
+#details-panel-overview .cast-header,
+#details-panel-overview .music-header,
+#details-panel-overview .screenshots-header { margin-bottom: 12px; }
+#details-panel-overview .cast-list { margin-top: 0; }
+
+/* One quiet surface for the score and facts, with compact labels and link/tag pills. */
+.details-information-surface { display: grid; gap: 1.6rem 2rem; padding: 1.5rem; border-radius: 8px; background: var(--bg-tertiary); }
+.details-information-surface:has(.details-api-score) { grid-template-columns: 15rem minmax(0, 1fr); align-items: start; }
+.details-information-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.4rem 2rem; margin: 0; min-width: 0; }
+.details-information-row { min-width: 0; line-height: 1.6; }
+.details-information-row dt { margin-bottom: 0.25rem; color: var(--text-overview); font-size: 0.85rem; font-weight: 500; }
+.details-information-row dd { margin: 0; color: var(--text-title); font-size: 1rem; overflow-wrap: anywhere; }
+.details-information-wide { grid-column: 1 / -1; }
+.details-information-row dd:has(.details-information-tag), .details-information-row dd:has(a) { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+.details-information-tag, .details-information-row dd a { display: inline-block; padding: 0.25rem 0.65rem; border-radius: 5px; background: var(--bg-primary); color: var(--text-secondary); font-size: 0.9rem; text-decoration: none; }
+.details-information-row dd a:hover { color: var(--text-secondary); background: var(--hover-bg); }
+.details-information-detail { display: block; margin-top: 0.3rem; color: var(--text-overview); font-size: 0.9em; }
+.details-api-score { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 0.8rem 1rem; box-sizing: border-box; width: 100%; padding: 1.2rem; border-radius: 6px; background: var(--details-score-bg); color: var(--details-score-text); }
+.details-api-score-provider { font-size: 1.2rem; font-weight: 600; }
+.details-api-score-value { font-size: 1.8rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.details-api-score-value small { margin-left: 0.2rem; font-size: 0.85rem; font-weight: 400; color: var(--text-overview); }
+.details-api-score-meter { grid-column: 1 / -1; width: 100%; height: 0.4rem; border: none; border-radius: 1rem; background: var(--details-score-track); }
+.details-api-score-meter::-webkit-meter-bar { background: var(--details-score-track); border: none; border-radius: 1rem; }
+.details-api-score-meter::-webkit-meter-optimum-value { background: var(--details-score-fill); border-radius: 1rem; }
+.details-api-score-meter::-moz-meter-bar { background: var(--details-score-fill); border-radius: 1rem; }
+
+.details-section-card { position: relative; flex: 0 0 auto; }
+.details-section-grid { align-items: flex-start; }
+.details-section-card:hover > .details-person-favorite,
+.details-person-favorite:focus-within { opacity: 1; }
+.details-track-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+.details-track-list .details-section-card-link { display: block; padding: 0.5rem 0; color: var(--text-title); text-decoration: none; }
+.details-track-list .details-section-card-title { display: block; font-size: 0.95rem; }
+.details-track-list .details-section-card-subtitle { display: block; margin-top: 0.3rem; color: var(--text-overview); font-size: 0.85rem; }
+.details-track-list a:hover .details-section-card-title { color: var(--special-color); }
+.details-music-information { display: grid; gap: 1.5rem; }
+.details-music-information-section { padding: 1.5rem; border-radius: 8px; background: var(--bg-tertiary); }
+.details-music-information-section h3 { margin: 0 0 1rem; color: var(--text-title); font-size: 1.1rem; }
+.details-music-album-title { margin-left: 0.8rem; color: var(--text-overview); font-size: 0.9em; font-weight: 400; }
+.details-music-facts { margin-top: 1.2rem; }
+.details-music-facts .details-information-surface { padding: 0; background: transparent; }
+.details-music-facts .details-information-list { gap: 1rem 2rem; }
+.details-music-facts .details-information-tag { background: var(--bg-primary); }
+.details-panel-tools { display: flex; justify-content: flex-end; align-items: center; margin-bottom: 1rem; gap: 0.8rem; }
+.details-panel-tools:empty { display: none; }
+.details-person-search { display: flex; align-items: center; justify-content: flex-end; gap: 0.5rem; max-width: 100%; }
+.details-person-search-input { width: 22rem; max-width: calc(100% - 3rem); min-width: 0; height: 2.5rem; box-sizing: border-box; padding: 0 0.9rem; border: 0; border-radius: 6px; outline: none; background: var(--bg-tertiary); color: var(--text-title); font: inherit; }
+.details-person-search-input::placeholder { color: var(--text-overview); }
+.details-person-search-results { margin-bottom: 1.5rem; padding: 1rem; border-radius: 8px; background: var(--bg-tertiary); }
+
+/* Thumbnails are cheap; at most one trailer iframe is mounted at a time. */
+.details-trailer-controls { display: flex; justify-content: flex-end; align-items: center; }
+.details-trailer-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.2rem 1rem; }
+.details-trailer-grid.small { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.details-trailer-card { min-width: 0; }
+.details-trailer-preview { display: block; position: relative; width: 100%; aspect-ratio: 16 / 9; overflow: hidden; padding: 0; border: 0; border-radius: 6px; background: #151515; cursor: pointer; }
+.details-trailer-preview img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.details-trailer-play { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgb(0 0 0 / 12%); transition: background-color 0.2s ease; }
+.details-trailer-play svg { width: 3.2rem; height: 3.2rem; padding: 0.45rem; box-sizing: border-box; border-radius: 50%; background: rgb(0 0 0 / 65%); color: white; }
+.details-trailer-preview:hover .details-trailer-play { background: rgb(0 0 0 / 3%); }
+.details-trailer-preview:focus-visible { outline: 2px solid var(--special-color); outline-offset: 3px; }
+.details-trailer-name { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; margin: 0.5rem 0 0; color: var(--text-secondary); font-size: 0.85rem; line-height: 1.6; }
+.details-trailer-name-pending { min-height: 3.2em; }
+.details-trailer-kind { display: inline-block; padding: 0 0.45rem; margin-right: 0.2rem; border-radius: 4px; background: var(--bg-tertiary); color: var(--text-overview); font-size: 0.9em; }
+.details-trailer-grid iframe { display: block; width: 100%; aspect-ratio: 16 / 9; border: 0; border-radius: 6px; }
+.details-scroll-marker { min-height: 1px; margin-top: 1rem; }
+
+/* The inline suffix takes part in the last visible line, rather than covering it. */
+.text-info .overview { max-height: 7em; } /* Five lines at line-height 1.4, including before initialization. */
+.text-info .overview.details-inline-overview { display: block; max-height: none; overflow: visible; -webkit-line-clamp: unset; line-clamp: unset; transition: none; }
+.text-info .overview.details-overview-truncated { min-height: 7em; }
+.text-info .overview-container > .read-more-btn { display: none; }
+.text-info .overview-more-tail { white-space: nowrap; }
+.text-info .overview-more-tail .read-more-btn {
+  position: static;
+  display: inline;
+  transform: none;
+  margin: -0.05em 0; /* Retain the pill's padding without making the last text line taller. */
+  padding: 0.05em 0.4em;
+  border: 0;
+  border-radius: 4px;
+  background: var(--bg-primary);
+  color: var(--text-overview);
+  font: inherit;
+  transition: none;
+  opacity: 1;
+  pointer-events: auto;
+}
+.text-info .overview-more-tail .read-more-btn:hover { background: var(--bg-primary); color: var(--text-overview); }
+@media (hover: hover) {
+  .text-info .overview-more-tail .read-more-btn { opacity: 0; pointer-events: none; }
+  .text-info .overview:hover .read-more-btn,
+  .text-info .overview:focus-within .read-more-btn { opacity: 1; pointer-events: auto; }
+}
+@media (max-width: 800px) {
+  .details-information-surface:has(.details-api-score) { grid-template-columns: 1fr; }
+  .details-api-score { max-width: 18rem; }
+  .details-track-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (orientation: portrait) {
+  .edit-favorite-wrapper.add-list-actions { width: calc(24rem - 0.5rem); }
+  .details-tab { font-size: 1.7rem; padding: 1.2rem; }
+  .details-preview > h2, .details-preview-header h2 { font-size: 3rem; }
+  .details-information-surface, .details-information-surface:has(.details-api-score) { grid-template-columns: 1fr; padding: 1.5rem; }
+  .details-information-list { gap: 1.4rem 1.6rem; }
+  .details-information-row dt { font-size: 1.4rem; }
+  .details-information-row dd { font-size: 1.7rem; }
+  .details-information-tag, .details-information-row dd a { font-size: 1.5rem; padding: 0.4rem 0.7rem; }
+  .details-api-score { max-width: 24rem; padding: 1.3rem 1.6rem; }
+  .details-api-score-provider { font-size: 2rem; }
+  .details-api-score-value { font-size: 2.4rem; }
+  .details-api-score-value small { font-size: 1.3rem; }
+  .details-api-score-meter { height: 0.6rem; }
+  .details-person-search-input { width: 30rem; height: 70px; max-width: calc(100% - 80px); font-size: 1.7rem; }
+  .details-track-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .details-track-list .details-section-card-title { font-size: 1.7rem; }
+  .details-track-list .details-section-card-subtitle { font-size: 1.4rem; }
+  .details-music-information-section h3 { font-size: 2rem; }
+  .details-trailer-grid, .details-trailer-grid.small { grid-template-columns: 1fr; }
+  .details-trailer-name { font-size: 1.6rem; }
+  .details-trailer-play svg { width: 4.5rem; height: 4.5rem; }
+  .details-empty { font-size: 1.7rem; }
+}
+

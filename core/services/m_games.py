@@ -9,6 +9,7 @@ from django.http import JsonResponse
 
 from core.models import APIKey, MediaItem
 from core.services.g_utils import apply_initial_item_status, download_image
+from core.services.g_relations import pack_relations
 
 IGDB_ACCESS_TOKEN = None
 IGDB_TOKEN_EXPIRY = 0
@@ -34,7 +35,7 @@ def save_igdb_item(igdb_id, *, http=None, prepare_only=False, initial_status='pl
       id, name, summary, storyline, 
       cover.url, genres.name, platforms.name, 
       involved_companies.company.name, involved_companies.developer,
-      first_release_date, screenshots.url, artworks.url;
+      first_release_date, screenshots.url, artworks.url, expansions.id, dlcs.id;
     where id = {igdb_id};
     """
 
@@ -149,7 +150,7 @@ def save_igdb_item(igdb_id, *, http=None, prepare_only=False, initial_status='pl
         release_date=release_date,
         cast=[],
         seasons=None,
-        related_titles=[],
+        related_titles=pack_relations([], bool(game.get('expansions') or game.get('dlcs'))),
         genres=genres,
         creators=creators,
     )
@@ -201,220 +202,6 @@ def get_igdb_token(*, http=None):
     IGDB_ACCESS_TOKEN = token_data["access_token"]
     IGDB_TOKEN_EXPIRY = time.time() + token_data["expires_in"] - 60
     return IGDB_ACCESS_TOKEN
-
-
-def get_game_extra_info(game_id):
-    token = get_igdb_token()
-    if not token:
-        raise ApiError('igdb', 'invalid_key')
-
-    try:
-        igdb_keys = APIKey.objects.get(name="igdb")
-    except APIKey.DoesNotExist:
-        raise ApiError('igdb', 'missing_key')
-
-    headers = {
-        "Client-ID": igdb_keys.key_1,
-        "Authorization": f"Bearer {token}",
-    }
-
-    # Request fields we want for extra info
-    body = f"""
-        fields
-            platforms.name,
-            genres.name,
-            involved_companies.company.name,
-            involved_companies.developer,
-            status,
-            first_release_date,
-            rating,
-            websites.url,
-            videos.video_id,
-            videos.name,
-            expansions.id,
-            expansions.name,
-            expansions.cover.url,
-            dlcs.id,
-            dlcs.name,
-            dlcs.cover.url,
-            similar_games.name,
-            similar_games.cover.url;
-        where id = {game_id};
-    """
-
-    try:
-        response = ApiClient('igdb').post(
-            "https://api.igdb.com/v4/games", headers=headers, data=body
-        )
-        if response.status_code == 429:
-            raise Exception("HTTP 429 Too Many Requests: Rate Limit Exceeded")
-        elif response.status_code != 200:
-            return {}
-
-        data = response.json()
-        if not data:
-            return {}
-
-        game = data[0]
-
-        # Process videos: trailers first, then others, limit to 3
-        trailers = []
-        if game.get("videos"):
-            trailer_videos = []
-            other_videos = []
-            for v in game["videos"]:
-                if not v.get("video_id"):
-                    continue
-                name_lower = v.get("name", "").lower()
-                if "trailer" in name_lower:
-                    trailer_videos.append(v)
-                else:
-                    other_videos.append(v)
-
-            combined = trailer_videos + other_videos
-            trailers = [
-                {
-                    "name": v.get("name"),
-                    "youtube_id": v.get("video_id"),
-                    "url": f"https://www.youtube.com/watch?v={v['video_id']}",
-                }
-                for v in combined[:3]
-            ]
-
-        # Process expansions
-        expansions = []
-        if game.get("expansions"):
-            for exp in game["expansions"]:
-                if exp.get("cover") and exp["cover"].get("url"):
-                    raw_url = exp["cover"]["url"].replace("t_thumb", "t_cover_big")
-                    cover_url = raw_url if raw_url.startswith("https:") else "https:" + raw_url
-                    expansions.append(
-                        {
-                            "id": exp.get("id"),
-                            "name": exp.get("name"),
-                            "cover": cover_url,
-                        }
-                    )
-
-        # Process DLCs
-        dlcs = []
-        if game.get("dlcs"):
-            for dlc in game["dlcs"]:
-                if dlc.get("cover") and dlc["cover"].get("url"):
-                    raw_url = dlc["cover"]["url"].replace("t_thumb", "t_cover_big")
-                    cover_url = raw_url if raw_url.startswith("https:") else "https:" + raw_url
-                    dlcs.append(
-                        {
-                            "id": dlc.get("id"),
-                            "name": dlc.get("name"),
-                            "cover": cover_url,
-                        }
-                    )
-
-        # Process time to beat - separate query filtering by game_id
-        time_to_beat = {}
-        ttb_body = f"fields hastily, normally, completely; where game_id = {game_id};"
-        try:
-            ttb_response = ApiClient('igdb').post(
-                "https://api.igdb.com/v4/game_time_to_beats", headers=headers, data=ttb_body
-            )
-            if ttb_response.status_code == 200:
-                ttb_data = ttb_response.json()
-                if ttb_data:
-                    ttb = ttb_data[0]
-                    hastily = round(ttb["hastily"] / 3600) if ttb.get("hastily") else None
-                    normally = round(ttb["normally"] / 3600) if ttb.get("normally") else None
-                    completely = round(ttb["completely"] / 3600) if ttb.get("completely") else None
-                    
-                    if hastily and hastily < 1000:
-                        time_to_beat["main_story"] = hastily
-                    if normally and normally < 1000:
-                        time_to_beat["main_extras"] = normally
-                    if completely and completely < 1000:
-                        time_to_beat["completionist"] = completely
-        except ApiError:
-            raise
-        except Exception:
-            pass
-
-        # Process similar games from main query
-        recommendations = []
-        if game.get("similar_games"):
-            for similar in game["similar_games"][:16]:
-                cover_url = None
-                if similar.get("cover") and similar["cover"].get("url"):
-                    raw_url = similar["cover"]["url"].replace("t_thumb", "t_cover_big")
-                    cover_url = raw_url if raw_url.startswith("https:") else "https:" + raw_url
-                recommendations.append(
-                    {
-                        "id": similar.get("id"),
-                        "title": similar.get("name"),
-                        "poster_path": cover_url,
-                    }
-                )
-
-        STATUS_MAP = {
-            0: "Released",
-            2: "Alpha",
-            3: "Beta",
-            4: "Early Access",
-            5: "Offline",
-            6: "Cancelled",
-            7: "Rumored",
-            8: "Delisted"
-        }
-
-        raw_status = game.get("status")
-
-        # If IGDB gives us a specific status (like Early Access or Cancelled), use it.
-        if raw_status is not None:
-            mapped_status = STATUS_MAP.get(raw_status)
-        else:
-            # If status is blank, we check the release date against the current time
-            release_date = game.get("first_release_date")
-            current_time = int(time.time())
-            
-            if release_date is None or release_date > current_time:
-                mapped_status = "In development"
-            else:
-                mapped_status = "Released"
-
-        result = {
-            "status": mapped_status,
-            "platforms": [p.get("name") for p in game.get("platforms", [])]
-            if game.get("platforms")
-            else [],
-            "genres": [g.get("name") for g in game.get("genres", [])]
-            if game.get("genres")
-            else [],
-            "involved_companies": [
-                c.get("company", {}).get("name")
-                for c in game.get("involved_companies", [])
-                if c.get("company") and c.get("developer")
-            ]
-            if game.get("involved_companies")
-            else [],
-            "rating": round(game["rating"] / 10, 1)
-            if game.get("rating") is not None
-            else None,
-            "websites": [
-                w.get("url")
-                for w in game.get("websites", [])
-                # Add a filter condition inside the comprehension
-                if w.get("url") and w.get("url").startswith(('http://', 'https://', '/'))
-            ],
-            "trailers": trailers,
-            "recommendations": recommendations,
-            "expansions": expansions,
-            "dlcs": dlcs,
-            "time_to_beat": time_to_beat,
-        }
-        return result
-
-    except ApiError:
-        raise
-    except Exception as error:
-        raise ApiError('igdb') from error
 
 
 def get_igdb_discover(

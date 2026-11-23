@@ -1,0 +1,78 @@
+/* Season links share the tab strip; their menu sits outside its scroll area. */
+.details-tabs a.details-tab { display: flex; align-items: center; text-decoration: none; }
+.details-season-trigger { gap: 0.55rem; }
+.details-season-arrow {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  border-left: 0.3rem solid transparent;
+  border-right: 0.3rem solid transparent;
+  border-top: 0.35rem solid currentColor;
+  transition: transform 0.18s ease;
+}
+.details-season-arrow[hidden] { display: none; }
+.details-season-trigger[aria-expanded="true"] .details-season-arrow { transform: rotate(180deg); }
+.details-season-menu {
+  position: fixed;
+  z-index: 600;
+  box-sizing: border-box;
+  min-width: 11rem;
+  max-width: calc(100vw - 1rem);
+  padding: 0.35rem;
+  border-radius: 6px;
+  background: var(--bg-primary);
+  box-shadow: 0 5px 16px rgb(0 0 0 / 28%);
+}
+.details-season-menu[hidden] { display: none; }
+.details-season-menu a {
+  display: block;
+  padding: 0.6rem 0.85rem;
+  border-radius: 4px;
+  color: var(--text-overview);
+  text-decoration: none;
+  font-size: 0.95rem;
+  white-space: nowrap;
+}
+.details-season-menu a:hover, .details-season-menu a:focus-visible { background: var(--hover-bg); color: var(--text-title); }
+
+.episodes-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 12px; }
+.episodes-header h2 { margin: 0; }
+.episode-compact-caption { display: none; }
+.episode-image-container:focus-visible { outline: 2px solid var(--text-title); outline-offset: 3px; }
+
+/* Seven covers at the normal page width, close to the original 160 × 90 preview. */
+.episodes-list.small { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); align-items: start; }
+.episodes-list.small .episode-card { display: block; min-width: 0; padding: 0; overflow: hidden; background: transparent; }
+.episodes-list.small .episode-info, .episodes-list.small .expand-overlay { display: none; }
+.episodes-list.small .episode-image-container { width: 100%; height: auto; aspect-ratio: 16 / 9; overflow: hidden; border-radius: 6px; }
+.episodes-list.small .episode-image { display: block; width: 100%; height: 100%; border-radius: 0; border-bottom: 1px solid transparent; box-sizing: border-box; }
+.episodes-list.small .episode-compact-caption {
+  display: block;
+  position: absolute;
+  inset: auto 0 0;
+  padding: 0.3rem 0.4rem;
+  background: rgb(0 0 0 / 78%);
+  color: #f2f2f2;
+  pointer-events: none;
+  text-align: center;
+}
+.episode-compact-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.2;
+}
+.episode-compact-date { margin: 0.2rem 0 0; font-size: 0.7rem; line-height: 1.2; }
+@media (orientation: portrait) {
+  .details-season-menu { min-width: 16rem; padding: 0.5rem; }
+  .details-season-menu a { padding: 1rem 1.2rem; font-size: 1.7rem; }
+  .details-season-arrow { border-left-width: 0.45rem; border-right-width: 0.45rem; border-top-width: 0.5rem; }
+  .episodes-list.small { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+  .episodes-list.small .episode-compact-caption { padding: 0.5rem 0.6rem; }
+  .episode-compact-title { font-size: 1.5rem; }
+  .episode-compact-date { font-size: 1.3rem; }
+}

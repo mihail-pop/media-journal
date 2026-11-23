@@ -393,7 +393,7 @@ def has_sequel(item):
     """Check if item.related_titles includes a sequel"""
     if not item.related_titles:
         return False
-    for rel in item.related_titles:
+    for rel in item.related_entries:
         if rel.get("relation", "").lower() == "sequel":
             return True
     return False

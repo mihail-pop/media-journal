@@ -18,6 +18,7 @@ from core.services.m_people import (
     resolve_person_identity,
     actor_search,
     character_search,
+    anilist_staff_search,
     save_favorite_actor_character,
     delete_favorite_person_and_reorder,
 )
@@ -39,9 +40,27 @@ def actor_search_view(request):
     return JsonResponse(results, safe=False)
 
 
+@ensure_csrf_cookie
+@require_GET
+@api_errors('anilist')
+def anilist_staff_search_view(request):
+    query = request.GET.get('q', '').strip()
+    return JsonResponse(anilist_staff_search(query) if query else [], safe=False)
+
+
 def check_favorite_person_view(request):
     name = request.GET.get("name")
     person_type = request.GET.get("type")
+
+    if 'ids' in request.GET:
+        identities = request.GET['ids'].split(',')
+        if not person_type or not identities or len(identities) > 500 or any(not value.isascii() or not value.isdecimal() for value in identities):
+            return JsonResponse({'error': 'Invalid person IDs.'}, status=400)
+        try:
+            matches = favorite_person_queryset(person_type, source=request.GET.get('source'), person_ids=identities)
+            return JsonResponse({'favorites': list(matches.values_list('person_id', flat=True))})
+        except ValueError as error:
+            return JsonResponse({'error': str(error)}, status=400)
 
     if not name or not person_type:
         return JsonResponse({"error": "Missing parameters"}, status=400)

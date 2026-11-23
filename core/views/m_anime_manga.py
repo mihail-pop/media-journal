@@ -120,6 +120,7 @@ def anilist_detail(request, source, media_type, source_id):
     title = ""
     in_my_list = False
     recommendations = []
+    details_bundle = None
 
     # 1. Try to find the item in the DB by the ID provided in the URL
     lookup_key = f"provider_ids__{source}"
@@ -161,7 +162,7 @@ def anilist_detail(request, source, media_type, source_id):
             })
 
         # Process Prequels/Sequels
-        for related in item.related_titles or []:
+        for related in item.related_entries:
             # Use the fallback logic: AniList ID preference, then MAL ID
             r_id = related.get("anilist_id") or related.get("mal_id")
             r_source = "anilist" if related.get("anilist_id") else "mal"
@@ -188,9 +189,9 @@ def anilist_detail(request, source, media_type, source_id):
         try:
             # Fetch from API using the provided source
             if source == "anilist":
-                api_data = fetch_anilist_data(media_type, anilist_id=source_id)
+                api_data = fetch_anilist_data(media_type, anilist_id=source_id, include_sections=True)
             else:
-                api_data = fetch_anilist_data(media_type, mal_id=source_id)
+                api_data = fetch_anilist_data(media_type, mal_id=source_id, include_sections=True)
             
             # Healing check: 
             alt_anilist = api_data.get("anilist_id")
@@ -239,8 +240,9 @@ def anilist_detail(request, source, media_type, source_id):
             except ValueError:
                 formatted_release_date = release_date
 
-        cast = api_data["cast"]
-        recommendations = api_data.get("recommendations", [])
+        cast = api_data["cast"][:8]
+        recommendations = api_data.get("recommendations", [])[:16]
+        details_bundle = api_data.get('details_bundle')
 
         # Process related titles from API
         for r in api_data["related_titles"]:
@@ -284,6 +286,7 @@ def anilist_detail(request, source, media_type, source_id):
         "page_type": media_type,
         "theme_mode": theme_mode,
         "details_sections_order": details_sections_order,
+        "details_bundle": details_bundle,
     }
 
     return render(request, "core/p_media_details.html", context)

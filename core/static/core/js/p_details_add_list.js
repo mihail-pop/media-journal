@@ -1,10 +1,7 @@
 // Shared add button and initial-status menu for media and TV-season details.
 document.addEventListener('DOMContentLoaded', () => {
   try {
-    if (sessionStorage.getItem('openEditModal')) {
-      sessionStorage.removeItem('openEditModal');
-      document.getElementById('edit-button')?.click();
-    }
+    sessionStorage.removeItem('openEditModal');
   } catch (error) { /* Adding still works without browser storage. */ }
 
   const control = document.querySelector('.add-list-control');
@@ -93,7 +90,6 @@ document.addEventListener('DOMContentLoaded', () => {
         throw new Error(result.error || 'Failed to add item.');
       }
       try {
-        if (status === 'planned') sessionStorage.setItem('openEditModal', 'true');
         sessionStorage.setItem('refreshSuccess', '1');
       } catch (error) { /* The item is saved even if storage is unavailable. */ }
       location.reload();

@@ -425,6 +425,7 @@ def get_music_extra_info(recording_id, artist_id=None, album_id=None):
 
     album_tracks = []
     artist_singles = []
+    album_title = (cast_data.get('album') or {}).get('title') or ''
 
     # Fetch album tracks
     if album_id:
@@ -440,6 +441,7 @@ def get_music_extra_info(recording_id, artist_id=None, album_id=None):
             print(f"[MUSIC] Album status: {album_response.status_code}")
             if album_response.status_code == 200:
                 album_data = album_response.json()
+                album_title = album_data.get('title') or album_title
                 for medium in album_data.get("media", []):
                     for track in medium.get("tracks", []):
                         recording = track.get("recording", {})
@@ -508,7 +510,7 @@ def get_music_extra_info(recording_id, artist_id=None, album_id=None):
     print(
         f"[MUSIC] Returning tracks={len(album_tracks)}, singles={len(artist_singles)}"
     )
-    return {"album_tracks": album_tracks, "artist_singles": artist_singles}
+    return {"album_tracks": album_tracks, "artist_singles": artist_singles, "album_title": album_title}
 
 def get_musicbrainz_discover(page=1, query="", sort="trending", genre="", year=""):
     import requests

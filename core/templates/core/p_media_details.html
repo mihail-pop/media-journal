@@ -1,17 +1,20 @@
 {% extends "core/g_base.html" %}
 {% load static %}
 {% load custom_filters %}
+{% load details_tags %}
 
-{% block head %}
-  {{ block.super }}
+{% block page_head %}
   <title>{{ title }} - Media Journal</title>
   <link rel="stylesheet" href="{% static 'core/css/p_details.css' %}" />
+  <link rel="stylesheet" href="{% static 'core/css/p_details_tabs.css' %}" />
   <link rel="stylesheet" href="{% static 'core/css/g_edit_modal.css' %}" />
   <link rel="stylesheet" href="{% static 'core/css/g_metadata_modal.css' %}" />
+  <script src="{% static 'core/js/p_details_overview.js' %}"></script>
 {% endblock %}
 
 {% block content %}
-<body data-media-type="{{ media_type }}"></body>
+{% details_tabs_state as details_state %}
+{{ details_state|json_script:"details-tabs-state" }}
 <script>
   document.body.dataset.theme = '{{ theme_mode }}';
   document.body.dataset.mediaType = '{{ media_type }}';
@@ -84,20 +87,30 @@
 <div class="right-column">
   <div class="text-info">
     <h1>{{ title }}</h1>
+    {% if media_type != 'music' or not details_state.music_generated_overview %}
     <div class="overview-container">
       <p class="overview">{% if media_type == 'anime' or media_type == 'manga' %}{{ overview|safe_html:True }}{% else %}{{ overview|safe_html }}{% endif %}</p>
-      <button class="read-more-btn">Read More</button>
+      <button type="button" class="read-more-btn">show more</button>
     </div>
-    <p class="release-date">{{ release_date }}</p>
-
-    <!-- More info button -->
-    {% if media_type != "book" and 'custom_' not in source_id %}
-    <button id="more-info-btn" class="more-info-btn">More information</button>
+    <script>window.initializeDetailsOverview?.(document.currentScript.previousElementSibling);</script>
     {% endif %}
-    <!-- Container for extra info -->
-    <div id="extra-info-container" style="margin-top:0.5em;"></div>
+    {% if media_type == 'music' %}
+    <div id="music-header-information" class="details-music-facts">{% include 'core/g_details_information.html' with information=details_state.header_information %}</div>
+    {% else %}
+    <p class="release-date">{{ release_date }}</p>
+    {% endif %}
+
   </div>
-</div>
+  <div class="details-tabs-shell">
+  <nav class="details-tabs" role="tablist" aria-label="Item sections">
+    {% for tab in details_state.tabs %}
+    <button type="button" class="details-tab{% if tab.id == 'overview' %} is-active{% endif %}"
+            id="details-tab-{{ tab.id }}" role="tab" data-tab="{{ tab.id }}"
+            aria-selected="{% if tab.id == 'overview' %}true{% else %}false{% endif %}"
+            aria-controls="details-panel-{{ tab.id }}" tabindex="{% if tab.id == 'overview' %}0{% else %}-1{% endif %}">{{ tab.label }}</button>
+    {% endfor %}
+  </nav>
+  </div>
   </div>
  </div>
 </div>
@@ -110,13 +123,40 @@
 <div class="main-colored-section">
   <div class="detail-container">
     {{ screenshots|json_script:"screenshots-data" }}
+    <div id="details-panel-overview" class="details-panel" role="tabpanel" aria-labelledby="details-tab-overview">
 
-    {% for section in details_sections_order %}
+    {% for section in details_state.overview_order %}
       {% if section.visible %}
 
         <!-- TRAILERS -->
         {% if section.id == 'trailers' %}
-          <div id="trailer-container" class="trailer-grid"></div>
+          {% if not in_my_list and details_state.seed.trailers %}
+            {% include 'core/g_details_trailer_preview.html' with videos=details_state.seed.trailers %}
+          {% endif %}
+        {% endif %}
+        {% if section.id == 'information' and details_state.show_overview_information %}
+          <section id="overview-information" class="details-preview">
+            <h2>Information</h2>
+            <div>{% include 'core/g_details_information.html' with information=details_state.preview_information %}</div>
+          </section>
+        {% endif %}
+        {% if section.id == 'movie_relations' %}
+          {% if details_state.movie_relations or details_state.movie_relations_error %}
+          <section class="recommendations-section movie-relations-section">
+            <h2>Relations</h2>
+            {% if details_state.movie_relations_error %}<div id="movie-relations-api-error"></div>{% endif %}
+            <div class="recommendations-list">
+              {% for relation in details_state.movie_relations %}
+              <a href="/tmdb/movie/{{ relation.id }}/" class="rec-card" title="{{ relation.title }}">
+                <img src="{{ relation.image|default:'/static/core/img/placeholder.png' }}" alt="{{ relation.title }}"
+                     loading="lazy" data-placeholder="{% static 'core/img/placeholder.png' %}"
+                     onerror="this.onerror=null;this.src=this.dataset.placeholder;">
+                <div class="card-title-overlay"><p class="rec-title">{{ relation.title }}</p></div>
+              </a>
+              {% endfor %}
+            </div>
+          </section>
+          {% endif %}
         {% endif %}
 
         <!-- PREQUELS & SEQUELS -->
@@ -416,8 +456,8 @@
 
         <!-- CAST & CREW -->
         {% if section.id == 'cast' %}
-          {% if cast %}
-          <section class="cast-section">
+          {% if cast and media_type != 'book' %}
+          <section class="cast-section" data-details-preview="cast">
             <div class="cast-header">
               {% if media_type == "tv" or media_type == "movie" %}
               <h2>Cast</h2>
@@ -429,33 +469,7 @@
               <h2>Cast</h2>
               {% endif %}
               
-              <div class="cast-controls">
-                <div class="search-container">
-                  <button id="search-toggle-btn" class="search-toggle">
-                    <svg class="cast-search-icon" width="24" height="24" viewBox="0 0 512 512" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M505 442.7L405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128
-                               C416 93.1 322.9 0 208 0S0 93.1 0 208s93.1 208 208 208c48.3 0 92.7-16.4 128-44v16.3
-                               c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9 0l28.3-28.3
-                               c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7 0-128-57.2-128-128
-                               0-70.7 57.2-128 128-128 70.7 0 128 57.2 128 128
-                               0 70.7-57.2 128-128 128z"></path>
-                    </svg>
-                  </button>
-                  <input type="text" id="person-search-input" placeholder="Search.." autocomplete="off" class="search-input hidden">
-                </div>
-                
-                {% if cast|length >= 8 %}
-                <button id="load-more-cast" class="load-more-btn" 
-                        data-source="{{ source }}" 
-                        data-source-id="{{ source_id }}" 
-                        data-media-type="{{ media_type }}" 
-                        data-page="1">Load More</button>
-                {% endif %}
-              </div>
             </div>
-
-            <!-- Search results above the cast list -->
-            <div id="person-search-results" class="search-results"></div>
 
             <div class="cast-list">
               {% for member in cast %}
@@ -561,7 +575,7 @@
 <!-- RECOMMENDATIONS -->
         {% if section.id == 'recommendations' %}
           {% if recommendations %}
-          <section class="recommendations-section">
+          <section class="recommendations-section" data-details-preview="recommendations">
             <h2>Recommendations</h2>
             <div class="recommendations-list">
               {% for rec in recommendations %}
@@ -584,7 +598,7 @@
                 
                 {% if rec.poster_path %}
           <img
-            src="{% if media_type == 'game' or media_type == 'anime' or media_type == 'manga' %}
+            src="{% if media_type == 'game' or media_type == 'anime' or media_type == 'manga' or media_type == 'book' %}
                   {{ rec.poster_path }}
                  {% else %}
                   https://image.tmdb.org/t/p/w185{{ rec.poster_path }}
@@ -615,7 +629,28 @@
 
       {% endif %}
     {% endfor %}
-
+    </div>
+    {% for tab in details_state.tabs %}
+      {% if tab.id != 'overview' %}
+      <section id="details-panel-{{ tab.id }}" class="details-panel details-remote-panel" role="tabpanel"
+               aria-labelledby="details-tab-{{ tab.id }}" hidden>
+        {% if tab.id == 'cast' or tab.id == 'staff' %}
+        <div class="details-panel-tools">
+          <form class="details-person-search" role="search" data-section="{{ tab.id }}">
+            <input type="text" class="details-person-search-input" placeholder="Search.." aria-label="Search {% if tab.id == 'cast' and media_type == 'anime' or tab.id == 'cast' and media_type == 'manga' %}characters{% else %}people{% endif %}" autocomplete="off" hidden>
+            <button type="button" class="music-control-btn details-search-toggle" aria-label="Search {% if tab.id == 'cast' and media_type == 'anime' or tab.id == 'cast' and media_type == 'manga' %}characters{% else %}people{% endif %}" aria-expanded="false">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"></circle><path d="m16 16 4.5 4.5" stroke-linecap="round"></path></svg>
+            </button>
+          </form>
+        </div>
+        <div class="details-person-search-results" hidden></div>
+        {% elif tab.id == 'trailers' %}
+        <div class="details-panel-tools details-trailer-controls"></div>
+        {% endif %}
+        <div class="details-panel-content"></div>
+      </section>
+      {% endif %}
+    {% endfor %}
   </div>
 </div>
 {% endblock %}
@@ -623,6 +658,7 @@
 {% block script %}
   {{ block.super }}
   <script src="{% static 'core/js/p_media_details.js' %}"></script>
+  <script src="{% static 'core/js/p_details_tabs.js' %}"></script>
   {% if in_my_list %}<script src="{% static 'core/js/p_details_journal.js' %}"></script>{% endif %}
   <script src="{% static 'core/js/g_edit_modal.js' %}"></script>
   <script src="{% static 'core/js/g_metadata_modal.js' %}"></script>

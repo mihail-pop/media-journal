@@ -691,7 +691,7 @@ def delete_item(request, item_id):
                         os.path.join(media_root, p.replace("/media/", ""))
                     )
 
-        for related in item.related_titles or []:
+        for related in item.related_entries:
             p = related.get("poster_path", "")
             if p.startswith("/media/"):
                 paths_to_check.append(

@@ -27,7 +27,7 @@ def resolve_person_identity(person_type, person_id=None, source=None):
     return person_type, source
 
 
-def favorite_person_queryset(person_type, person_id=None, source=None, name=None):
+def favorite_person_queryset(person_type, person_id=None, source=None, name=None, *, person_ids=None):
     from django.db.models import Q
     person_type, source = resolve_person_identity(person_type, person_id, source)
     query = FavoritePerson.objects.filter(type=person_type)
@@ -39,6 +39,8 @@ def favorite_person_queryset(person_type, person_id=None, source=None, name=None
         query = query.filter(Q(source=source) | Q(source='')).exclude(person_id__startswith='custom_')
     else:
         query = query.filter(source=source)
+    if person_ids is not None:
+        return query.filter(person_id__in=[str(identity) for identity in person_ids])
     if person_id:
         return query.filter(person_id=str(person_id))
     return query.filter(name=name) if name else query.none()
@@ -116,6 +118,20 @@ def character_search(query):
         return results
     else:
         return []
+
+
+def anilist_staff_search(query):
+    payload = ApiClient('anilist').post('https://graphql.anilist.co', json={
+        'query': '''query ($search: String) {
+            Page(perPage: 10) { staff(search: $search) { id name { full } image { large } } }
+        }''',
+        'variables': {'search': query},
+    }).json()
+    people = (payload.get('data') or {}).get('Page') or {}
+    require_api_data(isinstance(people.get('staff'), list), 'anilist')
+    return [{'id': person['id'], 'name': (person.get('name') or {}).get('full') or '',
+             'image': (person.get('image') or {}).get('large')}
+            for person in people['staff'] if isinstance(person, dict) and person.get('id')]
 
 
 def calculate_age(birth_date, death_date=None):
