@@ -15,6 +15,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const activityMonthInput = document.getElementById('activity-month');
   const activityYearInput = document.getElementById('activity-year');
   const activityDateInputs = [activityDayInput, activityMonthInput, activityYearInput].filter(Boolean);
+  const activityMonthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'];
+  let monthTypedPrefix = '';
+  let monthTypingTime = 0;
+  let monthSelectedIndex = -1;
   const rewindButton = document.getElementById('activity-rewind');
   
   // Slider Controls
@@ -454,9 +459,55 @@ document.addEventListener("DOMContentLoaded", () => {
     return resolved;
   }
 
+  function activityMonthValue(value) {
+    const text = value.trim();
+    if (!text || /^\d+$/.test(text)) return text;
+    const index = activityMonthNames.findIndex(name => name.toLowerCase().startsWith(text.toLowerCase()));
+    return index < 0 ? text : String(index + 1);
+  }
+
+  function selectActivityMonth(letter) {
+    const key = letter.toLowerCase();
+    const now = Date.now();
+    let prefix = now - monthTypingTime < 1000 && monthTypedPrefix && monthTypedPrefix !== key
+      ? monthTypedPrefix + key : key;
+    const matchesFor = query => activityMonthNames.map((name, index) => ({ name, index }))
+      .filter(month => month.name.toLowerCase().startsWith(query));
+    let matches = matchesFor(prefix);
+    if (!matches.length) { prefix = key; matches = matchesFor(prefix); }
+    if (!matches.length) return;
+    const position = prefix === key && monthTypedPrefix === key
+      ? (matches.findIndex(month => month.index === monthSelectedIndex) + 1) % matches.length : 0;
+    activityMonthInput.value = matches[position].name.slice(0, 3);
+    activityMonthInput.select();
+    monthTypedPrefix = prefix;
+    monthTypingTime = now;
+    monthSelectedIndex = matches[position].index;
+  }
+
+  function normalizeActivityDateInput(input, commit = false) {
+    if (input === activityMonthInput && /^[a-z]+$/i.test(input.value.trim())) {
+      const month = Number(activityMonthValue(input.value));
+      if (month >= 1 && month <= 12) input.value = activityMonthNames[month - 1].slice(0, 3);
+      return;
+    }
+    const digits = input.value.replace(/\D/g, '');
+    if (input === activityYearInput) {
+      input.value = digits.slice(0, 4);
+      return;
+    }
+    const maximum = input === activityMonthInput ? 12 : 31;
+    let value = digits.slice(0, 2);
+    if (digits && (Number(digits) > maximum || digits.length > 2)) value = String(Math.min(maximum, Number(digits)));
+    // Keep a leading zero while typing so dates such as 04 remain easy to enter.
+    if (commit && value && Number(value) === 0) value = '1';
+    input.value = value;
+    if (input === activityMonthInput) monthTypedPrefix = '';
+  }
+
   function readActivityDateInputs(showErrors = false) {
     const raw = {
-      year: activityYearInput?.value || '', month: activityMonthInput?.value || '', day: activityDayInput?.value || '',
+      year: activityYearInput?.value || '', month: activityMonthValue(activityMonthInput?.value || ''), day: activityDayInput?.value || '',
     };
     const valid = resolveActivityDate(raw) !== null;
     const incomplete = (raw.year && raw.year.length < 4) || raw.month === '0' || raw.day === '0';
@@ -547,24 +598,45 @@ document.addEventListener("DOMContentLoaded", () => {
     advanceRewind(generation);
   });
 
+  function activityDateInputChanged(input) {
+    normalizeActivityDateInput(input);
+    stopRewind();
+    cancelHistoryRequest();
+    clearTimeout(activityDateTimeout);
+    const raw = readActivityDateInputs();
+    if (!raw) return;
+    activityDateTimeout = setTimeout(() => {
+      applyActivityDate(raw);
+      resetAndLoad();
+    }, 250);
+  }
+
   activityDateInputs.forEach(input => {
-    input.addEventListener('input', () => {
-      stopRewind();
-      cancelHistoryRequest();
-      input.value = input.value.replace(/\D/g, '').slice(0, input.maxLength);
-      clearTimeout(activityDateTimeout);
-      const raw = readActivityDateInputs();
-      if (!raw) return;
-      activityDateTimeout = setTimeout(() => {
-        applyActivityDate(raw);
-        resetAndLoad();
-      }, 250);
+    input.addEventListener('input', event => {
+      if (event.isComposing) return;
+      // Soft keyboards may insert letters without a usable keydown event.
+      if (input === activityMonthInput && /^[a-z]$/i.test(event.data || '')) selectActivityMonth(event.data);
+      activityDateInputChanged(input);
     });
-    input.addEventListener('blur', () => readActivityDateInputs(true));
+    input.addEventListener('blur', () => {
+      const previous = input.value;
+      normalizeActivityDateInput(input, true);
+      if (input === activityMonthInput) monthTypedPrefix = '';
+      if (input.value !== previous) activityDateInputChanged(input);
+      readActivityDateInputs(true);
+    });
     input.addEventListener('keydown', event => {
+      if (input === activityMonthInput && /^[a-z]$/i.test(event.key) &&
+          !event.ctrlKey && !event.metaKey && !event.altKey && !event.isComposing) {
+        event.preventDefault();
+        selectActivityMonth(event.key);
+        activityDateInputChanged(input);
+        return;
+      }
       if (event.key !== 'Enter') return;
       event.preventDefault();
       clearTimeout(activityDateTimeout);
+      activityDateInputs.forEach(field => normalizeActivityDateInput(field, true));
       const raw = readActivityDateInputs(true);
       if (!raw) return;
       applyActivityDate(raw);

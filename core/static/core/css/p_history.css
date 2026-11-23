@@ -413,7 +413,7 @@ html {
 
 .activity-date-inputs {
   display: grid;
-  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr) minmax(0, 1.3fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.4rem;
 }
 
@@ -422,8 +422,8 @@ html {
   width: 100%;
   padding: 0.4rem 0.2rem;
   font-size: 0.9rem;
-  color: var(--text-primary);
-  background-color: var(--bg-filter);
+  color: var(--text-tertiary);
+  background-color: var(--table-bg);
   border: none;
   border-radius: 6px;
   box-sizing: border-box;
@@ -437,13 +437,8 @@ html {
   background-color: var(--bg-quaternary);
 }
 
-.activity-date-inputs input[aria-invalid="true"] {
-  outline: 1px solid #d86464;
-  outline-offset: -1px;
-}
-
 .activity-date-inputs input::placeholder {
-  color: var(--text-primary);
+  color: var(--text-tertiary);
   opacity: 1;
 }
 
