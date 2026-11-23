@@ -1205,7 +1205,7 @@
 <li>Run:
     <div class="highlight"><pre><span></span><code>tailscale<span class="w"> </span>serve<span class="w"> </span>--bg<span class="w"> </span>http://127.0.0.1:8000
 </code></pre></div>
-    For the default Docker setup, use <code>http://127.0.0.1:8090</code> instead, since that is the port exposed on the host. If Tailscale asks you to enable HTTPS, follow the link it provides.</li>
+    For the default Docker setup, use <code>http://127.0.0.1:8090</code> instead, since that is the port exposed on the host. For the Windows installer, use the port selected during Setup. If Tailscale asks you to enable HTTPS, follow the link it provides.</li>
 <li>Copy the HTTPS address shown by the command. It will look like <code>https://your-device.your-tailnet.ts.net/</code>. Add that origin to <code>CSRF_TRUSTED_ORIGINS</code> using the instructions below, then restart Media Journal.</li>
 <li>Open that HTTPS address on your phone while connected to Tailscale. You can then <a href="../../app-guide/how-to-use/#28-add-to-your-home-screen">add Media Journal to your home screen</a>.</li>
 </ol>
@@ -1239,6 +1239,8 @@ docker-compose<span class="w"> </span>up<span class="w"> </span>-d
 </code></pre></div></p>
 </div>
 <div class="tabbed-block">
+<p><strong>If using the Windows Installer:</strong></p>
+<p>Open <code>config.json</code> in your installation folder and set <code>csrf_trusted_origins</code> to your HTTPS origin, such as <code>https://your-domain.com</code>. Keep the other settings in the file. Use Stop Media Journal in the Start menu, then open Media Journal again to apply the change.</p>
 <p><strong>If using the <code>.bat</code> file (Recommended):</strong><br />
 Open your <code>run_journal.bat</code> file in a text editor and add the variable right before the runserver command:
 <div class="highlight"><pre><span></span><code><span class="k">set</span> <span class="nv">CSRF_TRUSTED_ORIGINS</span><span class="p">=</span>https://your-domain.com

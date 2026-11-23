@@ -1151,6 +1151,18 @@
 <em>It will prompt you to create a username, email (optional) and password. Note that as you type your password nothing will show on the screen for security reasons.</em></p>
 </div>
 <div class="tabbed-block">
+<p><strong>If using the Windows Installer:</strong></p>
+<p>Open PowerShell in your installation folder (by default <code>%USERPROFILE%\MediaJournal</code>) and run:
+<div class="highlight"><pre><span></span><code><span class="nv">$journalRoot</span> <span class="p">=</span> <span class="p">(</span><span class="nb">Get-Location</span><span class="p">).</span><span class="n">Path</span>
+<span class="nv">$journalState</span> <span class="p">=</span> <span class="nb">Get-Content</span> <span class="p">.\</span><span class="nb">install-state</span><span class="p">.</span><span class="n">json</span> <span class="n">-Raw</span> <span class="p">|</span> <span class="nb">ConvertFrom-Json</span>
+<span class="nv">$journalRelease</span> <span class="p">=</span> <span class="nb">Join-Path</span> <span class="nv">$journalRoot</span> <span class="p">(</span><span class="s2">&quot;releases\&quot;</span> <span class="p">+</span> <span class="nv">$journalState</span><span class="p">.</span><span class="n">active_release</span><span class="p">)</span>
+<span class="nv">$env:DJANGO_SETTINGS_MODULE</span> <span class="p">=</span> <span class="s2">&quot;installed_settings&quot;</span>
+<span class="nv">$env:MEDIA_JOURNAL_INSTALL_ROOT</span> <span class="p">=</span> <span class="nv">$journalRoot</span>
+<span class="nv">$env:PYTHONPATH</span> <span class="p">=</span> <span class="s2">&quot;$journalRoot\support;$journalRelease\application&quot;</span>
+<span class="p">&amp;</span> <span class="s2">&quot;$journalRelease\env\Scripts\python.exe&quot;</span> <span class="s2">&quot;$journalRelease\application\manage.py&quot;</span> <span class="n">createsuperuser</span>
+</code></pre></div>
+This uses the installed app's private Python and library. Close this PowerShell window when you finish.</p>
+<p><strong>For a manual installation:</strong></p>
 <p>Open a terminal inside your <code>media-journal</code> folder and run:
 <div class="highlight"><pre><span></span><code>python<span class="w"> </span>manage.py<span class="w"> </span>createsuperuser
 </code></pre></div>
@@ -1188,6 +1200,8 @@ docker-compose<span class="w"> </span>up<span class="w"> </span>-d
 </code></pre></div></p>
 </div>
 <div class="tabbed-block">
+<p><strong>If using the Windows Installer:</strong></p>
+<p>Open <code>config.json</code> in your installation folder and change <code>require_login</code> to <code>true</code>. Keep the other settings in the file. Use Stop Media Journal in the Start menu, then open Media Journal again to apply the change.</p>
 <p><strong>If using the <code>.bat</code> file (Recommended):</strong><br />
 Open your <code>run_journal.bat</code> file in a text editor and add <code>set REQUIRE_LOGIN=True</code> right before the runserver command:
 <div class="highlight"><pre><span></span><code><span class="k">set</span> <span class="nv">REQUIRE_LOGIN</span><span class="p">=</span>True

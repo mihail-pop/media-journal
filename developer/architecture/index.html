@@ -985,10 +985,54 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#details-page-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Details Page Data
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#recorded-activity-and-year-in-review" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recorded Activity and Year in Review
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#video-news" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Video News
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#music-player-and-home-screen-installation" class="md-nav__link">
     <span class="md-ellipsis">
       
         Music Player and Home Screen Installation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#windows-installer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Windows Installer
       
     </span>
   </a>
@@ -1160,10 +1204,54 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#details-page-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Details Page Data
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#recorded-activity-and-year-in-review" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recorded Activity and Year in Review
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#video-news" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Video News
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#music-player-and-home-screen-installation" class="md-nav__link">
     <span class="md-ellipsis">
       
         Music Player and Home Screen Installation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#windows-installer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Windows Installer
       
     </span>
   </a>
@@ -1251,9 +1339,20 @@ I use MkDocs for building this documentation and Ruff for general code checking 
 <li><strong>MusicBrainz &amp; YouTube Search:</strong> Music</li>
 </ul>
 <p>TMDB also supplies people, while AniList supplies characters and staff. Person URLs include the provider, such as <code>/person/tmdb/123/</code> or <code>/person/anilist/456/</code>. Custom people use <code>/person/custom/custom_.../</code>, and characters use <code>/character/123/</code>. Old <code>/person/actor/.../</code> and <code>/person/character/.../</code> links still redirect to the current routes.</p>
+<p>Provider requests share error handling for unavailable APIs, rate limits and missing credentials. The interface links these failures to the API status checks or credentials page without making a separate health-check request for every action.</p>
+<h2 id="details-page-data">Details Page Data<a class="headerlink" href="#details-page-data" title="Permanent link">#</a></h2>
+<p>Overview renders saved item data without provider calls. Extra tabs share an on-demand data bundle. <code>p_details_tabs.js</code> caches these bundles in session storage for up to 20 minutes, with limits of 20 items and roughly 2 MB. AniList character and staff lists request additional pages on scroll. Trailer thumbnails become embedded players only when opened, rather than loading all the iframes at once.</p>
+<h2 id="recorded-activity-and-year-in-review">Recorded Activity and Year in Review<a class="headerlink" href="#recorded-activity-and-year-in-review" title="Permanent link">#</a></h2>
+<p><code>MediaItemActivity</code> stores changes to progress, status and repeats alongside explicit edits. It keeps before/after values, including decreases, so corrections can be handled without treating old totals as new consumption. This history is separate from the editable Activity Date and manual journal logs.</p>
+<p>The music player keeps pending listening sessions in persistent browser storage and sends them when a session starts or closes. Each session has a unique event ID so retries can update listening time without duplicating a play. News uses the same player but does not enter music listening statistics. Year in Review aggregates the saved library and these records without fetching provider metadata.</p>
+<h2 id="video-news">Video News<a class="headerlink" href="#video-news" title="Permanent link">#</a></h2>
+<p>The News page reads recent YouTube RSS videos from built-in and user-added channels. Custom sources are stored in <code>NewsChannel</code>, while disabled built-in sources are kept in app settings. The app does not maintain an archive of old news videos.</p>
 <h2 id="music-player-and-home-screen-installation">Music Player and Home Screen Installation<a class="headerlink" href="#music-player-and-home-screen-installation" title="Permanent link">#</a></h2>
 <p>The main app still uses normal Django page navigation. The in-page YouTube player reloads between pages, while <code>/music/player/</code> runs it in a separate pop-out window so playback can continue. Player mode, position and pop-out size are saved in browser storage.</p>
 <p>The web app manifest is generated at <code>/manifest.webmanifest</code> with relative app URLs, so each installation can use its own address. Home screen installation does not add offline caching or a service worker; the server must remain reachable.</p>
+<h2 id="windows-installer">Windows Installer<a class="headerlink" href="#windows-installer" title="Permanent link">#</a></h2>
+<p>The installer source is in <code>installer/windows/</code>. It downloads the latest stable release and uses private Python environments rather than the user's system Python. Application versions live in <code>releases/</code>, while the database, media and other persistent data stay in <code>library/</code>. The launcher runs Waitress and supports manual startup, startup after sign-in or a Windows service before sign-in.</p>
+<p>The Windows installer GitHub Actions workflow builds <code>MediaJournalSetup.exe</code> and its checksum when a release is published, then attaches them to stable releases. Build instructions and installation details are in <a href="https://github.com/mihail-pop/media-journal/blob/main/installer/windows/BUILDING.md">installer/windows/BUILDING.md</a>.</p>
 <h2 id="csv-transfer">CSV Transfer<a class="headerlink" href="#csv-transfer" title="Permanent link">#</a></h2>
 <p>The transfer views and services handle CSV upload, field and value mapping, provider matching, review and import/export progress. Jobs run in background threads, with staging data in <code>data/transfer/</code> rather than new library models. Imports reuse the normal provider loaders with database writes deferred until an item is ready to save. No additional runtime dependency is needed.</p>
 <h2 id="file-naming-conventions">File Naming Conventions<a class="headerlink" href="#file-naming-conventions" title="Permanent link">#</a></h2>

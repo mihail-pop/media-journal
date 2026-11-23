@@ -554,6 +554,28 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#windows-installer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Windows Installer
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#manual-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Manual Setup
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#access-from-other-devices" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1095,6 +1117,28 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#windows-installer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Windows Installer
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#manual-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Manual Setup
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#access-from-other-devices" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1155,6 +1199,13 @@
   <h1>Windows</h1>
 
 <h2 id="setup-for-windows">Setup for Windows<a class="headerlink" href="#setup-for-windows" title="Permanent link">#</a></h2>
+<h3 id="windows-installer">Windows Installer<a class="headerlink" href="#windows-installer" title="Permanent link">#</a></h3>
+<p>For Windows 11, you can also use the <a href="https://github.com/mihail-pop/media-journal/releases/latest/download/MediaJournalSetup.exe">Windows Installer</a>.</p>
+<p>It installs the latest stable release with its own Python and dependencies, so you don't need to install Python, pip or Git first. Choose an installation folder, an available port and whether the app starts manually, after sign-in or before sign-in. Before-sign-in startup uses a Windows service and may ask for administrator approval.</p>
+<p>The optional desktop shortcut starts the app and opens it in your browser. Stop Media Journal and Update Media Journal are also available in the Start menu. Enable access from other devices during Setup if you want to connect over your local network; this may ask for approval to add Windows Firewall rules for Private networks.</p>
+<p>Updating through Setup keeps your library and offers your existing settings. Uninstalling keeps the library unless you choose to remove it.</p>
+<p>After installation, open Settings &gt; API Keys to add your keys. The steps below are for manual setup instead.</p>
+<h3 id="manual-setup">Manual Setup<a class="headerlink" href="#manual-setup" title="Permanent link">#</a></h3>
 <ol>
 <li>
 <p>Download <a href="https://www.python.org/downloads/release/python-3130/">Python 3.13.0</a>.<br />
@@ -1209,7 +1260,7 @@
 <em>(Example: Once you find it, you would type <code>http://192.168.1.15:8000</code> into your phone's browser).</em></p>
 <hr />
 <h3 id="run-automatically-on-startup">Run Automatically on Startup<a class="headerlink" href="#run-automatically-on-startup" title="Permanent link">#</a></h3>
-<p>To make the app start automatically in the background when you log into Windows, you can use a combination of a <code>.bat</code> file (to run the app) and a <code>.vbs</code> file (to hide the terminal window so it isn't in your way).</p>
+<p>For a manual installation, you can make the app start automatically in the background when you log into Windows using a <code>.bat</code> file (to run the app) and a <code>.vbs</code> file (to hide the terminal window so it isn't in your way). Installer users can choose automatic startup directly in Setup instead.</p>
 <p><strong>1. Create a <code>.bat</code> file (e.g., <code>run_journal.bat</code>) inside your project folder:</strong><br />
 <div class="highlight"><pre><span></span><code><span class="p">@</span><span class="k">echo</span> off  
 <span class="k">cd</span> /d <span class="s2">&quot;C:\***path to your folder***\media-journal&quot;</span>  
