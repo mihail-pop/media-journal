@@ -731,6 +731,13 @@ const hiddenInput = form.querySelector('#edit_status_hidden');
     }
     
     updateTotalDisplays(item);
+
+    const fields = form.querySelector('.edit-fields');
+    if (fields) {
+      const visibleFields = [...fields.querySelectorAll('.form-row-two > .form-group')]
+        .filter(group => getComputedStyle(group).display !== 'none');
+      fields.classList.toggle('three-columns', visibleFields.length >= 5);
+    }
   }
 
   // Card edit button click - use event delegation

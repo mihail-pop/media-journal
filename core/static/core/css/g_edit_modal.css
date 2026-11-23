@@ -271,6 +271,29 @@
   border-color: var(--button-primary);
 }
 
+/* Status uses 1.8rem of content plus 0.35rem padding on each side. */
+#edit-modal .form-group input:is([type="number"], [type="date"]),
+#edit-modal .rating-stars {
+  flex: none;
+  height: 1.8rem;
+  min-height: 1.8rem;
+  padding-block: 0.35rem;
+}
+
+#edit-modal .rating-faces {
+  min-height: 2rem;
+  align-items: center;
+}
+
+#edit-modal .collection-select {
+  height: 1.8rem;
+  max-height: 1.8rem;
+}
+
+#edit-modal .collection-indicator {
+  height: 100%;
+}
+
 
 .modal-hidden {
   display: none !important;
@@ -723,6 +746,47 @@ body {
   width: 100%;
   max-width: 600px;
   margin-bottom: 1.2rem;
+}
+
+#edit-modal .edit-fields {
+  display: contents;
+}
+
+@media (orientation: landscape) and (pointer: fine) {
+  #edit-modal #edit-form:has(> .edit-fields.three-columns) {
+    padding-left: 0;
+    align-items: center;
+  }
+
+  #edit-modal .edit-fields.three-columns {
+    display: grid;
+    grid-template-columns: repeat(3, 150px);
+    gap: 1.5rem;
+    column-gap: clamp(0px, calc((100% - 450px) / 2), 1.5rem);
+    width: 100%;
+    max-width: calc(450px + 3rem);
+    margin-bottom: 1.2rem;
+    justify-content: center;
+    align-items: start;
+  }
+
+  #edit-modal .edit-fields.three-columns > .form-row-two {
+    display: contents;
+  }
+
+  #edit-modal .edit-fields.three-columns > .form-row-two > .form-group {
+    width: 150px;
+    max-width: 150px;
+    margin-right: 0;
+  }
+
+  #edit-modal #edit-form:has(> .edit-fields.three-columns) > .notes-group {
+    max-width: calc(450px + 3rem);
+  }
+
+  #edit-modal #edit-form:has(> .edit-fields.three-columns) > .notes-group textarea {
+    width: calc(100% - 1rem);
+  }
 }
 
 .form-group:first-child {
@@ -1361,6 +1425,22 @@ input[type="number"] {
     padding: 0.2rem 0.5rem;
     width: 18rem;
     height: 4.4rem;
+  }
+
+  #edit-modal .rating-stars {
+    height: 3.8rem;
+    min-height: 3.8rem;
+    padding-block: 0.5rem;
+  }
+
+  #edit-modal .rating-faces {
+    height: 3.4rem;
+    min-height: 3.4rem;
+  }
+
+  #edit-modal .collection-select {
+    height: 4.8rem !important;
+    max-height: 4.8rem !important;
   }
 
   .form-group.notes-group {

@@ -1083,6 +1083,19 @@ body {
   color: var(--text-tertiary);
 }
 
+/* Match the Creators field's normal height without changing widths or flex sizing. */
+#metadata-modal .md-form-row-two input:is([type="number"], [type="date"]),
+#metadata-modal .md-creator-input-container,
+#metadata-modal #metadata-genre-select {
+  height: 1.8rem;
+  min-height: 1.8rem;
+  max-height: 1.8rem;
+}
+
+#metadata-modal .md-genre-indicator {
+  height: 100%;
+}
+
 .md-form-group.md-vertical-label {
   flex-direction: column;
   align-items: flex-start;
@@ -1392,6 +1405,14 @@ input[type="number"] {
     height: auto !important;
     max-height: 12rem !important;
     overflow-y: auto !important;
+  }
+
+  #metadata-modal .md-form-row-two input:is([type="number"], [type="date"]),
+  #metadata-modal .md-creator-input-container,
+  #metadata-modal #metadata-genre-select {
+    height: 4.8rem !important;
+    min-height: 4.8rem !important;
+    max-height: 4.8rem !important;
   }
 
   .md-creator-tag, 
