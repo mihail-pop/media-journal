@@ -5,6 +5,8 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentType = initialTypeBtn ? initialTypeBtn.dataset.type : 'movie';
   let isLoading = false;
   let hasMorePages = true;
+  let failedPage = null;
+  const apiErrorBox = document.getElementById('discover-api-error');
   let pageCache = new Map();
   const renderedTmdbItems = new Set();
   
@@ -308,6 +310,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 3000);
     
     if (reset) {
+      failedPage = null;
+      apiErrorBox.hidden = true;
       currentPage = 1;
       cardGrid.innerHTML = '';
       hasMorePages = true;
@@ -316,15 +320,15 @@ document.addEventListener('DOMContentLoaded', () => {
       
       // Load 2 pages initially
       await loadPage(1);
-      currentPage = 2;
-      if (hasMorePages) {
+      if (failedPage === null) currentPage = 2;
+      if (hasMorePages && failedPage === null) {
         await loadPage(2);
-        currentPage = 3;
+        if (failedPage === null) currentPage = 3;
       }
     } else {
       // Load single page for subsequent loads
       await loadPage(currentPage);
-      currentPage++;
+      if (failedPage === null) currentPage++;
     }
     
     updateURL();
@@ -332,7 +336,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Continue over fully filtered pages when there are no cards to scroll yet.
     while (hasMorePages && cardGrid.children.length === 0) {
       await loadPage(currentPage);
-      currentPage++;
+      if (failedPage === null) currentPage++;
     }
 
     isLoading = false;
@@ -361,6 +365,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function loadPage(page) {
+    apiErrorBox.hidden = true;
+    failedPage = null;
     const filters = { ...getActiveFilters(), page };
     const cacheKey = JSON.stringify(filters);
     
@@ -376,13 +382,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     try {
       const response = await fetch(`/discover/api/?${params}`);
-      const data = await response.json();
-      
-      if (data.error) {
-        console.error('API Error:', data.error);
-        hasMorePages = false;
-        return;
-      }
+      const data = await ApiFeedback.readResponse(response, currentType);
       
       // Cache the data
       pageCache.set(cacheKey, data);
@@ -392,8 +392,22 @@ document.addEventListener('DOMContentLoaded', () => {
       hasMorePages = hasMoreResults(data);
       
     } catch (error) {
-      console.error('Fetch error:', error);
+      failedPage = page;
       hasMorePages = false;
+      apiErrorBox.hidden = false;
+      ApiFeedback.render(apiErrorBox, error, currentType, { retry: async () => {
+        if (isLoading || failedPage === null) return;
+        const retryPage = failedPage;
+        isLoading = true;
+        try {
+          await loadPage(retryPage);
+          if (failedPage === null) {
+            currentPage = retryPage + 1;
+            updateURL();
+          }
+        } finally { isLoading = false; }
+        if (failedPage === null && hasMorePages && cardGrid.children.length === 0) await loadContent(false);
+      } });
     }
   }
   
@@ -563,7 +577,7 @@ document.addEventListener('DOMContentLoaded', () => {
         body: JSON.stringify(itemData)
       });
       
-      const data = await response.json();
+      const data = await ApiFeedback.readResponse(response, itemData.source);
       
       if (response.ok && (data.success || data.message)) {
         btn.textContent = '✓';
@@ -574,12 +588,12 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         btn.textContent = originalText;
         btn.disabled = false;
-        alert(data.error || 'Failed to add item');
+        ApiFeedback.notify({ error: data.error || 'Failed to add item.' }, itemData.source);
       }
     } catch (error) {
       btn.textContent = originalText;
       btn.disabled = false;
-      alert('Network error occurred');
+      ApiFeedback.notify(error, itemData.source);
     }
   }
   
@@ -589,7 +603,8 @@ document.addEventListener('DOMContentLoaded', () => {
       window.history.replaceState({
         html: cardGrid.innerHTML,
         currentPage: currentPage,
-        hasMorePages: hasMorePages,
+        hasMorePages: failedPage !== null ? true : hasMorePages,
+        failedPage: failedPage,
         scrollPosition: window.scrollY
       }, '', window.location.href);
     }
@@ -611,6 +626,8 @@ document.addEventListener('DOMContentLoaded', () => {
       cardGrid.innerHTML = state.html;
       currentPage = state.currentPage;
       hasMorePages = state.hasMorePages;
+      // A failed page is retried after Back, never restored as a real end.
+      if (state.failedPage) currentPage = state.failedPage;
       
       // Re-attach event listeners
       cardGrid.querySelectorAll('.card').forEach(card => {
@@ -657,10 +674,13 @@ document.addEventListener('DOMContentLoaded', () => {
       hasMorePages = true;
       isLoading = true;
       
-      for (let i = 1; i <= currentPage; i++) {
+      const targetPage = currentPage;
+      currentPage = 1;
+      for (let i = 1; i <= targetPage; i++) {
         await loadPage(i);
+        if (failedPage !== null) break;
+        currentPage = i + 1;
       }
-      currentPage++;
       
       isLoading = false;
     } else {

@@ -1,0 +1,55 @@
+.api-feedback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.8rem;
+  padding: 0.9rem 1rem;
+  border-radius: 6px;
+  background: var(--bg-secondary, var(--bg-tertiary));
+  color: var(--text-secondary, var(--text-primary));
+  line-height: 1.5;
+  font-size: 0.95rem;
+}
+.api-feedback a { color: inherit; text-decoration: underline; text-underline-offset: 0.2em; }
+.api-feedback a:hover { color: var(--special-color, inherit); }
+.api-feedback button {
+  padding: 0.3rem 0.65rem;
+  border: none;
+  border-radius: 5px;
+  background: var(--bg-tertiary);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.api-feedback button:hover { background: var(--hover-bg); }
+.api-feedback-compact { padding: 0; background: none; color: inherit; font: inherit; }
+.api-feedback-toast {
+  position: fixed;
+  top: 4rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30000;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-sizing: border-box;
+  width: max-content;
+  max-width: calc(100vw - 2rem);
+  padding: 0.8rem 1.1rem;
+  border-radius: 6px;
+  background: #dc3545;
+  color: white;
+  box-shadow: 0 4px 16px #0003;
+}
+.api-feedback-toast a:hover { color: white; }
+.api-feedback-close { padding: 0; border: none; background: none; color: inherit; font-size: 1.4em; cursor: pointer; }
+.api-unavailable { max-width: 38rem; margin: 4rem auto; padding: 2rem; text-align: center; }
+.api-unavailable p { line-height: 1.6; }
+.api-unavailable-actions { display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; margin-top: 1.5rem; }
+.api-unavailable-actions a { color: var(--special-color); }
+@media (orientation: portrait) {
+  .api-feedback { font-size: 1.7rem; padding: 1rem; }
+  .api-feedback-compact { padding: 0; font: inherit; }
+  .api-feedback-toast { top: 5rem; padding: 1.2rem; font-size: 1.8rem; }
+}

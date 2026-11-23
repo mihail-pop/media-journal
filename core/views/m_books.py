@@ -1,3 +1,4 @@
+from core.services.g_api_errors import api_errors, as_api_error
 import re
 import datetime
 import time
@@ -41,6 +42,7 @@ def _openlib_list(data, field):
 
 @ensure_csrf_cookie
 @require_GET
+@api_errors('openlib')
 def openlib_search(request):
     query = request.GET.get("q", "").strip()
 
@@ -52,8 +54,8 @@ def openlib_search(request):
 
     try:
         data = _openlib_json(url, params=params)
-    except (requests.RequestException, ValueError):
-        return JsonResponse({"error": "Open Library is unavailable. Please try again.", "results": []}, status=503)
+    except (requests.RequestException, ValueError) as error:
+        raise as_api_error(error, 'openlib') from error
     results = []
     editions_available = True
 
@@ -115,6 +117,7 @@ def openlib_search(request):
 
 @ensure_csrf_cookie
 @require_GET
+@api_errors('openlib', detail_page=True)
 def openlib_detail(request, work_id):
     item = None
     deadline = time.monotonic() + 30 if request.GET.get("after_delete") == "1" else None
@@ -168,8 +171,10 @@ def openlib_detail(request, work_id):
     detail_url = f"https://openlibrary.org/works/{work_id}.json"
     try:
         detail_data = _openlib_json(detail_url, deadline=deadline)
-    except (requests.RequestException, ValueError):
-        return redirect(f"{reverse('books')}?detail_unavailable=1")
+    except (requests.RequestException, ValueError) as error:
+        if deadline is not None:
+            return redirect(f"{reverse('books')}?detail_unavailable=1")
+        raise as_api_error(error, 'openlib') from error
 
     # Title and description
     title = detail_data.get("title") if isinstance(detail_data.get("title"), str) and detail_data["title"] else "Untitled"

@@ -866,8 +866,9 @@ function showProgressModal(title) {
             if (stopped) return;
             if (data.error) {
               clearInterval(pollInterval);
-              alert("Error: " + data.error);
               closeModal();
+              if (data.api_error) ApiFeedback.notify(data.api_error);
+              else alert("Error: " + data.error);
               return;
             }
 
@@ -878,6 +879,16 @@ function showProgressModal(title) {
             renderStatus();
 
             if (data.status === 'completed') {
+              if (data.failed_count > 0) {
+                clearInterval(pollInterval);
+                closeModal();
+                ApiFeedback.notify({
+                  ...(data.api_error || {}),
+                  error: `${data.failed_count} item${data.failed_count === 1 ? '' : 's'} could not be refreshed. Check API status.`,
+                  api_status_url: '/settings/?api_status=1#api-status'
+                });
+                return;
+              }
               clearInterval(pollInterval);
               clearInterval(elapsedTimer);
               statusText.textContent = "Completed!";
@@ -1110,6 +1121,14 @@ function checkApiStatusIfNeeded(force = false) {
         timestampEl.textContent = "Error";
     });
 }
+
+// A failure link always opens the Information tab with a fresh status check.
+document.addEventListener('DOMContentLoaded', () => {
+  if (new URLSearchParams(location.search).get('api_status') === '1') {
+    checkApiStatusIfNeeded(true);
+    document.getElementById('api-status')?.scrollIntoView({ block: 'start' });
+  }
+});
 
 // Bind the Check Now button
 document.getElementById("refresh-api-status-btn")?.addEventListener("click", () => {

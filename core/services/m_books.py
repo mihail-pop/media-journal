@@ -1,3 +1,4 @@
+from core.services.g_api_errors import ApiError, ApiClient, require_api_data
 import re
 import time
 import datetime
@@ -12,7 +13,7 @@ from core.services.g_utils import apply_initial_item_status, download_image
 def save_openlib_item(work_id, *, http=None, prepare_only=False, initial_status='planned'):
     # Fetch main Work details (Title, Description, Covers)
     detail_url = f"https://openlibrary.org/works/{work_id}.json"
-    detail_response = (http or requests).get(detail_url, timeout=60)
+    detail_response = (ApiClient('openlib', http)).get(detail_url, timeout=60)
 
     if detail_response.status_code == 429:
         raise Exception("HTTP 429 Too Many Requests: Rate Limit Exceeded")
@@ -20,6 +21,7 @@ def save_openlib_item(work_id, *, http=None, prepare_only=False, initial_status=
         raise Exception("Failed to fetch book details from Open Library.")
 
     detail_data = detail_response.json()
+    require_api_data(isinstance(detail_data, dict) and detail_data.get('title'), 'openlib')
 
     # Get Authors and Pages in ONE request with the search index
     author_names = []
@@ -27,7 +29,7 @@ def save_openlib_item(work_id, *, http=None, prepare_only=False, initial_status=
     search_url = f"https://openlibrary.org/search.json?q=key:/works/{work_id}&fields=author_name,number_of_pages_median"
     
     try:
-        search_response = (http or requests).get(search_url, timeout=60)
+        search_response = (ApiClient('openlib', http)).get(search_url, timeout=60)
         
         # Catch the 429 Rate Limit here
         if search_response.status_code == 429:
@@ -35,12 +37,18 @@ def save_openlib_item(work_id, *, http=None, prepare_only=False, initial_status=
             
         if search_response.status_code == 200:
             search_data = search_response.json()
+            require_api_data(isinstance(search_data, dict) and isinstance(search_data.get('docs'), list), 'openlib')
+            from core.services.g_media_files import current_downloads
+            if current_downloads.get() is not None and not search_data['docs']:
+                raise ApiError('openlib')
             if search_data.get("docs"):
                 doc = search_data["docs"][0]
                 # Replaced empty brackets with list() to bypass your UI cutoff bug
                 author_names = doc.get("author_name", list())
                 total_pages = doc.get("number_of_pages_median")
                 
+    except ApiError:
+        raise
     except Exception as e:
         if http is not None:
             raise
@@ -176,9 +184,10 @@ def get_openlib_discover(page=1, query="", sort="trending", genre="", year=""):
         params["sort"] = ol_sort
         
     try:
-        resp = requests.get(url, params=params, timeout=100)
+        resp = ApiClient('openlib').get(url, params=params, timeout=100)
         if resp.status_code == 200:
             data = resp.json()
+            require_api_data(isinstance(data.get('docs'), list), 'openlib')
             results = []
             for doc in data.get("docs", []):
                 cover_i = doc.get("cover_i")
@@ -204,6 +213,7 @@ def get_openlib_discover(page=1, query="", sort="trending", genre="", year=""):
                 })
             return results
         return []
+    except ApiError:
+        raise
     except Exception as e:
-        print(f"OpenLibrary API error: {e}")
-        return []
+        raise ApiError('openlib') from e

@@ -1,3 +1,4 @@
+from core.services.g_api_errors import ApiError, ApiClient, api_errors, require_api_data
 import re
 import time
 import datetime
@@ -21,6 +22,7 @@ IGDB_TOKEN_EXPIRY = 0
 
 @ensure_csrf_cookie
 @require_GET
+@api_errors('igdb')
 def igdb_search(request):
     query = request.GET.get("q", "").strip()
     if not query:
@@ -76,11 +78,13 @@ def igdb_search(request):
     found_exact_slug = False
 
     try:
-        response = requests.post(
+        response = ApiClient('igdb').post(
             "https://api.igdb.com/v4/games", headers=headers, data=data_search
         )
         if response.status_code == 200:
-            for item in response.json():
+            matches = response.json()
+            require_api_data(isinstance(matches, list), 'igdb')
+            for item in matches:
                 if item.get("slug") == query_slug:
                     found_exact_slug = True
 
@@ -92,6 +96,8 @@ def igdb_search(request):
                         "slug": item.get("slug", ""),
                     }
                 )
+    except ApiError:
+        raise
     except Exception as e:
         print(f"IGDB Search Error: {e}")
         return JsonResponse({"error": "Failed to fetch from IGDB."}, status=500)
@@ -105,7 +111,7 @@ def igdb_search(request):
         where slug = "{query_slug}"{f" & {adult_condition}" if adult_condition else ""};
         '''
         try:
-            slug_response = requests.post(
+            slug_response = ApiClient('igdb').post(
                 "https://api.igdb.com/v4/games", headers=headers, data=data_slug_check
             )
             if slug_response.status_code == 200:
@@ -122,6 +128,8 @@ def igdb_search(request):
                             "slug": missing_game.get("slug", ""),
                         },
                     )
+        except ApiError:
+            raise
         except Exception:
             pass
 
@@ -182,6 +190,7 @@ def igdb_search(request):
 
 @ensure_csrf_cookie
 @require_GET
+@api_errors('igdb', detail_page=True)
 def igdb_detail(request, igdb_id):
     try:
         item = MediaItem.objects.get(provider_ids__igdb=str(igdb_id))
@@ -259,15 +268,16 @@ def igdb_detail(request, igdb_id):
     where id = {igdb_id};
     """
 
-    response = requests.post(
+    response = ApiClient('igdb').post(
         "https://api.igdb.com/v4/games", headers=headers, data=query
     )
     if response.status_code != 200:
         return JsonResponse({"error": "Failed to fetch details from IGDB."}, status=500)
 
     data = response.json()
+    require_api_data(isinstance(data, list), 'igdb')
     if not data:
-        return JsonResponse({"error": "Game not found."}, status=404)
+        raise ApiError('igdb', 'not_found')
 
     game = data[0]
     title = game.get("name") or "Unknown Title"

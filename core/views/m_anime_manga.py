@@ -1,3 +1,4 @@
+from core.services.g_api_errors import ApiError, ApiClient, api_errors, require_api_data
 import datetime
 
 import requests
@@ -15,6 +16,7 @@ from core.services.g_utils import adult_content_allowed
 
 @ensure_csrf_cookie
 @require_GET
+@api_errors('anilist')
 def anilist_search(request):
     query_str = request.GET.get("q", "").strip()
     search_type = request.GET.get("type", "anime").lower()
@@ -55,7 +57,7 @@ def anilist_search(request):
         variables['isAdult'] = False
 
     headers = {"Content-Type": "application/json"}
-    response = requests.post(
+    response = ApiClient('anilist').post(
         "https://graphql.anilist.co",
         json={"query": graphql_query, "variables": variables},
         headers=headers,
@@ -66,6 +68,7 @@ def anilist_search(request):
 
     try:
         data = response.json()
+        require_api_data(isinstance(data.get('data', {}).get('Page', {}).get('media'), list), 'anilist')
         results = []
 
         for media in data.get("data", {}).get("Page", {}).get("media", []):
@@ -99,6 +102,7 @@ def anilist_search(request):
 
 @ensure_csrf_cookie
 @require_GET
+@api_errors('anilist', detail_page=True)
 def anilist_detail(request, source, media_type, source_id):
     if media_type not in ("anime", "manga"):
         return JsonResponse({"error": "Invalid media type."}, status=400)
@@ -217,6 +221,8 @@ def anilist_detail(request, source, media_type, source_id):
                     item.save()
                     return redirect(request.path)
 
+        except ApiError:
+            raise
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
 

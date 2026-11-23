@@ -4,6 +4,7 @@ import uuid
 import datetime
 import tempfile
 import concurrent.futures
+from core.services.g_api_errors import ApiError
 
 import requests
 from django.apps import apps
@@ -426,6 +427,8 @@ def backup_status(request, task_id):
             "message": task.message,
             "details": task.details,
             "error": task.error,
+            "api_error": getattr(task, 'api_error', None),
+            "failed_count": getattr(task, 'failed_count', 0),
         }
     )
 
@@ -574,6 +577,9 @@ def api_status_check(request):
             if r.status_code == 429: 
                 return "rate_limited"
             return "down"
+        except ApiError as error:
+            return {'missing_key': 'missing_key', 'invalid_key': 'auth_error',
+                    'rate_limited': 'rate_limited'}.get(error.code, 'down')
         except Exception: 
             return "down"
 

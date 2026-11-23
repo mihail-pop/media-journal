@@ -1,3 +1,4 @@
+from core.services.g_api_errors import ApiError, api_errors, provider_for_request
 import os
 import json
 import time
@@ -33,6 +34,7 @@ def delete_favorite_person(request, person_id):
 
 @ensure_csrf_cookie
 @require_POST
+@api_errors(provider_for_request)
 def refresh_favorite_person_view(request):
     data = json.loads(request.body)
     api_person_id = data.get("person_id")  # This is the API ID (TMDB/AniList)
@@ -104,6 +106,7 @@ def upload_person_image(request):
 
 @ensure_csrf_cookie
 @require_GET
+@api_errors('tmdb')
 def actor_detail_api(request, actor_id):
     """API endpoint for actor details"""
     data = fetch_actor_data(actor_id)
@@ -114,6 +117,7 @@ def actor_detail_api(request, actor_id):
 
 @ensure_csrf_cookie
 @require_GET
+@api_errors('anilist')
 def character_detail_api(request, character_id):
     """API endpoint for character details"""
     logger.info(
@@ -139,6 +143,8 @@ def character_detail_api(request, character_id):
             return JsonResponse(data)
         logger.error(f"No data returned for character_id: {character_id}")
         return JsonResponse({"error": "Character not found"}, status=404)
+    except ApiError:
+        raise
     except Exception as e:
         logger.error(
             f"Error in character_detail_api for character_id {character_id}: {str(e)}"

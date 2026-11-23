@@ -44,7 +44,7 @@ let isRefreshing = false;
     if (settingsBtn) settingsBtn.disabled = true;
     refreshBtns.forEach(btn => btn.disabled = true);
 
-    showNotification('Refreshing...', 'warning');
+    const refreshNotification = showNotification('Refreshing...', 'warning');
 
     fetch('/refresh-item/', {
       method: 'POST',
@@ -54,7 +54,8 @@ let isRefreshing = false;
       },
       body: JSON.stringify({ id: itemId, refresh_type: refreshType }),
     })
-      .then((res) => {
+      .then(res => ApiFeedback.readResponse(res, 'tmdb'))
+      .then(() => {
         sessionStorage.setItem('refreshSuccess', '1');
         setTimeout(() => window.location.reload(true));
       })
@@ -63,7 +64,8 @@ let isRefreshing = false;
         isRefreshing = false;
         if (settingsBtn) settingsBtn.disabled = false;
         refreshBtns.forEach(btn => btn.disabled = false);
-        console.error('Refresh error:', error);
+        refreshNotification?.remove();
+        ApiFeedback.notify(error, 'tmdb');
       });
   }
 
@@ -189,6 +191,7 @@ function showNotification(message, type) {
   document.body.appendChild(notification);
   const duration = type === "warning" ? 20000 : 2000;
   setTimeout(() => notification.remove(), duration);
+  return notification;
 }
 
 document.addEventListener("DOMContentLoaded", function() {

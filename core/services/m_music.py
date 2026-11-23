@@ -1,3 +1,5 @@
+from django.db import transaction
+from core.services.g_api_errors import ApiError, ApiClient, require_api_data
 import time
 import logging
 import datetime
@@ -66,7 +68,7 @@ def save_musicbrainz_item(recording_id, *, http=None, prepare_only=False, initia
 
     try:
         # Use our smart mb_session which will retry on 503/429
-        recording_response = (http or mb_session).get(
+        recording_response = (ApiClient('musicbrainz', http or mb_session)).get(
             recording_url, params=recording_params, timeout=10
         )
         recording_response.raise_for_status()
@@ -96,6 +98,7 @@ def save_musicbrainz_item(recording_id, *, http=None, prepare_only=False, initia
         )
 
     recording_data = recording_response.json()
+    require_api_data(isinstance(recording_data, dict) and recording_data.get('id') and recording_data.get('title'), 'musicbrainz')
 
     # Get title and artist
     title = recording_data.get("title", "Untitled")
@@ -378,17 +381,18 @@ def save_musicbrainz_item(recording_id, *, http=None, prepare_only=False, initia
     if prepare_only:
         return {"item": item_data, "music_videos": youtube_links}
     apply_initial_item_status(item_data, initial_status)
-    item = MediaItem.objects.create(**item_data)
+    with transaction.atomic():
+        item = MediaItem.objects.create(**item_data)
 
-    from core.models import MusicVideo
-    MusicVideo.objects.bulk_create([
-        MusicVideo(
-            item=item, 
-            url=v["url"], 
-            position=v.get("position", i+1)
-        )
-        for i, v in enumerate(youtube_links)
-    ])
+        from core.models import MusicVideo
+        MusicVideo.objects.bulk_create([
+            MusicVideo(
+                item=item,
+                url=v["url"],
+                position=v.get("position", i+1)
+            )
+            for i, v in enumerate(youtube_links)
+        ])
 
     return JsonResponse({"success": True, "message": "Song added to list"})
 
@@ -428,7 +432,7 @@ def get_music_extra_info(recording_id, artist_id=None, album_id=None):
         album_url = f"https://musicbrainz.org/ws/2/release/{album_id}"
         album_params = {"inc": "recordings", "fmt": "json"}
         try:
-            album_response = mb_session.get(
+            album_response = ApiClient('musicbrainz', mb_session).get(
                 album_url, params=album_params, timeout=10
             )
             if album_response.status_code == 429:
@@ -445,6 +449,8 @@ def get_music_extra_info(recording_id, artist_id=None, album_id=None):
                                 {"title": recording.get("title", ""), "id": rec_id}
                             )
                 print(f"[MUSIC] Album tracks: {len(album_tracks)}")
+        except ApiError:
+            raise
         except Exception as e:
             print(f"[MUSIC] Album error: {e}")
 
@@ -462,7 +468,7 @@ def get_music_extra_info(recording_id, artist_id=None, album_id=None):
 
         try:
             while True:
-                rg_response = mb_session.get(
+                rg_response = ApiClient('musicbrainz', mb_session).get(
                     rg_url, params=rg_params, timeout=10
                 )
                 if rg_response.status_code == 429:
@@ -494,6 +500,8 @@ def get_music_extra_info(recording_id, artist_id=None, album_id=None):
             # Sort by date descending (newest → oldest)
             artist_singles.sort(key=lambda x: x["date"] or "0000-00-00", reverse=True)
             print(f"[MUSIC] Total singles after sort: {len(artist_singles)}")
+        except ApiError:
+            raise
         except Exception as e:
             print(f"[MUSIC] Singles error: {e}")
 
@@ -517,10 +525,11 @@ def get_musicbrainz_discover(page=1, query="", sort="trending", genre="", year="
             lb_range = "this_month" if sort == "trending" else "all_time"
             
             url = "https://api.listenbrainz.org/1/stats/sitewide/recordings"
-            resp = mb_session.get(url, params={"count": 100, "range": lb_range}, timeout=10)
+            resp = ApiClient('listenbrainz', mb_session).get(url, params={"count": 100, "range": lb_range}, timeout=10)
             
             if resp.status_code == 200:
                 recordings = resp.json().get("payload", {}).get("recordings", [])
+                require_api_data(isinstance(resp.json().get('payload', {}).get('recordings'), list), 'listenbrainz')
                 chunk = recordings[offset:offset+20]
                 
                 for rec in chunk:
@@ -567,8 +576,9 @@ def get_musicbrainz_discover(page=1, query="", sort="trending", genre="", year="
         # Call wait_for_rate_limit() to guarantee Page 2 doesn't trigger a 503 on MusicBrainz
         wait_for_rate_limit() 
         
-        resp = mb_session.get(url, params=params, timeout=10)
+        resp = ApiClient('musicbrainz', mb_session).get(url, params=params, timeout=10)
         if resp.status_code == 200:
+            require_api_data(isinstance(resp.json().get('recordings'), list), 'musicbrainz')
             for rec in resp.json().get("recordings", []):
                 artist = ", ".join([a.get("name", "") for a in rec.get("artist-credit", [])])
                 
@@ -587,6 +597,7 @@ def get_musicbrainz_discover(page=1, query="", sort="trending", genre="", year="
                     "overview": artist,
                 })
         return results
+    except ApiError:
+        raise
     except Exception as e:
-        print(f"MusicBrainz API error: {e}")
-        return []
+        raise ApiError('musicbrainz') from e

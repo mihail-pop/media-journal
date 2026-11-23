@@ -1,3 +1,4 @@
+from core.services.g_api_errors import ApiError, ApiClient, require_api_data
 import time
 from datetime import datetime, date
 
@@ -105,6 +106,8 @@ def save_anilist_item(media_type, anilist_id=None, mal_id=None, *, http=None, pr
 
         return JsonResponse({"message": "Saved to your list."})
 
+    except ApiError:
+        raise
     except Exception as e:
         return JsonResponse({"error": f"Save failed: {str(e)}"})
 
@@ -217,7 +220,7 @@ def fetch_anilist_data(media_type, anilist_id=None, mal_id=None, *, http=None):
 
     headers = {"Content-Type": "application/json"}
 
-    response = (http or requests).post(
+    response = (ApiClient('anilist', http)).post(
         "https://graphql.anilist.co",
         json={"query": query, "variables": variables},
         headers=headers,
@@ -228,9 +231,13 @@ def fetch_anilist_data(media_type, anilist_id=None, mal_id=None, *, http=None):
     elif response.status_code != 200:
         raise Exception(f"AniList API request failed with status {response.status_code}.")
 
-    media = response.json().get("data", {}).get("Media")
+    payload = response.json()
+    require_api_data(isinstance(payload.get('data'), dict) and 'Media' in payload['data'], 'anilist')
+    media = payload['data']['Media']
     if not media:
-        raise Exception(f"AniList: No entry found for {id_field} {search_id}")
+        raise ApiError('anilist', 'not_found')
+    require_api_data(isinstance(media, dict) and media.get('id') and isinstance(media.get('title'), dict)
+                     and (media['title'].get('english') or media['title'].get('romaji')), 'anilist')
 
     # Title
     title = (
@@ -495,7 +502,7 @@ def get_anime_extra_info(media_type, anilist_id=None, mal_id=None):
     headers = {"Content-Type": "application/json"}
 
     try:
-        response = requests.post(
+        response = ApiClient('anilist').post(
             "https://graphql.anilist.co",
             json={"query": query, "variables": variables},
             headers=headers,
@@ -611,9 +618,10 @@ def get_anime_extra_info(media_type, anilist_id=None, mal_id=None):
             "recommendations": recommendations,
         }
 
+    except ApiError:
+        raise
     except Exception as e:
-        print(f"Error in get_anime_extra_info: {e}")
-        return {}
+        raise ApiError('anilist') from e
 
 
 def get_manga_extra_info(media_type, anilist_id=None, mal_id=None):
@@ -712,7 +720,7 @@ def get_manga_extra_info(media_type, anilist_id=None, mal_id=None):
     headers = {"Content-Type": "application/json"}
 
     try:
-        response = requests.post(
+        response = ApiClient('anilist').post(
             "https://graphql.anilist.co",
             json={"query": query, "variables": variables},
             headers=headers,
@@ -804,9 +812,10 @@ def get_manga_extra_info(media_type, anilist_id=None, mal_id=None):
             "recommendations": recommendations,
         }
 
+    except ApiError:
+        raise
     except Exception as e:
-        print(f"Error in get_manga_extra_info: {e}")
-        return {}
+        raise ApiError('anilist') from e
 
 
 def get_anilist_discover(
@@ -892,7 +901,7 @@ def get_anilist_discover(
     headers = {"Content-Type": "application/json"}
 
     try:
-        response = requests.post(
+        response = ApiClient('anilist').post(
             "https://graphql.anilist.co",
             json={"query": query_text, "variables": variables},
             headers=headers,
@@ -903,6 +912,7 @@ def get_anilist_discover(
 
         data = response.json()
         raw_media = data.get("data", {}).get("Page", {}).get("media", [])
+        require_api_data(isinstance(data.get('data', {}).get('Page', {}).get('media'), list), 'anilist')
         results = []
 
         for media in raw_media:
@@ -971,8 +981,10 @@ def get_anilist_discover(
             )
 
         return {"results": results, "hasMore": len(raw_media) > 0}
-    except Exception:
-        return {"results": [], "hasMore": False}
+    except ApiError:
+        raise
+    except Exception as error:
+        raise ApiError('anilist') from error
 
 
 def update_anilist_anime_manga(item: MediaItem):
@@ -996,7 +1008,7 @@ def update_anilist_anime_manga(item: MediaItem):
             item.provider_ids["mal"] = str(anilist_data["mal_id"])
         item.source = "anilist"
         
-    except requests.exceptions.RequestException as e:
+    except (requests.exceptions.RequestException, ApiError) as e:
         print(f"[AniList Update] Network error for {item.title}: {e}")
         item.last_updated = timezone.now()  # Prevent retry storm
         item.save()

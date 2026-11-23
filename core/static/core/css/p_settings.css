@@ -1493,6 +1493,8 @@ table select {
   justify-content: center;
 }
 
+.api-status-section { scroll-margin-top: 6rem; }
+
 .card-overlay-section { grid-column: 1 / -1; min-width: 0; }
 .card-overlay-types {
   display: grid;

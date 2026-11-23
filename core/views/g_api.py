@@ -1,3 +1,4 @@
+from core.services.g_api_errors import api_errors, provider_for_request
 import logging
 from datetime import date, datetime, timedelta
 
@@ -1459,6 +1460,7 @@ def favorites_api(request):
     return JsonResponse({"items": items_data, "has_more": has_more, "page": page})
 
 @require_GET
+@api_errors(provider_for_request)
 def discover_api(request):
     from core.services.g_utils import adult_content_allowed
     allow_adult = adult_content_allowed()
@@ -1627,6 +1629,7 @@ def collections_api(request):
     return JsonResponse({"items": collections_data, "has_more": has_more, "page": page})
 
 @require_GET
+@api_errors('igdb')
 def game_screenshots_api(request):
     igdb_id = request.GET.get("igdb_id")
     try:

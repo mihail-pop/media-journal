@@ -30,7 +30,7 @@ function refreshItem(sourceId, refreshType = 'all') {
   if (settingsBtn) settingsBtn.disabled = true;
   refreshBtns.forEach(btn => btn.disabled = true);
   
-  showNotification('Refreshing...', 'warning');
+  const refreshNotification = showNotification('Refreshing...', 'warning');
   
   fetch("/refresh-item/", {
     method: "POST",
@@ -40,7 +40,8 @@ function refreshItem(sourceId, refreshType = 'all') {
     },
     body: JSON.stringify({ id: sourceId, refresh_type: refreshType }),
   })
-    .then((res) => {
+    .then(res => ApiFeedback.readResponse(res, document.body.dataset.source))
+    .then(() => {
       sessionStorage.setItem("refreshSuccess", "1");
       setTimeout(() => window.location.reload(true));
     })
@@ -49,7 +50,8 @@ function refreshItem(sourceId, refreshType = 'all') {
       isRefreshing = false;
       if (settingsBtn) settingsBtn.disabled = false;
       refreshBtns.forEach(btn => btn.disabled = false);
-      console.error('Refresh error:', error);
+      refreshNotification?.remove();
+      ApiFeedback.notify(error, document.body.dataset.source);
     });
 }
 
@@ -335,8 +337,7 @@ async function reloadScreenshotGallery() {
       page: 1, favorites_only: String(showFavoriteScreenshotsOnly),
     });
     const response = await fetch(`/api/game_screenshots/?${params}`);
-    const data = await response.json();
-    if (!response.ok || data.error) throw new Error(data.error || 'Could not load screenshots.');
+    const data = await ApiFeedback.readResponse(response, 'igdb');
     if (generation !== screenshotsGeneration) return false;
     screenshotsData.splice(0, screenshotsData.length, ...data.screenshots);
     screenshotsPage = 1;
@@ -351,8 +352,7 @@ async function reloadScreenshotGallery() {
     }
     return true;
   } catch (error) {
-    const notification = showNotification('Could not load screenshots. Please try again.', 'warning');
-    if (screenshotOverlay?.classList.contains('active')) screenshotOverlay.appendChild(notification);
+    if (generation === screenshotsGeneration) ApiFeedback.notify(error, 'igdb');
     return false;
   } finally {
     isReloadingScreenshotGallery = false;
@@ -518,7 +518,7 @@ function loadMoreScreenshots() {
   
   const params = new URLSearchParams({ igdb_id: igdbId, page: nextPage, offset: screenshotsData.length, favorites_only: String(showFavoriteScreenshotsOnly) });
   fetch(`/api/game_screenshots/?${params}`)
-    .then(r => r.json())
+    .then(r => ApiFeedback.readResponse(r, 'igdb'))
     .then(data => {
       if (generation !== screenshotsGeneration) return;
       if (data.screenshots && data.screenshots.length > 0) {
@@ -539,7 +539,14 @@ function loadMoreScreenshots() {
         hasMoreScreenshots = false;
       }
     })
-    .catch(error => console.error('Could not load more screenshots:', error))
+    .catch(error => {
+      if (generation !== screenshotsGeneration) return;
+      hasMoreScreenshots = false;
+      ApiFeedback.notify(error, 'igdb', { retry: () => {
+        hasMoreScreenshots = true;
+        loadMoreScreenshots();
+      } });
+    })
     .finally(() => {
       isLoadingScreenshots = false;
       if (generation !== screenshotsGeneration && document.querySelector('.screenshots-list.is-resized')) {
@@ -2203,16 +2210,14 @@ if (moreInfoBtn) {
       }
       
       const response = await fetch(url);
-      if (!response.ok) throw new Error("Network response was not ok");
-
-      const data = await response.json();
+      const data = await ApiFeedback.readResponse(response, source);
 
       // Render the data as HTML in the container (you'll write this function)
       container.innerHTML = renderExtraInfo(mediaType, data);
 
       btn.style.display = "none"; // Hide button after successful fetch
     } catch (error) {
-      container.innerHTML = `<p style="color:red;">Failed to load extra information.</p>`;
+      ApiFeedback.render(container, error, source);
       btn.disabled = false;
       btn.textContent = "More information";
       console.error(error);

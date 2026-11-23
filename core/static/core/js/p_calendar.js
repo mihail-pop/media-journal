@@ -132,8 +132,17 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!pageIsActive) return;
         clearTimeout(syncStatusTimer);
         const status = document.getElementById('sync-status-msg');
-        status.textContent = message;
+        const apiFailure = message && typeof message === 'object';
+        status.classList.toggle('api-sync-error', !!apiFailure);
+        status.style.transform = '';
+        if (apiFailure) ApiFeedback.render(status, message, null, { compact: true });
+        else status.textContent = message;
         status.classList.add('visible');
+        if (apiFailure) {
+            const rect = status.getBoundingClientRect();
+            const shift = rect.left < 12 ? 12 - rect.left : rect.right > innerWidth - 12 ? innerWidth - 12 - rect.right : 0;
+            status.style.transform = `translateX(${shift}px)`;
+        }
         if (duration) {
             syncStatusTimer = setTimeout(() => status.classList.remove('visible'), duration);
         }
@@ -1081,8 +1090,15 @@ document.addEventListener("DOMContentLoaded", function () {
                     const attempted = Number(data.attempted_count) || 0;
                     const failed = Number(data.failed_count) || 0;
                     const skipped = Number(data.skipped_count) || 0;
+                    const providerFailures = Object.values(data.provider_errors || {});
                     if (payload.force || attempted > 0) {
-                        if (failed) message = `Sync finished; ${failed} item${failed === 1 ? '' : 's'} could not be checked. Try again later.`;
+                        if (failed || (payload.force && providerFailures.length)) {
+                            const failures = providerFailures;
+                            message = failures.length === 1 ? failures[0] : {
+                                error: `Couldn’t check ${failed} item${failed === 1 ? '' : 's'}. Check API status.`,
+                                api_status_url: '/settings/?api_status=1#api-status'
+                            };
+                        }
                         else if (skipped) message = `Sync complete. ${skipped} item${skipped === 1 ? '' : 's'} skipped.`;
                         else message = 'Sync Complete!';
                     } else if (announce) {
@@ -1106,7 +1122,7 @@ document.addEventListener("DOMContentLoaded", function () {
             activeSyncForce = false;
             syncVisible = false;
             updateSyncButton();
-            if (message) showStatus(message, message === 'Sync Complete!' ? 2500 : 6000);
+            if (message) showStatus(message, typeof message === 'object' ? 12000 : message === 'Sync Complete!' ? 2500 : 6000);
         }
     }
 

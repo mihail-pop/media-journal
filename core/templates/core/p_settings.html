@@ -12,16 +12,16 @@
   <h1>Settings</h1>
 
   <div class="settings-tabs">
-    <button class="tab-button active" data-tab="preferences">Preferences</button>
+    <button class="tab-button{% if initial_settings_tab == 'preferences' %} active{% endif %}" data-tab="preferences">Preferences</button>
     <button class="tab-button" data-tab="backup">Backup</button>
     <button class="tab-button" data-tab="transfer">Transfer</button>
-    <button class="tab-button" data-tab="api-keys">API Keys</button>
+    <button class="tab-button{% if initial_settings_tab == 'api-keys' %} active{% endif %}" data-tab="api-keys">API Keys</button>
     <button class="tab-button" data-tab="refresh">Refresh</button>
-    <button class="tab-button" data-tab="information">Information</button>
+    <button class="tab-button{% if initial_settings_tab == 'information' %} active{% endif %}" data-tab="information">Information</button>
     <button class="tab-button" data-tab="extras">Extras</button>
   </div>
 
-  <div class="tab-content active" id="preferences">
+  <div class="tab-content{% if initial_settings_tab == 'preferences' %} active{% endif %}" id="preferences">
     <div class="preferences-container">
       <div class="preferences-section">
         <h3>Scoring System</h3>
@@ -400,7 +400,7 @@
 
   {% include 'core/p_settings_transfer.html' %}
 
-  <div class="tab-content" id="api-keys">
+  <div class="tab-content{% if initial_settings_tab == 'api-keys' %} active{% endif %}" id="api-keys">
     <div class="preferences-container">
       <div class="preferences-section" style="grid-column: 1 / -1; max-width: none;">
         <h3>API Keys Management</h3>
@@ -534,7 +534,7 @@
     </div>
   </div>
 
-  <div class="tab-content" id="information">
+  <div class="tab-content{% if initial_settings_tab == 'information' %} active{% endif %}" id="information">
     <div class="preferences-container">
       <div class="preferences-section info-section">
         <h3>Useful Resources</h3>
@@ -584,7 +584,7 @@
         </div>
 
         <!-- API Status (2/3 Width) -->
-        <div class="preferences-section info-section api-status-section">
+        <div class="preferences-section info-section api-status-section" id="api-status">
           <h3>APIs Status</h3>
           <div id="api-status-container" class="api-status-grid">
             <div class="api-status-loading">

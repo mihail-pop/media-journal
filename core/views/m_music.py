@@ -1,3 +1,4 @@
+from core.services.g_api_errors import ApiError, ApiClient, api_errors
 import logging
 import datetime
 import re
@@ -17,6 +18,7 @@ logger = logging.getLogger(__name__)
 
 @ensure_csrf_cookie
 @require_GET
+@api_errors('musicbrainz')
 def musicbrainz_search(request):
     wait_for_rate_limit()
     raw_query = request.GET.get("q", "").strip()
@@ -44,7 +46,7 @@ def musicbrainz_search(request):
         params = {"query": lucene_query, "limit": 20, "fmt": "json"}
 
         # Uses the smart mb_session from services that has retries and correct User-Agent
-        response = mb_session.get(url, params=params, timeout=10)
+        response = ApiClient('musicbrainz', mb_session).get(url, params=params, timeout=10)
         response.raise_for_status()
         data = response.json()
 
@@ -71,6 +73,8 @@ def musicbrainz_search(request):
             status=500,
         )
 
+    except ApiError:
+        raise
     except Exception as e:
         logger.error(f"MusicBrainz search error: {str(e)}")
         return JsonResponse({"error": f"Search failed: {str(e)}"}, status=500)
@@ -151,6 +155,7 @@ def musicbrainz_search(request):
 
 @ensure_csrf_cookie
 @require_GET
+@api_errors('musicbrainz', detail_page=True)
 def musicbrainz_detail(request, recording_id):
     item = None
     try:
@@ -243,7 +248,7 @@ def musicbrainz_detail(request, recording_id):
     }
 
     try:
-        recording_response = mb_session.get(
+        recording_response = ApiClient('musicbrainz', mb_session).get(
             recording_url, params=recording_params, timeout=10
         )
         recording_response.raise_for_status()

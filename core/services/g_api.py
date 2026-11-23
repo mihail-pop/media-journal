@@ -1,4 +1,5 @@
 import requests
+from core.services.g_api_errors import ApiClient, ApiError
 
 from core.models import APIKey, MediaItem
 from core.services.m_games import get_igdb_token
@@ -45,7 +46,7 @@ def get_game_screenshots_data(igdb_id):
     # Fetch only screenshots
     query = f"fields screenshots.url; where id = {igdb_id};"
     try:
-        response = requests.post(
+        response = ApiClient('igdb').post(
             "https://api.igdb.com/v4/games", headers=headers, data=query
         )
         if response.status_code == 200:
@@ -57,6 +58,8 @@ def get_game_screenshots_data(igdb_id):
                         url = "https:" + ss["url"].replace("t_thumb", "t_1080p")
                         screenshots.append({"url": url, "is_full_url": True})
                 return screenshots
-    except Exception:
-        pass
+    except ApiError:
+        raise
+    except Exception as error:
+        raise ApiError('igdb') from error
     return []

@@ -136,8 +136,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     favorite: enabled,
                 }),
             });
-            const data = await response.json();
-            if (!response.ok || data.status !== (enabled ? 'added' : 'removed')) throw new Error(data.error || 'Unable to update this favorite. Please try again.');
+            const data = await ApiFeedback.readResponse(response, favForm.dataset.personSource || 'anilist');
+            if (data.status !== (enabled ? 'added' : 'removed')) throw new Error(data.error || 'Unable to update this favorite.');
             checkbox.checked = data.status === 'added';
             favoriteStatusReady = true;
         }
@@ -162,7 +162,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
             } catch (error) {
-                showNotification(error.message || 'Unable to update this favorite.', 'warning');
+                ApiFeedback.notify(error, favForm.dataset.personSource || 'anilist');
             } finally {
                 favoriteSaving = false;
                 checkbox.disabled = !favoriteStatusReady;
@@ -217,7 +217,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 body: JSON.stringify({ person_id: personId, person_type: personType, source: favForm.dataset.personSource, refresh_mode: mode }),
             })
-            .then(res => res.json())
+            .then(res => ApiFeedback.readResponse(res, favForm.dataset.personSource || 'anilist'))
             .then(data => {
                 if (data.success) {
                     sessionStorage.setItem('personRefreshSuccess', '1');
@@ -226,14 +226,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     isRefreshing = false;
                     refreshBtn.disabled = false;
                     refreshBtn.style.opacity = '1';
-                    showNotification('Refresh failed.', 'warning');
+                    ApiFeedback.notify({ error: 'This person could not be refreshed.' });
                 }
             })
-            .catch(() => {
+            .catch(error => {
                 isRefreshing = false;
                 refreshBtn.disabled = false;
                 refreshBtn.style.opacity = '1';
-                showNotification('Refresh failed.', 'warning');
+                ApiFeedback.notify(error, favForm.dataset.personSource || 'anilist');
             });
         };
 

@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="{% static 'core/css/g_header.css' %}" />
   <script src="{% static 'core/js/g_scroll_lock.js' %}"></script>
   <link rel="stylesheet" href="{% static 'core/css/g_search.css' %}" />
+  <link rel="stylesheet" href="{% static 'core/css/g_api_feedback.css' %}" />
   <link rel="stylesheet" href="{% static 'core/css/g_modal_tag_fields.css' %}" />
   {% include 'core/g_pwa_meta.html' %}
   <!-- fonts (Served locally via CSS) -->
@@ -88,6 +89,7 @@
 {% csrf_token %}
 
 {% block script %}
+  <script src="{% static 'core/js/g_api_feedback.js' %}"></script>
   <script src="{% static 'core/js/g_modal_tag_fields.js' %}"></script>
   <script src="{% static 'core/js/g_ratings.js' %}"></script>
   <script src="{% static 'core/js/g_banner_rotator.js' %}"></script>

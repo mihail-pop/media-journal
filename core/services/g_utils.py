@@ -55,20 +55,43 @@ def get_sharded_path(original_path):
 
 
 def download_image(url, relative_path, *, timeout=10):
-    sharded_relative_path = get_sharded_path(relative_path)
+    import tempfile
+    from core.services.g_api_errors import as_api_error
+    from core.services.g_media_files import current_downloads
     
-    local_path = Path(settings.MEDIA_ROOT) / sharded_relative_path
-    local_path.parent.mkdir(parents=True, exist_ok=True)  # Ensure folder exists
-
+    batch = current_downloads.get()
+    temporary_path = None
     try:
+        sharded_relative_path = get_sharded_path(relative_path)
+        root = Path(settings.MEDIA_ROOT).resolve()
+        local_path = (root / sharded_relative_path).resolve()
+        if not local_path.is_relative_to(root) or local_path == root:
+            raise ValueError('Invalid media path.')
+        local_path.parent.mkdir(parents=True, exist_ok=True)
         response = requests.get(url, timeout=timeout)
-        if response.status_code == 200:
-            with open(local_path, "wb") as f:
-                f.write(response.content)
-            return settings.MEDIA_URL + sharded_relative_path
+        response.raise_for_status()
+        if not response.content or response.headers.get('Content-Type', '').split(';')[0] in ('text/html', 'application/json'):
+            raise ValueError('Invalid image response.')
+        existed = local_path.exists()
+        with tempfile.NamedTemporaryFile(dir=local_path.parent, suffix='.tmp', delete=False) as output:
+            temporary_path = Path(output.name)
+            output.write(response.content)
+        os.replace(temporary_path, local_path)
+        temporary_path = None
+        if batch is not None and not existed:
+            batch.created.add(local_path)
+        return settings.MEDIA_URL + sharded_relative_path
     except Exception as e:
+        if batch is not None:
+            batch.failure = as_api_error(e, batch.provider)
+            if batch.failure.code == 'not_found':
+                from core.services.g_api_errors import ApiError
+                batch.failure = ApiError(batch.provider)
+            raise batch.failure from e
         print("Image download failed:", e)
-
+    finally:
+        if temporary_path is not None:
+            temporary_path.unlink(missing_ok=True)
     return ""
 
 

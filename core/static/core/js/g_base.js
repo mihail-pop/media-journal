@@ -200,8 +200,7 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const params = new URLSearchParams({ q: query, type });
       const response = await fetch(`${apiEndpoints[type]}?${params}`, { signal: searchController.signal });
-      if (!response.ok) throw new Error('Network error');
-      const data = await response.json();
+      const data = await ApiFeedback.readResponse(response, type);
       if (revision !== searchRevision) return;
       // Person/character searches return a list; media searches wrap it in results.
       const results = Array.isArray(data) ? data : data.results;
@@ -254,7 +253,7 @@ document.addEventListener("DOMContentLoaded", () => {
       updateSearchResultsSize();
     } catch (error) {
       if (error.name === 'AbortError' || revision !== searchRevision) return;
-      showSearchMessage('Error fetching results');
+      ApiFeedback.render(resultsContainer, error, type);
       console.error('Search error:', error);
     }
   }

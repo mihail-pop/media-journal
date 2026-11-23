@@ -1,3 +1,4 @@
+from core.services.g_api_errors import api_errors, provider_for_request
 import os
 import json
 import time
@@ -23,6 +24,7 @@ from core.services.m_people import (
 
 
 @ensure_csrf_cookie
+@api_errors('anilist')
 def character_search_view(request):
     query = request.GET.get("q", "")
     results = character_search(query) if query else []
@@ -30,6 +32,7 @@ def character_search_view(request):
 
 
 @ensure_csrf_cookie
+@api_errors('tmdb')
 def actor_search_view(request):
     query = request.GET.get("q", "")
     results = actor_search(query) if query else []
@@ -53,6 +56,7 @@ def check_favorite_person_view(request):
 
 
 @ensure_csrf_cookie
+@api_errors(provider_for_request)
 def toggle_favorite_person_view(request):
     if request.method != "POST":
         return JsonResponse({"error": "POST request required."}, status=400)

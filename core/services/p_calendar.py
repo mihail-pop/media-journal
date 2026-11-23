@@ -16,6 +16,7 @@ from core.services.g_calendar_dates import (
     normalize_calendar_datetime,
 )
 from core.services.m_games import get_igdb_token
+from core.services.g_api_errors import ApiError, as_api_error
 
 
 # Home and Calendar share this lock; network workers never write to SQLite.
@@ -65,6 +66,7 @@ def _failed(result, items, error, provider=None):
     result['skipped_count' if isinstance(error, _ProviderDeferred) else 'failed_count'] += len(items)
     _remember_failure(items, provider)
     if not isinstance(error, _ProviderDeferred):
+        result.setdefault('provider_errors', {})[provider] = as_api_error(error, provider).payload()
         print(f"Calendar {provider or 'item'} synchronization failed: {error}")
 
 
@@ -85,7 +87,7 @@ def _request_json(provider, method, url, *, interval=0, result=None, **kwargs):
     try:
         response = getattr(requests, method)(url, timeout=10, **kwargs)
     except requests.RequestException as error:
-        raise _RequestFailure('The request timed out or could not connect.') from error
+        raise as_api_error(error, provider) from error
     if response.status_code == 429:
         retry_after = response.headers.get('Retry-After', '')
         try:
@@ -97,13 +99,17 @@ def _request_json(provider, method, url, *, interval=0, result=None, **kwargs):
                 seconds = 60
         with _retry_lock:
             _provider_retry_until[provider] = time.time() + max(1, seconds)
-        raise _RequestFailure('The provider rate limit was reached; remaining requests are deferred.')
+        raise ApiError(provider, 'rate_limited')
     if response.status_code != 200:
-        raise _RequestFailure(f"The provider returned HTTP {response.status_code}.")
+        try:
+            response.raise_for_status()
+        except requests.RequestException as error:
+            raise as_api_error(error, provider) from error
+        raise ApiError(provider)
     try:
         return response.json()
     except (TypeError, ValueError) as error:
-        raise _RequestFailure('The provider returned an invalid response.') from error
+        raise ApiError(provider) from error
 
 
 def cleanup_old_events():
@@ -221,6 +227,7 @@ def _tmdb_key(items, result):
         key = None
     if not key:
         result['skipped_count'] += len(items)
+        result.setdefault('provider_errors', {})['tmdb'] = ApiError('tmdb', 'missing_key').payload()
     return key
 
 
@@ -506,6 +513,7 @@ def _sync_igdb(items, result):
         keys = None
     if keys is None or not keys.key_1 or not keys.key_2:
         result['skipped_count'] += len(items)
+        result.setdefault('provider_errors', {})['igdb'] = ApiError('igdb', 'missing_key').payload()
         return
     try:
         token = get_igdb_token(http=_TokenHTTP(result))

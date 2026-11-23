@@ -1,3 +1,4 @@
+from core.services.g_api_errors import ApiError, ApiClient, require_api_data
 import time
 
 import concurrent.futures
@@ -61,12 +62,17 @@ def save_tmdb_item(media_type, tmdb_id, *, http=None, prepare_only=False, initia
             params = {"api_key": api_key, "append_to_response": "aggregate_credits"}
         else:
             params = {"api_key": api_key, "append_to_response": "credits"}
-        response = (http or requests).get(url, params=params)
+        response = (ApiClient('tmdb', http)).get(url, params=params)
 
         if response.status_code != 200:
             return JsonResponse({"error": "Failed to fetch TMDB details."})
 
         data = response.json()
+        require_api_data(isinstance(data, dict) and data.get('id') and (data.get('title') or data.get('name')), 'tmdb')
+        credits_key = 'aggregate_credits' if media_type == 'tv' else 'credits'
+        require_api_data(isinstance(data.get(credits_key), dict) and isinstance(data[credits_key].get('cast'), list), 'tmdb')
+        if media_type == 'tv':
+            require_api_data(isinstance(data.get('seasons'), list), 'tmdb')
 
         # Poster and banner
         poster_url = (
@@ -213,6 +219,8 @@ def save_tmdb_item(media_type, tmdb_id, *, http=None, prepare_only=False, initia
 
         return JsonResponse({"message": "Added to your list."})
 
+    except ApiError:
+        raise
     except Exception as e:
         return JsonResponse({"error": f"Failed to save: {str(e)}"})
 
@@ -224,19 +232,24 @@ def save_tmdb_season(tmdb_id, season_number, *, http=None, prepare_only=False, i
         # Get season details
         season_url = f"https://api.themoviedb.org/3/tv/{tmdb_id}/season/{season_number}"
         season_params = {"api_key": api_key, "append_to_response": "aggregate_credits"}
-        season_response = (http or requests).get(season_url, params=season_params)
+        season_response = (ApiClient('tmdb', http)).get(season_url, params=season_params)
 
         if season_response.status_code == 429:
             raise Exception("HTTP 429 Too Many Requests: Rate Limit Exceeded")
         elif season_response.status_code != 200:
             return JsonResponse({"error": "Failed to fetch season details."})
         season_data = season_response.json()
+        require_api_data(isinstance(season_data, dict) and season_data.get('id') and
+                         isinstance(season_data.get('episodes'), list), 'tmdb')
+        require_api_data(isinstance(season_data.get('aggregate_credits'), dict) and
+                         isinstance(season_data['aggregate_credits'].get('cast'), list), 'tmdb')
 
         # Get main show details
         show_url = f"https://api.themoviedb.org/3/tv/{tmdb_id}"
         show_params = {"api_key": api_key}
-        show_response = (http or requests).get(show_url, params=show_params)
+        show_response = (ApiClient('tmdb', http)).get(show_url, params=show_params)
         show_data = show_response.json() if show_response.status_code == 200 else {}
+        require_api_data(isinstance(show_data, dict) and show_data.get('id') and show_data.get('name'), 'tmdb')
 
         # Download images
         poster_url = (
@@ -353,6 +366,8 @@ def save_tmdb_season(tmdb_id, season_number, *, http=None, prepare_only=False, i
 
         return JsonResponse({"message": "Season added to your list."})
 
+    except ApiError:
+        raise
     except Exception as e:
         return JsonResponse({"error": f"Failed to save season: {str(e)}"})
 
@@ -361,7 +376,7 @@ def get_movie_extra_info(tmdb_id):
     try:
         api_key = APIKey.objects.get(name="tmdb").key_1
     except APIKey.DoesNotExist:
-        return {}
+        raise ApiError('tmdb', 'missing_key')
 
     base_url = f"https://api.themoviedb.org/3/movie/{tmdb_id}"
     params = {
@@ -371,7 +386,7 @@ def get_movie_extra_info(tmdb_id):
 
     try:
         # Single API call with all data
-        response = requests.get(base_url, params=params)
+        response = ApiClient('tmdb').get(base_url, params=params)
         if response.status_code != 200:
             return {}
 
@@ -420,7 +435,7 @@ def get_movie_extra_info(tmdb_id):
         if collection:
             collection_id = collection.get("id")
             collection_url = f"https://api.themoviedb.org/3/collection/{collection_id}"
-            collection_resp = requests.get(collection_url, params=params)
+            collection_resp = ApiClient('tmdb').get(collection_url, params=params)
             if collection_resp.status_code == 200:
                 items = collection_resp.json().get("parts", [])
                 # Sort by release date
@@ -460,16 +475,17 @@ def get_movie_extra_info(tmdb_id):
             "recommendations": recommendations,
         }
 
+    except ApiError:
+        raise
     except Exception as e:
-        print(f"Error in get_movie_extra_info: {e}")
-        return {}
+        raise ApiError('tmdb') from e
 
 
 def get_tv_extra_info(tmdb_id):
     try:
         api_key = APIKey.objects.get(name="tmdb").key_1
     except APIKey.DoesNotExist:
-        return {}
+        raise ApiError('tmdb', 'missing_key')
 
     base_url = f"https://api.themoviedb.org/3/tv/{tmdb_id}"
     params = {
@@ -479,7 +495,7 @@ def get_tv_extra_info(tmdb_id):
 
     try:
         # Single API call with all data
-        response = requests.get(base_url, params=params)
+        response = ApiClient('tmdb').get(base_url, params=params)
         if response.status_code != 200:
             return {}
 
@@ -584,16 +600,17 @@ def get_tv_extra_info(tmdb_id):
             "episode_runtime": episode_runtime,
         }
 
+    except ApiError:
+        raise
     except Exception as e:
-        print("TV API error:", e)
-        return {}
+        raise ApiError('tmdb') from e
 
 
 def get_tmdb_discover(media_type, page, query="", sort="popularity.desc", year="", genre="", allow_adult=True):
     try:
         api_key = APIKey.objects.get(name="tmdb").key_1
     except APIKey.DoesNotExist:
-        return []
+        raise ApiError('tmdb', 'missing_key')
 
     if query:
         url = f"https://api.themoviedb.org/3/search/{media_type}"
@@ -639,12 +656,13 @@ def get_tmdb_discover(media_type, page, query="", sort="popularity.desc", year="
         params['include_adult'] = str(allow_adult).lower()
 
     try:
-        response = requests.get(url, params=params)
+        response = ApiClient('tmdb').get(url, params=params)
         if response.status_code != 200:
             return []
 
         data = response.json()
         raw_results = data.get("results", [])
+        require_api_data(isinstance(data.get('results'), list), 'tmdb')
         
         # Pagination follows the raw page, not the number left after filtering.
         has_more = bool(raw_results)
@@ -662,9 +680,11 @@ def get_tmdb_discover(media_type, page, query="", sort="popularity.desc", year="
                 try:
                     detail_url = f"https://api.themoviedb.org/3/tv/{tv_id}"
                     # We only need basic details, no append_to_response needed to keep it lightning fast
-                    resp = requests.get(detail_url, params={"api_key": api_key}, timeout=3)
+                    resp = ApiClient('tmdb').get(detail_url, params={"api_key": api_key}, timeout=3)
                     if resp.status_code == 200:
                         return tv_id, resp.json().get("next_episode_to_air")
+                except ApiError:
+                    raise
                 except Exception:
                     pass
                 return tv_id, None
@@ -743,9 +763,10 @@ def get_tmdb_discover(media_type, page, query="", sort="popularity.desc", year="
             results.append(result_dict)
 
         return {'results': results, 'hasMore': has_more}
+    except ApiError:
+        raise
     except Exception as e:
-        print(f"Discover Error: {e}")
-        return []
+        raise ApiError('tmdb') from e
 
 
 def update_tmdb_seasons(media_item):
@@ -772,10 +793,10 @@ def update_tmdb_seasons(media_item):
     params = {"api_key": api_key}
 
     try:
-        response = requests.get(url, params=params, timeout=10)
+        response = ApiClient('tmdb').get(url, params=params, timeout=10)
         response.raise_for_status()
         data = response.json()
-    except RequestException as e:
+    except (RequestException, ApiError) as e:
         print(f"TMDB update skipped for {media_item.title} — no connection or error: {e}")
         media_item.last_updated = timezone.now()
         media_item.save()

@@ -1,3 +1,4 @@
+from core.services.g_api_errors import api_errors
 import logging
 from datetime import date, datetime, time, timedelta
 from collections import defaultdict
@@ -1022,6 +1023,7 @@ def favorites_page(request):
 
 @ensure_csrf_cookie
 @require_GET
+@api_errors(lambda request, person_type, person_id: 'anilist' if person_type in ('anilist', 'character') else 'tmdb', detail_page='person')
 def person_detail(request, person_type, person_id):
     AppSettings = apps.get_model("core", "AppSettings")
     settings = AppSettings.objects.first()
@@ -1226,6 +1228,7 @@ def settings_page(request):
             "show_collections_field": settings.show_collections_field,
             "activity_date_mode": settings.activity_date_mode,
             "activity_date_modes": activity_date_modes,
+            "initial_settings_tab": 'information' if request.GET.get('api_status') == '1' else ('api-keys' if request.GET.get('tab') == 'api-keys' else 'preferences'),
             "details_sections_order": settings.details_sections_order,
             "favorite_sections_order": settings.get_favorite_sections_order(),
             "share_favorite_sections": favorite_export_options(settings),

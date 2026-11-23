@@ -4,6 +4,7 @@ import uuid
 import time
 import datetime
 import datetime as dt
+from core.services.g_api_errors import api_errors, provider_for_request
 
 from django.apps import apps
 from django.conf import settings
@@ -27,6 +28,7 @@ from core.services.m_movies_tvshows import save_tmdb_item, save_tmdb_season
 
 @ensure_csrf_cookie
 @require_POST
+@api_errors(provider_for_request)
 def add_to_list(request):
     try:
         data = json.loads(request.body)
@@ -82,6 +84,7 @@ def add_to_list(request):
 
 @ensure_csrf_cookie
 @require_POST
+@api_errors('tmdb')
 def add_season_to_list(request):
     try:
         data = json.loads(request.body)
@@ -746,154 +749,36 @@ def delete_item(request, item_id):
 
 @ensure_csrf_cookie
 @require_POST
+@api_errors(provider_for_request)
 def refresh_item(request):
+    from core.services.g_media_files import RefreshDownloads
+    from core.services.g_refresh import METADATA_FIELDS, apply_refresh, prepare_full_refresh
+
     try:
         data = json.loads(request.body)
-        item_id = data.get("id")
-        refresh_type = data.get("refresh_type", "all")
-        if not item_id:
-            return JsonResponse({"error": "Missing item ID."}, status=400)
-
-        # Get the item first
-        item = MediaItem.objects.get(id=item_id)
-        original_provider_ids = dict(item.provider_ids)
-        
-        source = item.source
-        source_id = item.source_id
-        media_type = item.media_type
-
-        # 1. Temporarily hide the old item by changing its provider_ids 
-        # so the API fetcher doesn't think it's a duplicate and abort.
-        item.provider_ids = {source: f"temp_{uuid.uuid4().hex}"}
-        item.save(update_fields=['provider_ids'])
-
-        try:
-            # 2. Fetch fresh data by triggering the standard save function
-            res = None
-            if source == "tmdb":
-                if "_s" in source_id:  # It's a season
-                    tmdb_id, season_number = source_id.split("_s")
-                    res = save_tmdb_season(tmdb_id, season_number)
-                else:
-                    res = save_tmdb_item(media_type, source_id)
-            elif source in ["mal", "anilist"]:
-                anilist_id = original_provider_ids.get("anilist")
-                mal_id = original_provider_ids.get("mal")
-                res = save_anilist_item(media_type, anilist_id=anilist_id, mal_id=mal_id)
-            elif source == "igdb":
-                res = save_igdb_item(source_id)
-            elif source == "openlib":
-                res = save_openlib_item(source_id)
-            elif source == "musicbrainz":
-                res = save_musicbrainz_item(source_id)
-            else:
-                raise Exception("Unsupported source.")
-            
-            # Check for API failure
-            if res and res.status_code != 200:
-                error_msg = "Unknown API error"
-                try:
-                    error_msg = json.loads(res.content).get("error", error_msg)
-                except Exception:
-                    pass
-                raise Exception(error_msg)
-
-            # 3. Find the newly created temporary item holding the fresh data
-            lookup_key = f"provider_ids__{source}"
-            new_item = MediaItem.objects.get(media_type=media_type, **{lookup_key: str(source_id)})
-
-        except Exception as e:
-            # 4a. On API failure, simply revert provider_ids and abort. NO DATA LOST!
-            item.provider_ids = original_provider_ids
-            item.save(update_fields=['provider_ids'])
-            return JsonResponse({"error": f"Failed to refresh: {str(e)}"}, status=500)
-
-        # 4b. On success, securely copy purely API-driven metadata from new_item to old item
-        metadata_fields =[
-            'title', 'overview', 'release_date', 'cast', 'seasons', 'episodes',
-            'related_titles', 'genres', 'creators', 'total_main', 'total_secondary'
-        ]
-        
-        files_to_delete = []
-        
-        # Determine which item's metadata images to clean up
-        # If updating data: clean the old item's images (they are being replaced)
-        # If NOT updating data: clean the new item's images (they are discarded to prevent orphaned files)
-        item_to_clean = item if refresh_type in ['all', 'data'] else new_item
-
-        if item_to_clean.media_type != "music":
-            for member in (item_to_clean.cast or []):
-                p = member.get("profile_path", "")
-                if p.startswith("/media/"):
-                    files_to_delete.append(os.path.join(settings.MEDIA_ROOT, p.replace("/media/", "")))
-        for related in (item_to_clean.related_titles or []):
-            p = related.get("poster_path", "")
-            if p.startswith("/media/"):
-                files_to_delete.append(os.path.join(settings.MEDIA_ROOT, p.replace("/media/", "")))
-        for season in (item_to_clean.seasons or []):
-            p = season.get("poster_path", "")
-            if p.startswith("/media/"):
-                files_to_delete.append(os.path.join(settings.MEDIA_ROOT, p.replace("/media/", "")))
-        for episode in (item_to_clean.episodes or []):
-            p = episode.get("still_path", "")
-            if p.startswith("/media/"):
-                files_to_delete.append(os.path.join(settings.MEDIA_ROOT, p.replace("/media/", "")))
-
-        # Apply the new text-based metadata only if requested
-        if refresh_type in ['all', 'data']:
-            if item.media_type in ('tv', 'anime') and new_item.episode_runtime is not None:
-                metadata_fields.append('episode_runtime')
-            for field in metadata_fields:
-                setattr(item, field, getattr(new_item, field))
-
-        # Handle Cover based on refresh_type
-        if refresh_type in ['all', 'cover']:
-            if item.cover_url and item.cover_url.startswith('/media/'):
-                files_to_delete.append(os.path.join(settings.MEDIA_ROOT, item.cover_url.replace('/media/', '')))
-            item.cover_url = new_item.cover_url
-        else:
-            if new_item.cover_url and new_item.cover_url.startswith('/media/'):
-                files_to_delete.append(os.path.join(settings.MEDIA_ROOT, new_item.cover_url.replace('/media/', '')))
-
-        # Handle Banner based on refresh_type
-        if refresh_type in ['all', 'banner']:
-            if item.banner_url and item.banner_url.startswith('/media/'):
-                files_to_delete.append(os.path.join(settings.MEDIA_ROOT, item.banner_url.replace('/media/', '')))
-            item.banner_url = new_item.banner_url
-        else:
-            if new_item.banner_url and new_item.banner_url.startswith('/media/'):
-                files_to_delete.append(os.path.join(settings.MEDIA_ROOT, new_item.banner_url.replace('/media/', '')))
-
-        # Screenshots are manual, so we ALWAYS keep old screenshots. Mark new ones for deletion.
-        for shot in new_item.game_screenshots.all():
-            url = shot.url
-            if url.startswith("/media/"):
-                files_to_delete.append(os.path.join(settings.MEDIA_ROOT, url.replace("/media/", "")))
-
-        # Restore original provider ids to put it back in its rightful place
-        item.provider_ids = original_provider_ids
-        item.last_updated = timezone.now()
-        item.save()
-
-        # 5. Delete the temporary new_item container from DB
-        new_item.delete()
-
-        # 6. Delete orphaned local files
-        for path in files_to_delete:
-            if os.path.exists(path):
-                try:
-                    os.remove(path)
-                except Exception:
-                    pass
-
-        return JsonResponse({"message": "Item refreshed successfully."})
-
+        item_id = data.get('id')
+        refresh_type = data.get('refresh_type', 'all')
+        if not item_id or refresh_type not in ('all', 'data', 'cover', 'banner'):
+            return JsonResponse({'error': 'Invalid refresh request.'}, status=400)
+    except (ValueError, AttributeError):
+        return JsonResponse({'error': 'Invalid refresh request.'}, status=400)
+    try:
+        item = MediaItem.objects.get(pk=item_id)
     except MediaItem.DoesNotExist:
-        return JsonResponse({"error": "Item not found."}, status=404)
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return JsonResponse({"error": str(e)}, status=500)
+        return JsonResponse({'error': 'Item not found.'}, status=404)
+    if str(item.source_id).startswith('custom_'):
+        return JsonResponse({'error': 'Custom items do not have API metadata to refresh.'}, status=400)
+
+    with RefreshDownloads(item.source) as downloads:
+        prepared = prepare_full_refresh(item)
+        fields = list(METADATA_FIELDS) if refresh_type in ('all', 'data') else []
+        if refresh_type in ('all', 'cover'):
+            fields.append('cover_url')
+        if refresh_type in ('all', 'banner'):
+            fields.append('banner_url')
+        apply_refresh(item, prepared, fields, downloads,
+                      refresh_runtime=refresh_type in ('all', 'data'))
+    return JsonResponse({'message': 'Item refreshed successfully.'})
 
 
 # API endpoint used by edit modal (g_edit_modal.js, p_history.js, m_lists.js)

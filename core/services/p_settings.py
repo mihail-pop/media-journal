@@ -1,3 +1,4 @@
+from core.services.g_api_errors import ApiError, ApiClient, require_api_data
 import os
 import glob
 import time
@@ -175,11 +176,12 @@ def refresh_musicbrainz_item(recording_id):
     recording_url = f"https://musicbrainz.org/ws/2/recording/{recording_id}"
     recording_params = {"inc": "artists+releases+release-groups+isrcs+tags", "fmt": "json"}
 
-    response = requests.get(recording_url, params=recording_params, headers=headers, timeout=10)
+    response = ApiClient('musicbrainz').get(recording_url, params=recording_params, headers=headers, timeout=10)
     if response.status_code == 429:
         raise Exception("HTTP 429 Too Many Requests: Rate Limit Exceeded")
     response.raise_for_status()
     recording_data = response.json()
+    require_api_data(isinstance(recording_data, dict) and recording_data.get('id') and recording_data.get('title'), 'musicbrainz')
 
     title = recording_data.get("title", "Untitled")
     artist_credits = recording_data.get("artist-credit", [])
@@ -235,7 +237,7 @@ def refresh_musicbrainz_item(recording_id):
 
     creators =[a.get("name", "") for a in artist_credits if a.get("name")]
 
-    MediaItem.objects.create(
+    return dict(
         title=title,
         media_type="music",
         source="musicbrainz",
@@ -250,7 +252,6 @@ def refresh_musicbrainz_item(recording_id):
         genres=genres,
         creators=creators,
     )
-    return True
 
 def refresh_igdb_item(igdb_id):
     import requests
@@ -276,17 +277,19 @@ def refresh_igdb_item(igdb_id):
     where id = {igdb_id};
     """
 
-    response = requests.post("https://api.igdb.com/v4/games", headers=headers, data=query)
+    response = ApiClient('igdb').post("https://api.igdb.com/v4/games", headers=headers, data=query)
     if response.status_code == 429:
         raise Exception("HTTP 429 Too Many Requests: Rate Limit Exceeded")
     elif response.status_code != 200:
         raise Exception(f"Failed to fetch details from IGDB. Status: {response.status_code}")
 
     data = response.json()
+    require_api_data(isinstance(data, list), 'igdb')
     if not data:
-        raise Exception("Game not found.")
+        raise ApiError('igdb', 'not_found')
 
     game = data[0]
+    require_api_data(isinstance(game, dict) and game.get('id') and game.get('name'), 'igdb')
     title = game.get("name") or "Unknown Title"
     overview = game.get("summary") or game.get("storyline") or ""
 
@@ -301,7 +304,7 @@ def refresh_igdb_item(igdb_id):
         if c.get("developer") and c.get("company", {}).get("name")
     ]
 
-    MediaItem.objects.create(
+    return dict(
         title=title,
         media_type="game",
         source="igdb",
@@ -316,7 +319,6 @@ def refresh_igdb_item(igdb_id):
         genres=genres,
         creators=creators,
     )
-    return True
 
 def refresh_tmdb_item(media_type, tmdb_id, existing_seasons=None, existing_cast=None):
     import requests
@@ -326,7 +328,7 @@ def refresh_tmdb_item(media_type, tmdb_id, existing_seasons=None, existing_cast=
     api_key = APIKey.objects.get(name="tmdb").key_1
     url = f"https://api.themoviedb.org/3/{media_type}/{tmdb_id}"
     params = {"api_key": api_key, "append_to_response": "aggregate_credits" if media_type == "tv" else "credits"}
-    response = requests.get(url, params=params)
+    response = ApiClient('tmdb').get(url, params=params)
 
     if response.status_code == 429:
         raise Exception("HTTP 429 Too Many Requests: Rate Limit Exceeded")
@@ -334,6 +336,11 @@ def refresh_tmdb_item(media_type, tmdb_id, existing_seasons=None, existing_cast=
         raise Exception(f"Failed to fetch TMDB details. Status: {response.status_code}")
 
     data = response.json()
+    require_api_data(isinstance(data, dict) and data.get('id') and (data.get('title') or data.get('name')), 'tmdb')
+    credits_key = 'aggregate_credits' if media_type == 'tv' else 'credits'
+    require_api_data(isinstance(data.get(credits_key), dict) and isinstance(data[credits_key].get('cast'), list), 'tmdb')
+    if media_type == 'tv':
+        require_api_data(isinstance(data.get('seasons'), list), 'tmdb')
     cache_bust = int(time.time() * 1000)
 
     # --- REUSE EXISTING CAST IMAGES ---
@@ -431,7 +438,7 @@ def refresh_tmdb_item(media_type, tmdb_id, existing_seasons=None, existing_cast=
         crew = data.get("credits", {}).get("crew", [])
         creators =[c.get("name") for c in crew if c.get("job") == "Director" and c.get("name")]
 
-    MediaItem.objects.create(
+    return dict(
         title=data.get("title") or data.get("name"),
         media_type=media_type,
         source="tmdb",
@@ -449,7 +456,6 @@ def refresh_tmdb_item(media_type, tmdb_id, existing_seasons=None, existing_cast=
         genres=genres,
         creators=creators,
     )
-    return True
 
 def refresh_anilist_item(media_type, anilist_id=None, mal_id=None, existing_related=None, existing_cast=None):
     from core.services.g_utils import download_image
@@ -533,7 +539,7 @@ def refresh_anilist_item(media_type, anilist_id=None, mal_id=None, existing_rela
     if data["mal_id"]:
         new_provider_ids["mal"] = str(data["mal_id"])
 
-    MediaItem.objects.create(
+    return dict(
         title=data["title"],
         media_type=media_type,
         source="anilist",
@@ -552,7 +558,6 @@ def refresh_anilist_item(media_type, anilist_id=None, mal_id=None, existing_rela
         genres=data["genres"],
         creators=data["creators"],
     )
-    return True
 
 
 # --- REFRESH TASK ---
@@ -563,6 +568,8 @@ class RefreshTask(threading.Thread):
         self.task_id = task_id
         self.media_type = media_type
         self.selected_fields = selected_fields or []
+        self.api_error = None
+        self.failed_count = 0
         self.progress = 0
         self.status = "pending"
         self.message = "Initializing..."
@@ -670,111 +677,46 @@ class RefreshTask(threading.Thread):
             source_id = str(item.source_id)
             media_type = item.media_type
 
-            original_provider_ids = dict(item.provider_ids)
-            existing_seasons = item.seasons if media_type == 'tv' else None
-            existing_related = item.related_titles if media_type in ['anime', 'manga'] else None
-            existing_cast = item.cast
-
-            # 1. Safely hide old item so API fetcher doesn't clash
-            item.provider_ids = {source: f"temp_{uuid.uuid4().hex}"}
-            item.save(update_fields=['provider_ids'])
+            from core.services.g_media_files import RefreshDownloads
+            from core.services.g_refresh import STRUCTURAL_FIELDS, apply_refresh, prepared_data
 
             try:
-                # 2. Refetch item via lightweight functions (respectfully against rate limits)
-                if source == "tmdb":
-                    if "_s" in source_id:
-                        tmdb_id, season_number = source_id.split("_s")
-                        save_tmdb_season(tmdb_id, season_number) # Full payload for seasons
+                with RefreshDownloads(source) as downloads:
+                    if source == 'tmdb':
+                        if '_s' in source_id:
+                            tmdb_id, season_number = source_id.split('_s')
+                            result = save_tmdb_season(tmdb_id, season_number, prepare_only=True)
+                        else:
+                            result = refresh_tmdb_item(media_type, source_id, item.seasons, item.cast)
+                        time.sleep(0.2)
+                    elif source in ('mal', 'anilist'):
+                        result = refresh_anilist_item(media_type, item.provider_ids.get('anilist'),
+                                                      item.provider_ids.get('mal'), item.related_titles, item.cast)
+                        time.sleep(2.1)
+                    elif source == 'igdb':
+                        result = refresh_igdb_item(source_id)
+                        time.sleep(0.3)
+                    elif source == 'openlib':
+                        result = save_openlib_item(source_id, prepare_only=True)
+                        time.sleep(1.0)
+                    elif source == 'musicbrainz':
+                        result = refresh_musicbrainz_item(source_id)
+                        time.sleep(1.1)
                     else:
-                        refresh_tmdb_item(media_type, source_id, existing_seasons, existing_cast)
-                    time.sleep(0.2)
-                elif source in ["mal", "anilist"]:
-                    anilist_id = original_provider_ids.get("anilist")
-                    mal_id = original_provider_ids.get("mal")
-                    refresh_anilist_item(media_type, anilist_id, mal_id, existing_related, existing_cast)
-                    time.sleep(2.1)
-                elif source == "igdb":
-                    refresh_igdb_item(source_id)
-                    time.sleep(0.3)
-                elif source == "openlib":
-                    save_openlib_item(source_id)
-                    time.sleep(1.0)
-                elif source == "musicbrainz":
-                    refresh_musicbrainz_item(source_id)
-                    time.sleep(1.1)
-                else:
-                    item.provider_ids = original_provider_ids
-                    item.save(update_fields=['provider_ids'])
-                    processed += 1
-                    continue
-
-                # 3. Pull recently made object to grab fresh metadata
-                lookup_key = f"provider_ids__{source}"
-                new_item = MediaItem.objects.get(media_type=media_type, **{lookup_key: source_id})
-
-                # 4. Clean up orphans and copy metadata
-                def extract_urls(data, paths_set):
-                    if isinstance(data, dict):
-                        for v in data.values():
-                            extract_urls(v, paths_set)
-                    elif isinstance(data, list):
-                        for i in data:
-                            extract_urls(i, paths_set)
-                    elif isinstance(data, str) and data.startswith("/media/"):
-                        paths_set.add(data.replace("/media/", "", 1).strip('/'))
-
-                media_fields =['cast', 'seasons', 'episodes', 'related_titles']
-                old_files = set()
-                new_files = set()
-                
-                for f in media_fields:
-                    extract_urls(getattr(item, f, None), old_files)
-                    extract_urls(getattr(new_item, f, None), new_files)
-
-                # Copy strictly API-driven fields
-                # Base uneditable structural fields that are always safe to overwrite
-                metadata_fields = ['cast', 'seasons', 'episodes', 'related_titles']
-                # Runtime is API-only metadata; a missing response must not erase
-                # a previously known value. Editable totals keep their checkbox.
-                if media_type in ('tv', 'anime') and new_item.episode_runtime is not None:
-                    metadata_fields.append('episode_runtime')
-                
-                # Append editable fields only if the user explicitly checked them
-                if 'title' in self.selected_fields: 
-                    metadata_fields.append('title')
-                if 'overview' in self.selected_fields: 
-                    metadata_fields.append('overview')
-                if 'release_date' in self.selected_fields: 
-                    metadata_fields.append('release_date')
-                if 'genres' in self.selected_fields: 
-                    metadata_fields.append('genres')
-                if 'creators' in self.selected_fields: 
-                    metadata_fields.append('creators')
-                if 'progress' in self.selected_fields: 
-                    metadata_fields.extend(['total_main', 'total_secondary'])
-
-                for field in metadata_fields:
-                    setattr(item, field, getattr(new_item, field))
-                
-                # Combine notifications
-                item.notification = item.notification or new_item.notification
-                
-                # Restore original provider IDs
-                item.provider_ids = original_provider_ids
-                item.last_updated = timezone.now()
-                item.save()
-
-                # Delete the temporary new_item container
-                new_item.delete()
-
-                # Delete orphaned local files explicitly replaced by the API
-                for rel_path in old_files - new_files:
-                    abs_path = os.path.join(settings.MEDIA_ROOT, rel_path)
-                    if os.path.exists(abs_path):
-                        try:
-                            os.remove(abs_path)
-                        except Exception:
-                            pass
+                        processed += 1
+                        continue
+                    prepared = prepared_data(result, source)
+                    fields = list(STRUCTURAL_FIELDS)
+                    for choice, names in {
+                        'title': ('title',), 'overview': ('overview',),
+                        'release_date': ('release_date',), 'genres': ('genres',),
+                        'creators': ('creators',), 'progress': ('total_main', 'total_secondary'),
+                    }.items():
+                        if choice in self.selected_fields:
+                            fields.extend(names)
+                    if self._cancel_event.is_set():
+                        return
+                    apply_refresh(item, prepared, fields, downloads, notify=True)
 
                 consecutive_errors = 0  # <--- RESET on successful fetch
                 processed += 1
@@ -782,11 +724,15 @@ class RefreshTask(threading.Thread):
 
             except Exception as e:
                 consecutive_errors += 1
+                self.failed_count += 1
                 error_msg = str(e).lower()
+                if isinstance(e, ApiError):
+                    self.api_error = e.payload()
+                    if e.code in ('missing_key', 'invalid_key'):
+                        self.error = str(e)
+                        self.status = 'error'
+                        break
                 
-                # Restore original provider IDs on failure. Data completely safe.
-                item.provider_ids = original_provider_ids
-                item.save(update_fields=['provider_ids'])
                     
                 # If it explicitly caught a known 429
                 if "429" in error_msg or "rate limit" in error_msg or "too many requests" in error_msg:

@@ -1,3 +1,5 @@
+from django.db import transaction
+from core.services.g_api_errors import ApiError, ApiClient, require_api_data
 import time
 import json
 from datetime import datetime
@@ -36,17 +38,19 @@ def save_igdb_item(igdb_id, *, http=None, prepare_only=False, initial_status='pl
     where id = {igdb_id};
     """
 
-    response = (http or requests).post(
+    response = (ApiClient('igdb', http)).post(
         "https://api.igdb.com/v4/games", headers=headers, data=query
     )
     if response.status_code != 200:
         raise Exception("Failed to fetch details from IGDB.")
 
     data = response.json()
+    require_api_data(isinstance(data, list), 'igdb')
     if not data:
-        raise Exception("Game not found.")
+        raise ApiError('igdb', 'not_found')
 
     game = data[0]
+    require_api_data(isinstance(game, dict) and game.get('id') and game.get('name'), 'igdb')
 
     title = game.get("name") or "Unknown Title"
     overview = game.get("summary") or game.get("storyline") or ""
@@ -152,18 +156,19 @@ def save_igdb_item(igdb_id, *, http=None, prepare_only=False, initial_status='pl
     if prepare_only:
         return {"item": item_data, "screenshots": local_screenshots}
     apply_initial_item_status(item_data, initial_status)
-    item = MediaItem.objects.create(**item_data)
+    with transaction.atomic():
+        item = MediaItem.objects.create(**item_data)
 
-    from core.models import Screenshot
-    Screenshot.objects.bulk_create([
-        Screenshot(
-            item=item, 
-            url=s["url"], 
-            is_full_url=s.get("is_full_url", False), 
-            position=i+1
-        )
-        for i, s in enumerate(local_screenshots)
-    ])
+        from core.models import Screenshot
+        Screenshot.objects.bulk_create([
+            Screenshot(
+                item=item,
+                url=s["url"],
+                is_full_url=s.get("is_full_url", False),
+                position=i+1
+            )
+            for i, s in enumerate(local_screenshots)
+        ])
 
     return JsonResponse({"success": True, "message": "Game added to list"})
 
@@ -177,7 +182,9 @@ def get_igdb_token(*, http=None):
     try:
         igdb_keys = APIKey.objects.get(name="igdb")
     except APIKey.DoesNotExist:
-        return None
+        raise ApiError('igdb', 'missing_key')
+    if not igdb_keys.key_1 or not igdb_keys.key_2:
+        raise ApiError('igdb', 'missing_key')
 
     url = "https://id.twitch.tv/oauth2/token"
     params = {
@@ -186,7 +193,7 @@ def get_igdb_token(*, http=None):
         "grant_type": "client_credentials",
     }
 
-    resp = (http or requests).post(url, params=params)
+    resp = (ApiClient('igdb', http)).post(url, params=params)
     if resp.status_code != 200:
         return None
 
@@ -199,12 +206,12 @@ def get_igdb_token(*, http=None):
 def get_game_extra_info(game_id):
     token = get_igdb_token()
     if not token:
-        return {}
+        raise ApiError('igdb', 'invalid_key')
 
     try:
         igdb_keys = APIKey.objects.get(name="igdb")
     except APIKey.DoesNotExist:
-        return {}
+        raise ApiError('igdb', 'missing_key')
 
     headers = {
         "Client-ID": igdb_keys.key_1,
@@ -236,7 +243,7 @@ def get_game_extra_info(game_id):
     """
 
     try:
-        response = requests.post(
+        response = ApiClient('igdb').post(
             "https://api.igdb.com/v4/games", headers=headers, data=body
         )
         if response.status_code == 429:
@@ -308,7 +315,7 @@ def get_game_extra_info(game_id):
         time_to_beat = {}
         ttb_body = f"fields hastily, normally, completely; where game_id = {game_id};"
         try:
-            ttb_response = requests.post(
+            ttb_response = ApiClient('igdb').post(
                 "https://api.igdb.com/v4/game_time_to_beats", headers=headers, data=ttb_body
             )
             if ttb_response.status_code == 200:
@@ -325,6 +332,8 @@ def get_game_extra_info(game_id):
                         time_to_beat["main_extras"] = normally
                     if completely and completely < 1000:
                         time_to_beat["completionist"] = completely
+        except ApiError:
+            raise
         except Exception:
             pass
 
@@ -402,8 +411,10 @@ def get_game_extra_info(game_id):
         }
         return result
 
-    except Exception:
-        return {}
+    except ApiError:
+        raise
+    except Exception as error:
+        raise ApiError('igdb') from error
 
 
 def get_igdb_discover(
@@ -411,12 +422,12 @@ def get_igdb_discover(
 ):
     token = get_igdb_token()
     if not token:
-        return []
+        raise ApiError('igdb', 'invalid_key')
 
     try:
         igdb_keys = APIKey.objects.get(name="igdb")
     except APIKey.DoesNotExist:
-        return []
+        raise ApiError('igdb', 'missing_key')
 
     headers = {
         "Client-ID": igdb_keys.key_1,
@@ -476,7 +487,7 @@ def get_igdb_discover(
         data = f"fields {fields_to_request}; where {where_clause}; {sort_clause}; limit 20; offset {offset};"
 
     try:
-        response = requests.post(
+        response = ApiClient('igdb').post(
             "https://api.igdb.com/v4/games", headers=headers, data=data.encode('utf-8')
         )
         if response.status_code == 429:
@@ -486,6 +497,7 @@ def get_igdb_discover(
             return list()
 
         results_raw = response.json()
+        require_api_data(isinstance(results_raw, list), 'igdb')
         results = []
 
         for item in results_raw:
@@ -534,6 +546,7 @@ def get_igdb_discover(
             )
 
         return results
+    except ApiError:
+        raise
     except Exception as e:
-        print(f"IGDB Discover function error: {e}")
-        return []
+        raise ApiError('igdb') from e

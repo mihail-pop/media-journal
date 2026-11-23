@@ -88,8 +88,8 @@ document.addEventListener('DOMContentLoaded', () => {
         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
         body: JSON.stringify(data),
       });
-      const result = await response.json();
-      if (!response.ok || result.error || !(result.message || result.success)) {
+      const result = await ApiFeedback.readResponse(response, addButton.dataset.source || 'tmdb');
+      if (!(result.message || result.success)) {
         throw new Error(result.error || 'Failed to add item.');
       }
       try {
@@ -101,7 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
       saving = false;
       buttons.forEach(button => { button.disabled = false; });
       notification?.remove();
-      alert(error.message || 'Failed to add item.');
+      ApiFeedback.notify(error, addButton.dataset.source || 'tmdb');
     }
   }
 

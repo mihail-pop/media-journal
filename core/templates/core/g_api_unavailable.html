@@ -1,0 +1,17 @@
+{% extends 'core/g_base.html' %}
+{% block head %}{{ block.super }}<title>Unable to Load - Media Journal</title>{% endblock %}
+{% block content %}
+<section class="api-unavailable">
+  <h1>Unable to load this item</h1>
+  <p>{{ api_error_text }}</p>
+  <div class="api-unavailable-actions">
+    {% if api_error.error_code == 'missing_key' or api_error.error_code == 'invalid_key' %}
+      <a href="/settings/?tab=api-keys#api-keys">API credentials</a>
+    {% else %}
+      <a href="{{ api_error.api_status_url }}">Check API status</a>
+    {% endif %}
+    <a href="" onclick="window.location.reload(); return false;">Retry</a>
+    <a href="{{ list_url }}">Go to list</a>
+  </div>
+</section>
+{% endblock %}

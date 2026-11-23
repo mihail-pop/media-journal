@@ -1,3 +1,4 @@
+from core.services.g_api_errors import ApiClient, api_errors, require_api_data
 import datetime
 
 import requests
@@ -13,6 +14,7 @@ from core.services.g_utils import adult_content_allowed
 
 @ensure_csrf_cookie
 @require_GET
+@api_errors('tmdb')
 def tmdb_search(request):
     query = request.GET.get("q", "").strip()
     media_type = request.GET.get("type", "").lower()  # Expect 'movie' or 'tv'
@@ -39,12 +41,13 @@ def tmdb_search(request):
         url = "https://api.themoviedb.org/3/search/tv"
 
     params = {"api_key": api_key, "query": query, "include_adult": str(adult_content_allowed()).lower()}
-    response = requests.get(url, params=params)
+    response = ApiClient('tmdb').get(url, params=params)
 
     if response.status_code != 200:
         return JsonResponse({"error": "Failed to fetch from TMDB."}, status=500)
 
     data = response.json()
+    require_api_data(isinstance(data.get('results'), list), 'tmdb')
 
     # Format results
     results = [
@@ -64,6 +67,7 @@ def tmdb_search(request):
 
 @ensure_csrf_cookie
 @require_GET
+@api_errors('tmdb', detail_page=True)
 def tmdb_detail(request, media_type, tmdb_id):
     if media_type not in ("movie", "tv"):
         return JsonResponse({"error": "Invalid media type."}, status=400)
@@ -182,7 +186,7 @@ def tmdb_detail(request, media_type, tmdb_id):
         }
     else:
         params = {"api_key": api_key, "append_to_response": "credits,recommendations"}
-    response = requests.get(url, params=params)
+    response = ApiClient('tmdb').get(url, params=params)
 
     if response.status_code != 200:
         return JsonResponse({"error": "Failed to fetch details from TMDB."}, status=500)
@@ -308,6 +312,7 @@ def tmdb_detail(request, media_type, tmdb_id):
 
 @ensure_csrf_cookie
 @require_GET
+@api_errors('tmdb', detail_page='tv')
 def tmdb_season_detail(request, tmdb_id, season_number):
     # Check if season already exists in database
     season_source_id = f"{tmdb_id}_s{season_number}"
@@ -371,7 +376,8 @@ def tmdb_season_detail(request, tmdb_id, season_number):
                 api_key = APIKey.objects.get(name="tmdb").key_1
                 show_url = f"https://api.themoviedb.org/3/tv/{tmdb_id}"
                 show_params = {"api_key": api_key}
-                show_response = requests.get(show_url, params=show_params)
+                # Optional navigation must not hold a saved season page hostage.
+                show_response = ApiClient('tmdb').get(show_url, params=show_params, timeout=(3, 5))
                 if show_response.status_code == 200:
                     show_data = show_response.json()
                     all_seasons = show_data.get("seasons", [])
@@ -424,7 +430,7 @@ def tmdb_season_detail(request, tmdb_id, season_number):
     # Get season details
     season_url = f"https://api.themoviedb.org/3/tv/{tmdb_id}/season/{season_number}"
     season_params = {"api_key": api_key, "append_to_response": "aggregate_credits"}
-    season_response = requests.get(season_url, params=season_params)
+    season_response = ApiClient('tmdb').get(season_url, params=season_params)
 
     if season_response.status_code != 200:
         return JsonResponse(
@@ -436,7 +442,7 @@ def tmdb_season_detail(request, tmdb_id, season_number):
     # Get main show details for context
     show_url = f"https://api.themoviedb.org/3/tv/{tmdb_id}"
     show_params = {"api_key": api_key}
-    show_response = requests.get(show_url, params=show_params)
+    show_response = ApiClient('tmdb').get(show_url, params=show_params)
     show_data = show_response.json() if show_response.status_code == 200 else {}
 
     # Format data

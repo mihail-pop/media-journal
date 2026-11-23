@@ -1,3 +1,4 @@
+from core.services.g_api_errors import ApiError, ApiClient, require_api_data
 import os
 import logging
 import datetime
@@ -53,10 +54,11 @@ def actor_search(query):
         "page": 1,
     }
 
-    response = requests.get(url, params=params)
+    response = ApiClient('tmdb').get(url, params=params)
 
     if response.status_code == 200:
         data = response.json()
+        require_api_data(isinstance(data.get('results'), list), 'tmdb')
         results = []
         for person in data.get("results", [])[:10]:
             results.append(
@@ -95,12 +97,13 @@ def character_search(query):
 
     variables = {"search": query}
 
-    response = requests.post(
+    response = ApiClient('anilist').post(
         url, json={"query": graphql_query, "variables": variables}, headers=headers
     )
 
     if response.status_code == 200:
         data = response.json()
+        require_api_data(isinstance(data.get('data', {}).get('Page', {}).get('characters'), list), 'anilist')
         results = []
         for char in data["data"]["Page"]["characters"]:
             results.append(
@@ -241,14 +244,15 @@ def fetch_actor_data(actor_id, source=None, force_refresh=False):
     try:
         api_key = APIKey.objects.get(name="tmdb").key_1
         person_url = f"https://api.themoviedb.org/3/person/{actor_id}"
-        person_response = requests.get(person_url, params={"api_key": api_key})
+        person_response = ApiClient('tmdb').get(person_url, params={"api_key": api_key})
 
         if person_response.status_code != 200:
             return None
 
         person_data = person_response.json()
+        require_api_data(person_data.get('id') and person_data.get('name'), 'tmdb')
         credits_url = f"https://api.themoviedb.org/3/person/{actor_id}/combined_credits"
-        credits_response = requests.get(credits_url, params={"api_key": api_key})
+        credits_response = ApiClient('tmdb').get(credits_url, params={"api_key": api_key})
 
         known_for = []
         related_media = []
@@ -374,6 +378,10 @@ def fetch_actor_data(actor_id, source=None, force_refresh=False):
             "assigned_media": [] # Empty when fetching freshly from API
         }
 
+    except APIKey.DoesNotExist:
+        raise ApiError('tmdb', 'missing_key')
+    except ApiError:
+        raise
     except Exception as e:
         logger.error(f"Error fetching actor data for {actor_id}: {str(e)}")
         return None
@@ -416,7 +424,7 @@ def fetch_anilist_staff_data(staff_id):
     }
     """
     try:
-        response = requests.post(
+        response = ApiClient('anilist').post(
             'https://graphql.anilist.co',
             json={'query': query, 'variables': {'id': int(staff_id)}},
             timeout=30,
@@ -678,7 +686,7 @@ def fetch_character_data(character_id, force_refresh=False):
             f"Making AniList request for character {character_id} with variables: {variables}"
         )
 
-        response = requests.post(
+        response = ApiClient('anilist').post(
             "https://graphql.anilist.co",
             json={"query": query, "variables": variables},
             headers={"Content-Type": "application/json"},
@@ -790,6 +798,8 @@ def fetch_character_data(character_id, force_refresh=False):
             "voice_actors": voice_actors,
         }
 
+    except ApiError:
+        raise
     except Exception as e:
         logger.error(f"Error fetching character data for {character_id}: {str(e)}")
         return None
@@ -808,6 +818,8 @@ def save_favorite_actor_character(name, image_url, type, person_id=None, source=
     
     if type == "actor" and person_id:
         actor_data = fetch_actor_data(person_id, source=source)
+        if not actor_data:
+            raise ApiError(source or 'tmdb')
         if actor_data:
             high_quality_image_url = actor_data.get("image") or image_url
             additional_data = {
@@ -824,6 +836,8 @@ def save_favorite_actor_character(name, image_url, type, person_id=None, source=
             }
     elif type == "character" and person_id:
         character_data = fetch_character_data(person_id)
+        if not character_data:
+            raise ApiError('anilist')
         if character_data:
             high_quality_image_url = character_data.get("image") or image_url
             additional_data = {

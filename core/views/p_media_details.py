@@ -1,3 +1,4 @@
+from core.services.g_api_errors import api_errors, provider_for_request
 import os
 import json
 import time
@@ -127,6 +128,7 @@ def upload_cover(request):
     return JsonResponse({"success": True, "url": relative_url})
 
 
+@api_errors(provider_for_request)
 def get_extra_info(request):
     media_type = request.GET.get("media_type")
     item_id = request.GET.get("item_id")
