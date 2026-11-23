@@ -10,19 +10,23 @@ After you add your API keys you can start adding items. The search button is ava
 
 You can also change the media type using the dropdown attached to the search bar. Its options follow your navigation button order and leave out media types you have hidden in Settings.
 
+People and Characters can also appear after the media types. Settings > Preferences > Extra Search Options controls these two choices; People starts enabled and Characters starts disabled. People search uses TMDB, while character search uses AniList.
+
 > **Note:** Live search is controlled per media type from Settings > Preferences > Live Search. Movies, TV shows and games have it enabled by default. Anime, manga, books and music start with it disabled to reduce API requests. You can always press Enter to search manually.
 
 Alternatively you can open the discover page from the home page. There you can just hover over an item and press the plus button to quickly add it. 
 
 Discover has different sorting and filtering options for each media type. For games, the Free to Play filter can be combined with Top Rated or Upcoming, genres and any available release year filter.
 
-When using the search bar, clicking on an item will open its details page where you can press the add to my list button.
+When using the search bar, clicking on an item will open its details page. Press Add to List to save it as Planned, or use the attached dropdown to add it with a different status. The button's wording changes for each media type, like Add to Anime List or Add to TV List.
 
 ### 1.2 Details Page
 
-Each media type has different sections on its details page. You can rearrange them or hide them completely from Settings > Preferences > Details Page Sections.
+The tabs below the description switch between Overview and full sections like Information, Cast, Characters, Staff, Trailers and Recommendations. The available tabs depend on the media type. Settings > Preferences > Details Page Overview lets you rearrange or hide the previews in Overview without removing access to their full tabs.
 
-If you want to see more details about an item you can press on More Information. I made this button load extra information through an on-demand API call so you always get the latest data. This way whenever you load a page for an item already in your list there are no automatic API calls. The app only fetches data when you actually want it. 
+Overview uses locally saved data for items already in your list, so opening it does not make provider API calls. Opening a tab that needs extra data fetches a shared bundle, then the other tabs reuse it. This data is cached in the browser tab for up to 20 minutes, with limits on how many items and how much data are kept. Long AniList character and staff lists fetch more pages as you scroll.
+
+Items not yet in your list also show Information, Trailers and Recommendations previews in Overview when available. Movie collections appear as relations, ordered by release date. TV season pages have their own Overview, Information, Cast and Staff tabs, plus links for moving between seasons and back to the main show. Episodes can be shown in their usual detailed layout or as small cards.
 
 Here are some notable sections:
 
@@ -30,17 +34,21 @@ Here are some notable sections:
 
 In this section you can see and write Notes and Logs. Notes also appear in the edit modal and are supposed to be a single place where you keep general thoughts about your media. Logs on the other hand can only be created from the journal section. You can have multiple logs for an item which gives you more options to keep detailed and sectioned info.
 
+You can edit or delete logs, search within the journal, change the sort order and switch between grid and list views. Unfinished notes and logs are kept as drafts in the same browser so you can return to them later.
+
 > **Note:** Both your notes and logs will appear under each media item when you use the Detailed List View on list pages.
 
 #### 1.2.2 Cast & Characters Section
 
-Here you will see 8 people or characters by default and you can see the rest with the load more button. When you hover over them you can favorite or unfavorite using the heart icon. There is also a search button here to search for a specific person or character.
+Overview shows a preview of the cast or characters. Press its title or the matching tab to open the full section. When you hover over a card you can favorite or unfavorite using the heart icon. Search is available inside the full Cast, Characters and Staff tabs; anime and manga staff search uses AniList.
 
-People come from TMDB or AniList. Voice actors on character pages and original creators under More Information for anime and manga are clickable too, so you can open their person page and favorite them.
+People come from TMDB or AniList. Voice actors on character pages and staff cards are clickable too, so you can open their person page and favorite them.
 
 #### 1.2.3 Music Section
 
-In this section you can add YouTube URLs to link videos for a music item. Just note that only the video at the top of the list will be played in the built-in music player.
+In this section you can add YouTube URLs to link videos for a music item. The + opens the URL input; press it again or use Enter to save. You can toggle the video size, enable autoplay or remove a video after confirming.
+
+The music-note button beside each video starts the built-in player from that video. Next and Previous move through the other videos attached to the same item and loop through them. When starting the item from Home or a music list, the player uses its first video.
 
 #### 1.2.4 Screenshots Section
 
@@ -70,7 +78,16 @@ Besides the default tracking fields you can enable additional ones from Settings
 
 You can also use the small + next to progress on list pages while an item is Watching, Reading or Playing. It adds one episode or chapter, with separate episode and season controls in TV list views. Movies, games, books and music use a simple complete action instead of adding minutes, hours or pages. Reaching the known total marks the item as Completed without assigning a score.
 
-Activity Date updates when you change both status and score, or when an item moves from Watching/Reading/Playing to Completed or Dropped even without a score change. This also applies when the progress + completes an item. A date you explicitly change in the edit modal takes priority.
+Settings > Preferences > Activity Date Updates lets you choose when Activity Date changes automatically:
+
+* **Manual Only:** Keep the date unless you change it yourself.
+* **Any Status Change:** Update the date whenever the status changes.
+* **Status + Score:** Update only when both status and score change in the same edit.
+* **Combined:** Update when Watching/Reading/Playing changes to Completed, Dropped or Paused, or when both status and score change. This is the default.
+
+The progress + follows the same preference when it completes an item. A date you explicitly change in the edit modal takes priority, and an unchanged score keeps its original saved value even if your scoring system displays a rounded number.
+
+Genres, creators and collections show their selected values in a floating box while you use the field. When closed, the field shows the first choice and how many more are selected, so adding several values does not stretch the form.
 
 #### 1.4.1 Scoring System
 
@@ -122,13 +139,13 @@ Here you can see your top 10 collections and quickly access the collections page
 
 #### 2.1.3 Activity History Section
 
-Here you can see an activity graph that shows items you modified or added by activity date per day for the past 24 weeks (about 5.5 months). Under it you will find the latest media items and how long ago they were updated. You can also find the Media History button here which redirects you to the History page.
+Here you can see an activity graph that shows items you modified or added by activity date per day for the past 24 weeks (about 5.5 months). Press a day tile to open History filtered to that date. Under the graph you will find the latest media items and how long ago they were updated. You can also find the Media History button here which redirects you to the History page.
 
 #### 2.1.4 Upcoming Releases Section
 
 Here you can view the latest releases in tiles for one week ahead and from the last week. It also shows the 12 newest upcoming releases and how long it is until they release. From here you can access the calendar page through the Calendar button.
 
-> **Note:** When you swap from activity history to upcoming releases the data for the calendar refreshes automatically and the tiles are populated so you don't have to go to the calendar page every time to get updates.
+> **Note:** Upcoming Releases and Calendar share the same synchronization. Opening this section checks whether an update is due, so you don't have to visit Calendar to get updates. The media filters you select on Calendar also apply here.
 
 #### 2.1.5 Favorites Section
 
@@ -145,9 +162,19 @@ There are 3 types of notifications that can appear on the home page:
 
 Here you can see all your media items in one single place and you have more filtering options to search through them.
 
+The Activity Date fields let you filter by year, month or a specific day. Month accepts a number or a month name. If you leave the year empty, the current year is assumed; entering only a day also assumes the current month. Rewind automatically moves backwards through days with activity that matches your other filters, skipping empty days. Press Stop to stay on the displayed date.
+
 ### 2.3 Calendar Page
 
-Here you can see all the past and upcoming releases displayed as pills inside a calendar. Pills older than 3 months are deleted automatically to not clutter the calendar or database for nothing. There is no limit for upcoming releases. The calendar automatically refreshes every time you access the page.
+Here you can see past and upcoming releases in a month grid or a 30-day Agenda view. Press a day to see its items; Today also selects the current day. The media-type filter is remembered in your browser and also applies to Home's Upcoming Releases.
+
+You can create custom events, including recurring ones, and edit their date, title or notes later. Rescheduling a recurring event can also shift the remaining events in its group. Enable notifications for releases you want to be reminded about.
+
+Export Day, Export Month and Export Agenda download an `.ics` file for the current selection and media filters. You can import that file into a calendar app that supports `.ics`; it is a snapshot, not a live subscription.
+
+Calendar checks whether synchronization is due when you open it. Its sync options choose whether to check ongoing and planned items. Known future dates are rechecked less often to save API calls, and you can request a manual sync when needed. Home uses the same data and sync rules.
+
+Events older than 90 days, including custom events and their notes, are deleted automatically. There is no limit for future releases.
 
 ### 2.4 Favorites Page
 
@@ -163,24 +190,31 @@ The community page uses a Realtime Database from Firebase to store data. It uses
 
 On the community page posts you can insert YouTube videos, Imgur images, links and media items (excluding custom items).
 
+Posts load in batches as you scroll. You can comment, like and unlike posts. Likes use one identity for your Media Journal installation, so changing browsers or devices does not give you another like on the same post.
+
 ### 2.6 Collections Page
 
-Collections let you group items from different media types in one place. You can search the collections page by collection title, then search titles and creators inside a collection. Searching turns off reordering so filtered results don't accidentally change your saved order.
+Collections let you group media items, saved People and Characters in one place. In Add Items to Collection, switch between Media and People to choose what to add. People and characters come from your favorites, and you can mix them with media in the same custom order.
+
+You can search the collections page by collection title, then search titles and creators inside a collection. Searching turns off reordering so filtered results don't accidentally change your saved order. Touch devices do not show the reorder control.
 
 ### 2.7 Settings
 
 Preferences contains the theme, font and scoring options, along with a few ways to adjust what you see:
 
-* **Navigation Buttons:** Click to hide/show buttons and drag to reorder them. Favorites, Collections, History, Calendar, Discover and Community are available as extra buttons and start hidden. If seven or more buttons are enabled, the first five stay visible and the rest go into More.
+* **Navigation Buttons:** Click to hide/show buttons and drag to reorder them. Favorites, Collections, History, Calendar, Discover, Community and News are available as extra buttons and start hidden. If seven or more buttons are enabled, the first five stay visible and the rest go into More.
 * **Favorite Sections:** Hide/show and reorder the media, People and Characters sections on Home and Favorites.
+* **Details Page Overview:** Hide/show and reorder the previews in Overview while keeping their full tabs available.
 * **Live Search:** Choose separately for each media type whether searching starts while you type.
+* **Extra Search Options:** Show or hide People and Characters in the header search dropdown.
 * **List Card Overlays:** Choose Full, Progress & Score or Hidden per media type. This affects card views; list views stay the same.
 * **Banner Notes:** Show or hide your item notes over the banner rotators on Home and list pages.
 * **18+ Content:** Include or filter out provider-marked adult titles in search and Discover. This does not hide or remove items already saved in your library. It relies on the provider's classification, so it isn't a general filter for violence or mature themes.
+* **Activity Date Updates:** Choose when editing an item's status and score should update its Activity Date.
 
 #### 2.7.1 Backups
 
-Settings > Backup creates a ZIP archive containing your library database records and local media files. This includes settings, API keys, optional login accounts, collections, logs, people, screenshot records and music links. Use this when moving your installation or keeping a full backup, rather than CSV export.
+Settings > Backup creates a ZIP archive containing your library database records and local media files. This includes settings, API keys, optional login accounts, collections, logs, people, screenshot records, music links, recorded progress, listening history and saved News channels. Use this when moving your installation or keeping a full backup, rather than CSV export.
 
 Loading a backup checks the archive before restoring it. Uploading, validation and restoration have progress reporting, so a large library may spend some time validating before the item counter starts moving.
 
@@ -206,6 +240,18 @@ In Settings > Extras > Share Favorites, choose the sections you want to share, P
 
 For PNG, up to three sections download as separate images. Four or more are grouped into a ZIP. PDF puts the selected sections into one document. This is useful when you want to share your favorites without sharing a link to your private server.
 
+#### 2.7.4 Year in Review
+
+Settings > Extras > Year in Review opens your latest available review and lets you browse past years. Each year's review becomes available on 20 December. A Home button also appears from 20 December through 7 January and opens the latest review without the year selector.
+
+The review brings together completed items, favorites among those items, dropped items, scores and recorded activity. It uses Activity Date to place completed and dropped items in a year. You can pause the background effects and use Share at the bottom to export an image.
+
+Movie time uses each completed movie's saved runtime. Completed AniList anime can use their episode totals and saved episode runtime. TV shows, game hours and reading progress use changes recorded after tracking was added, rather than assigning all your past progress to one year. Music includes recorded plays and listening time from the built-in player. A play counts after one minute or half the video, whichever is shorter.
+
+Existing progress is the starting baseline; refreshing metadata or loading a backup does not count it as new activity. Later changes are recorded when you make them, so adding old progress now places that change in the current year. Pending music listening data stays in the browser until the player closes or a later session starts.
+
+The 24 Nov 2026 update starts recording more detailed activity, so reviews from 2027 onward will have more complete statistics.
+
 ### 2.8 Add to Your Home Screen
 
 Open Media Journal through your own HTTPS address and choose Install app or Add to Home screen in your browser's menu. On iPhone, use Safari's Share > Add to Home Screen, with Open as Web App enabled if shown. The icon opens the app without the usual browser address bar.
@@ -213,3 +259,11 @@ Open Media Journal through your own HTTPS address and choose Install app or Add 
 No domain needs to be added to the app's code. It uses the address you installed from. Your server still needs to be running and reachable; offline use is not included. Regular HTTP access continues to work in the browser, but installation generally requires HTTPS, except for localhost on the same device.
 
 If you use Tailscale, see [Remote Access](../configuration/remote-access.md#https-with-tailscale-serve) for a private HTTPS setup.
+
+### 2.9 News Page
+
+News shows recent YouTube videos from a selection of channels for each media type. Search filters the loaded videos by keyword. Sort by Views or Upload Date, ascending or descending; your sort choice is remembered in the browser, while the page starts with Movies each time.
+
+Open Channels on the sidebar to enable or disable sources, or add your own YouTube channel URL for that media type. Default channels can be disabled, while channels you add can also be deleted after confirmation. These choices are saved with your library and included in backups.
+
+Press a thumbnail or title to play the video in the shared player. Next and Previous follow the displayed video order. News playback stays separate from your music listening statistics. The page uses each channel's recent RSS videos, so it does not keep an archive of past news.

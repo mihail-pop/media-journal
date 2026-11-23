@@ -20,11 +20,13 @@ The app gets data for media items (like titles, descriptions, covers and banners
 
 After the data is fetched it is saved locally on your machine. You can then edit the items to add your own tracking data like notes and scores or even edit the metadata (the information received from the API).
 
-Library records and app settings are stored in `data/db.sqlite3`, while downloaded and uploaded images live in `media/`. Some interface choices, such as view modes, the last search type and music player positions, are saved in the browser instead. Those choices can differ between browsers and devices.
+Library records and app settings are stored in `data/db.sqlite3`, while downloaded and uploaded images live in `media/`. The Windows installer keeps these under its `library/` folder so updating the application does not replace them. Some interface choices, such as view modes, the last search type and music player positions, are saved in the browser instead. Those choices can differ between browsers and devices.
 
-The rest of the features in the app are built entirely around this concept of fetching and saving locally. The notable exception is the Community page which adds another layer of integration. It uses a Realtime Database from Firebase to store the data for posts and comments rather than saving it on your local machine.
+Most of the app is built around fetching and saving locally. Extra details-page tabs fetch provider information when needed and temporarily cache it in the browser tab. News reads recent videos from YouTube channel feeds, while the Community page uses a Realtime Database from Firebase for posts, comments and likes rather than saving them on your local machine.
 
 CSV transfer is another way to add items to this same local library. It resolves IDs or searches for titles, lets you review the matches, then fetches the normal provider metadata and applies the fields you mapped from the file. It does not keep the library synced with the app you exported from.
+
+Progress and status changes are recorded separately from your Activity Date and journal logs. Existing values are a baseline; refreshes, imports and backup restores do not turn those totals into new activity. The music player also records listening time and play counts, keeping pending records in the browser until a player session starts or closes. Year in Review uses this activity alongside your saved items.
 
 ## 3. Longevity and API Reliability
 

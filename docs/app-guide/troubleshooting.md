@@ -33,6 +33,18 @@ Use a named address instead of the numeric IP. Here are some options depending o
 
 Allow pop-ups for your Media Journal address, then try the pop-out control again. The player opens a separate browser window; it is not an always-on-top picture-in-picture window. Closing that window stops the player.
 
+### Search, Discover or Provider Details Fail to Load
+
+If a request fails, the app shows a message with a Check API Status link. You can also find the status checks under Settings > Information. Missing or invalid credentials link to API Keys instead. If the provider is down or rate-limiting requests, wait rather than repeatedly retrying.
+
+Your saved library is still available locally. An unsuccessful provider request should not create an incomplete item or replace saved metadata with an empty response. Batch refresh also reports failed items so you can retry them later.
+
+### Year in Review Is Missing the Current Year or Older Activity
+
+The current year's review becomes available on 20 December. Before then, Settings opens the latest available past year.
+
+Detailed progress and music tracking started with the 24 Nov 2026 update. Existing game hours, TV progress and reading totals are a starting baseline, so earlier activity cannot be reconstructed from them. TV and anime time also need a saved episode runtime, which you can populate using Refresh Data. Listening data still waiting in the browser is sent when the player closes or a new session starts.
+
 ### CSV Rows Are Unmatched or Skipped
 
 Check the selected media type, column mappings, score scale and date format. Provider IDs help avoid title ambiguity; AniList imports accept MyAnimeList IDs too. MusicBrainz IDs must identify recordings, and diary exports with repeated viewings need to be reduced to one row per item.

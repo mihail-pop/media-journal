@@ -1,6 +1,18 @@
 ## Setup for Windows
 
+### Windows Installer
+
 For Windows 11, you can also use the [Windows Installer](https://github.com/mihail-pop/media-journal/releases/latest/download/MediaJournalSetup.exe).
+
+It installs the latest stable release with its own Python and dependencies, so you don't need to install Python, pip or Git first. Choose an installation folder, an available port and whether the app starts manually, after sign-in or before sign-in. Before-sign-in startup uses a Windows service and may ask for administrator approval.
+
+The optional desktop shortcut starts the app and opens it in your browser. Stop Media Journal and Update Media Journal are also available in the Start menu. Enable access from other devices during Setup if you want to connect over your local network; this may ask for approval to add Windows Firewall rules for Private networks.
+
+Updating through Setup keeps your library and offers your existing settings. Uninstalling keeps the library unless you choose to remove it.
+
+After installation, open Settings > API Keys to add your keys. The steps below are for manual setup instead.
+
+### Manual Setup
 
 1. Download [Python 3.13.0](https://www.python.org/downloads/release/python-3130/).  
     During installation check the option:
@@ -55,7 +67,7 @@ You can find your IPv4 address by opening a terminal and running `ipconfig`.
 ---
 
 ### Run Automatically on Startup
-To make the app start automatically in the background when you log into Windows, you can use a combination of a `.bat` file (to run the app) and a `.vbs` file (to hide the terminal window so it isn't in your way).
+For a manual installation, you can make the app start automatically in the background when you log into Windows using a `.bat` file (to run the app) and a `.vbs` file (to hide the terminal window so it isn't in your way). Installer users can choose automatic startup directly in Setup instead.
 
 **1. Create a `.bat` file (e.g., `run_journal.bat`) inside your project folder:**  
 ```bat

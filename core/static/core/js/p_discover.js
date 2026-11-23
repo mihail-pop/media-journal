@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const apiErrorBox = document.getElementById('discover-api-error');
   let pageCache = new Map();
   const renderedTmdbItems = new Set();
+  const cardStates = new WeakMap();
   
   const cardGrid = document.getElementById('card-view');
 
@@ -141,6 +142,87 @@ document.addEventListener('DOMContentLoaded', () => {
     updateYearVisibility();
   }
 
+  function renderSavedState(card, saved) {
+    const state = cardStates.get(card);
+    const btn = card.querySelector('.add-to-list-btn');
+    state.saved = saved;
+    btn.classList.toggle('in-list', saved);
+    btn.classList.toggle('not-in-list', !saved);
+    btn.disabled = saved;
+    if (saved) btn.textContent = '✓';
+    else {
+      const symbol = document.createElement('span');
+      symbol.className = 'discover-add-symbol';
+      symbol.textContent = '+';
+      btn.replaceChildren(symbol);
+    }
+    btn.style.display = !saved && card.matches(':hover') ? 'block' : 'none';
+  }
+
+  function refreshCardState(card) {
+    const state = cardStates.get(card);
+    if (state.saving) return;
+    if (state.checking) return state.checking;
+    const btn = card.querySelector('.add-to-list-btn');
+    const version = state.version;
+    btn.disabled = true;
+    let request;
+    request = (async () => {
+      try {
+        const params = new URLSearchParams({ source: state.item.source || getSourceFromMediaType(state.item.media_type), source_id: state.item.id });
+        if (state.item.mal_id) params.set('mal_id', state.item.mal_id);
+        const response = await fetch('/api/check_in_list/?' + params, { cache: 'no-store' });
+        const data = await response.json();
+        if (!response.ok || typeof data.in_list !== 'boolean') throw new Error('Invalid saved state.');
+        // A previous read must not overwrite a newer Add or Back action.
+        if (state.version !== version) return;
+        state.stale = false;
+        renderSavedState(card, data.in_list);
+      } catch (_) {
+        if (state.version === version) btn.disabled = state.saved;
+      } finally {
+        if (state.checking === request) state.checking = null;
+      }
+    })();
+    state.checking = request;
+    return request;
+  }
+
+  function bindCard(card, item, check = true) {
+    const btn = card.querySelector('.add-to-list-btn');
+    const saved = btn.classList.contains('in-list') || btn.textContent.trim() === '✓';
+    cardStates.set(card, { item, key: [item.source || getSourceFromMediaType(item.media_type), item.media_type, item.id].join(':'),
+      saved, stale: true, version: 0, checking: null, saving: false, timer: null });
+    btn.style.removeProperty('background');
+    renderSavedState(card, saved);
+    card.addEventListener('mouseenter', event => {
+      const state = cardStates.get(card);
+      if (state.stale) refreshCardState(card);
+      if (!btn.classList.contains('in-list')) btn.style.display = 'block';
+      showTooltip(event, item);
+    });
+    card.addEventListener('mouseleave', () => { btn.style.display = 'none'; hideTooltip(); });
+    if (check) refreshCardState(card);
+  }
+
+  function refreshReturnedCards() {
+    const visited = window.history.state?.viewedItem;
+    for (const card of cardGrid.querySelectorAll('.card')) {
+      const state = cardStates.get(card);
+      if (!state) continue;
+      clearTimeout(state.timer);
+      state.timer = null;
+      state.version++;
+      state.checking = null;
+      state.saving = false;
+      state.stale = true;
+      renderSavedState(card, state.saved);
+      const rect = card.getBoundingClientRect();
+      // Recheck the visited item immediately, and other cards only as needed.
+      if (visited ? state.key === visited : rect.bottom > 0 && rect.top < window.innerHeight) refreshCardState(card);
+    }
+  }
+
   function createCard(item) {
     const card = document.createElement('div');
     card.className = 'card';
@@ -174,59 +256,13 @@ document.addEventListener('DOMContentLoaded', () => {
       <a href="${linkUrl}" class="card-link">
         <img src="${posterUrl}" onerror="this.src='/static/core/img/placeholder.png'" alt="${item.title}" loading="lazy">
         <!-- Button is now inside the link, making its position relative to the image -->
-        <button class="add-to-list-btn" data-id="${item.id}" data-type="${item.media_type}" data-title="${item.title}" data-poster="${posterUrl}" data-item="${encodeURIComponent(JSON.stringify(item))}" style="display: none;">+</button>
+        <button class="add-to-list-btn" data-id="${item.id}" data-type="${item.media_type}" data-title="${item.title}" data-poster="${posterUrl}" data-item="${encodeURIComponent(JSON.stringify(item))}" style="display: none;"><span class="discover-add-symbol">+</span></button>
       </a>
       <div class="card-title">${item.title}</div>
     `;
     
-    const btn = card.querySelector('.add-to-list-btn');
-    
-    // Check if item is in list immediately for mobile
-    (async () => {
-      const source = item.source;
-      const source_id = item.id;
-      const mal_id = item.mal_id;
-      
-      try {
-        let url = `/api/check_in_list/?source=${source}&source_id=${source_id}`;
-        if (mal_id) {
-          url += `&mal_id=${mal_id}`;
-        }
-        const response = await fetch(url);
-        const data = await response.json();
-        
-        if (data.in_list) {
-          btn.classList.add('in-list');
-        } else {
-          btn.classList.add('not-in-list');
-        }
-      } catch (error) {
-        btn.classList.add('not-in-list');
-      }
-    })();
-    
-    // Add hover events
-    let isHovering = false;
-    card.addEventListener('mouseenter', async (e) => {
-      isHovering = true;
-      
-      if (!btn.classList.contains('in-list') && isHovering) {
-        btn.style.display = 'block';
-      }
-      
-      // Show tooltip
-      if (isHovering) {
-        showTooltip(e, item);
-      }
-    });
-    
-    card.addEventListener('mouseleave', () => {
-      isHovering = false;
-      const btn = card.querySelector('.add-to-list-btn');
-      btn.style.display = 'none';
-      hideTooltip();
-    });
-    
+    bindCard(card, item);
+
     return card;
   }
   
@@ -237,9 +273,9 @@ document.addEventListener('DOMContentLoaded', () => {
     tooltip.className = 'hover-tooltip';
     
     // Add backdrop/banner image if available
-    let content = '';
+    let content = '<div class="tooltip-surface">';
     if (item.backdrop_path) {
-      content += `<div class="tooltip-backdrop" style="background-image: url('${item.backdrop_path}');"></div>`;
+      content += '<div class="tooltip-backdrop"></div>';
     }
     
     content += `<div class="tooltip-content">`;
@@ -280,15 +316,17 @@ document.addEventListener('DOMContentLoaded', () => {
       content += `<div class="tooltip-overview">${shortOverview}</div>`;
     }
     
-    content += `</div>`;
+    content += `</div></div>`;
     
     tooltip.innerHTML = content;
+    const backdrop = tooltip.querySelector('.tooltip-backdrop');
+    if (backdrop) backdrop.style.setProperty('--tooltip-backdrop-image', `url(${JSON.stringify(item.backdrop_path)})`);
     document.body.appendChild(tooltip);
     
     // Position tooltip
     const rect = e.target.closest('.card').getBoundingClientRect();
     tooltip.style.left = (rect.right + 10) + 'px';
-    tooltip.style.top = rect.top + 'px';
+    tooltip.style.top = (rect.top - 2) + 'px';
   }
   
   function hideTooltip() {
@@ -556,7 +594,12 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Add to list function
   async function addToList(itemData, btn) {
-    const originalText = btn.textContent;
+    const card = btn.closest('.card');
+    const state = cardStates.get(card);
+    if (btn.disabled || state.saving) return;
+    const version = ++state.version;
+    state.saving = true;
+    const originalContent = [...btn.childNodes];
     btn.textContent = '...';
     btn.disabled = true;
     
@@ -571,20 +614,27 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       
       const data = await ApiFeedback.readResponse(response, itemData.source);
+      if (state.version !== version) return;
       
       if (response.ok && (data.success || data.message)) {
         btn.textContent = '✓';
-        btn.style.background = 'rgba(40, 167, 69, 0.8)';
-        setTimeout(() => {
-          btn.style.display = 'none';
+        state.saved = true;
+        state.stale = false;
+        state.timer = setTimeout(() => {
+          state.saving = false;
+          state.timer = null;
+          renderSavedState(card, true);
         }, 1000);
       } else {
-        btn.textContent = originalText;
+        state.saving = false;
+        btn.replaceChildren(...originalContent);
         btn.disabled = false;
         ApiFeedback.notify({ error: data.error || 'Failed to add item.' }, itemData.source);
       }
     } catch (error) {
-      btn.textContent = originalText;
+      if (state.version !== version) return;
+      state.saving = false;
+      btn.replaceChildren(...originalContent);
       btn.disabled = false;
       ApiFeedback.notify(error, itemData.source);
     }
@@ -592,12 +642,15 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Store page state before navigation
   document.addEventListener('click', (e) => {
+    if (e.defaultPrevented || e.target.closest('.add-to-list-btn')) return;
     if (e.target.closest('.card-link')) {
+      const state = cardStates.get(e.target.closest('.card'));
       window.history.replaceState({
         html: cardGrid.innerHTML,
         currentPage: currentPage,
         hasMorePages: failedPage !== null ? true : hasMorePages,
         failedPage: failedPage,
+        viewedItem: state?.key,
         scrollPosition: window.scrollY
       }, '', window.location.href);
     }
@@ -607,6 +660,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.state?.scrollPosition !== undefined) {
       setTimeout(() => window.scrollTo(0, e.state.scrollPosition), 100);
     }
+  });
+
+  window.addEventListener('pageshow', event => {
+    if (event.persisted) { hideTooltip(); refreshReturnedCards(); }
   });
   
   // Initial load
@@ -622,45 +679,14 @@ document.addEventListener('DOMContentLoaded', () => {
       // A failed page is retried after Back, never restored as a real end.
       if (state.failedPage) currentPage = state.failedPage;
       
-      // Re-attach event listeners
       cardGrid.querySelectorAll('.card').forEach(card => {
         const btn = card.querySelector('.add-to-list-btn');
         const itemData = JSON.parse(decodeURIComponent(btn.dataset.item));
-        if (itemData.source === 'tmdb') {
-          renderedTmdbItems.add(`${itemData.media_type}:${itemData.id}`);
-        }
-        
-        let isHovering = false;
-        card.addEventListener('mouseenter', async (e) => {
-          isHovering = true;
-          const source = itemData.source;
-          const source_id = itemData.id;
-          const mal_id = itemData.mal_id;
-          try {
-            let url = `/api/check_in_list/?source=${source}&source_id=${source_id}`;
-            if (mal_id) {
-              url += `&mal_id=${mal_id}`;
-            }
-            const response = await fetch(url);
-            const data = await response.json();
-            if (data.in_list) {
-              btn.classList.add('in-list');
-            } else if (isHovering) {
-              btn.style.display = 'block';
-            }
-          } catch {
-            if (isHovering) btn.style.display = 'block';
-          }
-          if (isHovering) showTooltip(e, itemData);
-        });
-        
-        card.addEventListener('mouseleave', () => {
-          isHovering = false;
-          btn.style.display = 'none';
-          hideTooltip();
-        });
+        if (itemData.source === 'tmdb') renderedTmdbItems.add(`${itemData.media_type}:${itemData.id}`);
+        bindCard(card, itemData, false);
       });
-      
+      refreshReturnedCards();
+
       window.scrollTo(0, state.scrollPosition);
     } else if (currentPage > 1) {
       cardGrid.innerHTML = '';

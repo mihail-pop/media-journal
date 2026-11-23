@@ -21,7 +21,7 @@ A plain `http://` Tailscale address works for browsing, but home screen installa
     ```sh
     tailscale serve --bg http://127.0.0.1:8000
     ```
-    For the default Docker setup, use `http://127.0.0.1:8090` instead, since that is the port exposed on the host. If Tailscale asks you to enable HTTPS, follow the link it provides.
+    For the default Docker setup, use `http://127.0.0.1:8090` instead, since that is the port exposed on the host. For the Windows installer, use the port selected during Setup. If Tailscale asks you to enable HTTPS, follow the link it provides.
 3. Copy the HTTPS address shown by the command. It will look like `https://your-device.your-tailnet.ts.net/`. Add that origin to `CSRF_TRUSTED_ORIGINS` using the instructions below, then restart Media Journal.
 4. Open that HTTPS address on your phone while connected to Tailscale. You can then [add Media Journal to your home screen](../app-guide/how-to-use.md#28-add-to-your-home-screen).
 
@@ -66,6 +66,10 @@ Set the `CSRF_TRUSTED_ORIGINS` environment variable to your external origin, suc
     ```
 
 === "Windows"
+
+    **If using the Windows Installer:**
+
+    Open `config.json` in your installation folder and set `csrf_trusted_origins` to your HTTPS origin, such as `https://your-domain.com`. Keep the other settings in the file. Use Stop Media Journal in the Start menu, then open Media Journal again to apply the change.
 
     **If using the `.bat` file (Recommended):**  
     Open your `run_journal.bat` file in a text editor and add the variable right before the runserver command:

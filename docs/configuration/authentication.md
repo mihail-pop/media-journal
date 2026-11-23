@@ -23,6 +23,22 @@ Before you lock the app you need to create a "Superuser" account so you can actu
 
 === "Windows"
 
+    **If using the Windows Installer:**
+
+    Open PowerShell in your installation folder (by default `%USERPROFILE%\MediaJournal`) and run:
+    ```powershell
+    $journalRoot = (Get-Location).Path
+    $journalState = Get-Content .\install-state.json -Raw | ConvertFrom-Json
+    $journalRelease = Join-Path $journalRoot ("releases\" + $journalState.active_release)
+    $env:DJANGO_SETTINGS_MODULE = "installed_settings"
+    $env:MEDIA_JOURNAL_INSTALL_ROOT = $journalRoot
+    $env:PYTHONPATH = "$journalRoot\support;$journalRelease\application"
+    & "$journalRelease\env\Scripts\python.exe" "$journalRelease\application\manage.py" createsuperuser
+    ```
+    This uses the installed app's private Python and library. Close this PowerShell window when you finish.
+
+    **For a manual installation:**
+
     Open a terminal inside your `media-journal` folder and run:
     ```sh
     python manage.py createsuperuser
@@ -66,6 +82,10 @@ Now that you have an account you need to start the app with the `REQUIRE_LOGIN=T
     ```
 
 === "Windows"
+
+    **If using the Windows Installer:**
+
+    Open `config.json` in your installation folder and change `require_login` to `true`. Keep the other settings in the file. Use Stop Media Journal in the Start menu, then open Media Journal again to apply the change.
 
     **If using the `.bat` file (Recommended):**  
     Open your `run_journal.bat` file in a text editor and add `set REQUIRE_LOGIN=True` right before the runserver command:

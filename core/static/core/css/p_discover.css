@@ -17,6 +17,7 @@
   --table-bg: #1f2a38;
 
   --score-color: #ffd700;
+  --activity-high: #abbacd;
 }
 
 
@@ -39,6 +40,7 @@
   --table-bg: #F2F2F2;
 
   --score-color: #9b2c2c;
+  --activity-high: #b3b3b3;
 }
 
 [data-theme="brown"] {
@@ -59,6 +61,7 @@
   --table-bg: #55423d;
 
   --score-color: #ffd700;
+  --activity-high: #af7f76;
 }
 
 /* Muted forest green, with warm sage text and moss accents. */
@@ -80,6 +83,7 @@
   --table-bg: #3b5140;
 
   --score-color: #ffd700;
+  --activity-high: #9cb589;
 }
 
 /* Warm plum, with parchment text and muted brass accents. */
@@ -101,6 +105,7 @@
   --table-bg: #514254;
 
   --score-color: #ffd700;
+  --activity-high: #c4a3bb;
 }
 
 /* Warm charcoal, with ivory text and restrained amber accents. */
@@ -122,6 +127,7 @@
   --table-bg: #48433b;
 
   --score-color: #ffd700;
+  --activity-high: #c2a77e;
 }
 
 /* Muted ocean teal, with warm linen text and sea-glass accents. */
@@ -143,6 +149,7 @@
   --table-bg: #3c575a;
 
   --score-color: #ffd700;
+  --activity-high: #9fc6b4;
 }
 
 /* Light rose, with warm ivory backgrounds, cocoa text and berry accents. */
@@ -164,6 +171,7 @@
   --table-bg: #f8eaec;
 
   --score-color: #993852;
+  --activity-high: #b74c74;
 }
 
 /* Cake: creamy ivory, peach layers and red accents. */
@@ -185,7 +193,13 @@
   --table-bg: #f7e5d1;
 
   --score-color: #9e401c;
+  --activity-high: #c14d2b;
 }
+
+/* Match list-page controls over dark covers in the light themes, too. */
+[data-theme="light"] .add-to-list-btn { --text-light: #f2f2f2; }
+[data-theme="pink"] .add-to-list-btn { --text-light: #fff8fb; }
+[data-theme="cake"] .add-to-list-btn { --text-light: #fff7e8; }
 
 html {
   scrollbar-gutter: stable;
@@ -553,15 +567,40 @@ body {
   top: 5px;
   right: 5px;
   display: none;
-  background: rgba(0, 0, 0, 0.8);
-  color: white;
+  background: rgba(0, 0, 0, 0.6);
+  color: var(--text-light);
   border: none;
   padding: 8px 10px;
+  min-width: calc(1em + 20px);
+  box-sizing: border-box;
   cursor: pointer;
   border-radius: 4px;
-  font-size: 14px;
-  font-weight: bold;
   z-index: 2;
+}
+
+.add-to-list-btn:hover {
+  background: rgba(0, 0, 0, 0.9);
+  color: var(--activity-high);
+}
+
+.discover-add-symbol {
+  display: inline-block;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Center the enlarged strokes on the button, independently of the font baseline. */
+.add-to-list-btn:has(.discover-add-symbol)::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 0.9em;
+  height: 0.9em;
+  background:
+    linear-gradient(currentColor, currentColor) center / 100% 0.15em no-repeat,
+    linear-gradient(currentColor, currentColor) center / 0.15em 100% no-repeat;
+  pointer-events: none;
 }
 
 .add-to-list-btn::before {
@@ -575,17 +614,23 @@ body {
 
 .hover-tooltip {
   position: fixed;
-  background: var(--bg-tertiary);
   border: none;
   border-radius: 8px;
-  padding: 12px;
-  max-width: 350px;
+  max-width: 374px;
   z-index: 1000;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   color: var(--text-primary);
   font-size: 0.9rem;
   display: block;
-  overflow: hidden;
+}
+
+.tooltip-surface {
+  position: relative;
+  padding: 12px;
+  background: var(--bg-tertiary);
+  /* Composite first, then clip once, so antialiasing cannot expose the banner. */
+  transform: translateZ(0);
+  clip-path: inset(0 round 8px);
 }
 
 .tooltip-backdrop {
@@ -594,19 +639,8 @@ body {
   left: 0;
   right: 0;
   height: 56%;
-  background-size: cover;
-  background-position: top center;
-  background-repeat: no-repeat;
-  border-radius: none;
   z-index: 0;
-}
-
-.tooltip-backdrop::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-
-  background:
+  background-image:
     linear-gradient(to right,
       rgba(var(--bg-secondary-rgb), 1) 5%,
       rgba(var(--bg-secondary-rgb), 0.95) 20%,
@@ -618,10 +652,11 @@ body {
       rgba(var(--bg-secondary-rgb), 0.95) 20%,
       rgba(var(--bg-secondary-rgb), 0.90) 25%,
       rgba(var(--bg-secondary-rgb), 0.85) 30%,
-      rgba(var(--bg-secondary-rgb), 0.1) 100%);
-
-  border-radius: 8px 8px 0 0;
-  z-index: 1;
+      rgba(var(--bg-secondary-rgb), 0.1) 100%),
+    var(--tooltip-backdrop-image, none);
+  background-size: cover;
+  background-position: top center;
+  background-repeat: no-repeat;
 }
 
 .tooltip-content {
@@ -850,7 +885,9 @@ body {
   }
 
   .add-to-list-btn {
-    padding: 6px 10px;
+    /* This page's portrait cards are already scaled by two. */
+    padding: 3px 5px;
+    min-width: calc(1em + 10px);
     font-size: 2rem;
   }
 
