@@ -55,9 +55,10 @@ def get_sharded_path(original_path):
 
 
 def download_image(url, relative_path, *, timeout=10):
-    import tempfile
+    from stat import S_IMODE
+    from uuid import uuid4
     from core.services.g_api_errors import as_api_error
-    from core.services.g_media_files import current_downloads
+    from core.services.g_media_files import current_downloads, remove_media_files
     
     batch = current_downloads.get()
     temporary_path = None
@@ -73,9 +74,13 @@ def download_image(url, relative_path, *, timeout=10):
         if not response.content or response.headers.get('Content-Type', '').split(';')[0] in ('text/html', 'application/json'):
             raise ValueError('Invalid image response.')
         existed = local_path.exists()
-        with tempfile.NamedTemporaryFile(dir=local_path.parent, suffix='.tmp', delete=False) as output:
-            temporary_path = Path(output.name)
+        permissions = S_IMODE(local_path.stat().st_mode) if existed else settings.FILE_UPLOAD_PERMISSIONS
+        temporary_path = local_path.parent / f'.{uuid4().hex}.tmp'
+        # Unlike NamedTemporaryFile, normal creation respects the process umask.
+        with temporary_path.open('xb') as output:
             output.write(response.content)
+        if permissions is not None:
+            os.chmod(temporary_path, permissions)
         os.replace(temporary_path, local_path)
         temporary_path = None
         if batch is not None and not existed:
@@ -91,7 +96,7 @@ def download_image(url, relative_path, *, timeout=10):
         print("Image download failed:", e)
     finally:
         if temporary_path is not None:
-            temporary_path.unlink(missing_ok=True)
+            remove_media_files({temporary_path})
     return ""
 
 

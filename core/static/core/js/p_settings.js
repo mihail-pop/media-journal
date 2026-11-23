@@ -884,8 +884,7 @@ function showProgressModal(title) {
                 closeModal();
                 ApiFeedback.notify({
                   ...(data.api_error || {}),
-                  error: `${data.failed_count} item${data.failed_count === 1 ? '' : 's'} could not be refreshed. Check API status.`,
-                  api_status_url: '/settings/?api_status=1#api-status'
+                  error: `${data.failed_count} item${data.failed_count === 1 ? '' : 's'} could not be refreshed.`,
                 });
                 return;
               }

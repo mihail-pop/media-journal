@@ -58,7 +58,8 @@
     document.querySelector('.api-feedback-toast')?.remove();
     const container = document.createElement('div');
     container.className = 'api-feedback-toast';
-    render(container, error, provider, { compact: true, retry });
+    render(container, error, provider, { compact: true,
+      retry: retry ? () => { container.remove(); return retry(); } : undefined });
     const close = document.createElement('button');
     close.type = 'button';
     close.className = 'api-feedback-close';

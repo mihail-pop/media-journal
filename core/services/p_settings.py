@@ -678,7 +678,7 @@ class RefreshTask(threading.Thread):
             media_type = item.media_type
 
             from core.services.g_media_files import RefreshDownloads
-            from core.services.g_refresh import STRUCTURAL_FIELDS, apply_refresh, prepared_data
+            from core.services.g_refresh import STRUCTURAL_FIELDS, RefreshConflict, apply_refresh, prepared_data
 
             try:
                 with RefreshDownloads(source) as downloads:
@@ -723,6 +723,14 @@ class RefreshTask(threading.Thread):
                 self.update_progress(processed, total_items, "Refreshing items")
 
             except Exception as e:
+                if isinstance(e, APIKey.DoesNotExist):
+                    e = ApiError(source, 'missing_key')
+                if isinstance(e, RefreshConflict):
+                    self.failed_count += 1
+                    consecutive_errors = 0
+                    processed += 1
+                    self.update_progress(processed, total_items, 'Refreshing items')
+                    continue
                 consecutive_errors += 1
                 self.failed_count += 1
                 error_msg = str(e).lower()

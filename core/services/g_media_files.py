@@ -27,14 +27,18 @@ def media_paths(value):
 
 
 def remove_media_files(paths):
-    root = Path(settings.MEDIA_ROOT).resolve()
+    try:
+        root = Path(settings.MEDIA_ROOT).resolve()
+    except (OSError, RuntimeError, ValueError):
+        logger.warning('Could not access the media directory for cleanup.')
+        return
     for path in paths:
-        path = Path(path).resolve()
-        if path.is_relative_to(root) and path != root:
-            try:
+        try:
+            path = Path(path).resolve()
+            if path.is_relative_to(root) and path != root:
                 path.unlink(missing_ok=True)
-            except OSError:
-                logger.warning('Could not remove an unused media file: %s', path)
+        except (OSError, RuntimeError, ValueError):
+            logger.warning('Could not remove an unused media file: %s', path)
 
 
 class RefreshDownloads:
@@ -42,15 +46,21 @@ class RefreshDownloads:
         self.provider = provider
         self.created = set()
         self.retained = set()
+        self.committed = False
         self.failure = None
 
     def __enter__(self):
         self.token = current_downloads.set(self)
         return self
 
-    def keep(self, value):
-        self.retained.update(media_paths(value))
+    def keep(self, paths):
+        self.retained.update(paths)
+
+    def mark_committed(self):
+        # Later cleanup errors must never delete files the database now uses.
+        self.committed = True
 
     def __exit__(self, exc_type, exc_value, traceback):
         current_downloads.reset(self.token)
-        remove_media_files(self.created - (self.retained if exc_type is None else set()))
+        retained = self.retained if exc_type is None or self.committed else set()
+        remove_media_files(self.created - retained)

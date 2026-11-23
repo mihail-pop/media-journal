@@ -752,7 +752,7 @@ def delete_item(request, item_id):
 @api_errors(provider_for_request)
 def refresh_item(request):
     from core.services.g_media_files import RefreshDownloads
-    from core.services.g_refresh import METADATA_FIELDS, apply_refresh, prepare_full_refresh
+    from core.services.g_refresh import METADATA_FIELDS, RefreshConflict, apply_refresh, prepare_full_refresh
 
     try:
         data = json.loads(request.body)
@@ -769,15 +769,18 @@ def refresh_item(request):
     if str(item.source_id).startswith('custom_'):
         return JsonResponse({'error': 'Custom items do not have API metadata to refresh.'}, status=400)
 
-    with RefreshDownloads(item.source) as downloads:
-        prepared = prepare_full_refresh(item)
-        fields = list(METADATA_FIELDS) if refresh_type in ('all', 'data') else []
-        if refresh_type in ('all', 'cover'):
-            fields.append('cover_url')
-        if refresh_type in ('all', 'banner'):
-            fields.append('banner_url')
-        apply_refresh(item, prepared, fields, downloads,
-                      refresh_runtime=refresh_type in ('all', 'data'))
+    try:
+        with RefreshDownloads(item.source) as downloads:
+            prepared = prepare_full_refresh(item)
+            fields = list(METADATA_FIELDS) if refresh_type in ('all', 'data') else []
+            if refresh_type in ('all', 'cover'):
+                fields.append('cover_url')
+            if refresh_type in ('all', 'banner'):
+                fields.append('banner_url')
+            apply_refresh(item, prepared, fields, downloads,
+                          refresh_runtime=refresh_type in ('all', 'data'))
+    except RefreshConflict as error:
+        return JsonResponse({'error': str(error), 'error_code': 'refresh_conflict'}, status=409)
     return JsonResponse({'message': 'Item refreshed successfully.'})
 
 
