@@ -4,6 +4,10 @@ from .models import AppSettings, NavItem, default_live_search_settings, default_
 def nav_items(request):
     items = list(NavItem.objects.filter(visible=True).order_by("position"))
     settings = AppSettings.objects.first()
+    extra_search_options = {
+        'person': settings.show_people_in_search if settings else True,
+        'character': settings.show_characters_in_search if settings else False,
+    }
 
     # Add display name to each item (from choices)
     for item in items:
@@ -22,9 +26,10 @@ def nav_items(request):
             {"data_type": media_types[item.name], "label": item.display_name}
             for item in items if item.name in media_types
         ] + [
-            {"data_type": "person", "label": "People"},
-            {"data_type": "character", "label": "Characters"},
+            {"data_type": "person", "label": "People", "disabled": not extra_search_options['person']},
+            {"data_type": "character", "label": "Characters", "disabled": not extra_search_options['character']},
         ],
+        "extra_search_options": extra_search_options,
         "live_search_settings": settings.get_live_search_settings() if settings else default_live_search_settings(),
         "journal_rating_mode": settings.rating_mode if settings else "faces",
         "show_banner_notes": settings.show_banner_notes if settings else True,

@@ -145,6 +145,30 @@ def update_activity_date_mode(request):
 
 
 @require_POST
+def update_extra_search_options(request):
+    fields = {'person': 'show_people_in_search', 'character': 'show_characters_in_search'}
+    try:
+        data = json.loads(request.body)
+        search_type = data.get('type') if isinstance(data, dict) else None
+        enabled = data.get('enabled') if isinstance(data, dict) else None
+        if not isinstance(search_type, str) or search_type not in fields or not isinstance(enabled, bool):
+            raise ValueError
+    except (ValueError, TypeError):
+        return JsonResponse({'success': False, 'error': 'Invalid extra search option.'}, status=400)
+
+    AppSettings = apps.get_model('core', 'AppSettings')
+    with transaction.atomic():
+        settings = AppSettings.objects.select_for_update().first()
+        if not settings:
+            settings = AppSettings.objects.create()
+        field = fields[search_type]
+        setattr(settings, field, enabled)
+        settings.save(update_fields=[field])
+        preferences = {key: getattr(settings, name) for key, name in fields.items()}
+    return JsonResponse({'success': True, 'extra_search_options': preferences})
+
+
+@require_POST
 def update_adult_content(request):
     try:
         data = json.loads(request.body)

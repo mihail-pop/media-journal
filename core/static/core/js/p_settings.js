@@ -92,6 +92,39 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
+  const extraSearchOptions = document.getElementById('extra-search-options');
+  if (extraSearchOptions) {
+    const buttons = [...extraSearchOptions.querySelectorAll('button[data-type]')];
+    extraSearchOptions.addEventListener('click', async event => {
+      const button = event.target.closest('button[data-type]');
+      if (!button || button.disabled) return;
+      const previous = button.getAttribute('aria-pressed') === 'true';
+      const setEnabled = (control, enabled) => {
+        control.setAttribute('aria-pressed', String(enabled));
+        control.classList.toggle('active', enabled);
+      };
+      buttons.forEach(control => { control.disabled = true; });
+      setEnabled(button, !previous);
+      try {
+        const response = await fetch(extraSearchOptions.dataset.saveUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+          body: JSON.stringify({ type: button.dataset.type, enabled: !previous }),
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error('Unable to save extra search options.');
+        buttons.forEach(control => setEnabled(control, data.extra_search_options[control.dataset.type] === true));
+        window.dispatchEvent(new CustomEvent('extra-search-options-updated', { detail: data.extra_search_options }));
+        showNotification('Search options updated!');
+      } catch (error) {
+        setEnabled(button, previous);
+        alert('Could not save search options. Please try again.');
+      } finally {
+        buttons.forEach(control => { control.disabled = false; });
+      }
+    });
+  }
+
   const adultContentToggle = document.getElementById('allow-adult-content');
   adultContentToggle?.addEventListener('change', async () => {
     const enabled = adultContentToggle.checked;

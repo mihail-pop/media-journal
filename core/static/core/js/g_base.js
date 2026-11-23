@@ -76,7 +76,7 @@ document.addEventListener("DOMContentLoaded", () => {
   new ResizeObserver(updateSearchControlsWidth).observe(searchControls);
   updateSearchControlsWidth();
   window.addEventListener('resize', updateSearchResultsSize);
-  const availableTypes = new Set(optionButtons.map(button => button.dataset.type));
+  const availableTypes = new Set(optionButtons.filter(button => !button.hidden).map(button => button.dataset.type));
   const apiEndpoints = {
     movie: '/api/tmdb_search/', tv: '/api/tmdb_search/',
     anime: '/api/anilist_search/', manga: '/api/anilist_search/',
@@ -88,9 +88,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const pageMediaType = [document.body.dataset.pageType, document.body.dataset.mediaType,
     document.getElementById('favorite-form')?.dataset.personType]
     .map(normalizeType).find(type => Object.hasOwn(apiEndpoints, type));
-  let selectedType = availableTypes.has(pageMediaType) ? pageMediaType : optionButtons[0]?.dataset.type;
+  let selectedType = availableTypes.has(pageMediaType) ? pageMediaType : [...availableTypes][0];
   try {
-    if (pageMediaType) localStorage.setItem('lastMediaPageType', pageMediaType);
+    if (availableTypes.has(pageMediaType)) localStorage.setItem('lastMediaPageType', pageMediaType);
     else {
       const saved = localStorage.getItem('lastMediaPageType');
       if (availableTypes.has(saved)) selectedType = saved;
@@ -135,6 +135,19 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   updateMediaSelection();
 
+  window.addEventListener('extra-search-options-updated', event => {
+    optionButtons.forEach(button => {
+      if (Object.hasOwn(event.detail, button.dataset.type)) button.hidden = event.detail[button.dataset.type] !== true;
+    });
+    availableTypes.clear();
+    optionButtons.filter(button => !button.hidden).forEach(button => availableTypes.add(button.dataset.type));
+    if (!availableTypes.has(selectedType)) selectedType = [...availableTypes][0];
+    cancelSearch();
+    resultsContainer.replaceChildren();
+    updateMediaSelection();
+    setMediaOptionsOpen(false);
+  });
+
   mediaSelect.addEventListener('mouseenter', () => {
     if (selectedType && window.matchMedia('(hover: hover)').matches) setMediaOptionsOpen(true);
   });
@@ -146,6 +159,7 @@ document.addEventListener("DOMContentLoaded", () => {
       ? true : mediaOptions.hidden);
   });
   optionButtons.forEach(button => button.addEventListener('click', () => {
+    if (button.hidden) return;
     cancelSearch();
     selectedType = button.dataset.type;
     updateMediaSelection();

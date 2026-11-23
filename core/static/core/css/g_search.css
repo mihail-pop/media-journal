@@ -567,6 +567,8 @@
   cursor: pointer;
 }
 
+.search-media-option[hidden] { display: none; }
+
 .search-media-option:hover,
 .search-media-option:focus-visible,
 .search-media-option[aria-pressed="true"] {

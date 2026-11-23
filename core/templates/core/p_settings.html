@@ -313,6 +313,13 @@
           {% endfor %}
         </div>
       </section>
+      <section class="preferences-section">
+        <h3>Extra Search Options</h3>
+        <div id="extra-search-options" class="extra-search-options" role="group" aria-label="Extra search options" data-save-url="{% url 'update_extra_search_options' %}">
+          <button type="button" class="extra-search-option{% if extra_search_options.person %} active{% endif %}" data-type="person" aria-pressed="{{ extra_search_options.person|yesno:'true,false' }}">People</button>
+          <button type="button" class="extra-search-option{% if extra_search_options.character %} active{% endif %}" data-type="character" aria-pressed="{{ extra_search_options.character|yesno:'true,false' }}">Characters</button>
+        </div>
+      </section>
     </div>
   </div>
 

@@ -381,6 +381,8 @@ class AppSettings(models.Model):
         return sections + list(defaults.values())
 
     live_search_settings = models.JSONField(default=default_live_search_settings, blank=True)
+    show_people_in_search = models.BooleanField(default=True)
+    show_characters_in_search = models.BooleanField(default=False)
 
     def get_live_search_settings(self):
         preferences = default_live_search_settings()

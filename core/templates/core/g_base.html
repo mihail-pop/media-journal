@@ -73,7 +73,7 @@
           </button>
           <div id="search-media-options" class="search-media-options" hidden>
             {% for media in search_media_types %}
-              <button type="button" class="search-media-option" data-type="{{ media.data_type }}" aria-pressed="false">{{ media.label }}</button>
+              <button type="button" class="search-media-option" data-type="{{ media.data_type }}" aria-pressed="false"{% if media.disabled %} hidden{% endif %}>{{ media.label }}</button>
             {% endfor %}
           </div>
         </div>

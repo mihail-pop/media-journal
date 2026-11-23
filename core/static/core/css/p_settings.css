@@ -171,7 +171,8 @@ p {
 }
 
 .rating-mode-options,
-.activity-date-options {
+.activity-date-options,
+.extra-search-options {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
@@ -180,7 +181,8 @@ p {
 }
 
 .rating-mode-button,
-.activity-date-mode-button {
+.activity-date-mode-button,
+.extra-search-option {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -198,23 +200,27 @@ p {
 .rating-mode-button:hover,
 .rating-mode-button:focus-visible,
 .activity-date-mode-button:hover,
-.activity-date-mode-button:focus-visible {
+.activity-date-mode-button:focus-visible,
+.extra-search-option:hover,
+.extra-search-option:focus-visible {
   background: var(--hover-bg);
 }
 
 .rating-mode-button.active,
-.activity-date-mode-button.active {
+.activity-date-mode-button.active,
+.extra-search-option.active {
   border-color: var(--special-color);
   color: var(--text-secondary);
 }
 
 .rating-mode-button:disabled,
-.activity-date-mode-button:disabled {
+.activity-date-mode-button:disabled,
+.extra-search-option:disabled {
   cursor: wait;
 }
 
-.activity-date-options { margin: 0 auto; }
-.activity-date-mode-button { justify-content: center; }
+.activity-date-options, .extra-search-options { margin: 0 auto; }
+.activity-date-mode-button, .extra-search-option { justify-content: center; }
 
 
 .custom-select-wrapper {
