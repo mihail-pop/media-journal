@@ -362,7 +362,7 @@
   transform: rotate(180deg);
 }
 
-.md-genre-select-wrapper.md-has-items .md-genre-indicator:hover::after {
+.md-genre-select-wrapper.md-has-items.md-open .md-genre-indicator:hover::after {
   content: "✕";
   border: none;
   font-size: 14px;

@@ -35,6 +35,11 @@ document.addEventListener("DOMContentLoaded", function () {
   const genreOptions = document.getElementById("metadata-genre-options");
   const genreTags = document.getElementById("metadata-genre-tags");
   const genreIndicator = document.getElementById("metadata-genre-indicator");
+  window.ModalTagFields?.attach({
+    control: document.getElementById('metadata-genre-select'), input: genreSearch,
+    tags: genreTags, wrapper: genreWrapper, options: genreOptions,
+    openClass: 'md-open', placeholder: 'Genres',
+  });
 
   function initMetadataGenres(mediaType) {
     if (genreOptions) {
@@ -78,7 +83,12 @@ document.addEventListener("DOMContentLoaded", function () {
     metadataCurrentGenres.forEach(genre => {
       const tag = document.createElement('div');
       tag.className = 'md-genre-tag';
-      tag.innerHTML = `<span>${genre}</span><span class="md-remove-tag">✕</span>`;
+      const label = document.createElement('span');
+      label.textContent = genre;
+      const remove = document.createElement('span');
+      remove.className = 'md-remove-tag';
+      remove.textContent = '✕';
+      tag.append(label, remove);
       tag.querySelector('.md-remove-tag').addEventListener('click', (e) => {
         e.stopPropagation();
         toggleMetadataGenre(genre);
@@ -128,7 +138,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (genreIndicator) {
       genreIndicator.addEventListener('click', (e) => {
         e.stopPropagation();
-        if (metadataCurrentGenres.length > 0) {
+        if (metadataCurrentGenres.length > 0 && genreWrapper.classList.contains('md-open')) {
           metadataCurrentGenres =[];
           updateMetadataGenreUI();
           if (genreOptions) genreOptions.classList.remove('md-open');
@@ -177,6 +187,18 @@ document.addEventListener("DOMContentLoaded", function () {
 
   const creatorTagsContainer = document.getElementById("metadata-creator-tags");
   const creatorInput = document.getElementById("metadata-creator-input");
+  const creatorField = window.ModalTagFields?.attach({
+    control: creatorInput?.parentElement, input: creatorInput, tags: creatorTagsContainer,
+    placeholder: () => metadataCreatorPlaceholder,
+    onClose: commitCreatorInput,
+  });
+
+  function commitCreatorInput() {
+    if (creatorInput.value.trim() !== '') {
+      addCreator(creatorInput.value);
+      creatorInput.value = '';
+    }
+  }
 
   function addCreator(name) {
     name = name.trim();
@@ -197,7 +219,12 @@ document.addEventListener("DOMContentLoaded", function () {
     metadataCurrentCreators.forEach(creator => {
       const tag = document.createElement('div');
       tag.className = 'md-creator-tag';
-      tag.innerHTML = `<span>${creator}</span><span class="md-remove-tag">✕</span>`;
+      const label = document.createElement('span');
+      label.textContent = creator;
+      const remove = document.createElement('span');
+      remove.className = 'md-remove-tag';
+      remove.textContent = '✕';
+      tag.append(label, remove);
       tag.querySelector('.md-remove-tag').addEventListener('click', () => {
         removeCreator(creator);
       });
@@ -224,12 +251,7 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     });
 
-    creatorInput.addEventListener('blur', () => {
-      if (creatorInput.value.trim() !== '') {
-        addCreator(creatorInput.value);
-        creatorInput.value = '';
-      }
-    });
+    if (!creatorField) creatorInput.addEventListener('blur', commitCreatorInput);
   }
 
   function updateMetadataFieldVisibility(mediaType) {

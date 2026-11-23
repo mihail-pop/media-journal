@@ -1,0 +1,110 @@
+/* The input stays single-line; selected items live in a shared floating layer. */
+:is(#edit-modal, #create-modal, #metadata-modal) .modal-tag-field {
+  position: relative;
+  align-self: stretch;
+  flex-wrap: nowrap;
+  height: 1.8rem;
+  min-height: 1.8rem;
+  max-height: 1.8rem;
+  overflow: visible;
+}
+
+:is(#edit-modal, #create-modal, #metadata-modal) .modal-tag-field > input {
+  display: block;
+  flex: 1 1 0;
+  width: 0 !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+:is(#edit-modal, #create-modal, #metadata-modal) .modal-tag-field.modal-tag-has-items:not(.modal-tag-active) > input {
+  opacity: 0;
+}
+
+.modal-tag-summary {
+  position: absolute;
+  inset-inline: 0.5rem 2.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--text-tertiary);
+  font-size: 0.95rem;
+  pointer-events: none;
+  min-width: 0;
+}
+
+.modal-tag-creator-field .modal-tag-summary { inset-inline-end: 0.5rem; }
+.modal-tag-active .modal-tag-summary,
+.modal-tag-summary[hidden],
+.modal-tag-more[hidden],
+.modal-tag-popover[hidden],
+.modal-tag-options-portal[hidden] { display: none !important; }
+.modal-tag-first { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.modal-tag-more { flex: none; padding: 0.08em 0.35em; border-radius: 999px; background: var(--bg-quaternary); font-size: 0.8em; }
+
+.modal-tag-popover,
+.modal-tag-options-portal {
+  position: fixed;
+  visibility: hidden;
+  box-sizing: border-box;
+  border: none;
+  border-radius: 8px;
+  background: var(--bg-primary);
+  color: var(--text-tertiary);
+  box-shadow: 0 6px 22px #0005;
+  scrollbar-color: var(--text-primary) var(--bg-primary);
+  overscroll-behavior: contain;
+}
+
+.modal-tag-popover { z-index: 22002; width: max-content; padding: 0.5rem; overflow-y: auto; }
+.modal-tag-options-portal { z-index: 22001; overflow: hidden; }
+.modal-tag-popover .modal-tag-list { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 0.4rem; min-width: 0; }
+.modal-tag-popover .modal-tag-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 0.2rem 0.5rem;
+  border-radius: 5px;
+  background: var(--bg-quaternary);
+  color: var(--text-tertiary);
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+.modal-tag-popover .modal-tag-label { min-width: 0; overflow-wrap: anywhere; }
+.modal-tag-popover .modal-tag-remove { flex: none; cursor: pointer; font-weight: 700; user-select: none; }
+.modal-tag-popover .modal-tag-remove:hover,
+.modal-tag-popover .modal-tag-remove:focus-visible { color: #ff4444; }
+.modal-tag-options-portal > .modal-tag-options {
+  display: block !important;
+  position: static !important;
+  width: 100% !important;
+  max-height: 100% !important;
+  box-sizing: border-box;
+  margin: 0 !important;
+  border-radius: inherit;
+  box-shadow: none;
+  overflow-y: auto;
+}
+
+@media (orientation: portrait) {
+  :is(#edit-modal, #create-modal, #metadata-modal) .modal-tag-field {
+    height: 4.8rem !important;
+    min-height: 4.8rem !important;
+    max-height: 4.8rem !important;
+  }
+  .modal-tag-summary { font-size: 2rem; inset-inline: 1rem 4rem; }
+  .modal-tag-creator-field .modal-tag-summary { inset-inline-end: 1rem; }
+  .modal-tag-popover { padding: 0.75rem; }
+  .modal-tag-popover .modal-tag-list { gap: 0.65rem; }
+  .modal-tag-popover .modal-tag-pill { padding: 0.5rem 0.8rem; gap: 0.6rem; border-radius: 8px; font-size: 1.6rem; }
+}

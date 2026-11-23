@@ -1154,6 +1154,14 @@ input[type="number"] {
   color: var(--text-primary);
 }
 
+/* List-page styles also supply the genre indicator; keep its closed arrow. */
+#create-modal .genre-select-wrapper:not(.open) .genre-indicator:hover::after {
+  content: "";
+  border-left: 0.3rem solid transparent;
+  border-right: 0.3rem solid transparent;
+  border-top: 0.35rem solid currentColor;
+}
+
 .c-status-indicator::after {
   content: "";
   border-left: 0.3rem solid transparent;
@@ -1372,6 +1380,12 @@ input[type="number"] {
   .genre-indicator::after {
     border-left: 0.5rem solid transparent;
     border-right: 0.5rem solid transparent;
+    border-top: 0.6rem solid var(--text-tertiary);
+  }
+
+  #create-modal .genre-select-wrapper:not(.open) .genre-indicator:hover::after {
+    border-left-width: 0.5rem;
+    border-right-width: 0.5rem;
     border-top: 0.6rem solid var(--text-tertiary);
   }
 

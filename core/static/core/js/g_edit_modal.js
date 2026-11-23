@@ -56,6 +56,14 @@ document.addEventListener("DOMContentLoaded", function () {
   // Collection State
   let editCurrentCollections = [];
   let editAllCollections = [];
+  window.ModalTagFields?.attach({
+    control: document.getElementById('edit-collection-select'),
+    input: document.getElementById('edit-collection-search'),
+    tags: document.getElementById('edit-collection-tags'),
+    wrapper: document.getElementById('edit-collection-wrapper'),
+    options: document.getElementById('edit-collection-options'),
+    placeholder: 'Collections',
+  });
 
   function initEditCollections(allCols, selectedIds) {
     editAllCollections = allCols || [];
@@ -109,7 +117,12 @@ document.addEventListener("DOMContentLoaded", function () {
       
       const tag = document.createElement('div');
       tag.className = 'collection-tag';
-      tag.innerHTML = `<span>${col.title}</span><span class="remove-tag">✕</span>`;
+      const label = document.createElement('span');
+      label.textContent = col.title;
+      const remove = document.createElement('span');
+      remove.className = 'remove-tag';
+      remove.textContent = '✕';
+      tag.append(label, remove);
       tag.querySelector('.remove-tag').addEventListener('click', (e) => {
         e.stopPropagation();
         toggleEditCollection(id);
@@ -188,7 +201,7 @@ document.addEventListener("DOMContentLoaded", function () {
         e.stopPropagation();
         const colOptions = document.getElementById("edit-collection-options");
         const colSearch = document.getElementById("edit-collection-search");
-        if (editCurrentCollections.length > 0) {
+        if (editCurrentCollections.length > 0 && colWrapper.classList.contains('open')) {
           editCurrentCollections = [];
           updateEditCollectionUI();
           if (colOptions) colOptions.classList.remove('open');

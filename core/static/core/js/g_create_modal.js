@@ -100,6 +100,9 @@ document.addEventListener("DOMContentLoaded", function () {
     let choices = new Map();
     let selected = [];
     options.setAttribute('aria-multiselectable', 'true');
+    window.ModalTagFields?.attach({
+      control: trigger, input: search, tags, wrapper, options, placeholder,
+    });
 
     function setOpen(open) {
       if (open) closeCreateDropdowns(wrapper);
@@ -172,7 +175,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
     indicator.addEventListener('click', event => {
       event.stopPropagation();
-      if (selected.length) {
+      if (selected.length && wrapper.classList.contains('open')) {
         selected = [];
         search.value = '';
         filter('');
@@ -274,6 +277,18 @@ document.addEventListener("DOMContentLoaded", function () {
 
   const creatorTagsContainer = document.getElementById("create-creator-tags");
   const creatorInput = document.getElementById("create-creator-input");
+  const creatorField = window.ModalTagFields?.attach({
+    control: creatorInput?.parentElement, input: creatorInput, tags: creatorTagsContainer,
+    placeholder: () => createCreatorPlaceholder,
+    onClose: commitCreatorInput,
+  });
+
+  function commitCreatorInput() {
+    if (creatorInput.value.trim() !== '') {
+      addCreator(creatorInput.value);
+      creatorInput.value = '';
+    }
+  }
 
   function addCreator(name) {
     name = name.trim();
@@ -294,7 +309,12 @@ document.addEventListener("DOMContentLoaded", function () {
     createCurrentCreators.forEach(creator => {
       const tag = document.createElement('div');
       tag.className = 'c-creator-tag';
-      tag.innerHTML = `<span>${creator}</span><span class="c-remove-tag">✕</span>`;
+      const label = document.createElement('span');
+      label.textContent = creator;
+      const remove = document.createElement('span');
+      remove.className = 'c-remove-tag';
+      remove.textContent = '✕';
+      tag.append(label, remove);
       tag.querySelector('.c-remove-tag').addEventListener('click', () => {
         removeCreator(creator);
       });
@@ -321,12 +341,7 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     });
 
-    creatorInput.addEventListener('blur', () => {
-      if (creatorInput.value.trim() !== '') {
-        addCreator(creatorInput.value);
-        creatorInput.value = '';
-      }
-    });
+    if (!creatorField) creatorInput.addEventListener('blur', commitCreatorInput);
   }
 
   function updateCreateFieldVisibility(mediaType) {

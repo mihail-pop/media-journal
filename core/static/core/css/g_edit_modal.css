@@ -923,7 +923,7 @@ body {
   transform: rotate(180deg);
 }
 
-.collection-select-wrapper.has-items .collection-indicator:hover::after {
+.collection-select-wrapper.has-items.open .collection-indicator:hover::after {
   border: none;
   content: "✕";
   font-size: 1.2rem;
