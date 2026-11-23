@@ -9,7 +9,7 @@ from datetime import datetime
 
 from core.models import APIKey, MediaItem
 from core.services.g_runtimes import tmdb_episode_runtime, tmdb_season_runtime
-from core.services.g_utils import download_image
+from core.services.g_utils import apply_initial_item_status, download_image
 
 TMDB_MOVIE_GENRES = {
     28: "Action",
@@ -53,7 +53,7 @@ TMDB_TV_GENRES = {
 }
 
 
-def save_tmdb_item(media_type, tmdb_id, *, http=None, prepare_only=False):
+def save_tmdb_item(media_type, tmdb_id, *, http=None, prepare_only=False, initial_status='planned'):
     try:
         api_key = APIKey.objects.get(name="tmdb").key_1
         url = f"https://api.themoviedb.org/3/{media_type}/{tmdb_id}"
@@ -208,6 +208,7 @@ def save_tmdb_item(media_type, tmdb_id, *, http=None, prepare_only=False):
         )
         if prepare_only:
             return {"item": item_data}
+        apply_initial_item_status(item_data, initial_status)
         MediaItem.objects.create(**item_data)
 
         return JsonResponse({"message": "Added to your list."})
@@ -216,7 +217,7 @@ def save_tmdb_item(media_type, tmdb_id, *, http=None, prepare_only=False):
         return JsonResponse({"error": f"Failed to save: {str(e)}"})
 
 
-def save_tmdb_season(tmdb_id, season_number, *, http=None, prepare_only=False):
+def save_tmdb_season(tmdb_id, season_number, *, http=None, prepare_only=False, initial_status='planned'):
     try:
         api_key = APIKey.objects.get(name="tmdb").key_1
 
@@ -347,6 +348,7 @@ def save_tmdb_season(tmdb_id, season_number, *, http=None, prepare_only=False):
 
         if prepare_only:
             return {"item": item_data}
+        apply_initial_item_status(item_data, initial_status)
         MediaItem.objects.create(**item_data)
 
         return JsonResponse({"message": "Season added to your list."})

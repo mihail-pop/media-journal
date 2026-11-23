@@ -6,10 +6,10 @@ import requests
 from django.http import JsonResponse
 
 from core.models import MediaItem
-from core.services.g_utils import download_image
+from core.services.g_utils import apply_initial_item_status, download_image
 
 
-def save_openlib_item(work_id, *, http=None, prepare_only=False):
+def save_openlib_item(work_id, *, http=None, prepare_only=False, initial_status='planned'):
     # Fetch main Work details (Title, Description, Covers)
     detail_url = f"https://openlibrary.org/works/{work_id}.json"
     detail_response = (http or requests).get(detail_url, timeout=60)
@@ -118,6 +118,7 @@ def save_openlib_item(work_id, *, http=None, prepare_only=False):
     )
     if prepare_only:
         return {"item": item_data}
+    apply_initial_item_status(item_data, initial_status)
     MediaItem.objects.create(**item_data)
 
     return JsonResponse({"success": True, "message": "Book added to list"})

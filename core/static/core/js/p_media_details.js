@@ -1590,49 +1590,6 @@ swapBtn?.addEventListener('click', () => {
     }
   });
 
-  // Add to list
-  const addBtn = document.getElementById("add-to-list-button");
-  if (addBtn) {
-    addBtn.addEventListener("click", function () {
-      showNotification("Adding to your list...", "warning");
-      
-      const data = {
-        source: addBtn.dataset.source,
-        source_id: addBtn.dataset.sourceId,
-        media_type: addBtn.dataset.mediaType,
-        title: addBtn.dataset.title,
-        cover_url: addBtn.dataset.coverUrl,
-      };
-      
-      fetch("/api/add_to_list/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRFToken": getCookie("csrftoken"),
-        },
-        body: JSON.stringify(data),
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.message) {
-            sessionStorage.setItem("openEditModal", "true");
-            sessionStorage.setItem("refreshSuccess", "1");
-            location.reload();
-          } else if (data.error) {
-            alert("Error: " + data.error);
-          }
-        })
-        .catch(() => alert("Failed to add item."));
-    });
-  }
-
-  // Auto-open edit modal
-  if (sessionStorage.getItem("openEditModal")) {
-    sessionStorage.removeItem("openEditModal");
-    const editButton = document.getElementById("edit-button");
-    editButton?.click();
-  }
-
   // Favorite toggle
   const favForm = document.getElementById("favorite-form");
   if (favForm) {

@@ -1,0 +1,19 @@
+<div class="add-list-control" data-add-url="{% if add_button_id == 'add-season-to-list-button' %}{% url 'add_season_to_list' %}{% else %}{% url 'add_to_list' %}{% endif %}">
+  <button type="button" id="{{ add_button_id }}" class="btn"
+    data-source="{{ source }}" data-source-id="{{ source_id }}" data-media-type="{{ media_type }}"
+    data-title="{{ title }}" data-cover-url="{{ cover_url }}"
+    data-tmdb-id="{{ tmdb_id }}" data-season-number="{{ season_number }}">
+    {% if media_type == 'movie' %}Add to Movies List{% elif media_type == 'tv' %}Add to TV List{% elif media_type == 'anime' %}Add to Anime List{% elif media_type == 'manga' %}Add to Manga List{% elif media_type == 'game' %}Add to Games List{% elif media_type == 'book' %}Add to Books List{% elif media_type == 'music' %}Add to Music List{% else %}Add to List{% endif %}
+  </button>
+  <div class="add-list-status-select">
+    <button type="button" class="add-list-toggle" aria-label="Choose status when adding to list" aria-haspopup="menu" aria-expanded="false" aria-controls="add-list-status-options">
+      <span class="add-list-arrow" aria-hidden="true"></span>
+    </button>
+    <div id="add-list-status-options" class="add-list-options" role="menu" aria-label="Add with status" hidden>
+      <button type="button" class="add-list-option" role="menuitem" data-status="completed">Set as Complete</button>
+      <button type="button" class="add-list-option" role="menuitem" data-status="ongoing">Set as {% if media_type == 'game' %}Playing{% elif media_type == 'book' or media_type == 'manga' %}Reading{% elif media_type == 'music' %}Listening{% else %}Watching{% endif %}</button>
+      <button type="button" class="add-list-option" role="menuitem" data-status="on_hold">Set as Paused</button>
+      <button type="button" class="add-list-option" role="menuitem" data-status="dropped">Set as Dropped</button>
+    </div>
+  </div>
+</div>

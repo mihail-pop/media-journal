@@ -8,7 +8,7 @@ from urllib3.util.retry import Retry
 from django.http import JsonResponse
 
 from core.models import MediaItem
-from core.services.g_utils import download_image
+from core.services.g_utils import apply_initial_item_status, download_image
 from core.context_processors import version_context
 
 logger = logging.getLogger(__name__)
@@ -54,7 +54,7 @@ def wait_for_rate_limit():
     last_request_time = time.time()
 
 
-def save_musicbrainz_item(recording_id, *, http=None, prepare_only=False):
+def save_musicbrainz_item(recording_id, *, http=None, prepare_only=False, initial_status='planned'):
     wait_for_rate_limit()
 
     # Get recording details
@@ -377,6 +377,7 @@ def save_musicbrainz_item(recording_id, *, http=None, prepare_only=False):
     )
     if prepare_only:
         return {"item": item_data, "music_videos": youtube_links}
+    apply_initial_item_status(item_data, initial_status)
     item = MediaItem.objects.create(**item_data)
 
     from core.models import MusicVideo

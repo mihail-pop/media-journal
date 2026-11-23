@@ -214,38 +214,6 @@ document.addEventListener("DOMContentLoaded", function() {
       });
   });
   
-  const addBtn = document.getElementById("add-season-to-list-button");
-  if (addBtn) {
-    addBtn.addEventListener("click", function() {
-      showNotification("Adding to your list...", "warning");
-      
-      const data = {
-        tmdb_id: parseInt(addBtn.dataset.tmdbId),
-        season_number: parseInt(addBtn.dataset.seasonNumber)
-      };
-      
-      fetch("/api/add_season_to_list/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRFToken": getCookie("csrftoken"),
-        },
-        body: JSON.stringify(data),
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.message) {
-            sessionStorage.setItem("openEditModal", "true");
-            sessionStorage.setItem("refreshSuccess", "1");
-            location.reload();
-          } else if (data.error) {
-            alert("Error: " + data.error);
-          }
-        })
-        .catch(() => alert("Failed to add season."));
-    });
-  }
-  
   // Favorite toggle functionality
   const favForm = document.getElementById("favorite-form");
   if (favForm) {

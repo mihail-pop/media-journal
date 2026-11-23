@@ -40,7 +40,7 @@
            onerror="this.onerror=null;this.src=this.dataset.placeholder;" />
     </div>  
 
-      <div class="edit-favorite-wrapper">
+      <div class="edit-favorite-wrapper{% if not in_my_list %} add-list-actions{% endif %}">
         {% if in_my_list %}
           <button id="edit-button" class="btn edit-card-btn" data-id="{{ item_id }}" data-media-type="{{ media_type }}">Edit</button>
           <form id="favorite-form" data-item-id="{{ item_id }}">
@@ -64,9 +64,7 @@
             <button onclick="refreshItem('{{ item_id }}', 'cover')" class="dropdown-item" title="Only the poster.">Refresh Poster</button>
           </div>
         {% else %}
-          <button id="add-season-to-list-button" class="btn"
-            data-tmdb-id="{{ tmdb_id }}"
-            data-season-number="{{ season_number }}">Add to My List</button>
+          {% include 'core/g_add_to_list.html' with add_button_id='add-season-to-list-button' %}
         {% endif %}
       </div>
     </div>
@@ -274,5 +272,6 @@
   <script src="{% static 'core/js/g_edit_modal.js' %}"></script>
   <script src="{% static 'core/js/g_metadata_modal.js' %}"></script>
   <script src="{% static 'core/js/p_season_details.js' %}"></script>
+  <script src="{% static 'core/js/p_details_add_list.js' %}"></script>
   {% if in_my_list %}<script src="{% static 'core/js/p_details_journal.js' %}"></script>{% endif %}
 {% endblock %}

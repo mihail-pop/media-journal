@@ -15,6 +15,15 @@ def adult_content_allowed():
     return enabled if enabled is not None else True
 
 
+def apply_initial_item_status(item_data, status):
+    """Set initial progress before creation, without recording it as new activity."""
+    item_data['status'] = status
+    if status == 'completed' and item_data['media_type'] not in ('movie', 'music'):
+        for progress, total in (('progress_main', 'total_main'), ('progress_secondary', 'total_secondary')):
+            if item_data.get(total) is not None:
+                item_data[progress] = item_data[total]
+
+
 def normalize_search_text(text):
     """
     Normalizes text for robust foreign-language searching.

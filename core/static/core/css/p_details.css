@@ -448,6 +448,115 @@ body[data-media-type="music"] .poster {
   ;
 }
 
+.edit-favorite-wrapper.add-list-actions {
+  width: 210px;
+  max-width: 100%;
+  gap: 0;
+}
+
+.add-list-control {
+  --add-list-toggle-width: 2.25rem;
+  position: relative;
+  display: flex;
+  width: 100%;
+  min-width: 0;
+}
+
+.add-list-control #add-to-list-button,
+.add-list-control #add-season-to-list-button {
+  flex: 1;
+  min-width: 0;
+  padding: 0.6rem 0.5rem !important;
+  border-radius: 6px 0 0 6px;
+  font-size: 0.95rem;
+  white-space: nowrap;
+}
+
+.add-list-status-select {
+  display: flex;
+  flex: 0 0 var(--add-list-toggle-width);
+}
+
+.add-list-toggle {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 0;
+  border: none;
+  border-radius: 0 6px 6px 0;
+  background: var(--button-primary);
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.add-list-toggle:hover { background: var(--button-primary-hover); }
+.add-list-toggle::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 25%;
+  bottom: 25%;
+  width: 2px;
+  border-radius: 999px;
+  background: currentColor;
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+.add-list-arrow {
+  width: 0;
+  height: 0;
+  border-left: 0.3rem solid transparent;
+  border-right: 0.3rem solid transparent;
+  border-top: 0.35rem solid currentColor;
+  transition: transform 0.2s ease;
+}
+
+.add-list-status-select.is-open .add-list-arrow { transform: rotate(180deg); }
+.add-list-status-select.is-open::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  right: 0;
+  width: var(--add-list-toggle-width);
+  height: 0.3rem;
+}
+
+.add-list-options {
+  position: absolute;
+  top: calc(100% + 0.3rem);
+  right: 0;
+  z-index: 12;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0.3rem;
+  border-radius: 6px;
+  background: var(--bg-tertiary);
+  box-shadow: 0 6px 20px rgb(0 0 0 / 25%);
+}
+
+.add-list-options[hidden] { display: none; }
+.add-list-option {
+  display: block;
+  width: 100%;
+  padding: 0.6rem;
+  border: none;
+  border-radius: 4px;
+  background: none;
+  color: var(--text-title);
+  text-align: left;
+  font: inherit;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.add-list-option:hover,
+.add-list-option:focus-visible { background: var(--hover-bg); }
+.add-list-control button:disabled { cursor: wait; }
+
 
 .favorite-checkbox {
   cursor: pointer;
@@ -2023,20 +2132,31 @@ img.poster[src*="placeholder"] {
 
 
 .settings-cogwheel-btn {
-  width: 40px;
-  height: 40px;
+  --cogwheel-button-size: 40px;
+  width: var(--cogwheel-button-size);
+  height: var(--cogwheel-button-size);
   padding: 0;
   background: none;
   color: var(--text-overview);
   border: none;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: color 0.2s ease;
   display: flex;
   align-items: center;
 }
 
 .settings-cogwheel-btn:hover {
   color: var(--text-title);
+}
+
+.settings-cogwheel-btn > svg {
+  /* Rotate around the same center as before without moving the hover area. */
+  transform-origin: calc(var(--cogwheel-button-size) / 2) 50%;
+  transition: transform 0.2s ease;
+  pointer-events: none;
+}
+
+.settings-cogwheel-btn:hover > svg {
   transform: rotate(90deg);
 }
 
@@ -3847,8 +3967,7 @@ body[data-page-type="person-detail"] .section-title-wrapper {
   }
 
   .settings-cogwheel-btn {
-    width: 60px;
-    height: 60px;
+    --cogwheel-button-size: 60px;
   }
 
   .settings-dropdown {
@@ -3886,6 +4005,28 @@ body[data-page-type="person-detail"] .section-title-wrapper {
     margin-top: 0.8rem;
     margin-left: -1.6rem;
   }
+
+  .edit-favorite-wrapper.add-list-actions {
+    width: 24rem;
+    transform: none;
+    margin-left: 0;
+  }
+
+  .add-list-control { --add-list-toggle-width: 4rem; }
+  .add-list-control #add-to-list-button,
+  .add-list-control #add-season-to-list-button {
+    margin: 0;
+    padding: 1.2rem 0.5rem !important;
+    font-size: 1.8rem;
+  }
+
+  .add-list-arrow {
+    border-left-width: 0.5rem;
+    border-right-width: 0.5rem;
+    border-top-width: 0.6rem;
+  }
+
+  .add-list-option { padding: 1rem; font-size: 1.8rem; }
 
   .episode-image-container {
     width: 356px;

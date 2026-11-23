@@ -33,6 +33,12 @@ def add_to_list(request):
     except json.JSONDecodeError:
         return JsonResponse({"error": "Invalid JSON"}, status=400)
 
+    if not isinstance(data, dict):
+        return JsonResponse({"error": "Invalid item data"}, status=400)
+    initial_status = data.get('status', 'planned')
+    if not isinstance(initial_status, str) or initial_status not in dict(MediaItem.STATUS_CHOICES):
+        return JsonResponse({"error": "Invalid status"}, status=400)
+
     required_fields = ["source", "source_id", "media_type"]
     if not all(data.get(field) for field in required_fields):
         return JsonResponse({"error": "Missing required fields"}, status=400)
@@ -52,23 +58,24 @@ def add_to_list(request):
 
     # Route to the correct handler (TMDB, MAL, IGDB, etc.)
     if source == "tmdb":
-        return save_tmdb_item(media_type, source_id)
+        return save_tmdb_item(media_type, source_id, initial_status=initial_status)
 
     if source in ["anilist", "mal"]:
         return save_anilist_item(
             media_type, 
             anilist_id=source_id if source == "anilist" else None,
-            mal_id=source_id if source == "mal" else None
+            mal_id=source_id if source == "mal" else None,
+            initial_status=initial_status,
         )
 
     if source == "igdb":
-        return save_igdb_item(source_id)
+        return save_igdb_item(source_id, initial_status=initial_status)
 
     if source == "openlib":
-        return save_openlib_item(source_id)
+        return save_openlib_item(source_id, initial_status=initial_status)
 
     if source == "musicbrainz":
-        return save_musicbrainz_item(source_id)
+        return save_musicbrainz_item(source_id, initial_status=initial_status)
 
     return JsonResponse({"error": "Unsupported source"}, status=400)
 
@@ -78,6 +85,11 @@ def add_to_list(request):
 def add_season_to_list(request):
     try:
         data = json.loads(request.body)
+        if not isinstance(data, dict):
+            return JsonResponse({"error": "Invalid item data"}, status=400)
+        initial_status = data.get('status', 'planned')
+        if not isinstance(initial_status, str) or initial_status not in dict(MediaItem.STATUS_CHOICES):
+            return JsonResponse({"error": "Invalid status"}, status=400)
         tmdb_id = data.get("tmdb_id")
         season_number = data.get("season_number")
 
@@ -86,7 +98,7 @@ def add_season_to_list(request):
                 {"error": "Missing tmdb_id or season_number"}, status=400
             )
 
-        return save_tmdb_season(tmdb_id, season_number)
+        return save_tmdb_season(tmdb_id, season_number, initial_status=initial_status)
 
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)

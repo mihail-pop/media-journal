@@ -7,10 +7,10 @@ from django.utils import timezone
 
 from core.models import MediaItem
 from core.services.g_runtimes import positive_runtime
-from core.services.g_utils import download_image
+from core.services.g_utils import apply_initial_item_status, download_image
 
 
-def save_anilist_item(media_type, anilist_id=None, mal_id=None, *, http=None, prepare_only=False):
+def save_anilist_item(media_type, anilist_id=None, mal_id=None, *, http=None, prepare_only=False, initial_status='planned'):
     try:
         data = fetch_anilist_data(media_type, anilist_id=anilist_id, mal_id=mal_id, http=http)
 
@@ -100,6 +100,7 @@ def save_anilist_item(media_type, anilist_id=None, mal_id=None, *, http=None, pr
         )
         if prepare_only:
             return {"item": item_data}
+        apply_initial_item_status(item_data, initial_status)
         MediaItem.objects.create(**item_data)
 
         return JsonResponse({"message": "Saved to your list."})

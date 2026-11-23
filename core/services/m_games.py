@@ -6,13 +6,13 @@ import requests
 from django.http import JsonResponse
 
 from core.models import APIKey, MediaItem
-from core.services.g_utils import download_image
+from core.services.g_utils import apply_initial_item_status, download_image
 
 IGDB_ACCESS_TOKEN = None
 IGDB_TOKEN_EXPIRY = 0
 
 
-def save_igdb_item(igdb_id, *, http=None, prepare_only=False):
+def save_igdb_item(igdb_id, *, http=None, prepare_only=False, initial_status='planned'):
     token = get_igdb_token(http=http)
     if not token:
         raise Exception("Failed to get IGDB access token.")
@@ -151,6 +151,7 @@ def save_igdb_item(igdb_id, *, http=None, prepare_only=False):
     )
     if prepare_only:
         return {"item": item_data, "screenshots": local_screenshots}
+    apply_initial_item_status(item_data, initial_status)
     item = MediaItem.objects.create(**item_data)
 
     from core.models import Screenshot
